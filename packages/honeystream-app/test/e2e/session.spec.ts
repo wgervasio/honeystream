@@ -15,9 +15,19 @@ describe('session', () => {
     })
 
     it('should not join invalid session', async () => {
-      await ms.visit(`/join/deadbeafdeadbeafdeadbeafdeadbeaf`)
-      const reason = await page.$eval('#disconnect_reason', e => e.textContent)
-      expect(reason).toBe('Session not found.')
+      const guestContext = await browser.newContext()
+      const guestPage = await guestContext.newPage()
+
+      try {
+        await ms.setProfile('default', guestPage)
+        await guestPage.goto(`http://localhost:8080/#/join/deadbeafdeadbeafdeadbeafdeadbeaf`)
+        await guestPage.waitForSelector('#disconnect_reason')
+        const reason = await guestPage.$eval('#disconnect_reason', e => e.textContent)
+        expect(reason).toBe('Session not found.')
+      } finally {
+        await guestPage.close()
+        await guestContext.close()
+      }
     })
   })
 
