@@ -16,6 +16,7 @@ import autoplayMware from './middleware/autoplay'
 import microdataMware from './middleware/microdata'
 import imgurMware from './middleware/imgur'
 import preventDownloadMware from './middleware/preventDownload'
+import { MediaMetadataCache } from './cache/mediaMetadataCache'
 
 import { IMediaItem } from 'lobby/reducers/mediaPlayer'
 
@@ -41,6 +42,21 @@ const middlewares: IMediaMiddleware[] = [
 ];
 
 type MediaUrl = URL
+const mediaMetadataCache = new MediaMetadataCache()
+
+/**
+ * Context: Media requests frequently repeat the same URL in short windows.
+ * Invariant: Metadata lookup must stay bounded and preserve middleware behavior on misses.
+ * Options considered: no cache, unbounded map, bounded TTL+LRU cache.
+ * Decision: Use a 32-entry default LRU/TTL cache at the resolver boundary.
+ * Performance impact: Avoids repeated metadata fetches for hot URLs.
+ * Memory/lifecycle ownership: media/index.ts owns the cache and exposes clearMediaResolverCache().
+ * Failure mode: Expired or evicted entries transparently fall back to middleware resolution.
+ * Validation: media/cache/mediaMetadataCache.spec.ts covers cap, LRU recency, TTL, and clear.
+ */
+export const clearMediaResolverCache = () => {
+  mediaMetadataCache.clear()
+}
 
 const createContext = (url: MediaUrl) => {
   const req: IMediaRequest = {
@@ -80,12 +96,19 @@ export const resolveMediaUrl = async (url: string): Promise<Readonly<IMediaRespo
     return null
   }
 
+  const cachedMedia = mediaMetadataCache.get(urlObj.href)
+  if (cachedMedia) {
+    return cachedMedia
+  }
+
   const ctx = createContext(urlObj)
 
   const fn = compose(middlewares)
   const result = (await fn(ctx)) || ctx.res
+  const finalizedMedia = finalizeMedia(result)
+  mediaMetadataCache.set(urlObj.href, finalizedMedia)
   console.debug('Resolved media', ctx)
-  return finalizeMedia(result)
+  return finalizedMedia
 }
 
 export const resolveMediaPlaylist = async (
