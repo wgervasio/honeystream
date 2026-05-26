@@ -50,7 +50,7 @@ flowchart LR
 
 ## Remaining cutover checklist (concrete)
 
-- [ ] Runtime composition root exists and is route-owned (single `dispose()` path on lobby leave/unmount).
+- [x] Runtime composition root exists and is route-owned (single `dispose()` path on lobby leave/unmount).
 - [ ] `network/middleware/rpc.ts` session RPC path replaced by protocol command/event flow.
 - [ ] `network/middleware/sync.ts` deep-diff replication replaced by host events + snapshots.
 - [ ] `reducers/index.ts` no longer applies `netApplyFullUpdate` / `netApplyUpdate` for session ownership.
