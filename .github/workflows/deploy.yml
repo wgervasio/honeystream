@@ -23,17 +23,17 @@ jobs:
         yarn install
 
     - name: Create dotenv file
-      working-directory: ./packages/metastream-app
+      working-directory: ./packages/honeystream-app
       run: |
         echo "${{ secrets.DOTENV_CONTENTS }}" >> .env
 
     - name: Build signal server
-      working-directory: ./packages/metastream-signal-server
+      working-directory: ./packages/honeystream-signal-server
       run: |
         yarn build
 
     - name: Build web app
-      working-directory: ./packages/metastream-app
+      working-directory: ./packages/honeystream-app
       run: |
         yarn build
       env:
@@ -44,5 +44,5 @@ jobs:
       env:
         REPO: self
         BRANCH: gh-pages
-        FOLDER: ./packages/metastream-app/dist
+        FOLDER: ./packages/honeystream-app/dist
         GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}

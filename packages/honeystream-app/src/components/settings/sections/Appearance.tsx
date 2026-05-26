@@ -1,0 +1,60 @@
+import React, { Component } from 'react'
+import { connect, DispatchProp } from 'react-redux'
+import { setSetting } from 'actions/settings'
+import { IAppState } from 'reducers'
+import { ISettingsState } from 'reducers/settings'
+import { locales, t, setLocale } from 'locale'
+import { Dropdown, SwitchOption } from '../controls'
+import styles from '../SettingsMenu.css'
+import { SettingsProps } from '../types'
+import { ChatLocation } from '../../chat/Location'
+import { LanguageSetting } from '../Language'
+
+interface Props extends SettingsProps {
+  onChange: () => void
+}
+
+export default class AppearanceSettings extends Component<Props> {
+  render() {
+    const { setSetting, settings } = this.props
+    // prettier-ignore
+    return (
+      <section className={styles.section}>
+        <LanguageSetting onChange={this.props.onChange} />
+
+        <SwitchOption
+          inputId="autofullscreen"
+          title={t('autoFullscreen')}
+          description={t('autoFullscreenDesc')}
+          checked={settings.autoFullscreen}
+          onChange={checked => setSetting('autoFullscreen', checked)}
+        />
+
+        <SwitchOption
+          inputId="theatermode"
+          title={t('theaterMode')}
+          description={t('theaterModeDesc')}
+          checked={settings.theaterMode}
+          onChange={checked => setSetting('theaterMode', checked)}
+        />
+
+        <SwitchOption
+          inputId="dock_chat"
+          title={t('uiDockToRight')}
+          checked={settings.chatLocation === ChatLocation.DockRight}
+          onChange={checked => setSetting('chatLocation', location =>
+            location === ChatLocation.DockRight ? ChatLocation.FloatLeft : ChatLocation.DockRight
+          )}
+        />
+
+        <SwitchOption
+          inputId="chat_timestamp"
+          title={t('chatTimestamp')}
+          description={t('chatTimestampDesc')}
+          checked={settings.chatTimestamp}
+          onChange={checked => setSetting('chatTimestamp', checked)}
+        />
+      </section>
+    )
+  }
+}

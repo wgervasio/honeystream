@@ -1,6 +1,8 @@
-# Metastream
+# Honeystream
 
 Private watch sessions for two people watching the same local file, website video, or direct video URL.
+
+Honeystream is a personal fork of the no-longer-maintained Metastream project, kept for 1:1 media watching with my girlfriend.
 
 ## Core flows
 
@@ -28,6 +30,6 @@ Requires Yarn 1 and Node 12.22.x.
 
 ```sh
 yarn
-yarn --cwd packages/metastream-signal-server build
-yarn --cwd packages/metastream-app start
+yarn --cwd packages/honeystream-signal-server build
+yarn --cwd packages/honeystream-app start
 ```

@@ -1,11 +1,11 @@
 {
-  "name": "metastream",
+  "name": "honeystream",
   "version": "1.0.0",
-  "description": "Metastream root",
+  "description": "Honeystream root",
   "private": true,
   "workspaces": [
-    "packages/metastream-app",
-    "packages/metastream-signal-server"
+    "packages/honeystream-app",
+    "packages/honeystream-signal-server"
   ],
   "prettier": {
     "printWidth": 100,
