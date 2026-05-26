@@ -23,3 +23,15 @@ export {
 } from './runtime'
 export type { SessionRuntime, SessionRuntimeContextValue, SessionRuntimeSnapshot } from './runtime'
 export * from './settings-runtime'
+export { SessionRuntimeShellContainer, createSessionRuntimeShellViewModel, mapProjectionSnapshotToSessionShellProps } from './session-runtime'
+export type {
+  HostSessionIntent,
+  JoinSessionIntent,
+  LeaveSessionIntent,
+  PlaybackSessionIntent,
+  SessionRuntimeIntentCallbacks,
+  SessionRuntimeProjectionSnapshot,
+  SessionRuntimeShellContainerProps,
+  SessionRuntimeShellViewModel,
+  SessionRuntimeSystemErrorSnapshot
+} from './session-runtime'

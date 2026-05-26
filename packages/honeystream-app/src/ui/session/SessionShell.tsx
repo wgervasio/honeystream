@@ -10,7 +10,7 @@ import {
 
 const EMPTY_ERRORS: readonly SessionSystemErrorViewModel[] = Object.freeze([])
 
-interface SessionShellProps {
+export interface SessionShellProps {
   readonly className?: string
   readonly errorTitle?: string
   readonly errors?: readonly SessionSystemErrorViewModel[]
