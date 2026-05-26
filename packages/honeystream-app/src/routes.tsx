@@ -4,16 +4,20 @@ import { Switch, Route, RouteProps } from 'react-router'
 import App from './containers/App'
 import { HomePage } from './containers/HomePage'
 import { LobbyPage } from './containers/LobbyPage'
+import { RuntimeSessionShellPage } from './containers/RuntimeSessionShellPage'
 import { SessionJoinPage } from './containers/SessionJoinPage'
 import { SettingsPage } from './containers/SettingsPage'
 import WelcomePage from './containers/WelcomePage'
+
+export const getLobbyRouteComponent = (): React.ComponentType<any> =>
+  FEATURE_RUNTIME_SESSION_SHELL ? RuntimeSessionShellPage : LobbyPage
 
 export default () => (
   <App>
     <Switch>
       <WelcomeRoute exact path="/" component={HomePage} />
       <WelcomeRoute exact path="/join" component={SessionJoinPage} />
-      <WelcomeRoute path="/join/:lobbyId" component={LobbyPage} />
+      <WelcomeRoute path="/join/:lobbyId" component={getLobbyRouteComponent()} />
       <WelcomeRoute path="/settings" component={SettingsPage} />
     </Switch>
   </App>
