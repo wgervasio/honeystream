@@ -1,0 +1,32 @@
+import React, { memo } from 'react'
+import { QueueMediaItemViewModel } from './types'
+
+interface QueueCurrentItemProps {
+  readonly className?: string
+  readonly emptyLabel?: string
+  readonly item?: QueueMediaItemViewModel
+  readonly label?: string
+  readonly requestedByLabel?: string
+}
+
+export const QueueCurrentItem = memo(function QueueCurrentItem(props: QueueCurrentItemProps) {
+  if (!props.item) {
+    return (
+      <p className={props.className} data-queue-current-empty="true">
+        {props.emptyLabel || 'No current item'}
+      </p>
+    )
+  }
+
+  const requestedByLabel = props.requestedByLabel || 'Requested by'
+
+  return (
+    <section className={props.className} data-queue-current-id={props.item.id}>
+      <p>{props.label || 'Current item'}</p>
+      <strong>{props.item.title}</strong>
+      <p>{`${requestedByLabel}: ${props.item.requestedBy}`}</p>
+    </section>
+  )
+})
+
+export type { QueueCurrentItemProps }
