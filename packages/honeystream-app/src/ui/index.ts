@@ -14,6 +14,7 @@ export type { SystemEventFeedProps } from './events'
 
 export { useProjectionSelector } from './useProjectionSelector'
 export type { ProjectionSelectorConfig } from './useProjectionSelector'
+export * from './invite'
 export {
   PlaybackRuntimeControls,
   createPlaybackRuntimeControlViewModel
@@ -24,7 +25,6 @@ export type {
   PlaybackRuntimeControlsProps,
   PlaybackRuntimeSessionModel
 } from './playback-runtime'
-
 export {
   SessionRuntimeProvider,
   useSessionRuntime,
