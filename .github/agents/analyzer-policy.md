@@ -19,15 +19,36 @@ legacy files during migration. As legacy code is removed, warnings should become
 - No Redux imports in new architecture code.
 - No mixins or static singleton service locators.
 - Pure folders cannot import React, browser APIs, storage, timers, WebRTC, or extension APIs.
-- Files using impure resources must include explicit cleanup through `dispose`, `destroy`, or `teardown`.
+- Import boundaries across `domain`, `protocol`, `transport`, `playback/engine`, `playback/adapters`, and `ui` are enforced.
+- Mutable `Map`/`Set` usage and stateful queue/event/cache array mutations must include explicit cap or eviction guards.
+- Resource allocation/registration calls must include matching cleanup pairs (listener/timer/object URL/observer/socket/peer/popup lifecycle).
+- Analyzer exceptions must use `architecture-analyzer-exception` with required rationale markers and a removal condition.
 - Architecture agent docs for performance/memory and rationale records exist.
+
+## Analyzer exceptions
+
+Analyzer exceptions are allowed only when they are narrow, temporary, and documented. Use:
+
+```text
+architecture-analyzer-exception: <rule-id>
+Context:
+Invariant:
+Options considered:
+Decision:
+Performance impact:
+Memory/lifecycle ownership:
+Failure mode:
+Validation:
+Removal condition:
+```
+
+Unknown exception rule ids fail the analyzer. Missing rationale markers fail the analyzer.
 
 ## Expected future analyzers
 
 Add these as the migration creates enough code to check:
 
 - Protocol compatibility tests for versioned message parsing.
-- Import-boundary checks backed by the TypeScript compiler graph.
 - Dead-code detection after Redux/chat/avatar removal.
 - Bundle-size budgets for playback adapters and extension scripts.
 - Leak tests that assert listener/timer/object-URL cleanup.
