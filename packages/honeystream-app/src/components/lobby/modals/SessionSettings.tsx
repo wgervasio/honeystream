@@ -4,7 +4,7 @@ import cx from 'classnames'
 
 import styles from './SessionSettings.css'
 import { IAppState } from 'reducers'
-import { getHostId, isHost, getHost, getNumUsers } from 'lobby/reducers/users.helpers'
+import { isHost, getNumUsers } from 'lobby/reducers/users.helpers'
 import { USERS_MAX, MAX_USERS_INFINITE } from 'constants/settings'
 import { t } from 'locale'
 import { HighlightButton } from '../../common/button'
@@ -36,8 +36,6 @@ interface IState {
 
 interface IConnectedProps {
   isHost: boolean
-  hostId: string
-  hostName: string
   numUsers: number
   maxUsers: number
   settings: ISettingsState
@@ -216,8 +214,6 @@ export default connect(
   (state: IAppState): IConnectedProps => {
     return {
       isHost: isHost(state),
-      hostId: getHostId(state),
-      hostName: getHost(state).name,
       numUsers: getNumUsers(state),
       maxUsers: state.session.maxUsers,
       settings: state.settings

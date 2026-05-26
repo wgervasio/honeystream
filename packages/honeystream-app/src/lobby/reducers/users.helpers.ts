@@ -15,8 +15,8 @@ export const getUserColor = (state: IAppState, userId: string): string => {
   return user ? user.color : DEFAULT_COLOR
 }
 
-export const getHostId = (state: IAppState) => state.users.host
-export const getHost = (state: IAppState) => getUser(state, getHostId(state))!
+const getHostId = (state: IAppState) => state.users.host
+const getHost = (state: IAppState) => getUser(state, getHostId(state))!
 export const isHost = (state: IAppState, userId: string = localUserId()) =>
   getHostId(state) === userId
 
@@ -32,7 +32,7 @@ export const isAdmin = (state: IAppState, userId: string = localUserId()) =>
 
 export const getNumUsers = (state: IAppState) => Object.keys(state.users.map).length
 
-export const findUser = (state: IAppState, filter: (user: IUser, index: number) => boolean) => {
+const findUser = (state: IAppState, filter: (user: IUser, index: number) => boolean) => {
   const userIds = Object.keys(state.users.map)
   for (let i = 0; i < userIds.length; i++) {
     const user = state.users.map[userIds[i]]!
@@ -42,7 +42,7 @@ export const findUser = (state: IAppState, filter: (user: IUser, index: number) 
   }
 }
 
-export const findUserByName = (state: IAppState, name: string) =>
+const findUserByName = (state: IAppState, name: string) =>
   findUser(state, user => user.name === name)
 
 /** Create new unique name with counter appended. */
