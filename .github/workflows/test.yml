@@ -52,15 +52,13 @@ jobs:
       run: |
         yarn build
 
-    - name: Run tests
+    - name: Run unit tests
       working-directory: ./packages/honeystream-app
       run: |
-        yarn test
-      env:
-        HONEYSTREAM_SIGNAL_SERVER: ws://localhost:27064
+        yarn test:unit
 
     - name: Archive screenshots
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: screenshots
         path: packages/honeystream-app/test/artifacts/*.jpg
