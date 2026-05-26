@@ -94,11 +94,11 @@ export const parseSessionSnapshot = (
       : parseParticipantSnapshot(value.participants.guest, `${path}.participants.guest`)
   if (guestResult && !guestResult.ok) return guestResult
   if (!Array.isArray(value.queue)) return err(malformedValueError(`${path}.queue`, 'Expected queue array.'))
-  const queue: MediaSnapshot[] = []
+  const queue: MediaSnapshot[] = new Array(value.queue.length)
   for (let index = 0; index < value.queue.length; index += 1) {
     const media = parseMediaSnapshot(value.queue[index], `${path}.queue[${index}]`)
     if (!media.ok) return media
-    queue.push(media.value)
+    queue[index] = media.value
   }
   if (value.currentMediaId !== undefined && !isNonEmptyString(value.currentMediaId)) {
     return err(malformedValueError(`${path}.currentMediaId`, 'Expected non-empty string when provided.'))
