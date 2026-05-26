@@ -4,8 +4,7 @@ import { TitleBar } from '../TitleBar'
 import { MenuButton } from '../menu/MenuButton'
 import { Icon } from '../Icon'
 import { NetworkDisconnectReason, NetworkDisconnectMessages } from 'constants/network'
-import { ExternalLink } from '../common/link'
-import { Trans, withNamespaces, WithNamespaces } from 'react-i18next'
+import { withNamespaces, WithNamespaces } from 'react-i18next'
 import { UpdateService } from 'services/updater'
 
 interface IProps extends WithNamespaces {
@@ -35,12 +34,6 @@ class _Disconnect extends Component<IProps> {
           <Icon name="info" />
           <span id="disconnect_reason">
             {msg}
-            {reason === NetworkDisconnectReason.Error && <>&nbsp;</>}
-            {reason === NetworkDisconnectReason.Error && (
-              <Trans i18nKey="networkTroubleshootingHelp">
-                See <ExternalLink href="https://github.com/samuelmaddock/metastream/wiki/Network-Troubleshooting">Network Troubleshooting guide</ExternalLink> for help.
-              </Trans>
-            )}
           </span>
         </p>
         <div className={styles.buttonrow}>

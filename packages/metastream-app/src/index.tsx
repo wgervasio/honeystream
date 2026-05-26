@@ -22,8 +22,6 @@ import { initLocale } from 'locale'
 import { setPendingMedia } from 'lobby/actions/mediaPlayer'
 import { sendMediaRequest } from 'lobby/actions/media-request'
 import { SEC2MS } from 'utils/math'
-import { AccountService } from 'account/account'
-import { sleep } from 'utils/async'
 import { checkExtensionInstall } from 'actions/ui'
 import { AvatarRegistry } from 'services/avatar'
 import { AppContext } from 'appContext'
@@ -95,15 +93,6 @@ async function main() {
   // fix: sometimes the extension installs too late and the app misses its check
   // this can be removed after Metastream Remote v0.4.2 is released
   setTimeout(extensionInstalled, 3e3)
-
-  try {
-    await Promise.race([
-      AccountService.get().checkLogin(),
-      sleep(15e3) // skip on timeout
-    ])
-  } catch (e) {
-    console.error(e)
-  }
 
   // Setup libsodium and cryptographic identity
   const platform = PlatformService.get()

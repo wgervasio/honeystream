@@ -30,7 +30,7 @@ class _ExtensionInstall extends React.Component<PrivateProps> {
   render(): JSX.Element | null {
     return (
       <div className={cx(styles.container, this.props.className)}>
-        <p>A browser extension is required for playback.</p>
+        <p>Website playback requires the browser companion extension.</p>
         <div className={styles.badgeList}>
           <a
             href="https://chrome.google.com/webstore/detail/fakegmdomhmegokfomgmkbopjibonfcp"

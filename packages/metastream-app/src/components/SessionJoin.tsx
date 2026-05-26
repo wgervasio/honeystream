@@ -1,15 +1,10 @@
 import React, { Component } from 'react'
-import { Trans } from 'react-i18next'
 import styles from './SessionJoin.css'
 import LayoutMain from 'components/layout/Main'
 import { MenuButton } from 'components/menu/MenuButton'
 import { TextInput, InputGroup } from './common/input'
 import { MenuHeader } from './menu/MenuHeader'
 import { t } from 'locale'
-import { PRODUCT_NAME } from 'constants/app'
-import { assetUrl } from 'utils/appUrl'
-import { ExternalLink } from './common/link'
-import { DISCORD_INVITE_URL } from 'constants/social'
 
 interface IProps {
   connect: (sessionId: string) => void
@@ -53,22 +48,6 @@ export class SessionJoin extends Component<IProps> {
               </MenuButton>
             </InputGroup>
           </form>
-        </section>
-        <section className={styles.discovery}>
-          <h2 className={styles.header}>{t('findSession')}</h2>
-          <p>
-            <Trans i18nKey="findSessionDescription">
-              Join the <strong>#sessions</strong> channel on the {PRODUCT_NAME} Discord community to
-              find other users’ sessions. Click the Discord logo below to join.
-            </Trans>
-            <ExternalLink href={DISCORD_INVITE_URL}>
-              <img
-                src={assetUrl('icons/social/discord-color.svg')}
-                className={styles.discordLogo}
-                alt="Discord"
-              />
-            </ExternalLink>
-          </p>
         </section>
       </LayoutMain>
     )

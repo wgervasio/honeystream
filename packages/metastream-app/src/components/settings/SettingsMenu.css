@@ -16,10 +16,6 @@
   flex: 1 0 auto;
 }
 
-.bottom {
-  width: 100%;
-}
-
 .tabSidebar {
   width: 12rem;
 }
@@ -81,10 +77,6 @@
   width: 40px;
   height: 40px;
   outline: none;
-}
-
-.colorSwatch:disabled {
-  cursor: not-allowed;
 }
 
 .avatarContainer {
