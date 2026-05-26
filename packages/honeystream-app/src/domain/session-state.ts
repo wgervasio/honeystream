@@ -3,11 +3,13 @@ import { createParticipantsState, ParticipantsState } from './participants'
 import { createPlaybackClock, PlaybackClockModel } from './playback-clock'
 
 export type SessionStatus = 'idle' | 'hosting' | 'joining' | 'connected' | 'ended'
+export type SessionMediaKind = 'url' | 'localFile' | 'website'
 
 export interface SessionMediaItem {
   readonly id: string
   readonly url: string
   readonly title: string
+  readonly kind?: SessionMediaKind
   readonly durationMs?: number
   readonly requestedBy: string
 }
