@@ -1,4 +1,3 @@
-import NetConnection from 'network/connection'
 import {
   PeerTransport,
   PeerTransportConnectionState,
@@ -29,10 +28,28 @@ export class PeerTransportError extends Error {
 
 type Listener<TValue> = (value: TValue) => void
 
+export interface PeerTransportConnection {
+  readonly connected?: boolean
+  send(data: Buffer): void
+  close(): void
+  on(eventName: 'connect', listener: () => void): this
+  on(eventName: 'disconnect', listener: () => void): this
+  on(eventName: 'reconnect', listener: () => void): this
+  on(eventName: 'close', listener: () => void): this
+  on(eventName: 'error', listener: (error: Error) => void): this
+  on(eventName: 'data', listener: (data: Buffer) => void): this
+  removeListener(eventName: 'connect', listener: () => void): this
+  removeListener(eventName: 'disconnect', listener: () => void): this
+  removeListener(eventName: 'reconnect', listener: () => void): this
+  removeListener(eventName: 'close', listener: () => void): this
+  removeListener(eventName: 'error', listener: (error: Error) => void): this
+  removeListener(eventName: 'data', listener: (data: Buffer) => void): this
+}
+
 export interface NetConnectionPeerTransportOptions<
   TMessage extends PeerTransportMessage = PeerTransportMessage
 > {
-  readonly connection: NetConnection
+  readonly connection: PeerTransportConnection
   readonly ownsConnection?: boolean
   readonly parseMessage?: (data: Buffer) => unknown
   readonly serializeMessage?: (message: TMessage) => Buffer
@@ -51,7 +68,7 @@ const serializeJsonMessage = <TMessage extends PeerTransportMessage>(message: TM
 export class NetConnectionPeerTransport<
   TMessage extends PeerTransportMessage = PeerTransportMessage
 > implements PeerTransport<TMessage> {
-  private readonly connection: NetConnection
+  private readonly connection: PeerTransportConnection
   private readonly ownsConnection: boolean
   private readonly parseMessage: (data: Buffer) => unknown
   private readonly serializeMessage: (message: TMessage) => Buffer

@@ -1,4 +1,4 @@
-import NetConnection, { NetUniqueId } from 'network/connection'
+import { EventEmitter } from 'events'
 import {
   NetConnectionPeerTransport,
   PeerTransportError
@@ -9,12 +9,13 @@ import {
   isPeerTransportMessage
 } from './peer-transport.contract'
 
-class TestConnection extends NetConnection {
+class TestConnection extends EventEmitter {
+  connected?: boolean
   sent: Buffer[] = []
   closeCount = 0
 
   constructor(connected: boolean) {
-    super(new NetUniqueId(new Uint8Array([1, 2, 3, 4])))
+    super()
     this.connected = connected
   }
 

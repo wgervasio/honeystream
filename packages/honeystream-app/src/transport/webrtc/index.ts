@@ -1,6 +1,7 @@
 export {
   NetConnectionPeerTransport,
   NetConnectionPeerTransportOptions,
+  PeerTransportConnection,
   PeerTransportError,
   PeerTransportErrorCode
 } from './net-connection-peer-transport'
