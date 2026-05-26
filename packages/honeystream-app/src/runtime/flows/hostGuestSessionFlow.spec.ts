@@ -96,11 +96,18 @@ describe('runtime/flows/hostGuestSessionFlow', () => {
 
       const hostSnapshot = flow.hostProjection.getSnapshot()
       const guestSnapshot = flow.guestProjection.getSnapshot()
+      const hostGuestParticipant = hostSnapshot.participants.guest
+      const guestGuestParticipant = guestSnapshot.participants.guest
 
       expect(hostSnapshot.status).toBe('connected')
       expect(guestSnapshot.status).toBe('connected')
-      expect(hostSnapshot.participants.guest?.peerId).toBe('guest-peer')
-      expect(guestSnapshot.participants.guest?.peerId).toBe('guest-peer')
+      expect(hostGuestParticipant).toBeDefined()
+      expect(guestGuestParticipant).toBeDefined()
+      if (!hostGuestParticipant || !guestGuestParticipant) {
+        throw new Error('Expected both host and guest projections to include guest participant data.')
+      }
+      expect(hostGuestParticipant.peerId).toBe('guest-peer')
+      expect(guestGuestParticipant.peerId).toBe('guest-peer')
       expect(hostSnapshot.currentMediaId).toBe('media-1')
       expect(guestSnapshot.currentMediaId).toBe('media-1')
       expect(hostSnapshot.playback.state).toBe('playing')

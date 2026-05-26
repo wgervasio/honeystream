@@ -286,9 +286,11 @@ const deriveCommandEvents = (
   command: ClientCommand
 ): readonly HostEvent[] => {
   const events: HostEvent[] = []
+  const previousCurrentMediaId = previousState.current ? previousState.current.id : undefined
+  const nextCurrentMediaId = nextState.current ? nextState.current.id : undefined
 
   if (command.type === 'addMedia') {
-    if (previousState.current?.id !== nextState.current?.id) {
+    if (previousCurrentMediaId !== nextCurrentMediaId) {
       events.push({
         type: 'currentMediaChanged',
         mediaId: nextState.current ? nextState.current.id : undefined
@@ -312,7 +314,7 @@ const deriveCommandEvents = (
       })
     }
   } else if (command.type === 'next') {
-    if (previousState.current?.id !== nextState.current?.id) {
+    if (previousCurrentMediaId !== nextCurrentMediaId) {
       events.push({
         type: 'currentMediaChanged',
         mediaId: nextState.current ? nextState.current.id : undefined
