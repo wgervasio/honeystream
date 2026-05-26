@@ -68,7 +68,7 @@ const userNameChanged = (userId: string, prevName: string): RpcThunk<void> => (
   const content = translateEscaped('userNameChanged', { userId, name, prevName })
   dispatch(addChat({ content, html: true, timestamp: Date.now() }))
 }
-export const multi_userNameChanged = rpc('userNameChanged', RpcRealm.Multicast, userNameChanged)
+const multi_userNameChanged = rpc('userNameChanged', RpcRealm.Multicast, userNameChanged)
 
 const kickClient = (reason: NetworkDisconnectReason): RpcThunk<void> => (
   dispatch,

@@ -45,7 +45,7 @@ const broadcastChat = (text: string, userId: string | null): RpcThunk<void> => (
     dispatch(clearTyping(userId!))
   }
 }
-export const multi_broadcastChat = rpc('broadcastChat', RpcRealm.Multicast, broadcastChat)
+const multi_broadcastChat = rpc('broadcastChat', RpcRealm.Multicast, broadcastChat)
 
 const rpcAddChat = (text: string): RpcThunk<boolean> => (dispatch, getState, context) => {
   text = text.trim()

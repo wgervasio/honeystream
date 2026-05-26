@@ -61,6 +61,13 @@ These are low-risk removals already completed in this branch:
     - `getHost`
     - `findUser`
     - `findUserByName`
+- `src/lobby/actions/chat.ts`
+  - `multi_broadcastChat` is now file-local (no external callers).
+- `src/lobby/actions/users.ts`
+  - `multi_userNameChanged` is now file-local (no external callers).
+- `src/lobby/reducers/chat.ts`
+  - Removed unused `Typing` interface.
+  - `IMessageAuthor` is now file-local.
 
 Behavior is unchanged; this is export-surface cleanup only.
 

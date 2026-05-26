@@ -11,7 +11,7 @@ import {
 
 let CHAT_MESSAGE_COUNTER = 0
 
-export interface IMessageAuthor {
+interface IMessageAuthor {
   id: string
   avatar?: string
   username: string
@@ -33,13 +33,6 @@ export interface IMessage {
   timestamp: number
 
   legacySystemNotice?: LegacySystemNotice
-}
-
-export interface Typing {
-  userId: string
-
-  /** Unix timestamp */
-  date: number
 }
 
 export interface IChatState {
