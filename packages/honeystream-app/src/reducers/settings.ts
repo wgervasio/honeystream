@@ -4,6 +4,10 @@ import { isType } from 'utils/redux'
 import { clamp } from 'utils/math'
 import { setVolume, setMute, setUsername, setColor, setSetting, addVolume } from 'actions/settings'
 import {
+  createDefaultMinimalSettings,
+  safeBrowseBehaviorToBoolean
+} from 'domain/settings/minimalSettings'
+import {
   USERNAME_MAX_LEN,
   COLOR_LEN,
   DEFAULT_COLOR,
@@ -46,17 +50,19 @@ export interface ISettingsState {
   safeBrowse: boolean
 }
 
+const defaultMinimalSettings = createDefaultMinimalSettings()
+
 const initialState: ISettingsState = {
-  mute: false,
-  volume: 0.75,
+  mute: defaultMinimalSettings.mute,
+  volume: defaultMinimalSettings.volume,
   allowTracking: false,
   sessionMode: SessionMode.Private,
   language: DEFAULT_LANGUAGE,
   chatLocation: ChatLocation.DockRight,
   chatTimestamp: false,
-  autoFullscreen: true,
-  theaterMode: false,
-  safeBrowse: true
+  autoFullscreen: defaultMinimalSettings.adapterPreferences.autoFullscreen,
+  theaterMode: defaultMinimalSettings.adapterPreferences.theaterMode,
+  safeBrowse: safeBrowseBehaviorToBoolean(defaultMinimalSettings.safeBrowseBehavior)
 }
 
 export const settings: Reducer<ISettingsState> = (
