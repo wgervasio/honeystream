@@ -62,3 +62,4 @@ jobs:
       with:
         name: screenshots
         path: packages/honeystream-app/test/artifacts/*.jpg
+        if-no-files-found: ignore

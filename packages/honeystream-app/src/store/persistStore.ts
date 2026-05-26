@@ -2,6 +2,10 @@ import { IAppState } from '../reducers'
 import storage from 'redux-persist/lib/storage'
 import autoMergeLevel2 from 'redux-persist/es/stateReconciler/autoMergeLevel2'
 import { createMigrate, PersistedState } from 'redux-persist'
+import {
+  normalizeMinimalSettings,
+  toLegacyMinimalSettingsPatch
+} from 'domain/settings/minimalSettings'
 
 const whitelist: (keyof IAppState)[] = ['mediaPlayer', 'settings']
 
@@ -15,6 +19,16 @@ const migrations: { [version: number]: (state: any) => any } = {
         avatar: avatar === 'asset:default.svg' ? undefined : avatar
       }
     }
+  },
+  3: function normalizeMinimalSettingsMigration(state) {
+    const minimalSettings = normalizeMinimalSettings(state && state.settings)
+    return {
+      ...state,
+      settings: {
+        ...state.settings,
+        ...toLegacyMinimalSettingsPatch(minimalSettings)
+      }
+    }
   }
 }
 
@@ -24,5 +38,5 @@ export default {
   whitelist,
   stateReconciler: autoMergeLevel2,
   migrate: createMigrate(migrations, { debug: process.env.NODE_ENV === 'development' }),
-  version: 2
+  version: 3
 }
