@@ -1,4 +1,5 @@
 import { invalidCommandError, malformedValueError } from './errors'
+import { parseProtocolInviteSecret } from './private-invite'
 import { parseMediaSnapshot, snapshotRequestReasons } from './parse-shared'
 import { err, ok, ProtocolResult } from './result'
 import { ClientCommand, SnapshotRequestReason } from './types'
@@ -26,8 +27,15 @@ export const parseClientCommand = (
   switch (value.type) {
     case 'join':
       if (!isNonEmptyString(value.username)) return err(malformedValueError(`${path}.username`, 'Expected non-empty username.'))
-      if (!isNonEmptyString(value.inviteSecret)) return err(malformedValueError(`${path}.inviteSecret`, 'Expected non-empty invite secret.'))
-      return ok({ type: value.type, username: value.username, inviteSecret: value.inviteSecret })
+      {
+        const inviteSecretResult = parseProtocolInviteSecret(value.inviteSecret, `${path}.inviteSecret`)
+        if (!inviteSecretResult.ok) return inviteSecretResult
+        return ok({
+          type: value.type,
+          username: value.username.trim(),
+          inviteSecret: inviteSecretResult.value
+        })
+      }
     case 'leave':
       return ok({ type: value.type, reason: readOptionalString(value, 'reason') })
     case 'addMedia': {

@@ -1,4 +1,5 @@
 import { invalidSnapshotError, malformedValueError } from './errors'
+import { parseProtocolRoomId } from './private-invite'
 import { err, ok, ProtocolResult } from './result'
 import {
   MediaSnapshot,
@@ -81,7 +82,8 @@ export const parseSessionSnapshot = (
   path: string = 'snapshot'
 ): ProtocolResult<SessionSnapshot> => {
   if (!isRecord(value)) return err(invalidSnapshotError('Expected snapshot object.', path))
-  if (!isNonEmptyString(value.roomId)) return err(malformedValueError(`${path}.roomId`, 'Expected non-empty string.'))
+  const roomIdResult = parseProtocolRoomId(value.roomId, `${path}.roomId`)
+  if (!roomIdResult.ok) return roomIdResult
   if (!isString(value.status) || !includesValue(value.status, sessionStatuses)) {
     return err(malformedValueError(`${path}.status`, 'Expected valid session status.'))
   }
@@ -109,7 +111,7 @@ export const parseSessionSnapshot = (
     return err(malformedValueError(`${path}.eventCursor`, 'Expected non-negative integer.'))
   }
   return ok({
-    roomId: value.roomId,
+    roomId: roomIdResult.value,
     status: value.status,
     participants: { host: hostResult.value, guest: guestResult ? guestResult.value : undefined },
     queue,

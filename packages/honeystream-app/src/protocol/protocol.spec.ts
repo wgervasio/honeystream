@@ -1,6 +1,7 @@
 import { parseHostEvent, parseProtocolError, parseWireEnvelope } from './parsers'
 import { PROTOCOL_VERSION } from './types'
 
+const roomId = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
 const host = { peerId: 'host-1', username: 'HostUser', role: 'host' as const }
 const guest = { peerId: 'guest-1', username: 'GuestUser', role: 'guest' as const }
 const media = {
@@ -26,15 +27,21 @@ describe('protocol foundation parsers', () => {
       direction: 'client-to-host',
       command: {
         type: 'join',
-        username: 'GuestUser',
-        inviteSecret: 'invite-secret'
+        username: '  GuestUser  ',
+        inviteSecret: '  invite-secret  '
       }
     })
 
     expect(result.ok).toBeTruthy()
     if (result.ok) {
       expect(result.value.direction).toBe('client-to-host')
-      if (result.value.direction === 'client-to-host') expect(result.value.command.type).toBe('join')
+      if (result.value.direction === 'client-to-host') {
+        expect(result.value.command).toEqual({
+          type: 'join',
+          username: 'GuestUser',
+          inviteSecret: 'invite-secret'
+        })
+      }
     }
   })
 
@@ -47,7 +54,7 @@ describe('protocol foundation parsers', () => {
       event: {
         type: 'snapshot',
         snapshot: {
-          roomId: 'room-1',
+          roomId,
           status: 'connected',
           participants: { host, guest },
           queue: [media],
@@ -91,11 +98,24 @@ describe('protocol foundation parsers', () => {
     if (!result.ok) expect(result.error.code).toBe('malformedValue')
   })
 
+  it('rejects join commands with invalid invite secrets', () => {
+    const result = parseWireEnvelope({
+      version: PROTOCOL_VERSION,
+      seq: 5,
+      sentAtMs: 15000,
+      direction: 'client-to-host',
+      command: { type: 'join', username: 'GuestUser', inviteSecret: 'bad secret' }
+    })
+
+    expect(result.ok).toBeFalsy()
+    if (!result.ok) expect(result.error.path).toBe('envelope.command.inviteSecret')
+  })
+
   it('rejects malformed snapshot events', () => {
     const result = parseHostEvent({
       type: 'snapshot',
       snapshot: {
-        roomId: 'room-1',
+        roomId,
         status: 'connected',
         participants: { host },
         queue: [media],

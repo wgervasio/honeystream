@@ -1,6 +1,7 @@
 export * from './event-log'
 export * from './participants'
 export * from './playback-clock'
+export * from './private-invite'
 export * from './queue'
 export * from './session-state'
 export * from './transitions'
