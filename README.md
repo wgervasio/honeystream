@@ -2,6 +2,8 @@
 
 Private watch sessions for two people watching the same local file, website video, or direct video URL.
 
+Honeystream is a personal fork of the no-longer-maintained Metastream project, kept for 1:1 media watching with my girlfriend.
+
 ## Core flows
 
 ### Local files
