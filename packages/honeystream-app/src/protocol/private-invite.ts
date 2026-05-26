@@ -2,11 +2,11 @@ import { malformedValueError } from './errors'
 import { err, ok, ProtocolResult } from './result'
 import { isString } from './validation'
 
-export const PROTOCOL_ROOM_ID_LENGTH = 64
+export const PROTOCOL_ROOM_ID_MAX_LENGTH = 128
 export const PROTOCOL_INVITE_SECRET_MIN_LENGTH = 8
 export const PROTOCOL_INVITE_SECRET_MAX_LENGTH = 128
 
-const roomIdPattern = /^[a-f0-9]+$/i
+const roomIdPattern = /^[a-z0-9-]+$/i
 const inviteSecretPattern = /^[A-Za-z0-9+/=_-]+$/
 
 export const normalizeProtocolRoomId = (roomId: string): string =>
@@ -21,9 +21,16 @@ export const parseProtocolRoomId = (
   }
 
   const normalized = normalizeProtocolRoomId(value)
-  if (normalized.length !== PROTOCOL_ROOM_ID_LENGTH || !roomIdPattern.test(normalized)) {
+  if (
+    normalized.length === 0 ||
+    normalized.length > PROTOCOL_ROOM_ID_MAX_LENGTH ||
+    !roomIdPattern.test(normalized)
+  ) {
     return err(
-      malformedValueError(path, 'Expected 64-character hexadecimal roomId.')
+      malformedValueError(
+        path,
+        'Expected non-empty roomId token with letters, digits, or dashes.'
+      )
     )
   }
 
@@ -69,4 +76,3 @@ export const parseProtocolInviteSecret = (
 
   return ok(normalized)
 }
-

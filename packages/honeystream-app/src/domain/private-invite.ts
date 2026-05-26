@@ -1,11 +1,11 @@
 import { isValidParticipantId, ParticipantsState } from './participants'
 
-export const PRIVATE_ROOM_ID_LENGTH = 64
+export const PRIVATE_ROOM_ID_MAX_LENGTH = 128
 export const PRIVATE_INVITE_SECRET_MIN_LENGTH = 8
 export const PRIVATE_INVITE_SECRET_MAX_LENGTH = 128
 export const PRIVATE_SESSION_MAX_PARTICIPANTS = 2
 
-const roomIdPattern = /^[a-f0-9]+$/i
+const roomIdPattern = /^[a-z0-9-]+$/i
 const inviteSecretPattern = /^[A-Za-z0-9+/=_-]+$/
 
 export type PrivateInviteJoinRejectionReason =
@@ -60,7 +60,10 @@ export const validateRoomId = (value: unknown): RoomIdValidationResult => {
   if (normalized.length === 0) {
     return { ok: false, normalized, issue: 'empty' }
   }
-  if (normalized.length !== PRIVATE_ROOM_ID_LENGTH || !roomIdPattern.test(normalized)) {
+  if (
+    normalized.length > PRIVATE_ROOM_ID_MAX_LENGTH ||
+    !roomIdPattern.test(normalized)
+  ) {
     return { ok: false, normalized, issue: 'invalid-format' }
   }
 
@@ -163,4 +166,3 @@ export const getPrivateInviteParticipantRejectionReason = (
 
   return undefined
 }
-
