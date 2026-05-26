@@ -10,7 +10,6 @@ const baseConfig = require('./webpack.config.base')
 const port = process.env.PORT || 8080
 const protocol = process.env.USE_HTTPS ? 'https' : 'http'
 const publicPath = `${protocol}://localhost:${port}/`
-const FEATURE_RUNTIME_SESSION_SHELL = process.env.FEATURE_RUNTIME_SESSION_SHELL === 'true'
 
 module.exports = merge.smart(baseConfig, {
   devtool: 'inline-source-map',
@@ -84,8 +83,7 @@ module.exports = merge.smart(baseConfig, {
      */
     new webpack.DefinePlugin({
       FEATURE_SESSION_BROWSER: JSON.stringify(false),
-      FEATURE_POPUP_PLAYER: JSON.stringify(true),
-      FEATURE_RUNTIME_SESSION_SHELL: JSON.stringify(FEATURE_RUNTIME_SESSION_SHELL)
+      FEATURE_POPUP_PLAYER: JSON.stringify(true)
     })
 
     // new webpack.LoaderOptionsPlugin({

@@ -7,7 +7,7 @@ import {
   toLegacyMinimalSettingsPatch
 } from 'domain/settings/minimalSettings'
 
-const whitelist: (keyof IAppState)[] = ['mediaPlayer', 'settings']
+const whitelist: (keyof IAppState)[] = ['settings']
 
 const migrations: { [version: number]: (state: any) => any } = {
   2: function removeDefaultAvatarMigration(state) {

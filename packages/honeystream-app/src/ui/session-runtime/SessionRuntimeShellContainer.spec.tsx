@@ -88,6 +88,7 @@ describe('sessionShellViewModel', () => {
     const viewModel = createSessionRuntimeShellViewModel(snapshot, intents)
 
     expect(viewModel.intents).toBe(intents)
+    expect(viewModel.snapshot).toBe(snapshot)
   })
 })
 

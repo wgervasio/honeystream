@@ -1,16 +1,35 @@
 import React, { useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import {
+  createErrorSystemEvent,
+  createSystemEventLog,
+  SystemEvent
+} from '../domain/event-log'
+import {
+  createDefaultMinimalSettings,
+  MinimalSettings
+} from '../domain/settings/minimalSettings'
+import {
   ProtocolError,
   SessionSnapshot,
   WireEnvelope,
   parseWireEnvelope
 } from '../protocol'
+import { ClientCommand, MediaSnapshot } from '../protocol/types'
 import {
   PlaybackEngineApplyResult,
   PlaybackEngineDesiredState
 } from '../playback/engine/playbackEngineContract'
 import {
+  createPlaybackRuntime,
+  PlaybackRuntimeAdapterContext,
+  PlaybackRuntimeAdapterKind
+} from '../playback/runtime'
+import { MediaElementPlaybackAdapter } from '../playback/adapters/media-element'
+import { createPopupAdapterFactory } from '../playback/adapters/popup'
+import { LocalFileMetadata, localFileToMediaUrl } from '../playback/adapters/local-file'
+import {
+  HostSessionCommand,
   SessionRuntime as RuntimeSession,
   SessionRuntimeDependencies,
   SessionRuntimePlaybackEngine,
@@ -18,20 +37,36 @@ import {
   createSessionRuntime
 } from '../runtime/session'
 import { TransportMessageValidator } from '../transport/contracts'
+import { LegacyNetWireTransport } from '../transport/legacy-net'
+import { LegacyNetServerLike } from '../transport/legacy-net'
 import {
   InMemoryPeerTransportPair,
   createInMemoryPeerTransportPair
 } from '../transport/in-memory-peer-transport-pair'
 import {
   Disposable,
+  InviteLinkPanel,
+  PlaybackRuntimeControlIntents,
+  PlaybackRuntimeControls,
+  PlaybackRuntimeSessionModel,
   ProjectionStore,
-  createProjectionStore,
-  connectSessionEngineProjection,
+  PrivateInviteCredentials,
+  QueueIntentCallbacks,
+  QueueMediaItemViewModel,
+  QueueShell,
+  RuntimeAddMediaPanel,
+  SettingsRuntimePanel,
   SessionRuntimeIntentCallbacks,
   SessionRuntimeProjectionSnapshot,
   SessionRuntimeShellContainer,
-  SessionRuntimeSystemErrorSnapshot
+  SessionRuntimeShellViewModel,
+  SessionRuntimeSystemErrorSnapshot,
+  SystemEventFeed,
+  createProjectionStore,
+  connectSessionEngineProjection
 } from '../ui'
+import { SessionShell } from '../ui/session'
+import { useProjectionSelector } from '../ui/useProjectionSelector'
 
 interface IRouteParams {
   lobbyId: string
@@ -49,11 +84,54 @@ interface RuntimeSessionShellRouteBoundaryDependencies {
   readonly createRuntime?: (dependencies: SessionRuntimeDependencies) => RuntimeSession
   readonly createTransportPair?: (now: () => number) => RuntimeRouteTransportPair
   readonly hostUsername?: string
+  readonly inviteSecret?: string
   readonly now?: () => number
+}
+
+interface RuntimeRouteRuntimeHandle extends Disposable {
+  readonly runtime: RuntimeSession
+  readonly playback: SessionRuntimePlaybackEngine
+  readonly role: 'host' | 'guest'
+}
+
+interface RuntimeRoutePlatform {
+  readonly ready: Promise<void>
+  createLobby(options: { readonly p2p?: boolean; readonly websocket?: boolean }): Promise<void>
+  joinLobby(roomId: string): Promise<void>
+  leaveLobby(roomId: string): boolean
+  getLocalId(): { toString(): string }
+  getServer(): LegacyNetServerLike | undefined
+}
+
+interface RuntimeRoutePlatformModule {
+  readonly PlatformService: {
+    get(): RuntimeRoutePlatform
+  }
+}
+
+interface RuntimeRouteRuntimeHandleInput {
+  readonly createPlaybackEngine: () => SessionRuntimePlaybackEngine
+  readonly createRuntime: (dependencies: SessionRuntimeDependencies) => RuntimeSession
+  readonly createTransportPair?: (now: () => number) => RuntimeRouteTransportPair
+  readonly now: () => number
+  readonly roomId: string
+}
+
+interface LocalFilePlaybackRegistry {
+  registerLocalFile(file: File): LocalFileMetadata
 }
 
 export interface RuntimeSessionShellRouteBoundary extends Disposable {
   readonly store: ProjectionStore<SessionRuntimeProjectionSnapshot>
+  readonly settingsStore: ProjectionStore<MinimalSettings>
+  readonly invite: PrivateInviteCredentials
+  readonly mediaElementRef: React.RefObject<HTMLVideoElement>
+  readonly playbackIntents: PlaybackRuntimeControlIntents
+  readonly queueIntents: QueueIntentCallbacks
+  readonly sessionIntents: SessionRuntimeIntentCallbacks
+  addLocalFile(file: File): void
+  addMediaUrl(url: string): void
+  updateSettings(nextSettings: MinimalSettings): void
   start(): Promise<void>
 }
 
@@ -61,18 +139,16 @@ const HOST_USERNAME = 'Host'
 const LOCAL_ONLY_WARNING: SessionRuntimeSystemErrorSnapshot = Object.freeze({
   id: 'runtime-shell-local-only',
   code: 'unsupported-runtime-network',
-  message:
-    'Runtime session shell is currently host/local only while live runtime transport credentials are pending.'
+  message: 'Runtime session shell is using an injected local-only transport.'
 })
 const STARTUP_ERROR_ID = 'runtime-shell-startup'
 const DEFAULT_SEEK_TOLERANCE_MS = 250
-
-const NOOP_INTENTS: SessionRuntimeIntentCallbacks = Object.freeze({
-  onHostIntent: () => undefined,
-  onJoinIntent: () => undefined,
-  onLeaveIntent: () => undefined,
-  onPlaybackIntent: () => undefined
-})
+const DEFAULT_INVITE_BASE_URL = 'https://honeystream.local'
+const QUEUE_REQUESTED_BY_LABEL = 'Session'
+const SYSTEM_ERROR_EVENT_TIMESTAMP_OFFSET = 1
+const BOUNDARY_SYSTEM_ERROR_CAP = 64
+const INVITE_SECRET_BYTES = 16
+const DIRECT_MEDIA_EXTENSION = /\.(mp4|m4v|webm|ogv|ogg|mp3|wav|m3u8)(?:[?#].*)?$/i
 
 class HostLocalPlaybackEngine implements SessionRuntimePlaybackEngine {
   private disposed = false
@@ -110,6 +186,18 @@ const toErrorMessage = (error: unknown): string => {
   return `Unexpected runtime session startup failure: ${String(error)}`
 }
 
+const toHexByte = (value: number): string => value.toString(16).padStart(2, '0')
+
+const createSecureInviteSecret = (): string => {
+  if (typeof crypto === 'undefined' || typeof crypto.getRandomValues !== 'function') {
+    throw new Error('Secure random invite secret generation is unavailable.')
+  }
+
+  const bytes = new Uint8Array(INVITE_SECRET_BYTES)
+  crypto.getRandomValues(bytes)
+  return Array.from(bytes).map(toHexByte).join('')
+}
+
 const createWireEnvelopeValidator = <TDirection extends WireEnvelope['direction']>(
   direction: TDirection
 ): TransportMessageValidator<Extract<WireEnvelope, { direction: TDirection }>> => ({
@@ -128,6 +216,138 @@ const createRuntimeRouteTransportPair = (now: () => number): RuntimeRouteTranspo
     guestInboundValidator: createWireEnvelopeValidator('host-to-client'),
     now
   })
+
+const getRuntimeRoutePlatform = (): RuntimeRoutePlatform => {
+  const platformModule = require('../platform') as RuntimeRoutePlatformModule
+  return platformModule.PlatformService.get()
+}
+
+const createRuntimeFromTransport = (
+  input: RuntimeRouteRuntimeHandleInput,
+  transport: SessionRuntimeDependencies['transport']
+): {
+  readonly runtime: RuntimeSession
+  readonly playback: SessionRuntimePlaybackEngine
+} => {
+  const playback = input.createPlaybackEngine()
+  const runtime = input.createRuntime({
+    now: input.now,
+    transport,
+    playback
+  })
+
+  return { runtime, playback }
+}
+
+const createMediaElementAdapter = (
+  context: PlaybackRuntimeAdapterContext,
+  getMediaElement: () => HTMLMediaElement | null
+): MediaElementPlaybackAdapter =>
+  new MediaElementPlaybackAdapter({
+    getMediaElement,
+    localFiles: context.localFiles
+  })
+
+const createBrowserPlaybackRuntime = (
+  getMediaElement: () => HTMLMediaElement | null
+): SessionRuntimePlaybackEngine => {
+  const popupFactory = createPopupAdapterFactory()
+  const selectAdapterKind = (media: { readonly source: string }): PlaybackRuntimeAdapterKind => {
+    if (media.source === 'local-file') return 'local-file'
+    if (media.source === 'website') return 'popup'
+    return 'embed-extension'
+  }
+
+  return createPlaybackRuntime({
+    adapters: {
+      createLocalFileAdapter: context => createMediaElementAdapter(context, getMediaElement),
+      createEmbedExtensionAdapter: context => createMediaElementAdapter(context, getMediaElement),
+      createPopupAdapter: context => popupFactory.createAdapter(context.media)
+    },
+    selectAdapterKind
+  })
+}
+
+const createLocalRuntimeHandle = (
+  input: RuntimeRouteRuntimeHandleInput,
+  createTransportPair: (now: () => number) => RuntimeRouteTransportPair
+): RuntimeRouteRuntimeHandle => {
+  const transportPair = createTransportPair(input.now)
+  const { runtime, playback } = createRuntimeFromTransport(input, transportPair.host)
+  let disposed = false
+
+  return {
+    runtime,
+    playback,
+    role: 'host',
+    dispose(): void {
+      if (disposed) return
+      disposed = true
+      runtime.dispose()
+      transportPair.guest.dispose()
+    }
+  }
+}
+
+const createLiveRuntimeHandle = async (
+  input: RuntimeRouteRuntimeHandleInput
+): Promise<RuntimeRouteRuntimeHandle> => {
+  const platform = getRuntimeRoutePlatform()
+  await platform.ready
+  const localPeerId = platform.getLocalId().toString()
+  const role = input.roomId === localPeerId ? 'host' : 'guest'
+
+  try {
+    if (role === 'host') {
+      await platform.createLobby({ p2p: true, websocket: true })
+    } else {
+      await platform.joinLobby(input.roomId)
+    }
+
+    const server = platform.getServer()
+    if (!server) {
+      throw new Error('Live runtime transport could not find an active lobby server.')
+    }
+
+    const transport = new LegacyNetWireTransport({
+      server,
+      localPeerId,
+      now: input.now
+    })
+    const { runtime, playback } = createRuntimeFromTransport(input, transport)
+    let disposed = false
+
+    return {
+      runtime,
+      playback,
+      role,
+      dispose(): void {
+        if (disposed) return
+        disposed = true
+        runtime.dispose()
+        platform.leaveLobby(input.roomId)
+      }
+    }
+  } catch (error) {
+    platform.leaveLobby(input.roomId)
+    throw error
+  }
+}
+
+const createRuntimeHandle = (
+  input: RuntimeRouteRuntimeHandleInput
+): Promise<RuntimeRouteRuntimeHandle> =>
+  input.createTransportPair
+    ? Promise.resolve(createLocalRuntimeHandle(input, input.createTransportPair))
+    : createLiveRuntimeHandle(input)
+
+const createFallbackRuntimeProjection = (now: () => number): SessionRuntimeProjection => ({
+  role: 'uninitialized',
+  lifecycle: 'idle',
+  transportState: { status: 'idle', changedAtMs: now() },
+  diagnostics: [],
+  runtimeErrors: []
+})
 
 const mapLifecycleToSessionStatus = (
   lifecycle: SessionRuntimeProjection['lifecycle']
@@ -186,9 +406,49 @@ const mapRuntimeErrorToSystemError = (
   message: error
 })
 
+const hostCommandToClientCommand = (command: HostSessionCommand): ClientCommand => {
+  switch (command.type) {
+    case 'addMedia':
+      return { type: 'addMedia', media: command.media }
+    case 'removeMedia':
+      return { type: 'removeMedia', mediaId: command.mediaId }
+    case 'playPause':
+      return { type: 'playPause', playing: command.playing }
+    case 'seek':
+      return { type: 'seek', positionMs: command.positionMs }
+    case 'setRate':
+      return { type: 'setRate', rate: command.rate }
+    case 'next':
+      return { type: 'next' }
+    case 'requestSnapshot':
+      return { type: 'requestSnapshot', reason: command.reason || 'manual' }
+  }
+}
+
+const dispatchRuntimeCommand = (
+  runtime: RuntimeSession,
+  command: HostSessionCommand
+): Promise<void> => {
+  const projection = runtime.getSnapshot()
+  return projection.role === 'host'
+    ? runtime.dispatchHostCommand(command)
+    : runtime.dispatchGuestCommand(hostCommandToClientCommand(command))
+}
+
+const runBoundaryCommand = (
+  command: () => Promise<void>,
+  recordError: (message: string) => void
+): void => {
+  void command().catch(error => {
+    recordError(toErrorMessage(error))
+  })
+}
+
 const mapProjectionToShellSnapshot = (
   projection: SessionRuntimeProjection,
-  fallbackSession: SessionSnapshot
+  fallbackSession: SessionSnapshot,
+  includeLocalWarning: boolean,
+  boundaryErrors: readonly SessionRuntimeSystemErrorSnapshot[] = []
 ): SessionRuntimeProjectionSnapshot => {
   const session = projection.session || {
     ...fallbackSession,
@@ -198,11 +458,133 @@ const mapProjectionToShellSnapshot = (
   return {
     session,
     systemErrors: [
-      LOCAL_ONLY_WARNING,
+      ...(includeLocalWarning ? [LOCAL_ONLY_WARNING] : []),
       ...projection.diagnostics.map(mapProtocolErrorToSystemError),
-      ...projection.runtimeErrors.map(mapRuntimeErrorToSystemError)
+      ...projection.runtimeErrors.map(mapRuntimeErrorToSystemError),
+      ...boundaryErrors
     ]
   }
+}
+
+const mapMediaSnapshotToQueueItem = (
+  media: MediaSnapshot
+): QueueMediaItemViewModel => ({
+  id: media.mediaId,
+  title: media.title,
+  requestedBy: QUEUE_REQUESTED_BY_LABEL,
+  durationMs: media.durationMs
+})
+
+const mapSessionSnapshotToQueueItems = (
+  snapshot: SessionSnapshot
+): {
+  readonly currentItem?: QueueMediaItemViewModel
+  readonly queuedItems: readonly QueueMediaItemViewModel[]
+} => ({
+  currentItem: snapshot.current
+    ? mapMediaSnapshotToQueueItem(snapshot.current)
+    : undefined,
+  queuedItems: snapshot.queue.map(mapMediaSnapshotToQueueItem)
+})
+
+const mapSessionSnapshotToPlaybackModel = (
+  snapshot: SessionSnapshot
+): PlaybackRuntimeSessionModel => ({
+  status: snapshot.status,
+  hasCurrentMedia: Boolean(snapshot.current || snapshot.currentMediaId),
+  hasNextMedia: snapshot.queue.length > 0,
+  canIssuePlaybackIntents: snapshot.status !== 'idle' && snapshot.status !== 'ended'
+})
+
+const mapSystemErrorsToEvents = (
+  errors: readonly SessionRuntimeSystemErrorSnapshot[]
+): readonly SystemEvent[] =>
+  createSystemEventLog(
+    errors.map((error, index) =>
+      createErrorSystemEvent(
+        error.message,
+        index + SYSTEM_ERROR_EVENT_TIMESTAMP_OFFSET,
+        error.code
+      )
+    )
+  )
+
+const getInviteBaseUrl = (): string =>
+  typeof window === 'undefined' ? DEFAULT_INVITE_BASE_URL : window.location.origin
+
+const readInviteSecret = (search: string | undefined): string | undefined => {
+  if (typeof search !== 'string' || search.length === 0) {
+    return undefined
+  }
+
+  const secret = new URLSearchParams(search).get('secret')
+  const trimmedSecret = secret ? secret.trim() : ''
+  return trimmedSecret.length > 0 ? trimmedSecret : undefined
+}
+
+const getMediaTitleFromUrl = (mediaUrl: URL): string => {
+  const pathName = mediaUrl.pathname.replace(/\/+$/, '')
+  const lastSegment = pathName.split('/').filter(Boolean).pop()
+  return lastSegment || mediaUrl.hostname || mediaUrl.toString()
+}
+
+const getMediaKindFromUrl = (mediaUrl: URL): MediaSnapshot['kind'] =>
+  DIRECT_MEDIA_EXTENSION.test(mediaUrl.pathname) ? 'url' : 'website'
+
+const hasLocalFileRegistry = (
+  playback: SessionRuntimePlaybackEngine
+): playback is SessionRuntimePlaybackEngine & LocalFilePlaybackRegistry =>
+  typeof (playback as { readonly registerLocalFile?: unknown }).registerLocalFile === 'function'
+
+const RuntimeSessionRouteSurface = ({
+  boundary,
+  lobbyId
+}: {
+  readonly boundary: RuntimeSessionShellRouteBoundary
+  readonly lobbyId: string
+}) => {
+  const settings = useProjectionSelector({
+    store: boundary.settingsStore,
+    selector: snapshot => snapshot
+  })
+
+  const renderRuntimeSurface = (viewModel: SessionRuntimeShellViewModel): React.ReactNode => {
+    const queueItems = mapSessionSnapshotToQueueItems(viewModel.snapshot.session)
+
+    return (
+      <>
+        <SessionShell errorTitle="Session issues" {...viewModel.sessionShellProps} />
+        <InviteLinkPanel baseUrl={getInviteBaseUrl()} invite={boundary.invite} title="Invite" />
+        <video controls ref={boundary.mediaElementRef} />
+        <RuntimeAddMediaPanel
+          onAddUrl={boundary.addMediaUrl}
+        />
+        <QueueShell {...queueItems} {...boundary.queueIntents} />
+        <PlaybackRuntimeControls
+          playback={viewModel.snapshot.session.playback}
+          session={mapSessionSnapshotToPlaybackModel(viewModel.snapshot.session)}
+          intents={boundary.playbackIntents}
+        />
+        <SystemEventFeed events={mapSystemErrorsToEvents(viewModel.snapshot.systemErrors)} />
+      </>
+    )
+  }
+
+  return (
+    <section data-runtime-session-shell="true">
+      <h1>Runtime session shell</h1>
+      <p>{`Lobby: ${lobbyId}`}</p>
+      <SessionRuntimeShellContainer
+        store={boundary.store}
+        intents={boundary.sessionIntents}
+        render={renderRuntimeSurface}
+      />
+      <SettingsRuntimePanel
+        settings={settings}
+        onSettingsChange={boundary.updateSettings}
+      />
+    </section>
+  )
 }
 
 export const createRuntimeSessionShellRouteBoundary = (
@@ -212,48 +594,215 @@ export const createRuntimeSessionShellRouteBoundary = (
   const roomId = lobbyId.trim()
   const now = dependencies.now || Date.now
   const hostUsername = dependencies.hostUsername || HOST_USERNAME
-  const transportPairFactory = dependencies.createTransportPair || createRuntimeRouteTransportPair
   const runtimeFactory = dependencies.createRuntime || createSessionRuntime
-  const playbackEngineFactory = dependencies.createPlaybackEngine || (() => new HostLocalPlaybackEngine())
+  const mediaElementRef = React.createRef<HTMLVideoElement>()
+  const playbackEngineFactory =
+    dependencies.createPlaybackEngine ||
+    (() => createBrowserPlaybackRuntime(() => mediaElementRef.current))
+  const includeLocalWarning = Boolean(dependencies.createTransportPair)
+  const inviteSecretProvided = typeof dependencies.inviteSecret === 'string'
+  const inviteSecret =
+    dependencies.inviteSecret ||
+    (includeLocalWarning ? `runtime-route-local:${roomId}` : createSecureInviteSecret())
 
-  const transportPair = transportPairFactory(now)
-  const runtime = runtimeFactory({
-    now,
-    transport: transportPair.host,
-    playback: playbackEngineFactory()
-  })
   const fallbackSession = createFallbackSessionSnapshot(roomId, hostUsername)
+  const invite: PrivateInviteCredentials = {
+    roomId,
+    secret: inviteSecret
+  }
+  const settingsStore = createProjectionStore(createDefaultMinimalSettings())
+  let boundaryErrors: readonly SessionRuntimeSystemErrorSnapshot[] = []
+  let runtimeHandle: RuntimeRouteRuntimeHandle | undefined
+  let projectionConnection: Disposable | undefined
+  let startEpoch = 0
+  let mediaCounter = 0
   const store = createProjectionStore(
-    mapProjectionToShellSnapshot(runtime.getSnapshot(), fallbackSession)
+    mapProjectionToShellSnapshot(createFallbackRuntimeProjection(now), fallbackSession, includeLocalWarning)
   )
-  const projectionConnection = connectSessionEngineProjection(store, {
-    subscribeToSnapshots(listener) {
-      return runtime.subscribeToSnapshots(projection => {
-        listener(mapProjectionToShellSnapshot(projection, fallbackSession))
-      })
-    }
-  })
 
   let started = false
   let disposed = false
 
-  const recordStartupError = (message: string): void => {
-    const snapshot = store.getSnapshot()
-    store.setSnapshot({
-      session: snapshot.session,
-      systemErrors: [
-        ...snapshot.systemErrors,
-        {
-          id: STARTUP_ERROR_ID,
-          code: 'unknown',
-          message
-        }
-      ]
+  const recordBoundaryError = (message: string): void => {
+    boundaryErrors = [
+      ...boundaryErrors,
+      {
+        id: `${STARTUP_ERROR_ID}-${boundaryErrors.length + 1}`,
+        code: 'unknown',
+        message
+      }
+    ].slice(-BOUNDARY_SYSTEM_ERROR_CAP)
+    const projection = runtimeHandle
+      ? runtimeHandle.runtime.getSnapshot()
+      : createFallbackRuntimeProjection(now)
+    store.setSnapshot(
+      mapProjectionToShellSnapshot(projection, fallbackSession, includeLocalWarning, boundaryErrors)
+    )
+  }
+
+  const requireRuntime = (): RuntimeSession => {
+    if (!runtimeHandle) {
+      throw new Error('Runtime session shell boundary has not started.')
+    }
+
+    return runtimeHandle.runtime
+  }
+
+  const requireRuntimeHandle = (): RuntimeRouteRuntimeHandle => {
+    if (!runtimeHandle) {
+      throw new Error('Runtime session shell boundary has not started.')
+    }
+
+    return runtimeHandle
+  }
+
+  const attachRuntimeProjection = (runtime: RuntimeSession): void => {
+    projectionConnection = connectSessionEngineProjection(store, {
+      subscribeToSnapshots(listener) {
+        return runtime.subscribeToSnapshots(projection => {
+          listener(
+            mapProjectionToShellSnapshot(
+              projection,
+              fallbackSession,
+              includeLocalWarning,
+              boundaryErrors
+            )
+          )
+        })
+      }
     })
+    store.setSnapshot(
+      mapProjectionToShellSnapshot(
+        runtime.getSnapshot(),
+        fallbackSession,
+        includeLocalWarning,
+        boundaryErrors
+      )
+    )
+  }
+
+  const disposeStartedRuntime = (): void => {
+    if (projectionConnection) {
+      projectionConnection.dispose()
+      projectionConnection = undefined
+    }
+    if (runtimeHandle) {
+      runtimeHandle.dispose()
+      runtimeHandle = undefined
+    }
+  }
+
+  const dispatchCommand = (command: HostSessionCommand): void => {
+    runBoundaryCommand(() => dispatchRuntimeCommand(requireRuntime(), command), recordBoundaryError)
+  }
+
+  const createMediaId = (): string => {
+    mediaCounter += 1
+    return `runtime-media-${now()}-${mediaCounter}`
+  }
+
+  const dispatchMedia = (media: MediaSnapshot): void => {
+    dispatchCommand({ type: 'addMedia', media })
+  }
+
+  const addMediaUrl = (url: string): void => {
+    const trimmedUrl = url.trim()
+    let mediaUrl: URL
+    try {
+      mediaUrl = new URL(trimmedUrl)
+    } catch {
+      recordBoundaryError(`Media URL "${trimmedUrl}" is not a valid absolute URL.`)
+      return
+    }
+
+    dispatchMedia({
+      mediaId: createMediaId(),
+      kind: getMediaKindFromUrl(mediaUrl),
+      source: mediaUrl.toString(),
+      title: getMediaTitleFromUrl(mediaUrl)
+    })
+  }
+
+  const addLocalFile = (file: File): void => {
+    try {
+      const playback = requireRuntimeHandle().playback
+      if (!hasLocalFileRegistry(playback)) {
+        recordBoundaryError('Local file playback is unavailable for this runtime.')
+        return
+      }
+
+      const metadata = playback.registerLocalFile(file)
+      dispatchMedia({
+        mediaId: createMediaId(),
+        kind: 'localFile',
+        source: localFileToMediaUrl(metadata),
+        title: metadata.name
+      })
+    } catch (error) {
+      recordBoundaryError(toErrorMessage(error))
+    }
+  }
+
+  const sessionIntents: SessionRuntimeIntentCallbacks = {
+    onHostIntent(intent) {
+      runBoundaryCommand(
+        () =>
+          requireRuntime().startHostSession({
+            roomId: intent.roomId,
+            hostUsername: intent.username,
+            inviteSecret: invite.secret
+          }),
+        recordBoundaryError
+      )
+    },
+    onJoinIntent(intent) {
+      runBoundaryCommand(() => requireRuntime().dispatchGuestCommand(intent), recordBoundaryError)
+    },
+    onLeaveIntent(intent) {
+      runBoundaryCommand(() => requireRuntime().dispatchGuestCommand(intent), recordBoundaryError)
+    },
+    onPlaybackIntent(intent) {
+      dispatchCommand(intent)
+    }
+  }
+
+  const playbackIntents: PlaybackRuntimeControlIntents = {
+    onPlayPause(playing) {
+      dispatchCommand({ type: 'playPause', playing })
+    },
+    onSeek(positionMs) {
+      dispatchCommand({ type: 'seek', positionMs })
+    },
+    onSetRate(rate) {
+      dispatchCommand({ type: 'setRate', rate })
+    },
+    onNext() {
+      dispatchCommand({ type: 'next' })
+    }
+  }
+
+  const queueIntents: QueueIntentCallbacks = {
+    onNext() {
+      dispatchCommand({ type: 'next' })
+    },
+    onRemove(mediaId) {
+      dispatchCommand({ type: 'removeMedia', mediaId })
+    }
   }
 
   return {
     store,
+    settingsStore,
+    invite,
+    mediaElementRef,
+    playbackIntents,
+    queueIntents,
+    sessionIntents,
+    addLocalFile,
+    addMediaUrl,
+    updateSettings(nextSettings: MinimalSettings): void {
+      settingsStore.setSnapshot(nextSettings)
+    },
     async start(): Promise<void> {
       if (disposed) {
         throw new Error('Runtime session shell boundary cannot be started after disposal.')
@@ -264,34 +813,78 @@ export const createRuntimeSessionShellRouteBoundary = (
       }
 
       started = true
+      const currentStartEpoch = startEpoch + 1
+      startEpoch = currentStartEpoch
+      let pendingRuntimeHandle: RuntimeRouteRuntimeHandle | undefined
       try {
-        await runtime.startHostSession({
-          roomId,
-          hostUsername,
-          inviteSecret: `runtime-route-local:${roomId}`
+        pendingRuntimeHandle = await createRuntimeHandle({
+          createPlaybackEngine: playbackEngineFactory,
+          createRuntime: runtimeFactory,
+          createTransportPair: dependencies.createTransportPair,
+          now,
+          roomId
         })
+        if (disposed || startEpoch !== currentStartEpoch) {
+          pendingRuntimeHandle.dispose()
+          return
+        }
+
+        runtimeHandle = pendingRuntimeHandle
+        pendingRuntimeHandle = undefined
+        attachRuntimeProjection(runtimeHandle.runtime)
+
+        if (runtimeHandle.role === 'host') {
+          await runtimeHandle.runtime.startHostSession({
+            roomId,
+            hostUsername,
+            inviteSecret: invite.secret
+          })
+        } else {
+          if (!inviteSecretProvided) {
+            throw new Error('Invite secret is required to join a runtime session.')
+          }
+
+          await runtimeHandle.runtime.startGuestSession({
+            roomId,
+            username: settingsStore.getSnapshot().username,
+            inviteSecret: invite.secret
+          })
+        }
+        if (disposed || startEpoch !== currentStartEpoch) {
+          disposeStartedRuntime()
+        }
       } catch (error) {
-        recordStartupError(toErrorMessage(error))
+        if (pendingRuntimeHandle) {
+          pendingRuntimeHandle.dispose()
+        }
+        disposeStartedRuntime()
+        started = false
+        if (!disposed) {
+          recordBoundaryError(toErrorMessage(error))
+        }
       }
     },
     dispose(): void {
       if (disposed) {
         return
       }
-
       disposed = true
-      projectionConnection.dispose()
-      runtime.dispose()
-      transportPair.guest.dispose()
+      startEpoch += 1
+      disposeStartedRuntime()
     }
   }
 }
 
 export const RuntimeSessionShellPage = ({
+  location,
   match
 }: RouteComponentProps<IRouteParams>) => {
   const lobbyId = match.params.lobbyId
-  const boundary = useMemo(() => createRuntimeSessionShellRouteBoundary(lobbyId), [lobbyId])
+  const inviteSecret = useMemo(() => readInviteSecret(location.search), [location.search])
+  const boundary = useMemo(
+    () => createRuntimeSessionShellRouteBoundary(lobbyId, { inviteSecret }),
+    [inviteSecret, lobbyId]
+  )
 
   useEffect(() => {
     void boundary.start()
@@ -302,10 +895,6 @@ export const RuntimeSessionShellPage = ({
   }, [boundary])
 
   return (
-    <section data-runtime-session-shell="true">
-      <h1>Runtime session shell</h1>
-      <p>{`Lobby: ${lobbyId}`}</p>
-      <SessionRuntimeShellContainer store={boundary.store} intents={NOOP_INTENTS} errorTitle="Session issues" />
-    </section>
+    <RuntimeSessionRouteSurface boundary={boundary} lobbyId={lobbyId} />
   )
 }

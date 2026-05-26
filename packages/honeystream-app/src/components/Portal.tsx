@@ -14,7 +14,8 @@ export const Portal = ({ children, container }: Props) => {
     if (remoteDocument) {
       // remove existing stylesheets
       Array.from(remoteDocument.styleSheets).forEach(stylesheet => {
-        if (stylesheet.ownerNode) stylesheet.ownerNode.remove()
+        const ownerNode = stylesheet.ownerNode
+        if (ownerNode && ownerNode.parentNode) ownerNode.parentNode.removeChild(ownerNode)
       })
 
       // add all stylesheets from main document

@@ -6,7 +6,8 @@ import {
   SessionSnapshot,
   SnapshotRequestReason
 } from 'protocol/types'
-import { PeerTransport, PeerTransportConnectionState } from 'transport/contracts'
+import { PeerTransport } from 'transport/contracts'
+import { PeerTransportConnectionState } from 'transport/connection-state'
 import { ProjectionStore, ProjectionUnsubscribe } from 'ui/externalStoreProjection'
 
 export type SessionRuntimeRole = 'uninitialized' | 'host' | 'guest'

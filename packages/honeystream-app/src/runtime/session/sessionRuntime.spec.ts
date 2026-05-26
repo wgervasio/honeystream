@@ -135,6 +135,7 @@ describe('runtime/session/SessionRuntime', () => {
     }
     expect(hostSession.currentMediaId).toBe('media-guest')
     expect(guestSession.currentMediaId).toBe('media-guest')
+    expect(guestSession.current).toEqual(createMedia('media-guest'))
   })
 
   it('records protocol diagnostics for malformed inbound envelopes', async () => {
@@ -165,6 +166,57 @@ describe('runtime/session/SessionRuntime', () => {
     const projection = hostRuntime.getSnapshot()
     expect(projection.diagnostics).toHaveLength(1)
     expect(projection.diagnostics[0].code).toBe('invalidEnvelope')
+  })
+
+  it('rejects guest local-file media because host cannot resolve guest file bytes', async () => {
+    let nowMs = 9000
+    const pair = createInMemoryPeerTransportPair({
+      hostInboundValidator: acceptsUnknownMessage,
+      guestInboundValidator: acceptsUnknownMessage
+    })
+    const hostRuntime = createSessionRuntime({
+      transport: pair.host,
+      playback: new FakePlaybackEngine(),
+      now: () => nowMs++
+    })
+    const guestRuntime = createSessionRuntime({
+      transport: pair.guest,
+      playback: new FakePlaybackEngine(),
+      now: () => nowMs++
+    })
+
+    await hostRuntime.startHostSession({
+      roomId: 'room-1',
+      hostUsername: 'Host',
+      inviteSecret: 'invite-secret'
+    })
+    await guestRuntime.startGuestSession({
+      roomId: 'room-1',
+      username: 'Guest',
+      inviteSecret: 'invite-secret'
+    })
+    await flushRuntime()
+
+    await guestRuntime.dispatchGuestCommand({
+      type: 'addMedia',
+      media: {
+        ...createMedia('guest-local'),
+        kind: 'localFile',
+        source: 'honeystream-local://guest-local'
+      }
+    })
+    await flushRuntime()
+
+    const hostSession = hostRuntime.getSnapshot().session
+    expect(hostSession && hostSession.currentMediaId).toBeUndefined()
+    expect(hostRuntime.getSnapshot().diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'invalidCommand',
+          path: 'command.addMedia.media.kind'
+        })
+      ])
+    )
   })
 
   it('disposes runtime resources and rejects commands after disposal', async () => {

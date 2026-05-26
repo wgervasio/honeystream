@@ -69,6 +69,7 @@ export const mapProjectionSnapshotToSessionShellProps = (
 
 export interface SessionRuntimeShellViewModel {
   readonly sessionShellProps: SessionShellProps
+  readonly snapshot: SessionRuntimeProjectionSnapshot
   readonly intents: SessionRuntimeIntentCallbacks
 }
 
@@ -77,5 +78,6 @@ export const createSessionRuntimeShellViewModel = (
   intents: SessionRuntimeIntentCallbacks
 ): SessionRuntimeShellViewModel => ({
   sessionShellProps: mapProjectionSnapshotToSessionShellProps(snapshot),
+  snapshot,
   intents
 })

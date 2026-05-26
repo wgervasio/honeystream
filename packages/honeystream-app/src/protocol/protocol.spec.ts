@@ -58,6 +58,7 @@ describe('protocol foundation parsers', () => {
           status: 'connected',
           participants: { host, guest },
           queue: [media],
+          current: media,
           currentMediaId: media.mediaId,
           playback,
           eventCursor: 7

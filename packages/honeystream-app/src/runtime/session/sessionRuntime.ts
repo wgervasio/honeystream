@@ -298,6 +298,15 @@ export class DefaultSessionRuntime implements SessionRuntime {
         ;({ state: nextState, errors: domainErrors } = transitionGuestLeft(state, fromPeerId, nowHostMs))
         break
       case 'addMedia':
+        if (fromRemote && command.media.kind === 'localFile') {
+          const protocolError = invalidCommandError(
+            'Guests cannot queue local files because the host cannot access guest-local file bytes.',
+            'command.addMedia.media.kind'
+          )
+          this.recordProtocolDiagnostic(protocolError)
+          this.trySendHostEvent({ type: 'protocolRejected', error: protocolError })
+          return
+        }
         ;({
           state: nextState,
           errors: domainErrors

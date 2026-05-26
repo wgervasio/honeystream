@@ -52,6 +52,15 @@ const createWireEnvelopeValidator = <TDirection extends WireEnvelope['direction'
   describeInvalidMessage: () => `Expected ${direction} wire envelope payload.`
 })
 
+const createRouteTransportPair = (now: () => number) =>
+  createInMemoryPeerTransportPair<ClientToHostWireEnvelope, HostToClientWireEnvelope>({
+    hostPeerId: 'host-peer',
+    guestPeerId: 'guest-peer',
+    hostInboundValidator: createWireEnvelopeValidator('client-to-host'),
+    guestInboundValidator: createWireEnvelopeValidator('host-to-client'),
+    now
+  })
+
 class FakePlaybackEngine implements SessionRuntimePlaybackEngine {
   async applyDesiredState(
     desiredState: PlaybackEngineDesiredState
@@ -70,24 +79,54 @@ class FakePlaybackEngine implements SessionRuntimePlaybackEngine {
   }
 }
 
+const installCryptoMock = (): (() => void) => {
+  const originalCrypto = globalThis.crypto
+  const cryptoMock = {
+    getRandomValues(bytes: Uint8Array): Uint8Array {
+      bytes.fill(1)
+      return bytes
+    }
+  }
+
+  Object.defineProperty(globalThis, 'crypto', {
+    configurable: true,
+    value: cryptoMock
+  })
+
+  return () => {
+    Object.defineProperty(globalThis, 'crypto', {
+      configurable: true,
+      value: originalCrypto
+    })
+  }
+}
+
 describe('RuntimeSessionShellPage', () => {
   it('renders route-owned runtime session shell details for the lobby route', () => {
-    const html = renderToStaticMarkup(
-      <RuntimeSessionShellPage {...createRouteProps('room-123')} />
-    )
+    const restoreCrypto = installCryptoMock()
+
+    let html = ''
+    try {
+      html = renderToStaticMarkup(
+        <RuntimeSessionShellPage {...createRouteProps('room-123')} />
+      )
+    } finally {
+      restoreCrypto()
+    }
 
     expect(html).toContain('Runtime session shell')
     expect(html).toContain('Lobby: room-123')
     expect(html).toContain('Idle')
     expect(html).toContain('Host: Host')
     expect(html).toContain('Guest: Waiting for guest')
-    expect(html).toContain('host/local only')
+    expect(html).toContain('Invite')
   })
 })
 
 describe('createRuntimeSessionShellRouteBoundary', () => {
   it('starts a route-owned host runtime and projects the host session snapshot', async () => {
     const boundary = createRuntimeSessionShellRouteBoundary('room-123', {
+      createTransportPair: createRouteTransportPair,
       now: () => 1000
     })
 
@@ -169,5 +208,57 @@ describe('createRuntimeSessionShellRouteBoundary', () => {
     expect(unsubscribeSpy).toHaveBeenCalledTimes(1)
     expect(runtimeDisposeSpy).toHaveBeenCalledTimes(1)
     expect(guestDisposeSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('dispatches URL media additions through the runtime command path', async () => {
+    const transportPair = createRouteTransportPair(() => 3000)
+    const dispatchHostCommandSpy = jest.fn(async (_command: HostSessionCommand) => undefined)
+    const runtimeProjection: SessionRuntimeProjection = {
+      role: 'host',
+      lifecycle: 'running',
+      transportState: transportPair.host.getState(),
+      diagnostics: [],
+      runtimeErrors: []
+    }
+    const runtime: RuntimeSession = {
+      getSnapshot(): SessionRuntimeProjection {
+        return runtimeProjection
+      },
+      getProjectionStore() {
+        return createProjectionStore(runtimeProjection)
+      },
+      subscribeToSnapshots(): () => void {
+        return () => undefined
+      },
+      startHostSession: async () => undefined,
+      startGuestSession: async () => undefined,
+      dispatchHostCommand: dispatchHostCommandSpy,
+      dispatchGuestCommand: async (_command: ClientCommand) => undefined,
+      dispose: jest.fn()
+    }
+
+    const boundary = createRuntimeSessionShellRouteBoundary('room-789', {
+      createRuntime: (_deps: SessionRuntimeDependencies) => runtime,
+      createPlaybackEngine: () => new FakePlaybackEngine(),
+      createTransportPair: () => transportPair,
+      now: () => 3000
+    })
+
+    try {
+      await boundary.start()
+      boundary.addMediaUrl('https://example.com/movie.mp4')
+
+      expect(dispatchHostCommandSpy).toHaveBeenCalledWith({
+        type: 'addMedia',
+        media: {
+          mediaId: 'runtime-media-3000-1',
+          kind: 'url',
+          source: 'https://example.com/movie.mp4',
+          title: 'movie.mp4'
+        }
+      })
+    } finally {
+      boundary.dispose()
+    }
   })
 })

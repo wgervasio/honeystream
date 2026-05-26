@@ -12,7 +12,7 @@ export const isNonNegativeNumber = (value: unknown): value is number =>
 export const isPositiveNumber = (value: unknown): value is number =>
   isFiniteNumber(value) && value > 0
 export const isNonNegativeInteger = (value: unknown): value is number =>
-  Number.isInteger(value) && isNonNegativeNumber(value)
+  isNonNegativeNumber(value) && Number.isInteger(value)
 export const isNonEmptyString = (value: unknown): value is string =>
   isString(value) && value.trim().length > 0
 

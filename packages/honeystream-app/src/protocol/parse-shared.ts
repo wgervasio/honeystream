@@ -102,6 +102,11 @@ export const parseSessionSnapshot = (
     if (!media.ok) return media
     queue[index] = media.value
   }
+  const currentResult =
+    value.current === undefined
+      ? undefined
+      : parseMediaSnapshot(value.current, `${path}.current`)
+  if (currentResult && !currentResult.ok) return currentResult
   if (value.currentMediaId !== undefined && !isNonEmptyString(value.currentMediaId)) {
     return err(malformedValueError(`${path}.currentMediaId`, 'Expected non-empty string when provided.'))
   }
@@ -115,6 +120,7 @@ export const parseSessionSnapshot = (
     status: value.status,
     participants: { host: hostResult.value, guest: guestResult ? guestResult.value : undefined },
     queue,
+    current: currentResult ? currentResult.value : undefined,
     currentMediaId: value.currentMediaId,
     playback: playbackResult.value,
     eventCursor: value.eventCursor

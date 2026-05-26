@@ -1,18 +1,18 @@
 # Runtime cutover map
 
-_Last refreshed: 2026-05-25 against `origin/master` (`bdeeaa67`)._
+_Last refreshed: 2026-05-26 against `origin/master` (`8f6f8451`) plus runtime-default cutover work._
 
 ## Current ownership map (after foundation merges)
 
 | Area | Current owner in shipped flow | Foundation status | Cutover owner |
 | --- | --- | --- | --- |
-| Session/network orchestration | `containers/LobbyPage.tsx` + Redux middleware chain in `store/appMiddleware.ts` | **Legacy path active by default**; feature-flagged runtime route now owns a `DefaultSessionRuntime` composition/dispose boundary | `SessionRuntime` composition root |
-| Shared session state | Redux reducers in `lobby/reducers/session.ts`, `lobby/reducers/users.ts`, `lobby/reducers/mediaPlayer.ts`, `lobby/reducers/chat.ts` | **Legacy path active** | Pure domain transitions (`domain/**`) + runtime projection |
+| Session/network orchestration | `containers/RuntimeSessionShellPage.tsx` route-owned runtime boundary | **Runtime route active by default**; live route wraps existing lobby bootstrap with typed `LegacyNetWireTransport`; legacy lobby remains as deletion target | `SessionRuntime` composition root |
+| Shared session state | Runtime projection for default session route; legacy reducers still compiled for deletion waves | **Runtime path active by default**; legacy state remains only for legacy code not mounted by session route | Pure domain transitions (`domain/**`) + runtime projection |
 | Pure state and transition primitives | `domain/session-state.ts`, `domain/transitions.ts`, `domain/queue.ts`, `domain/playback-clock.ts`, `domain/event-log.ts` | **Merged and exercised by runtime tests**; duplicate event-log implementation removed | Host `SessionEngine` inside runtime |
-| Wire protocol | `protocol/types.ts` + parsers under `protocol/parse-*.ts` | **Merged and parsed by `DefaultSessionRuntime`**; live default net path still uses legacy RPC/diff sync | Runtime wire bridge + transport boundary |
-| Transport abstraction | `transport/contracts.ts`, `transport/in-memory-peer-transport.ts`, `transport/webrtc/net-connection-peer-transport.ts`, `transport/legacy-net/*` | **Merged with fake/WebRTC/legacy-net adapters**; not default lobby owner yet | Runtime-owned `PeerTransport` |
+| Wire protocol | `protocol/types.ts` + parsers under `protocol/parse-*.ts` | **Merged and parsed by `DefaultSessionRuntime`**; default session route sends typed `WireEnvelope` traffic instead of Redux RPC/diff sync | Runtime wire bridge + transport boundary |
+| Transport abstraction | `transport/contracts.ts`, `transport/in-memory-peer-transport.ts`, `transport/webrtc/net-connection-peer-transport.ts`, `transport/legacy-net/*` | **Merged with fake/WebRTC/legacy-net adapters**; default session route now uses `LegacyNetWireTransport` for live lobby traffic | Runtime-owned `PeerTransport` |
 | Playback runtime | `playback/engine/playbackEngine.ts`, `playback/adapters/local-file/LocalFileAdapter.ts`, `playback/adapters/embed-extension/*`, `playback/adapters/popup/*`, `playback/runtime/*` | **Merged with adapter selection and lifecycle tests** | Runtime-owned `PlaybackEngine` + adapters |
-| UI projection/runtime UI shell | `ui/externalStoreProjection.ts`, `ui/useProjectionSelector.ts`, `ui/session/*`, `ui/session-runtime/*`, `ui/runtime/*` | **Merged behind feature flag with route-owned runtime composition** | Runtime-backed session UI |
+| UI projection/runtime UI shell | `ui/externalStoreProjection.ts`, `ui/useProjectionSelector.ts`, `ui/session/*`, `ui/session-runtime/*`, `ui/runtime/*` | **Default route uses runtime-backed session UI**; legacy lobby UI remains a deletion target | Runtime-backed session UI |
 | Settings schema migration | `domain/settings/minimalSettings.ts` used by `reducers/settings.ts` and `store/persistStore.ts` | **Merged and wired** | Keep as domain-owned settings core |
 
 ## Completed foundation inventory
@@ -72,21 +72,19 @@ flowchart LR
 
 ## Runtime wiring sequence for next implementation wave
 
-1. Add a runtime composition boundary (`runtime/**`) that owns lifecycle for transport, playback engine, and projection store; make `LobbyPage` start/stop this boundary instead of dispatching `NetActions.connect/disconnect`.
-2. Bridge live network payloads through typed `WireEnvelope` parsing/serialization (`protocol/**`) before any state mutation; keep host-authoritative sequencing at this boundary.
-3. Route host-side commands through `domain/transitions.ts` and emit explicit host events/snapshots; stop using Redux diff replication for session truth.
-4. Feed runtime snapshots into `ui/externalStoreProjection.ts`; mount runtime-backed session UI shell before removing legacy lobby state consumers.
-5. Apply playback updates via `playback/engine/playbackEngine.ts`; keep adapter lifecycle ownership in runtime (including object URL and embed listener cleanup).
-6. Keep settings compatibility through `domain/settings/minimalSettings.ts` while reducing legacy settings surfaces.
+1. Delete now-unmounted `LobbyPage`/`GameLobby` paths after live runtime transport is green in browser smoke coverage.
+2. Remove legacy lobby reducers/actions once all still-compiled legacy consumers are deleted or isolated from type-check.
+3. Apply playback updates via `playback/engine/playbackEngine.ts`; keep adapter lifecycle ownership in runtime (including object URL and embed listener cleanup).
+4. Keep settings compatibility through `domain/settings/minimalSettings.ts` while deleting legacy settings surfaces.
 
 ## Remaining cutover checklist (concrete)
 
 - [x] Runtime composition root exists and is route-owned (single `dispose()` path on lobby leave/unmount).
-- [ ] `network/middleware/rpc.ts` session RPC path replaced by protocol command/event flow.
-- [ ] `network/middleware/sync.ts` deep-diff replication replaced by host events + snapshots.
-- [ ] `reducers/index.ts` no longer applies `netApplyFullUpdate` / `netApplyUpdate` for session ownership.
-- [ ] Runtime wire transport uses `transport/contracts.ts` envelope validation in live flow.
-- [ ] Runtime projection replaces direct Redux reads for session participants/queue/playback/system errors.
+- [x] `network/middleware/rpc.ts` session RPC path replaced by protocol command/event flow for the default session route.
+- [x] `network/middleware/sync.ts` deep-diff replication removed from default app middleware.
+- [x] `reducers/index.ts` no longer applies `netApplyFullUpdate` / `netApplyUpdate` for session ownership.
+- [x] Runtime wire transport uses `transport/contracts.ts` envelope validation in live flow.
+- [x] Runtime projection replaces direct Redux reads for session participants/queue/playback/system errors in the default session route.
 - [ ] Chat/role/avatar/admin-only behavior removed from session UX and state contracts.
 - [x] Playback runtime handles media change lifecycle through `PlaybackEngine` (adapter switch + cleanup).
 - [x] Popup adapter implementation exists or popup fallback path is explicitly removed.

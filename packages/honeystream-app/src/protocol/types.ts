@@ -44,6 +44,7 @@ export type SessionSnapshot = {
     readonly guest?: ParticipantSnapshot
   }
   readonly queue: readonly MediaSnapshot[]
+  readonly current?: MediaSnapshot
   readonly currentMediaId?: string
   readonly playback: PlaybackSnapshot
   readonly eventCursor: number

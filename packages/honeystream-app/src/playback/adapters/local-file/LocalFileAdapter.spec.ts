@@ -1,5 +1,6 @@
 import {
   LocalFileAdapter,
+  localFileMediaUrlToKey,
   localFileToMediaUrl,
   validateLocalFileMetadata
 } from './LocalFileAdapter'
@@ -109,6 +110,7 @@ describe('validateLocalFileMetadata', () => {
     }
 
     expect(localFileToMediaUrl(metadata)).toBe('honeystream-local://my%3Akey')
+    expect(localFileMediaUrlToKey('honeystream-local://my%3Akey')).toBe('my:key')
   })
 
   it('rejects invalid metadata payloads', () => {
