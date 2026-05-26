@@ -2,6 +2,7 @@ export {
   createProjectionStore,
   connectSessionEngineProjection
 } from './externalStoreProjection'
+export { SystemEventFeed } from './events'
 export type {
   Disposable,
   ProjectionListener,
@@ -9,6 +10,7 @@ export type {
   ProjectionUnsubscribe,
   SessionEngineSnapshotSource
 } from './externalStoreProjection'
+export type { SystemEventFeedProps } from './events'
 
 export { useProjectionSelector } from './useProjectionSelector'
 export type { ProjectionSelectorConfig } from './useProjectionSelector'
