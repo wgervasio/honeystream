@@ -16,6 +16,17 @@ export { useProjectionSelector } from './useProjectionSelector'
 export type { ProjectionSelectorConfig } from './useProjectionSelector'
 
 export {
+  PlaybackRuntimeControls,
+  createPlaybackRuntimeControlViewModel
+} from './playback-runtime'
+export type {
+  PlaybackRuntimeControlIntents,
+  PlaybackRuntimeControlLabels,
+  PlaybackRuntimeControlsProps,
+  PlaybackRuntimeSessionModel
+} from './playback-runtime'
+
+export {
   SessionRuntimeProvider,
   useSessionRuntime,
   useSessionRuntimeContext,
