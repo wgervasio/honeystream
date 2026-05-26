@@ -1,6 +1,3 @@
-import { DEFAULT_USERNAME, USERNAME_MAX_LEN, USERNAME_MIN_LEN } from 'constants/settings'
-import { stripEmoji } from 'utils/string'
-
 export type SafeBrowseBehavior = 'prompt' | 'disabled'
 
 export interface AdapterPreferences {
@@ -26,6 +23,21 @@ export interface LegacyMinimalSettingsPatch {
 }
 
 const DEFAULT_VOLUME = 0.75
+const DEFAULT_USERNAME = 'Unknown'
+const USERNAME_MIN_LEN = 2
+const USERNAME_MAX_LEN = 32
+
+let EMOJI_REGEX: RegExp
+
+try {
+  // Keep domain username normalization compatible without importing legacy app modules.
+  EMOJI_REGEX = new RegExp(
+    '\\p{Emoji_Modifier_Base}\\p{Emoji_Modifier}?|\\p{Emoji_Presentation}|\\p{Emoji}\\uFE0F',
+    'gu'
+  )
+} catch {
+  EMOJI_REGEX = /([\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2694-\u2697]|\uD83E[\uDD10-\uDD5D])/g
+}
 
 const DEFAULT_ADAPTER_PREFERENCES: AdapterPreferences = {
   autoFullscreen: true,
@@ -57,7 +69,10 @@ const clamp = (value: number, min: number, max: number): number => {
 const normalizeUsername = (value: unknown): string => {
   if (typeof value !== 'string') return DEFAULT_MINIMAL_SETTINGS.username
 
-  const normalizedUsername = stripEmoji(value.trim()).substring(0, USERNAME_MAX_LEN)
+  const normalizedUsername = value
+    .trim()
+    .replace(EMOJI_REGEX, '')
+    .substring(0, USERNAME_MAX_LEN)
   return normalizedUsername.length >= USERNAME_MIN_LEN
     ? normalizedUsername
     : DEFAULT_MINIMAL_SETTINGS.username

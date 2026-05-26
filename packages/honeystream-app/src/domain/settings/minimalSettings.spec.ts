@@ -1,4 +1,3 @@
-import { DEFAULT_USERNAME } from 'constants/settings'
 import {
   createDefaultMinimalSettings,
   normalizeMinimalSettings,
@@ -9,7 +8,7 @@ import {
 describe('minimal settings schema', () => {
   it('creates a stable default shape', () => {
     expect(createDefaultMinimalSettings()).toEqual({
-      username: DEFAULT_USERNAME,
+      username: 'Unknown',
       volume: 0.75,
       mute: false,
       safeBrowseBehavior: 'prompt',
