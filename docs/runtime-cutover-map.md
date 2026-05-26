@@ -58,7 +58,7 @@ flowchart LR
 - [ ] Runtime projection replaces direct Redux reads for session participants/queue/playback/system errors.
 - [ ] Chat/role/avatar/admin-only behavior removed from session UX and state contracts.
 - [ ] Playback runtime handles media change lifecycle through `PlaybackEngine` (adapter switch + cleanup).
-- [ ] Popup adapter implementation exists or popup fallback path is explicitly removed.
+- [x] Popup adapter implementation exists or popup fallback path is explicitly removed.
 - [ ] Duplicate domain event-log shapes are consolidated to one canonical runtime event model.
 
 ## Deletion targets once runtime path is green
@@ -70,4 +70,3 @@ flowchart LR
 | Legacy chat surface | `packages/honeystream-app/src/lobby/reducers/chat.ts`, `packages/honeystream-app/src/lobby/actions/chat.ts`, `packages/honeystream-app/src/components/chat/**`, `packages/honeystream-app/src/constants/chat.ts` |
 | Legacy role/admin/avatar flows | role toggles in `packages/honeystream-app/src/lobby/actions/users.ts` + role state in `packages/honeystream-app/src/lobby/reducers/users.ts`; avatar service/UI paths under `packages/honeystream-app/src/services/avatar.ts` and lobby avatar components |
 | Legacy session mode/max-user controls | session-mode + max-user branches in `packages/honeystream-app/src/reducers/settings.ts` and dependent UI controls once private 1:1 is hard-default |
-
