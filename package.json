@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "Honeystream root",
   "private": true,
+  "scripts": {
+    "analyze": "node scripts/analyze-architecture.js",
+    "analyze:architecture": "node scripts/analyze-architecture.js"
+  },
   "workspaces": [
     "packages/honeystream-app",
     "packages/honeystream-signal-server"
