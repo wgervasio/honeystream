@@ -5,7 +5,8 @@
   "description": "Honeystream companion extension for controlling media.",
   "main": "build.js",
   "scripts": {
-    "build": "node build.js"
+    "build": "node build.js",
+    "test": "node --test test/*.test.js"
   },
   "devDependencies": {
     "archiver": "^4.0.1"
