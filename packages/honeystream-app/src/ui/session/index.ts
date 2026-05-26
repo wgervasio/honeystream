@@ -4,6 +4,7 @@ export { SessionStateLabel } from './SessionStateLabel'
 export { SessionSystemErrors } from './SessionSystemErrors'
 export { normalizeRuntimePrivateInviteJoinRequest } from './privateInviteRuntime'
 export { SESSION_VIEW_STATE_LABELS } from './types'
+export type { SessionShellProps } from './SessionShell'
 export type {
   SessionParticipantUsernames as SessionParticipantUsernamesModel,
   SessionSystemErrorCode,
