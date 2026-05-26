@@ -1,32 +1,14 @@
 import React, { Component } from 'react'
-import { Link } from 'react-router-dom'
 
 import { PRODUCT_NAME, VERSION } from 'constants/app'
 
 import styles from './Home.css'
 import LayoutMain from 'components/layout/Main'
-import { Icon } from 'components/Icon'
 import { MenuButton } from 'components/menu/MenuButton'
 import { MenuHeader } from './menu/MenuHeader'
-import { ExternalLink } from './common/link'
-import Tooltip from '@material-ui/core/Tooltip'
 import { assetUrl } from 'utils/appUrl'
-import { MenuTabs } from './menu/MenuTabs'
-import { DISCORD_INVITE_URL, GITHUB_REPO_URL } from 'constants/social'
 import { withNamespaces, WithNamespaces } from 'react-i18next'
 import { localUserId } from '../network/index'
-
-const SocialLink = (props: { href: string; title: string; image?: string; icon?: string }) => (
-  <ExternalLink href={props.href} className={styles.socialLink}>
-    <Tooltip title={props.title}>
-      {props.image ? (
-        <img src={props.image} className={styles.socialIcon} alt={props.title} />
-      ) : (
-        <Icon name={props.icon!} className={styles.socialIcon} />
-      )}
-    </Tooltip>
-  </ExternalLink>
-)
 
 interface IProps extends WithNamespaces {
   installable: boolean
@@ -86,16 +68,6 @@ class Home extends Component<IProps> {
                 {t('settings')}
               </MenuButton>
             </li>
-            <li>
-              <MenuButton
-                component={ExternalLink}
-                className={styles.btn}
-                href="https://www.patreon.com/metastream"
-                icon="heart"
-              >
-                {t('donate')}
-              </MenuButton>
-            </li>
             {this.props.installable && (
               <li>
                 <MenuButton icon="download" onClick={this.props.install}>
@@ -107,53 +79,13 @@ class Home extends Component<IProps> {
         </section>
 
         <section className={styles.intro}>
-          <MenuTabs />
+          <h2>Private synced playback for files and sites.</h2>
+          <p>
+            Start a session, send the link to one other person, then add a downloaded video,
+            website video, or direct media URL. Play, pause, seek, and speed changes stay synced
+            through the session.
+          </p>
         </section>
-
-        <footer className={styles.social}>
-          <div>
-            <SocialLink
-              href="https://www.patreon.com/metastream"
-              image="./assets/icons/social/patreon-wordmark.svg"
-              title="Become a patron"
-            />
-
-            <SocialLink
-              href="https://twitter.com/GetMetastream"
-              image="./assets/icons/social/twitter-color.svg"
-              title="Twitter"
-            />
-
-            <SocialLink
-              href={DISCORD_INVITE_URL}
-              image="./assets/icons/social/discord-color.svg"
-              title="Join Discord community"
-            />
-
-            <SocialLink
-              href={GITHUB_REPO_URL}
-              image="./assets/icons/social/github-mark.svg"
-              title="GitHub"
-            />
-          </div>
-
-          <div className={styles.socialRight}>
-            <div>
-              <span className={styles.credits}>
-                Created by{' '}
-                <ExternalLink href="http://samuelmaddock.com">Sam&nbsp;Maddock</ExternalLink>
-              </span>
-              <span className={styles.contributors}>
-                <br />
-                &amp;{' '}
-                <ExternalLink href="https://github.com/samuelmaddock/metastream/graphs/contributors">
-                  contributors
-                </ExternalLink>{' '}
-                ♥
-              </span>
-            </div>
-          </div>
-        </footer>
       </LayoutMain>
     )
   }

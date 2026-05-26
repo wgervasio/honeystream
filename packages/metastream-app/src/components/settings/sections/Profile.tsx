@@ -14,10 +14,6 @@ import { Trans } from 'react-i18next'
 import { SettingsProps } from '../types'
 import { server_updateUser } from '../../../lobby/actions/users'
 import { IReactReduxProps } from '../../../types/redux-thunk'
-import Tooltip from '@material-ui/core/Tooltip'
-import { MetastreamUserTier, AccountService } from 'account/account'
-import { usePatronTier } from 'account/hooks'
-import { LogoutButton } from 'components/account/buttons'
 import { useAppContext } from 'appContext'
 
 interface IProps extends SettingsProps {}
@@ -34,21 +30,6 @@ const ProfileSettings: SFC<Props> = props => {
   const propsRef = useRef<Props>(props)
   const dirtyRef = useRef<boolean>(false)
   const usernameInputRef = useRef<HTMLInputElement | null>(null)
-
-  const tier = usePatronTier()
-  const tierRef = useRef<MetastreamUserTier>(tier)
-
-  useEffect(
-    function onTierChange() {
-      if (tier !== tierRef.current) {
-        // update color on exit
-        dirtyRef.current = true
-
-        tierRef.current = tier
-      }
-    },
-    [tier]
-  )
 
   useEffect(
     function saveProps() {
@@ -85,7 +66,6 @@ const ProfileSettings: SFC<Props> = props => {
   const { avatarRegistry } = useAppContext()
   const selectedAvatar = props.avatar ? avatarRegistry.getByURI(props.avatar) : null
   const hasArtist = selectedAvatar ? !!selectedAvatar.artist : false
-  const hasPledged = tier > MetastreamUserTier.None
 
   return (
     <section className={styles.section}>
@@ -139,31 +119,16 @@ const ProfileSettings: SFC<Props> = props => {
       />
 
       <label htmlFor="profile_color">{t('chatColor')}</label>
-      <Tooltip
-        title={t('patreonPledgeRequired')}
-        placement="right"
-        disableHoverListener={hasPledged}
-        disableFocusListener={hasPledged}
-        disableTouchListener={hasPledged}
-      >
-        <input
-          disabled={!hasPledged}
-          id="profile_color"
-          type="color"
-          className={styles.colorSwatch}
-          defaultValue={props.color}
-          onChange={e => {
-            props.dispatch(setColor(e.target!.value))
-            dirtyRef.current = true
-          }}
-        />
-      </Tooltip>
-
-      {hasPledged && (
-        <div>
-          <LogoutButton onClick={() => AccountService.get().logout()} />
-        </div>
-      )}
+      <input
+        id="profile_color"
+        type="color"
+        className={styles.colorSwatch}
+        defaultValue={props.color}
+        onChange={e => {
+          props.dispatch(setColor(e.target!.value))
+          dirtyRef.current = true
+        }}
+      />
     </section>
   )
 }

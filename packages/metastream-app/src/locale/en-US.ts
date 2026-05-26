@@ -1,7 +1,7 @@
 export default {
   add: 'Add',
-  addMedia: 'Add Media',
-  addMediaCTA: 'Get started by adding media to the session.',
+  addMedia: 'Add Video',
+  addMediaCTA: 'Choose a downloaded video, website video, or direct video link.',
   admin: 'Admin',
   advanced: 'Advanced',
   allow: 'Allow',
@@ -110,7 +110,7 @@ export default {
   repeat: 'Repeat',
   retry: 'Retry',
   requestUrl: 'Add to session',
-  requestUrlPlaceholder: '',
+  requestUrlPlaceholder: 'Paste a website or direct video link',
   required: 'Required',
   requiresDJPermissions: 'Requires DJ permissions',
   requiresPortForward:

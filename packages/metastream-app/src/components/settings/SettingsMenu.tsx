@@ -14,7 +14,6 @@ import { IAppState } from '../../reducers/index'
 import { connect } from 'react-redux'
 import { setSetting } from '../../actions/settings'
 import { SettingsProps } from './types'
-import { DonateBar } from 'components/account/DonateBar'
 
 interface IProps {
   inSession?: boolean
@@ -120,7 +119,6 @@ class _SettingsMenu extends PureComponent<Props, State> {
             {children}
           </section>
         </div>
-        <DonateBar className={styles.bottom} />
       </div>
     )
   }

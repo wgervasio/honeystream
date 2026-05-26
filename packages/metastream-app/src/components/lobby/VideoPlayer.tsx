@@ -34,6 +34,8 @@ import { EMBED_BLOCKED_DOMAIN_LIST } from 'constants/embed'
 import { IdleScreen } from './overlays/IdleScreen'
 import { setVolume } from 'actions/settings'
 import { ytDomains } from 'constants/domains'
+import { getLocalFileMetadata } from 'media/localFile'
+import { LocalVideoPlayer } from './LocalVideoPlayer'
 
 type MediaReadyPayload = {
   duration?: number
@@ -154,6 +156,7 @@ class _VideoPlayer extends PureComponent<PrivateProps, IState> {
   }
 
   private get canEnterInteractMode() {
+    if (getLocalFileMetadata(this.props.current)) return false
     if (!this.props.isExtensionInstalled) return false
     if (!this.isPermittedBySafeBrowse) return false
     if (this.shouldRenderPopup) return false
@@ -222,7 +225,11 @@ class _VideoPlayer extends PureComponent<PrivateProps, IState> {
     }
 
     if (current !== prevMedia) {
-      if (isEqual(current, prevMedia)) {
+      if (getLocalFileMetadata(current)) {
+        if (this.mediaTimeout) clearTimeout(this.mediaTimeout)
+        if (!this.state.mediaReady) this.setState({ mediaReady: true })
+        return
+      } else if (isEqual(current, prevMedia)) {
         // Ignore: new object, same properties
       } else if (current && prevMedia && current.url === prevMedia.url && this.state.mediaReady) {
         // Force restart media if new media is the same URL
@@ -412,6 +419,7 @@ class _VideoPlayer extends PureComponent<PrivateProps, IState> {
   private onMediaTimeout = () => {
     // Ignore idlescreen timeout
     if (this.props.playback === PlaybackState.Idle) return
+    if (getLocalFileMetadata(this.props.current)) return
 
     const hasInteracted = Boolean(localStorage.getItem(StorageKey.HasInteracted))
     if (hasInteracted) return
@@ -523,6 +531,14 @@ class _VideoPlayer extends PureComponent<PrivateProps, IState> {
     const { mediaUrl } = this
     const { current: media } = this.props
 
+    if (getLocalFileMetadata(media)) {
+      return <LocalVideoPlayer className={cx(styles.video, styles.playing, styles.mediaReady)} />
+    }
+
+    if (this.props.playback === PlaybackState.Idle) {
+      return null
+    }
+
     if (!this.props.isExtensionInstalled) {
       return <ExtensionInstall />
     }
@@ -563,7 +579,7 @@ class _VideoPlayer extends PureComponent<PrivateProps, IState> {
   }
 
   private renderIdleScreen() {
-    if (!this.props.isExtensionInstalled || this.shouldRenderPopup) return
+    if (this.shouldRenderPopup) return
     return <IdleScreen />
   }
 

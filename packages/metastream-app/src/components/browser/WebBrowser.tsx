@@ -7,8 +7,7 @@ import { WebControls } from 'components/browser/Controls'
 import { assetUrl, absoluteUrl } from 'utils/appUrl'
 import { IReactReduxProps } from 'types/redux-thunk'
 import { Webview } from 'components/Webview'
-import { sendMediaRequest } from 'lobby/actions/media-request'
-import { DonateBar } from 'components/account/DonateBar'
+import { sendLocalMediaRequest, sendMediaRequest } from 'lobby/actions/media-request'
 import { HomeScreen } from './HomeScreen'
 import { Portal } from 'components/Portal'
 
@@ -92,6 +91,14 @@ export class _WebBrowser extends Component<PrivateProps, State> {
     }
   }
 
+  private requestLocalFile = (file: File) => {
+    this.props.dispatch(sendLocalMediaRequest({ file, source: 'homescreen-local-file' }))
+
+    if (this.props.onClose) {
+      this.props.onClose()
+    }
+  }
+
   render(): JSX.Element {
     return (
       <div className={cx(styles.container, this.props.className)}>
@@ -105,7 +112,6 @@ export class _WebBrowser extends Component<PrivateProps, State> {
           onRequestUrl={url => this.requestUrl(url, 'browser')}
         />
         {this.renderContent()}
-        <DonateBar className={styles.donateBar} />
         {this.state.showHomescreen && this.renderHomescreen()}
       </div>
     )
@@ -135,7 +141,10 @@ export class _WebBrowser extends Component<PrivateProps, State> {
 
     return (
       <Portal container={wvDoc}>
-        <HomeScreen onRequestUrl={url => this.requestUrl(url, 'homescreen')} />
+        <HomeScreen
+          onRequestUrl={url => this.requestUrl(url, 'homescreen')}
+          onRequestLocalFile={this.requestLocalFile}
+        />
       </Portal>
     )
   }

@@ -13,10 +13,11 @@ import { addChat } from './chat'
 import { RpcThunk } from 'lobby/types'
 import { getMediaParser } from './media-common'
 import { IMediaItem } from 'lobby/reducers/mediaPlayer'
-import { MediaThumbnailSize } from 'media/types'
+import { MediaThumbnailSize, MediaType } from 'media/types'
 import { enqueueMedia, nextMedia } from './mediaPlayer'
 import { rpc, RpcRealm } from 'network/middleware/rpc'
 import { MediaRequestErrorCode, MediaRequestError } from 'media/error'
+import { LocalFileMetadata, localFileToMediaUrl, registerLocalFile } from 'media/localFile'
 
 interface MediaRequestOptions {
   url: string
@@ -37,6 +38,21 @@ type MediaRequestResponse =
 
 export interface ClientMediaRequestOptions extends MediaRequestOptions {
   source: string
+}
+
+interface LocalMediaRequestOptions {
+  metadata: LocalFileMetadata
+  time?: number
+  /** Whether the media should be played immediately rather than queued. */
+  immediate?: boolean
+}
+
+export interface ClientLocalMediaRequestOptions {
+  file: File
+  source: string
+  time?: number
+  /** Whether the media should be played immediately rather than queued. */
+  immediate?: boolean
 }
 
 export const sendMediaRequest = (opts: ClientMediaRequestOptions): AppThunkAction => {
@@ -93,6 +109,43 @@ export const sendMediaRequest = (opts: ClientMediaRequestOptions): AppThunkActio
       dispatch(addChat({ content, html: true, timestamp: Date.now() }))
     } else {
       console.error(`Received media request success, but couldn't find media for ${mediaId}`)
+    }
+  }
+}
+
+export const sendLocalMediaRequest = (opts: ClientLocalMediaRequestOptions): AppThunkAction => {
+  return async (dispatch, getState) => {
+    let metadata: LocalFileMetadata
+
+    try {
+      metadata = registerLocalFile(opts.file)
+    } catch (e) {
+      dispatch(addChat({ content: e.message, timestamp: Date.now() }))
+      return
+    }
+
+    const mediaResponse = await dispatch(
+      server_requestLocalMedia({
+        metadata,
+        time: opts.time,
+        immediate: opts.immediate
+      })
+    )
+
+    if (!mediaResponse.ok) {
+      const content = t('noticeMediaError', { url: opts.file.name })
+      dispatch(addChat({ content, html: true, timestamp: Date.now() }))
+      return
+    }
+
+    const { id: mediaId } = mediaResponse
+    const state = getState()
+    const media = getMediaById(state, mediaId)
+    if (media && media !== getCurrentMedia(state)) {
+      const content = t('noticeAddedMedia', { mediaId: media.id, mediaTitle: media.title })
+      dispatch(addChat({ content, html: true, timestamp: Date.now() }))
+    } else if (!media) {
+      console.error(`Received local media request success, but couldn't find media for ${mediaId}`)
     }
   }
 }
@@ -158,3 +211,41 @@ const requestMedia = (opts: MediaRequestOptions): RpcThunk<Promise<MediaRequestR
   return { ok: true, id: media.id }
 }
 const server_requestMedia = rpc('requestMedia', RpcRealm.Server, requestMedia)
+
+const requestLocalMedia = (
+  opts: LocalMediaRequestOptions
+): RpcThunk<Promise<MediaRequestResponse>> => async (dispatch, getState, context) => {
+  const { metadata } = opts
+  const state = getState()
+
+  if (state.mediaPlayer.queueLocked && !hasPlaybackPermissions(state, context.client))
+    return { ok: false, err: MediaRequestErrorCode.NotAllowed }
+  if (opts.immediate && !hasPlaybackPermissions(state, context.client))
+    return { ok: false, err: MediaRequestErrorCode.NotAllowed }
+  if (!metadata || metadata.kind !== 'local-file' || !metadata.key || !metadata.name)
+    return { ok: false, err: MediaRequestErrorCode.Generic }
+
+  const userId = context.client.id.toString()
+  const mediaUrl = localFileToMediaUrl(metadata)
+  const media: IMediaItem = {
+    id: shortid(),
+    type: MediaType.Item,
+    url: mediaUrl,
+    title: metadata.name,
+    requestUrl: mediaUrl,
+    ownerId: userId,
+    ownerName: getUserName(getState(), userId),
+    startTime: opts.time,
+    state: metadata
+  }
+
+  if (opts.immediate) {
+    const queued = (dispatch(enqueueMedia(media, 0)) as any) as boolean
+    if (queued) dispatch(nextMedia(true))
+  } else {
+    dispatch(enqueueMedia(media))
+  }
+
+  return { ok: true, id: media.id }
+}
+const server_requestLocalMedia = rpc('requestLocalMedia', RpcRealm.Server, requestLocalMedia)

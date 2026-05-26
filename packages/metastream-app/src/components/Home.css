@@ -5,8 +5,7 @@
   display: grid;
   grid-template:
     'header header' auto
-    'nav intro' 1fr
-    'footer footer' auto / auto 50%;
+    'nav intro' 1fr / minmax(16rem, 24rem) 1fr;
 }
 
 @media only screen and (max-width: 840px) {
@@ -14,12 +13,7 @@
     grid-template:
       'header header' auto
       'nav nav' 1fr
-      'intro intro' auto
-      'footer footer' auto / auto 50%;
-  }
-
-  .social {
-    flex-direction: column;
+      'intro intro' auto / auto;
   }
 }
 
@@ -46,43 +40,12 @@
 .intro {
   composes: blend-text from '~styles/text.css';
   grid-area: intro;
-  font-weight: bold;
-  overflow: hidden;
-}
-
-.intro a {
-  text-decoration: underline;
-}
-
-.social {
-  grid-area: footer;
   display: flex;
-  align-content: center;
-  justify-content: space-between;
-}
-
-.socialLink {
-  display: inline-block;
-  margin-right: 20px;
-}
-
-.socialIcon {
-  filter: contrast(100) saturate(0);
-  mix-blend-mode: overlay;
-  opacity: 0.33;
-  height: 48px;
-}
-
-@media (prefers-contrast: high) {
-  .socialIcon {
-    mix-blend-mode: normal;
-  }
-}
-
-.socialIcon:hover {
-  filter: invert(1);
-  mix-blend-mode: normal;
-  opacity: 1;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 34rem;
+  padding: 2rem;
+  font-size: 1.125rem;
 }
 
 .btn {
@@ -90,23 +53,7 @@
   margin-bottom: 15px;
 }
 
-.socialRight {
-  display: flex;
-  align-items: center;
-  text-align: right;
-}
-
-.credits {
-  composes: blend-text from '~styles/text.css';
-  line-height: 1.2rem;
-  text-align: right;
-}
-
-.credits a {
-  font-weight: bolder;
-}
-
-.contributors {
-  composes: credits;
-  font-style: italic;
+.intro h2 {
+  margin-bottom: 1rem;
+  color: #fff;
 }

@@ -1,7 +1,5 @@
 import React, { Component, ErrorInfo } from 'react'
-import { ExternalLink } from './common/link'
 import styles from './ErrorBoundary.css'
-import { DISCORD_INVITE_URL, GITHUB_REPO_URL } from 'constants/social'
 import { HighlightButton } from './common/button'
 import { copyToClipboard } from 'utils/clipboard'
 import { VERSION } from 'constants/app'
@@ -49,25 +47,10 @@ ${errorInfo ? errorInfo.componentStack : ''}
           <div>
             <p>😱 An error occured in Metastream.</p>
             <p>
-              Please consider reporting this on Metastream&rsquo;s{' '}
-              <ExternalLink className="link" href={`${GITHUB_REPO_URL}/issues`}>
-                GitHub issue tracker
-              </ExternalLink>{' '}
-              and/or{' '}
-              <ExternalLink className="link" href={DISCORD_INVITE_URL}>
-                Discord community.
-              </ExternalLink>
+              Reload the app to continue. If the problem persists, copy the error details for
+              debugging.
             </p>
             <pre>{this.errorText}</pre>
-            <p>
-              <br />
-              To continue, you can try reloading the application. If the problem persists, refer to
-              the{' '}
-              <ExternalLink className="link" href={`${GITHUB_REPO_URL}/wiki/FAQ`}>
-                Metastream FAQ
-              </ExternalLink>{' '}
-              for tips on troubleshooting.
-            </p>
             <p>
               <HighlightButton
                 icon="refresh-cw"

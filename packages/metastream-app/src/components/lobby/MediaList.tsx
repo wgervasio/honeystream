@@ -25,6 +25,7 @@ import { copyMediaLink, openMediaInBrowser } from '../../media/utils'
 import { withNamespaces, WithNamespaces } from 'react-i18next'
 import { sendMediaRequest } from 'lobby/actions/media-request'
 import { setSetting } from 'actions/settings'
+import { getLocalFileMetadata } from 'media/localFile'
 
 interface IProps {
   className?: string
@@ -76,16 +77,19 @@ class _MediaList extends Component<Props> {
         }
         onTitleClick={this.props.collapsible ? this.props.toggleCollapsed : undefined}
         renderMenuOptions={(media: IMediaItem, close) => {
-          let items = [
-            {
-              label: t('openInBrowser'),
-              onClick: () => openMediaInBrowser(media)
-            },
-            {
-              label: t('copyLink'),
-              onClick: () => copyMediaLink(media)
-            }
-          ]
+         const isLocalFile = Boolean(getLocalFileMetadata(media))
+         let items = isLocalFile
+           ? []
+           : [
+               {
+                 label: t('openInBrowser'),
+                 onClick: () => openMediaInBrowser(media)
+               },
+               {
+                 label: t('copyLink'),
+                 onClick: () => copyMediaLink(media)
+               }
+             ]
 
           if (media.description) {
             items = [
@@ -104,10 +108,14 @@ class _MediaList extends Component<Props> {
                 label: t('moveToTop'),
                 onClick: () => this.props.moveToTop(media.id)
               },
-              {
-                label: t('duplicate'),
-                onClick: () => this.props.sendMediaRequest(media.requestUrl)
-              },
+              ...(isLocalFile
+                ? []
+                : [
+                    {
+                      label: t('duplicate'),
+                      onClick: () => this.props.sendMediaRequest(media.requestUrl)
+                    }
+                  ]),
               {
                 label: t('remove'),
                 onClick: () => this.props.deleteMedia(media.id)
