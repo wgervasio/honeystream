@@ -1,16 +1,38 @@
+import {
+  createErrorSystemEvent as createRuntimeErrorSystemEvent,
+  createParticipantJoinedSystemEvent,
+  createParticipantLeftSystemEvent
+} from '../event-log'
+
 export {
   appendSystemEvent,
-  createErrorSystemEvent,
-  createJoinSystemEvent,
-  createLeaveSystemEvent,
+  appendSystemEvents,
   createSystemEventLog,
-  SYSTEM_EVENT_LOG_CAP
-} from './eventLog'
+  DEFAULT_EVENT_LOG_CAP as SYSTEM_EVENT_LOG_CAP
+} from '../event-log'
 
 export type {
   ErrorSystemEvent,
-  JoinSystemEvent,
-  LeaveSystemEvent,
+  ParticipantJoinedSystemEvent as JoinSystemEvent,
+  ParticipantLeftSystemEvent as LeaveSystemEvent,
   SystemEvent,
   SystemEventLog
-} from './eventLog'
+} from '../event-log'
+
+export const createJoinSystemEvent = (
+  username: string,
+  occurredAtMs: number
+) =>
+  createParticipantJoinedSystemEvent(username, username, occurredAtMs)
+
+export const createLeaveSystemEvent = (
+  username: string,
+  occurredAtMs: number
+) =>
+  createParticipantLeftSystemEvent(username, occurredAtMs, username)
+
+export const createErrorSystemEvent = (
+  message: string,
+  occurredAtMs: number
+) =>
+  createRuntimeErrorSystemEvent(message, occurredAtMs, 'legacy-system-error')

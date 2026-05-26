@@ -28,9 +28,10 @@ describe('lobby/legacy/systemEventLogAdapter', () => {
 
     expect(eventLog).toEqual([
       {
-        type: 'join',
+        type: 'participantJoined',
+        participantId: 'host',
         username: 'host',
-        occurredAtMs: 10
+        timestampMs: 10
       }
     ])
   })
@@ -49,9 +50,10 @@ describe('lobby/legacy/systemEventLogAdapter', () => {
 
     expect(eventLog).toEqual([
       {
-        type: 'leave',
+        type: 'participantLeft',
+        participantId: 'guest',
         username: 'guest',
-        occurredAtMs: 20
+        timestampMs: 20
       }
     ])
   })
@@ -71,8 +73,9 @@ describe('lobby/legacy/systemEventLogAdapter', () => {
     expect(eventLog).toEqual([
       {
         type: 'error',
+        code: 'legacy-system-error',
         message: 'network timeout',
-        occurredAtMs: 30
+        timestampMs: 30
       }
     ])
   })
@@ -108,13 +111,15 @@ describe('lobby/legacy/systemEventLogAdapter', () => {
     expect(eventLog).toHaveLength(SYSTEM_EVENT_LOG_CAP)
     expect(eventLog[0]).toEqual({
       type: 'error',
+      code: 'legacy-system-error',
       message: 'error-4',
-      occurredAtMs: 4
+      timestampMs: 4
     })
     expect(eventLog[SYSTEM_EVENT_LOG_CAP - 1]).toEqual({
       type: 'error',
+      code: 'legacy-system-error',
       message: `error-${SYSTEM_EVENT_LOG_CAP + 3}`,
-      occurredAtMs: SYSTEM_EVENT_LOG_CAP + 3
+      timestampMs: SYSTEM_EVENT_LOG_CAP + 3
     })
   })
 })

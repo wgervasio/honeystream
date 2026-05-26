@@ -59,7 +59,7 @@ flowchart LR
 - [ ] Chat/role/avatar/admin-only behavior removed from session UX and state contracts.
 - [ ] Playback runtime handles media change lifecycle through `PlaybackEngine` (adapter switch + cleanup).
 - [x] Popup adapter implementation exists or popup fallback path is explicitly removed.
-- [ ] Duplicate domain event-log shapes are consolidated to one canonical runtime event model.
+- [x] Duplicate domain event-log shapes are consolidated to one canonical runtime event model.
 
 ## Deletion targets once runtime path is green
 

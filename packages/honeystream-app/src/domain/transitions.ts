@@ -1,4 +1,10 @@
-import { appendSystemEvent, SystemEvent } from './event-log'
+import {
+  appendSystemEvent,
+  createErrorSystemEvent,
+  createParticipantJoinedSystemEvent,
+  createParticipantLeftSystemEvent,
+  SystemEvent
+} from './event-log'
 import { addGuestParticipant, removeGuestParticipant } from './participants'
 import { pausePlayback, playPlayback, resetPlaybackClock, seekPlayback, setPlaybackDuration, setPlaybackRate } from './playback-clock'
 import { getPrivateInviteParticipantRejectionReason } from './private-invite'
@@ -29,7 +35,7 @@ const withEvent = (state: SessionState, event: SystemEvent): SessionState => ({ 
 const success = (state: SessionState, events: readonly SystemEvent[] = []): TransitionResult => ({ state, events, errors: [] })
 const failure = (state: SessionState, nowHostMs: number, code: DomainErrorCode, message: string): TransitionResult => {
   const error: DomainError = { code, message }
-  const event: SystemEvent = { type: 'error', timestampMs: nowHostMs, code, message }
+  const event = createErrorSystemEvent(message, nowHostMs, code)
   return { state: withEvent(state, event), events: [event], errors: [error] }
 }
 
@@ -55,7 +61,7 @@ export const transitionGuestJoined = (
   if (existingGuest && existingGuest.id === normalizedGuestId) return success(state)
 
   const username = sanitizeUsername(guestUsername)
-  const event: SystemEvent = { type: 'participantJoined', timestampMs: nowHostMs, participantId: normalizedGuestId, username }
+  const event = createParticipantJoinedSystemEvent(normalizedGuestId, username, nowHostMs)
   const nextState: SessionState = {
     ...state,
     status: 'connected',
@@ -73,7 +79,7 @@ export const transitionGuestLeft = (
   const guest = state.participants.guest
   if (!guest || guest.id !== guestId) return failure(state, nowHostMs, 'guest-not-found', 'Guest was not found in session state.')
 
-  const event: SystemEvent = { type: 'participantLeft', timestampMs: nowHostMs, participantId: guestId }
+  const event = createParticipantLeftSystemEvent(guestId, nowHostMs, guest.username)
   const nextState: SessionState = {
     ...state,
     status: 'hosting',

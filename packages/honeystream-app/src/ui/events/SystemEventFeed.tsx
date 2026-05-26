@@ -1,5 +1,5 @@
 import React, { memo } from 'react'
-import { SystemEvent, SYSTEM_EVENT_LOG_CAP } from '../../domain/events'
+import { DEFAULT_EVENT_LOG_CAP, SystemEvent } from '../../domain/event-log'
 
 const DEFAULT_EMPTY_LABEL = 'No system events yet.'
 const DEFAULT_ERROR_LABEL = 'Error'
@@ -16,7 +16,7 @@ export interface SystemEventFeedProps {
 
 const normalizeMaxVisibleEvents = (maxVisibleEvents: number): number => {
   if (!Number.isInteger(maxVisibleEvents) || maxVisibleEvents < 1) {
-    return SYSTEM_EVENT_LOG_CAP
+    return DEFAULT_EVENT_LOG_CAP
   }
 
   return maxVisibleEvents
@@ -24,10 +24,10 @@ const normalizeMaxVisibleEvents = (maxVisibleEvents: number): number => {
 
 const toEventMessage = (event: SystemEvent, errorLabel: string): string => {
   switch (event.type) {
-    case 'join':
+    case 'participantJoined':
       return `${event.username} joined`
-    case 'leave':
-      return `${event.username} left`
+    case 'participantLeft':
+      return `${event.username || event.participantId} left`
     case 'error':
       return `${errorLabel}: ${event.message}`
   }
@@ -35,7 +35,7 @@ const toEventMessage = (event: SystemEvent, errorLabel: string): string => {
 
 export const SystemEventFeed = memo(function SystemEventFeed(props: SystemEventFeedProps) {
   const maxVisibleEvents = normalizeMaxVisibleEvents(
-    typeof props.maxVisibleEvents === 'number' ? props.maxVisibleEvents : SYSTEM_EVENT_LOG_CAP
+    typeof props.maxVisibleEvents === 'number' ? props.maxVisibleEvents : DEFAULT_EVENT_LOG_CAP
   )
   const title = props.title || DEFAULT_TITLE
   const emptyLabel = props.emptyLabel || DEFAULT_EMPTY_LABEL
@@ -58,7 +58,7 @@ export const SystemEventFeed = memo(function SystemEventFeed(props: SystemEventF
       ) : (
         <ol>
           {visibleEvents.map((event, index) => (
-            <li key={`${event.type}-${event.occurredAtMs}-${index}`} data-system-event-type={event.type}>
+            <li key={`${event.type}-${event.timestampMs}-${index}`} data-system-event-type={event.type}>
               {toEventMessage(event, errorLabel)}
             </li>
           ))}
