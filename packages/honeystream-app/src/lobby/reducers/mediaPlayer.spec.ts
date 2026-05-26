@@ -89,12 +89,19 @@ describe('mediaPlayer reducer', () => {
     })
 
     it('set while playing', () => {
-      const initialTime = getPlaybackTime(store.getState() as any) * MS2SEC
-      store.dispatch(playPauseMedia()) // start playing
-      store.dispatch(setPlaybackRate(PlaybackRate.Max))
+      const now = Date.now()
+      const nowSpy = jest.spyOn(Date, 'now').mockReturnValue(now)
 
-      expect(store.getState().mediaPlayer!.playbackRate).toEqual(PlaybackRate.Max)
-      expect(getPlaybackTime(store.getState() as any) * MS2SEC).toBeCloseTo(initialTime)
+      try {
+        const initialTime = getPlaybackTime(store.getState() as any) * MS2SEC
+        store.dispatch(playPauseMedia()) // start playing
+        store.dispatch(setPlaybackRate(PlaybackRate.Max))
+
+        expect(store.getState().mediaPlayer!.playbackRate).toEqual(PlaybackRate.Max)
+        expect(getPlaybackTime(store.getState() as any) * MS2SEC).toBeCloseTo(initialTime)
+      } finally {
+        nowSpy.mockRestore()
+      }
     })
 
     it('maintain time on seek', () => {
