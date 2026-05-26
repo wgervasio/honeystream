@@ -72,7 +72,16 @@ export const sendChat = (text: string): AppThunkAction => {
       await dispatch(server_addChat(text))
     } catch {
       const content = t('chatMessageFailed')
-      dispatch(addChat({ content, timestamp: Date.now() }))
+      dispatch(
+        addChat({
+          content,
+          timestamp: Date.now(),
+          legacySystemNotice: {
+            kind: 'error',
+            message: content
+          }
+        })
+      )
     }
   }
 }

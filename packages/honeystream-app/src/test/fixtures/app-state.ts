@@ -15,7 +15,8 @@ export const INITIAL_TEST_APP_STATE: IAppState = {
   },
   chat: {
     messages: [],
-    typing: []
+    typing: [],
+    systemEventLog: []
   },
   mediaPlayer: {
     playback: PlaybackState.Paused,

@@ -426,7 +426,16 @@ class _VideoPlayer extends PureComponent<PrivateProps, IState> {
 
     const content =
       '⚠️ Playback not detected. If media doesn’t autoplay, you may need to interact with the webpage by double-clicking the screen.'
-    this.props.dispatch(addChat({ content, timestamp: Date.now() }))
+    this.props.dispatch(
+      addChat({
+        content,
+        timestamp: Date.now(),
+        legacySystemNotice: {
+          kind: 'error',
+          message: content
+        }
+      })
+    )
   }
 
   private onAutoplayError = (error: string) => {
@@ -437,7 +446,16 @@ class _VideoPlayer extends PureComponent<PrivateProps, IState> {
 
     const content =
       '⚠️ Autoplay permissions are blocked. Enable autoplay in your browser for a smoother playback experience. Reload the video if it doesn’t start.'
-    this.props.dispatch(addChat({ content, timestamp: Date.now() }))
+    this.props.dispatch(
+      addChat({
+        content,
+        timestamp: Date.now(),
+        legacySystemNotice: {
+          kind: 'error',
+          message: content
+        }
+      })
+    )
 
     try {
       sessionStorage.setItem(StorageKey.AutoplayNotice, '1')

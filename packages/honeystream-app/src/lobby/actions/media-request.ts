@@ -101,7 +101,17 @@ export const sendMediaRequest = (opts: ClientMediaRequestOptions): AppThunkActio
           content = t('noticeMediaError', { url: opts.url })
       }
 
-      dispatch(addChat({ content, html: true, timestamp: Date.now() }))
+      dispatch(
+        addChat({
+          content,
+          html: true,
+          timestamp: Date.now(),
+          legacySystemNotice: {
+            kind: 'error',
+            message: content
+          }
+        })
+      )
       return
     }
 
@@ -125,7 +135,17 @@ export const sendLocalMediaRequest = (opts: ClientLocalMediaRequestOptions): App
     try {
       metadata = registerLocalFile(opts.file)
     } catch (e) {
-      dispatch(addChat({ content: e.message, timestamp: Date.now() }))
+      const content = e.message
+      dispatch(
+        addChat({
+          content,
+          timestamp: Date.now(),
+          legacySystemNotice: {
+            kind: 'error',
+            message: content
+          }
+        })
+      )
       return
     }
 
@@ -139,7 +159,17 @@ export const sendLocalMediaRequest = (opts: ClientLocalMediaRequestOptions): App
 
     if (!mediaResponse.ok) {
       const content = t('noticeMediaError', { url: opts.file.name })
-      dispatch(addChat({ content, html: true, timestamp: Date.now() }))
+      dispatch(
+        addChat({
+          content,
+          html: true,
+          timestamp: Date.now(),
+          legacySystemNotice: {
+            kind: 'error',
+            message: content
+          }
+        })
+      )
       return
     }
 

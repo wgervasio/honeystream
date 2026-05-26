@@ -250,9 +250,11 @@ export class _LobbyPage extends Component<PrivateProps, IState> {
 
   private onServerError = (err: NetworkError) => {
     let content
+    let isErrorNotice = false
     switch (err.errorCode) {
       case NetworkErrorCode.SignalServerDisconnect: {
         content = '❌ Disconnected from session server. Reconnecting…'
+        isErrorNotice = true
         break
       }
       case NetworkErrorCode.SignalServerReconnect: {
@@ -264,7 +266,18 @@ export class _LobbyPage extends Component<PrivateProps, IState> {
         break
     }
     if (content) {
-      this.props.dispatch(addChat({ content, timestamp: Date.now() }))
+      this.props.dispatch(
+        addChat({
+          content,
+          timestamp: Date.now(),
+          legacySystemNotice: isErrorNotice
+            ? {
+                kind: 'error',
+                message: content
+              }
+            : undefined
+        })
+      )
     }
   }
 
