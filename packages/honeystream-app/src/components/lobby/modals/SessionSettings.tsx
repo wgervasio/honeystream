@@ -1,11 +1,10 @@
-import React, { Component, ChangeEvent } from 'react'
+import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import cx from 'classnames'
 
 import styles from './SessionSettings.css'
 import { IAppState } from 'reducers'
 import { isHost, getNumUsers } from 'lobby/reducers/users.helpers'
-import { USERS_MAX, MAX_USERS_INFINITE } from 'constants/settings'
 import { t } from 'locale'
 import { HighlightButton } from '../../common/button'
 import { ISettingsState, SessionMode } from '../../../reducers/settings'
@@ -18,8 +17,6 @@ import DialogContent from '@material-ui/core/DialogContent'
 import DialogContentText from '@material-ui/core/DialogContentText'
 import DialogTitle from '@material-ui/core/DialogTitle'
 import { IReactReduxProps } from 'types/redux-thunk'
-import { Dropdown } from 'components/settings/controls'
-import { setSessionData } from 'lobby/actions/session'
 import { ClipboardTextInput } from 'components/common/input'
 
 interface IProps {
@@ -37,7 +34,6 @@ interface IState {
 interface IConnectedProps {
   isHost: boolean
   numUsers: number
-  maxUsers: number
   settings: ISettingsState
 }
 
@@ -54,7 +50,6 @@ class SessionSettings extends Component<PrivateProps, IState> {
           <>
             {this.renderSessionMode()}
             {this.renderSessionModeDialog()}
-            {this.renderUserOpts()}
           </>
         )}
       </div>
@@ -167,47 +162,6 @@ class SessionSettings extends Component<PrivateProps, IState> {
     )
   }
 
-  private renderUserOpts() {
-    const dispatch = this.props.dispatch!
-    const userOpts: JSX.Element[] = []
-
-    const updateMaxUsers = (event: ChangeEvent<HTMLSelectElement>) => {
-      const value = parseInt(event.currentTarget.value, 10)
-      dispatch(setSessionData({ maxUsers: value }))
-      dispatch(setSetting('maxUsers', value))
-    }
-
-    const addOption = (value: number, label?: string) => {
-      const opt = (
-        <option key={value} value={value} selected={value === this.props.maxUsers}>
-          {label || `${value}`}
-        </option>
-      )
-
-      userOpts.push(opt)
-    }
-
-    for (let i = 2; i <= USERS_MAX; i = i << 1) {
-      addOption(i)
-    }
-    addOption(MAX_USERS_INFINITE, t('unlimited'))
-
-    return (
-      <p>
-        <label htmlFor="maxusers" className={styles.label}>
-          {t('maxUsers')}
-        </label>
-        <Dropdown
-          id="maxusers"
-          theme="secondary"
-          onChange={updateMaxUsers}
-          disabled={this.props.settings.sessionMode === SessionMode.Offline}
-        >
-          {userOpts}
-        </Dropdown>
-      </p>
-    )
-  }
 }
 
 export default connect(
@@ -215,7 +169,6 @@ export default connect(
     return {
       isHost: isHost(state),
       numUsers: getNumUsers(state),
-      maxUsers: state.session.maxUsers,
       settings: state.settings
     }
   }

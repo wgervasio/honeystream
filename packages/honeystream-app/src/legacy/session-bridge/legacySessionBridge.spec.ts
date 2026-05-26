@@ -45,7 +45,6 @@ const createSessionState = (overrides: Partial<ISessionState> = {}): ISessionSta
   startTime: undefined,
   secret: 'secret',
   serverClockSkew: 0,
-  maxUsers: 2,
   ...overrides
 })
 

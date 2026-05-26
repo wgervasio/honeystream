@@ -20,7 +20,7 @@ This document is intentionally deletion-oriented and does **not** propose a broa
 | Chat color profile | `src/reducers/settings.ts` (`color` / `setColor` / `getLocalColor`), `src/lobby/actions/user-init.ts`, `src/lobby/actions/users.ts`, `src/lobby/reducers/users.ts`, `src/components/settings/sections/Profile.tsx`, `src/components/chat/Username.tsx`, `src/lobby/reducers/users.helpers.ts` | User color remains part of replicated profile and chat display formatting. |
 | DJ/admin role model | `src/lobby/reducers/users.ts` (`UserRole`), `src/lobby/reducers/users.helpers.ts` (`hasRole`/`isDJ`/`isAdmin`), `src/lobby/actions/users.ts` (`setUserRole`, `server_toggleUserRole`, admin-gated moderation), `src/lobby/actions/user-init.ts` (`server_answerClient` admin gate), `src/components/lobby/UserList.tsx`, `src/components/lobby/UserItem.tsx`, `src/lobby/reducers/mediaPlayer.helpers.ts`, `src/lobby/reducers/chat.helpers.ts`, locale keys (`toggleDJ`, `requiresDJPermissions`, `dj`) | Product target is host/guest only; DJ is legacy multi-user moderation. |
 | Public/private/offline session mode | `src/reducers/settings.ts` (`SessionMode`, `getLocalSessionMode`), `src/components/lobby/modals/SessionSettings.tsx` (mode selector UI), `src/containers/LobbyPage.tsx` (networking on/off via mode), `src/lobby/actions/user-init.ts` (private-mode join approval path), `src/components/lobby/UserList.tsx` (invite highlight tied to offline mode) | Mode switching is legacy room-topology behavior outside reduced private 1:1 target. |
-| Configurable max users | `src/constants/settings.ts` (`USERS_MAX`, `MAX_USERS_INFINITE`, `DEFAULT_USERS_MAX`), `src/reducers/settings.ts` (`maxUsers`), `src/lobby/reducers/session.ts` (`maxUsers`, `getMaxUsers`), `src/lobby/actions/session.ts` (`initHostSession`), `src/lobby/actions/user-init.ts` (full-session rejection), `src/components/lobby/modals/SessionSettings.tsx` (dropdown), `src/components/lobby/UserList.tsx` (occupancy badge) | Reduced target is hard 1 host + 1 guest, not configurable capacity. |
+| Configurable max users | Locale keys `maxUsers` / `unlimited` in `src/locale/*.ts` | Fixed 1:1 capacity is now enforced via `MAX_SESSION_USERS = 2`; replicated `maxUsers` state and max-user UI controls were removed. |
 
 ## Ordered deletion plan (scoped waves)
 
@@ -40,7 +40,7 @@ This document is intentionally deletion-oriented and does **not** propose a broa
 
 4. **Remove session mode and max-user controls**
    - Eliminate public/private/offline selector UI and branching.
-   - Replace max-user setting with fixed 1 guest policy.
+   - ✅ Replace max-user setting with fixed 1 guest policy.
    - Keep explicit typed disconnect reason for capacity violations if needed.
 
 5. **Clean persistence/migrations and dead locale keys**
@@ -70,6 +70,24 @@ These are low-risk removals already completed in this branch:
   - `IMessageAuthor` is now file-local.
 
 Behavior is unchanged; this is export-surface cleanup only.
+
+## Completed in this wave (fixed max-user deletion)
+
+- `src/constants/settings.ts`
+  - Removed `USERS_MAX`, `MAX_USERS_INFINITE`, and `DEFAULT_USERS_MAX`.
+- `src/reducers/settings.ts`
+  - Removed persisted `settings.maxUsers`.
+- `src/lobby/reducers/session.ts`
+  - Removed replicated `session.maxUsers` and `getMaxUsers`.
+  - Added fixed session cap constant `MAX_SESSION_USERS = 2`.
+- `src/lobby/actions/session.ts`
+  - Host session init no longer writes `maxUsers`.
+- `src/lobby/actions/user-init.ts`
+  - Capacity rejection now checks against `MAX_SESSION_USERS`.
+- `src/components/lobby/modals/SessionSettings.tsx`
+  - Removed max-user dropdown/control surface.
+- `src/components/lobby/UserList.tsx`
+  - Removed occupancy rendering based on configurable max-user state.
 
 ## Guardrails for follow-up waves
 

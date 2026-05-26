@@ -12,12 +12,13 @@ import { resetLobby } from '../actions/common'
 import { ReplicatedState } from 'network/types'
 import { updateServerClockSkew } from '../actions/mediaPlayer'
 import { PlaybackState } from './mediaPlayer'
-import { DEFAULT_USERS_MAX, MAX_USERS_INFINITE } from 'constants/settings'
 
 export const enum ConnectionStatus {
   Connected = 'Connected',
   Pending = 'Pending'
 }
+
+export const MAX_SESSION_USERS = 2
 
 export interface ISessionState {
   id: string
@@ -30,7 +31,6 @@ export interface ISessionState {
   playback: PlaybackState
   startTime?: number
   users: number
-  maxUsers: number
 
   /**
    * Unique secret generated per session.
@@ -66,8 +66,7 @@ const initialState: ISessionState = {
   playback: PlaybackState.Idle,
   startTime: new Date().getTime(),
   secret: '',
-  serverClockSkew: 0,
-  maxUsers: DEFAULT_USERS_MAX
+  serverClockSkew: 0
 }
 
 export const session: Reducer<ISessionState> = (
@@ -96,6 +95,4 @@ export const session: Reducer<ISessionState> = (
   return state
 }
 
-export const getMaxUsers = (state: IAppState) =>
-  state.session.maxUsers === MAX_USERS_INFINITE ? Infinity : state.session.maxUsers
 export const getDisconnectReason = (state: IAppState) => state.session.disconnectReason

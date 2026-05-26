@@ -38,7 +38,6 @@ export interface ISettingsState {
   color?: string
   allowTracking: boolean
   sessionMode: SessionMode
-  maxUsers?: number
   avatar?: string
   language: string
   chatLocation: ChatLocation

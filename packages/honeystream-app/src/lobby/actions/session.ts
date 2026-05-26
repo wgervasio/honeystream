@@ -16,12 +16,10 @@ export const setConnectionStatus = actionCreator<ConnectionStatus | undefined>(
 )
 
 export const initHostSession = (): AppThunkAction => {
-  return (dispatch, getState) => {
-    const state = getState()
+  return dispatch => {
     const sessionData = cleanObject({
       id: localUserId(),
-      secret: btoa(shortid()),
-      maxUsers: state.settings.maxUsers
+      secret: btoa(shortid())
     })
     dispatch(setSessionData(sessionData))
   }

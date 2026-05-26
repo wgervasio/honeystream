@@ -5,7 +5,6 @@ import cx from 'classnames'
 import { IAppState } from '../../reducers'
 import { IUsersState, IUser, UserRole, IUserInvite } from '../../lobby/reducers/users'
 import { isHost, isAdmin } from '../../lobby/reducers/users.helpers'
-import { getMaxUsers } from '../../lobby/reducers/session'
 import { server_kickUser, server_toggleUserRole, answerUserInvite } from '../../lobby/actions/users'
 
 import MenuItem from '@material-ui/core/MenuItem'
@@ -27,7 +26,6 @@ interface IProps {
 }
 
 interface IConnectedProps {
-  maxUsers?: number
   users: IUsersState
   isHost: boolean
   isAdmin: boolean
@@ -51,9 +49,7 @@ class _UserList extends Component<Props> {
   }
 
   private get userSlots() {
-    const { numUsers } = this
-    const { maxUsers } = this.props
-    return `${numUsers}` + (maxUsers && isFinite(maxUsers) ? `/${maxUsers}` : '')
+    return `${this.numUsers}`
   }
 
   componentWillMount() {
@@ -206,7 +202,6 @@ export const UserList = withNamespaces()(
   connect(
     (state: IAppState): IConnectedProps => {
       return {
-        maxUsers: getMaxUsers(state),
         users: state.users,
         isAdmin: isAdmin(state),
         isHost: isHost(state),

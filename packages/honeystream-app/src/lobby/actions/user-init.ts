@@ -11,7 +11,7 @@ import {
   SessionMode,
   getLocalAvatar
 } from 'reducers/settings'
-import { getMaxUsers, ConnectionStatus } from '../reducers/session'
+import { ConnectionStatus, MAX_SESSION_USERS } from '../reducers/session'
 import { NetworkDisconnectReason, HONEYSTREAM_NETWORK_VERSION } from 'constants/network'
 import { setAuthorized, setConnectionStatus, setDisconnectReason } from './session'
 import { updateServerClockSkew } from './mediaPlayer'
@@ -146,7 +146,7 @@ const initClient = (info: ClientInitRequest): RpcThunk<ClientInitResponse | void
 
   if (validOrReason !== true) {
     reason = validOrReason as NetworkDisconnectReason
-  } else if (getNumUsers(state) >= getMaxUsers(state)) {
+  } else if (getNumUsers(state) >= MAX_SESSION_USERS) {
     reason = NetworkDisconnectReason.Full
   }
 

@@ -36,7 +36,6 @@ export const INITIAL_TEST_APP_STATE: IAppState = {
     startTime: 1575235118509,
     secret: 'NFlYeW5PRERi',
     serverClockSkew: 0,
-    maxUsers: 0,
     media: {
       url: 'https://www.youtube.com/watch?v=3bNITQR4Uso',
       title: 'Mariya Takeuchi 竹内 まりや Plastic Love',
@@ -69,8 +68,7 @@ export const INITIAL_TEST_APP_STATE: IAppState = {
     safeBrowse: true,
     username: 'sam',
     avatar: 'asset:default.svg',
-    color: '#7cfcc6',
-    maxUsers: 0
+    color: '#7cfcc6'
   },
   ui: {
     isExtensionInstalled: true
