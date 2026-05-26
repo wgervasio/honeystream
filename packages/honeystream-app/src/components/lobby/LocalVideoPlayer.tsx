@@ -138,7 +138,16 @@ class _LocalVideoPlayer extends Component<Props, State> {
 
     if (!this.reportedPlayError) {
       this.reportedPlayError = true
-      this.props.dispatch(addChat({ content: message, timestamp: Date.now() }))
+      this.props.dispatch(
+        addChat({
+          content: message,
+          timestamp: Date.now(),
+          legacySystemNotice: {
+            kind: 'error',
+            message
+          }
+        })
+      )
     }
 
     console.warn(error)

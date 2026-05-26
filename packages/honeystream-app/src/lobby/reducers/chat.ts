@@ -2,6 +2,12 @@ import { Reducer } from 'redux'
 import { isType } from 'utils/redux'
 import { addChat, recordTyping, clearTyping } from 'lobby/actions/chat'
 import { resetLobby } from '../actions/common'
+import { SystemEventLog } from 'domain/events'
+import {
+  appendLegacySystemNoticeEvent,
+  createLegacySystemEventLog,
+  LegacySystemNotice
+} from 'lobby/legacy/systemEventLogAdapter'
 
 let CHAT_MESSAGE_COUNTER = 0
 
@@ -25,6 +31,8 @@ export interface IMessage {
 
   /** Unix timestamp */
   timestamp: number
+
+  legacySystemNotice?: LegacySystemNotice
 }
 
 export interface Typing {
@@ -38,24 +46,26 @@ export interface IChatState {
   messages: IMessage[]
   /** List of typing users by ID. */
   typing: string[]
+  systemEventLog: SystemEventLog
 }
 
 const initialState: IChatState = {
   messages: [],
-  typing: []
+  typing: [],
+  systemEventLog: createLegacySystemEventLog()
 }
 
 export const chat: Reducer<IChatState> = (state: IChatState = initialState, action: any) => {
   if (isType(action, addChat)) {
+    const message: IMessage = {
+      ...action.payload,
+      id: `${++CHAT_MESSAGE_COUNTER}`
+    }
+
     return {
       ...state,
-      messages: [
-        ...state.messages,
-        {
-          ...action.payload,
-          id: `${++CHAT_MESSAGE_COUNTER}`
-        }
-      ]
+      messages: [...state.messages, message],
+      systemEventLog: appendLegacySystemNoticeEvent(state.systemEventLog, message)
     }
   } else if (isType(action, recordTyping)) {
     const userId = action.payload
