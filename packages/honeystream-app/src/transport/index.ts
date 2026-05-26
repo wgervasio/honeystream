@@ -1,4 +1,5 @@
 export * from './webrtc'
+export * from './legacy-net'
 export * from './connection-state'
 export * from './contracts'
 export * from './in-memory-peer-transport'
