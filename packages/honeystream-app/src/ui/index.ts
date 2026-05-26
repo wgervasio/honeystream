@@ -14,3 +14,12 @@ export type { SystemEventFeedProps } from './events'
 
 export { useProjectionSelector } from './useProjectionSelector'
 export type { ProjectionSelectorConfig } from './useProjectionSelector'
+
+export {
+  SessionRuntimeProvider,
+  useSessionRuntime,
+  useSessionRuntimeContext,
+  useSessionRuntimeProjectionSelector,
+  createSessionRuntimeProjectionBoundary
+} from './runtime'
+export type { SessionRuntime, SessionRuntimeContextValue, SessionRuntimeSnapshot } from './runtime'
