@@ -1,1 +1,6 @@
 export * from './webrtc'
+export * from './connection-state'
+export * from './contracts'
+export * from './in-memory-peer-transport'
+export * from './in-memory-peer-transport-pair'
+export * from './lifecycle'
