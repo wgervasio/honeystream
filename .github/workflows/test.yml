@@ -3,10 +3,28 @@ name: Test
 on:
   push:
     paths:
+    - 'AGENTS.md'
+    - '.github/agents/**'
+    - '.github/copilot-instructions.md'
+    - '.github/workflows/**'
+    - 'docs/**'
+    - 'scripts/**'
+    - 'package.json'
     - 'packages/honeystream-app/**'
+    - 'packages/honeystream-signal-server/**'
+    - 'packages/honeystream-remote-extension/**'
   pull_request:
     paths:
+    - 'AGENTS.md'
+    - '.github/agents/**'
+    - '.github/copilot-instructions.md'
+    - '.github/workflows/**'
+    - 'docs/**'
+    - 'scripts/**'
+    - 'package.json'
     - 'packages/honeystream-app/**'
+    - 'packages/honeystream-signal-server/**'
+    - 'packages/honeystream-remote-extension/**'
 
 jobs:
   test:
@@ -24,6 +42,10 @@ jobs:
     - name: Install dependencies
       run: |
         yarn install
+
+    - name: Run architecture analyzer
+      run: |
+        npm run analyze:architecture
 
     - name: Build signal server
       working-directory: ./packages/honeystream-signal-server

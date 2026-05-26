@@ -33,3 +33,13 @@ yarn
 yarn --cwd packages/honeystream-signal-server build
 yarn --cwd packages/honeystream-app start
 ```
+
+## Architecture guardrails
+
+The architecture migration plan is in `docs/architecture-migration-plan.md`. Coding
+assistants should read `.github/agents/` before changing session, transport, protocol,
+or playback architecture.
+
+```sh
+npm run analyze:architecture
+```
