@@ -50,10 +50,14 @@ const mapSessionSystemError = (
 
 const mapParticipantUsernames = (
   snapshot: SessionRuntimeProjectionSnapshot
-): SessionParticipantUsernamesModel => ({
-  hostUsername: snapshot.session.participants.host.username,
-  guestUsername: snapshot.session.participants.guest?.username
-})
+): SessionParticipantUsernamesModel => {
+  const guest = snapshot.session.participants.guest
+
+  return {
+    hostUsername: snapshot.session.participants.host.username,
+    guestUsername: guest ? guest.username : undefined
+  }
+}
 
 export const mapProjectionSnapshotToSessionShellProps = (
   snapshot: SessionRuntimeProjectionSnapshot
