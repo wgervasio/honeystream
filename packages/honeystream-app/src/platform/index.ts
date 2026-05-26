@@ -1,4 +1,5 @@
 import { WebPlatform } from 'platform/web'
+export * from './lifecycle'
 
 export class PlatformService {
   private static platform: WebPlatform
