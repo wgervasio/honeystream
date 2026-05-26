@@ -1,6 +1,7 @@
 import { appendSystemEvent, SystemEvent } from './event-log'
-import { addGuestParticipant, isValidParticipantId, removeGuestParticipant } from './participants'
+import { addGuestParticipant, removeGuestParticipant } from './participants'
 import { pausePlayback, playPlayback, resetPlaybackClock, seekPlayback, setPlaybackDuration, setPlaybackRate } from './playback-clock'
+import { getPrivateInviteParticipantRejectionReason } from './private-invite'
 import { appendQueueItem, DEFAULT_QUEUE_CAP, removeFirstQueueItem, takeNextQueueItem } from './queue'
 import { SessionMediaItem, SessionState } from './session-state'
 import { sanitizeUsername } from './usernames'
@@ -38,20 +39,27 @@ export const transitionGuestJoined = (
   guestUsername: unknown,
   nowHostMs: number
 ): TransitionResult => {
-  if (!isValidParticipantId(guestId) || state.participants.host.id === guestId) {
+  const participantRejectionReason = getPrivateInviteParticipantRejectionReason(
+    state.participants,
+    guestId
+  )
+  if (participantRejectionReason === 'invalid-participant-id') {
     return failure(state, nowHostMs, 'invalid-participant', 'Guest id must be non-empty and different from host id.')
   }
+  if (participantRejectionReason === 'participant-limit-reached') {
+    return failure(state, nowHostMs, 'guest-slot-occupied', 'Only one guest may join a session.')
+  }
 
+  const normalizedGuestId = guestId.trim()
   const existingGuest = state.participants.guest
-  if (existingGuest && existingGuest.id !== guestId) return failure(state, nowHostMs, 'guest-slot-occupied', 'Only one guest may join a session.')
-  if (existingGuest && existingGuest.id === guestId) return success(state)
+  if (existingGuest && existingGuest.id === normalizedGuestId) return success(state)
 
   const username = sanitizeUsername(guestUsername)
-  const event: SystemEvent = { type: 'participantJoined', timestampMs: nowHostMs, participantId: guestId, username }
+  const event: SystemEvent = { type: 'participantJoined', timestampMs: nowHostMs, participantId: normalizedGuestId, username }
   const nextState: SessionState = {
     ...state,
     status: 'connected',
-    participants: addGuestParticipant(state.participants, guestId, username),
+    participants: addGuestParticipant(state.participants, normalizedGuestId, username),
     events: appendSystemEvent(state.events, event)
   }
   return success(nextState, [event])
