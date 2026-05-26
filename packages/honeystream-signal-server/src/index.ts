@@ -5,20 +5,25 @@ import WebSocket, { Server } from 'ws'
 import sodium from 'libsodium-wrappers'
 import { Request, MessageType, RoomID, ClientID } from './types'
 import { SignalData } from 'simple-peer'
+import {
+  ClientSignalRequest,
+  ProtocolParseError,
+  isRoomID,
+  isSignalDataPayload,
+  parseClientRequestJson
+} from './protocol'
 
 // :( https://github.com/jedisct1/libsodium/issues/672
 process.removeAllListeners('unhandledRejection')
 
 const DEBUG = process.env.NODE_ENV !== 'production'
 const DEFAULT_PORT = 27064
+const MAX_PROTOCOL_DIAGNOSTICS = 64
 
 let clientCounter: ClientID = 0
 
 const getIP = (req: IncomingMessage) =>
   (req.headers['x-forwarded-for'] as string) || req.connection.remoteAddress
-const isValidRoom = (pk: string) => typeof pk === 'string' && pk.length == 64
-const isValidOffer = (offer: any): offer is SignalData =>
-  typeof offer === 'object' && (offer.hasOwnProperty('sdp') || offer.hasOwnProperty('candidate'))
 
 const enum ClientStatus {
   Unauthed,
@@ -46,6 +51,12 @@ interface Room {
   clientCounter: number
 }
 
+interface ProtocolDiagnostic {
+  clientID: ClientID
+  timestamp: number
+  error: ProtocolParseError
+}
+
 interface Credentials {
   username: string
   password: string
@@ -69,6 +80,10 @@ export class SignalServer extends EventEmitter {
   private roomCounter = 0
   private clients = new Map<ClientID, Client>()
   private rooms = new Map<RoomID, Room>()
+  /**
+   * Keep only a bounded history of protocol parse failures to avoid unbounded memory growth.
+   */
+  private protocolDiagnostics: ProtocolDiagnostic[] = []
 
   constructor(opts: SignalServerOptions) {
     super()
@@ -96,6 +111,7 @@ export class SignalServer extends EventEmitter {
     this.rooms.forEach(room => {
       this.closeRoom(room.id)
     })
+    this.protocolDiagnostics = []
   }
 
   close() {
@@ -173,6 +189,13 @@ export class SignalServer extends EventEmitter {
         status: client.status,
         pendingRoom: client.pendingRoom,
         room: client.room
+      })),
+      protocolDiagnostics: this.protocolDiagnostics.map(diagnostic => ({
+        clientID: diagnostic.clientID,
+        timestamp: new Date(diagnostic.timestamp).toISOString(),
+        code: diagnostic.error.code,
+        message: diagnostic.error.message,
+        field: diagnostic.error.field
       }))
     }
 
@@ -183,6 +206,18 @@ export class SignalServer extends EventEmitter {
   private sendTo(client: Client, json: Request) {
     const data = JSON.stringify(json)
     client.socket.send(data)
+  }
+
+  private addProtocolDiagnostic(clientID: ClientID, error: ProtocolParseError) {
+    if (this.protocolDiagnostics.length >= MAX_PROTOCOL_DIAGNOSTICS) {
+      this.protocolDiagnostics.shift()
+    }
+
+    this.protocolDiagnostics.push({
+      clientID,
+      timestamp: Date.now(),
+      error
+    })
   }
 
   private addClient(socket: WebSocket, ip?: string): Client {
@@ -243,16 +278,20 @@ export class SignalServer extends EventEmitter {
     this.log(`connect[${id}] ${ip}`)
 
     socket.on('message', msg => {
-      if (DEBUG) this.log(`received[${id}]: ${msg.toString()}`)
-      let request
-      try {
-        request = JSON.parse(msg.toString()) as Request
-      } catch {
-        this.log(`Client[${id}] sent invalid JSON request`)
+      const rawRequest = msg.toString()
+      if (DEBUG) this.log(`received[${id}]: ${rawRequest}`)
+
+      const requestResult = parseClientRequestJson(rawRequest)
+      if (!requestResult.ok) {
+        this.addProtocolDiagnostic(id, requestResult.error)
+        this.log(
+          `Client[${id}] sent invalid request [code=${requestResult.error.code}${requestResult.error.field ? ` field=${requestResult.error.field}` : ''}]`
+        )
         socket.close()
         return
       }
 
+      const request = requestResult.value
       try {
         this.dispatchRequest(client, request)
       } catch (e) {
@@ -271,7 +310,7 @@ export class SignalServer extends EventEmitter {
     })
   }
 
-  private dispatchRequest(client: Client, req: Request) {
+  private dispatchRequest(client: Client, req: ClientSignalRequest) {
     switch (req.t) {
       case MessageType.Ping:
         this.sendTo(client, { t: MessageType.Pong })
@@ -288,9 +327,6 @@ export class SignalServer extends EventEmitter {
       case MessageType.CandidateOffer:
         this.brokerOffer(client, req.o, req.f || client.id, req.to)
         break
-      default:
-        this.log(`Client[${client.id}] sent unknown request [t=${req.t}]`)
-        client.socket.close()
     }
   }
 
@@ -298,7 +334,7 @@ export class SignalServer extends EventEmitter {
   private authCheck(client: Client, publicKey: string) {
     if (client.status === ClientStatus.Authed) return true
     else if (client.status === ClientStatus.PendingAuth) return false
-    else if (!isValidRoom(publicKey)) return false
+    else if (!isRoomID(publicKey)) return false
 
     const nonce = sodium.randombytes_buf(sodium.crypto_box_NONCEBYTES)
     const box = sodium.crypto_box_seal(nonce, sodium.from_hex(publicKey))
@@ -340,7 +376,7 @@ export class SignalServer extends EventEmitter {
   }
 
   private createRoom(client: Client, id: RoomID) {
-    if (!isValidRoom(id)) {
+    if (!isRoomID(id)) {
       this.log(`Client[${client.id}] attempted to create invalid room ID`)
       client.socket.close()
       return
@@ -380,14 +416,14 @@ export class SignalServer extends EventEmitter {
   }
 
   private joinRoom(client: Client, roomId: RoomID, offer: SignalData) {
-    if (!isValidRoom(roomId)) {
+    if (!isRoomID(roomId)) {
       this.log(`Client[${client.id}] attempted to connect to invalid room '${roomId}'`)
       this.sendTo(client, { t: MessageType.RoomNotFound })
       client.socket.close()
       return
     }
 
-    if (!isValidOffer(offer)) {
+    if (!isSignalDataPayload(offer)) {
       this.log(`Client[${client.id}] sent an invalid offer while joining '${roomId}'`)
       client.socket.close()
       return
@@ -412,7 +448,7 @@ export class SignalServer extends EventEmitter {
 
   private brokerOffer(client: Client, offer: SignalData, from: ClientID, to?: ClientID) {
     if (!client.room) return
-    if (!isValidOffer(offer)) return
+    if (!isSignalDataPayload(offer)) return
 
     const room = this.rooms.get(client.room)
     if (!room) return

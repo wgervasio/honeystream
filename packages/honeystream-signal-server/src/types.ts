@@ -1,33 +1,19 @@
-import { SignalData } from 'simple-peer'
+import { MessageType } from './protocol/message-types'
+import { ClientID, RoomID, SignalPayload } from './protocol/wire-types'
 
-/** 64-char hex public key. */
-export type RoomID = string
-
-export type ClientID = number
-
-export const enum MessageType {
-  CreateRoom,
-  CreateRoomSuccess,
-  JoinRoom,
-  AuthChallenge,
-  AuthResponse,
-  CandidateOffer,
-  Ping,
-  Pong,
-  RoomNotFound
-}
+export { MessageType, ClientID, RoomID, SignalPayload }
 
 export type Request =
   | {
       t: MessageType.CreateRoom
-      id: string
+      id: RoomID
     }
   | { t: MessageType.CreateRoomSuccess }
   | {
       t: MessageType.JoinRoom
-      id: string
+      id: RoomID
       /** Offer */
-      o: SignalData
+      o: SignalPayload
     }
   | {
       t: MessageType.AuthResponse
@@ -42,7 +28,7 @@ export type Request =
   | {
       t: MessageType.CandidateOffer
       /** Offer */
-      o: SignalData
+      o: SignalPayload
       /** From */
       f?: ClientID
       to?: ClientID
