@@ -1,4 +1,5 @@
 export * from './fake-clock'
 export * from './fake-ids'
+export * from './fake-transport'
 export * from './bounded-assertions'
 export * from './resource-cleanup-assertions'
