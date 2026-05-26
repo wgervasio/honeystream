@@ -17,7 +17,12 @@ import { MediaThumbnailSize, MediaType } from 'media/types'
 import { enqueueMedia, nextMedia } from './mediaPlayer'
 import { rpc, RpcRealm } from 'network/middleware/rpc'
 import { MediaRequestErrorCode, MediaRequestError } from 'media/error'
-import { LocalFileMetadata, localFileToMediaUrl, registerLocalFile } from 'media/localFile'
+import {
+  LocalFileMetadata,
+  localFileToMediaUrl,
+  registerLocalFile,
+  validateLocalFileMetadata
+} from 'media/localFile'
 
 interface MediaRequestOptions {
   url: string
@@ -215,15 +220,14 @@ const server_requestMedia = rpc('requestMedia', RpcRealm.Server, requestMedia)
 const requestLocalMedia = (
   opts: LocalMediaRequestOptions
 ): RpcThunk<Promise<MediaRequestResponse>> => async (dispatch, getState, context) => {
-  const { metadata } = opts
+  const metadata = validateLocalFileMetadata(opts.metadata)
   const state = getState()
 
   if (state.mediaPlayer.queueLocked && !hasPlaybackPermissions(state, context.client))
     return { ok: false, err: MediaRequestErrorCode.NotAllowed }
   if (opts.immediate && !hasPlaybackPermissions(state, context.client))
     return { ok: false, err: MediaRequestErrorCode.NotAllowed }
-  if (!metadata || metadata.kind !== 'local-file' || !metadata.key || !metadata.name)
-    return { ok: false, err: MediaRequestErrorCode.Generic }
+  if (!metadata) return { ok: false, err: MediaRequestErrorCode.Generic }
 
   const userId = context.client.id.toString()
   const mediaUrl = localFileToMediaUrl(metadata)
