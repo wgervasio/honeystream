@@ -50,3 +50,28 @@ Bad records are vague:
 - "Trust this input."
 
 Temporary exceptions must include a removal condition.
+
+## Analyzer exception marker
+
+Analyzer suppressions are only valid with the explicit marker line:
+
+```text
+architecture-analyzer-exception: <rule-id>
+```
+
+Any analyzer exception must include these rationale markers near that marker:
+
+```text
+Context:
+Invariant:
+Options considered:
+Decision:
+Performance impact:
+Memory/lifecycle ownership:
+Failure mode:
+Validation:
+Removal condition:
+```
+
+Use a specific rule id whenever possible. `all` is allowed only for tightly scoped temporary
+blocks and still requires full rationale markers.
