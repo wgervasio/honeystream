@@ -1,4 +1,4 @@
-# Metastream
+# Honeystream
 
 Private watch sessions for two people watching the same local file, website video, or direct video URL.
 
@@ -28,6 +28,6 @@ Requires Yarn 1 and Node 12.22.x.
 
 ```sh
 yarn
-yarn --cwd packages/metastream-signal-server build
-yarn --cwd packages/metastream-app start
+yarn --cwd packages/honeystream-signal-server build
+yarn --cwd packages/honeystream-app start
 ```

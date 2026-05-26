@@ -3,10 +3,10 @@ name: Test
 on:
   push:
     paths:
-    - 'packages/metastream-app/**'
+    - 'packages/honeystream-app/**'
   pull_request:
     paths:
-    - 'packages/metastream-app/**'
+    - 'packages/honeystream-app/**'
 
 jobs:
   test:
@@ -26,19 +26,19 @@ jobs:
         yarn install
 
     - name: Build signal server
-      working-directory: ./packages/metastream-signal-server
+      working-directory: ./packages/honeystream-signal-server
       run: |
         yarn build
 
     - name: Run tests
-      working-directory: ./packages/metastream-app
+      working-directory: ./packages/honeystream-app
       run: |
         yarn test
       env:
-        METASTREAM_SIGNAL_SERVER: ws://localhost:27064
+        HONEYSTREAM_SIGNAL_SERVER: ws://localhost:27064
 
     - name: Archive screenshots
       uses: actions/upload-artifact@v2
       with:
         name: screenshots
-        path: packages/metastream-app/test/artifacts/*.jpg
+        path: packages/honeystream-app/test/artifacts/*.jpg
