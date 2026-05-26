@@ -1,8 +1,8 @@
-import { ClientID, MessageType, RoomID } from '../types'
+import { MessageType } from './message-types'
 import { ProtocolParseErrorCode, ProtocolParseResult, parseError, parseOk } from './errors'
+import { ClientID, RoomID, SignalPayload } from './wire-types'
 import {
   JsonRecord,
-  SignalPayload,
   hasOwn,
   isClientID,
   isRecord,

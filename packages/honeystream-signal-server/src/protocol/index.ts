@@ -1,3 +1,5 @@
 export * from './errors'
+export * from './message-types'
 export * from './requests'
 export * from './validation'
+export * from './wire-types'

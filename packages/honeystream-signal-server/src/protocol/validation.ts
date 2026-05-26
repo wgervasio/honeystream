@@ -1,9 +1,8 @@
-import { ClientID, MessageType, Request, RoomID } from '../types'
+import { ClientID, RoomID, SignalPayload } from './wire-types'
 
 const hasOwnProperty = Object.prototype.hasOwnProperty
 
 export type JsonRecord = { readonly [key: string]: unknown }
-export type SignalPayload = Extract<Request, { t: MessageType.JoinRoom }>['o']
 
 export const hasOwn = (value: JsonRecord, field: string): boolean => hasOwnProperty.call(value, field)
 
