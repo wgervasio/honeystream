@@ -1,3 +1,5 @@
 export * from './contracts'
 export * from './diagnostics'
 export * from './parser'
+export * from './EmbedExtensionAdapter'
+export * from './EmbedExtensionAdapterFactory'
