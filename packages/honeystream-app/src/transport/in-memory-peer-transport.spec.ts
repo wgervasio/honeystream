@@ -76,6 +76,54 @@ describe('in-memory peer transport', () => {
     expect(guestMessages).toEqual([{ type: 'pong', nonce: 7 }])
   })
 
+  it('optionally records zero-queue byte and latency metrics for deterministic local pairs', async () => {
+    let nowMs = 1000
+    const pair = createInMemoryPeerTransportPair({
+      hostInboundValidator: clientToHostValidator,
+      guestInboundValidator: hostToClientValidator,
+      now: () => nowMs,
+      collectMetrics: true
+    })
+
+    await pair.host.connect()
+    pair.guest.send({
+      seq: 1,
+      sentAtMs: 990,
+      message: { type: 'ping', nonce: 9 }
+    })
+
+    const metrics = pair.getAggregateMetrics()
+    expect(metrics.guest && metrics.guest.sentMessages).toBe(1)
+    expect(metrics.guest && metrics.guest.sentBytes).toBeGreaterThan(0)
+    expect(metrics.host && metrics.host.deliveredMessages).toBe(1)
+    expect(metrics.host && metrics.host.deliveredBytes).toBe(metrics.guest && metrics.guest.sentBytes)
+    expect(metrics.host && metrics.host.averageLatencyMs).toBe(10)
+
+    nowMs += 5
+    pair.host.send({
+      seq: 2,
+      sentAtMs: 1000,
+      message: { type: 'pong', nonce: 9 }
+    })
+
+    const nextMetrics = pair.getAggregateMetrics()
+    expect(nextMetrics.host && nextMetrics.host.sentMessages).toBe(1)
+    expect(nextMetrics.guest && nextMetrics.guest.deliveredMessages).toBe(1)
+    expect(nextMetrics.guest && nextMetrics.guest.maxLatencyMs).toBe(5)
+  })
+
+  it('keeps metrics disabled by default', () => {
+    const pair = createInMemoryPeerTransportPair({
+      hostInboundValidator: clientToHostValidator,
+      guestInboundValidator: hostToClientValidator
+    })
+
+    expect(pair.getAggregateMetrics()).toEqual({
+      host: undefined,
+      guest: undefined
+    })
+  })
+
   it('fails the receiver when the envelope shape is invalid', async () => {
     const pair = createInMemoryPeerTransportPair({
       hostInboundValidator: clientToHostValidator,

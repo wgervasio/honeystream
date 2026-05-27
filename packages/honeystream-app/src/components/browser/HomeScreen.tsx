@@ -10,8 +10,8 @@ interface Props {
 
 const siteExamples = [
   { label: 'YouTube', url: 'https://youtube.com' },
-  { label: 'Anime page', url: 'https://example.com/anime-watch' },
-  { label: 'Movie page', url: 'https://example.com/movie-watch' },
+  { label: 'Anime night', url: 'https://example.com/anime-watch' },
+  { label: 'Movie night', url: 'https://example.com/movie-watch' },
   { label: 'Direct video', url: 'https://example.com/video.mp4' }
 ]
 

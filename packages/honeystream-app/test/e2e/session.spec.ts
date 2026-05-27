@@ -50,10 +50,11 @@ describe('session', () => {
     it('should require allowing client to connect', async () => {
       await ms.visit(`/join/${hostId}`)
       const hostPage = page
+      await hostPage.waitForSelector(`#userlist [data-user=${hostId}]`)
 
-      await clientPage.goto(`${hostPage.url()}#/join/${hostId}`)
+      await clientPage.goto(`http://localhost:8080/#/join/${hostId}`)
 
-      await hostPage.click(`[data-user="${clientId}"][data-pending="true"] [data-id="allow"]`)
+      await hostPage.click(`#userlist [data-pending="true"] [data-id="allow"]`)
       await hostPage.waitForSelector(`[data-user="${clientId}"][data-pending="false"]`)
 
       await ms.screenshot('session_host+client')
@@ -62,6 +63,7 @@ describe('session', () => {
     it('should accept connecting client', async () => {
       await ms.visit(`/join/${hostId}`)
       const hostPage = page
+      await hostPage.waitForSelector(`#userlist [data-user=${hostId}]`)
 
       // set public session
       await hostPage.evaluate(() =>
@@ -71,7 +73,7 @@ describe('session', () => {
         })
       )
 
-      await clientPage.goto(`${hostPage.url()}#/join/${hostId}`)
+      await clientPage.goto(`http://localhost:8080/#/join/${hostId}`)
       await hostPage.waitForSelector(`[data-user="${clientId}"][data-pending="false"]`)
     })
   })
