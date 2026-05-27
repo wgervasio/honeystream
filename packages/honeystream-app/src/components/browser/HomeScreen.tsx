@@ -9,10 +9,10 @@ interface Props {
 }
 
 const siteExamples = [
-  { label: 'YouTube', url: 'https://youtube.com' },
-  { label: 'Anime night', url: 'https://example.com/anime-watch' },
-  { label: 'Movie night', url: 'https://example.com/movie-watch' },
-  { label: 'Direct video', url: 'https://example.com/video.mp4' }
+  { label: 'YouTube', url: 'https://www.youtube.com/watch?v=honeystream-demo' },
+  { label: 'AnimePahe', url: 'https://animepahe.ru/play/example' },
+  { label: 'Cineby', url: 'https://cineby.app/movie/example' },
+  { label: 'Miruro', url: 'https://www.miruro.tv/watch/example' }
 ]
 
 const addSteps = [

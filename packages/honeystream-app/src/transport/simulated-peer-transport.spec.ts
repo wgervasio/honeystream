@@ -71,7 +71,10 @@ describe('simulated peer transport', () => {
     expect(hostMessages).toEqual([{ type: 'ping', nonce: 1 }])
 
     expect(pair.guest.getMetrics().sentMessages).toBe(1)
+    expect(pair.guest.getMetrics().deliveryRate).toBe(1)
     expect(pair.guest.getMetrics().lostBytes).toBe(0)
+    expect(pair.guest.getMetrics().byteLossRate).toBe(0)
+    expect(pair.guest.getMetrics().averageMessageBytes).toBeGreaterThan(0)
     expect(pair.host.getMetrics().deliveredBytes).toBeGreaterThan(0)
     expect(pair.host.getMetrics().averageLatencyMs).toBe(25)
   })
@@ -100,6 +103,9 @@ describe('simulated peer transport', () => {
     expect(metrics.combinedDroppedMessages).toBe(1)
     expect(metrics.combinedSentBytes).toBeGreaterThan(metrics.combinedDeliveredBytes)
     expect(metrics.combinedLostBytes).toBeGreaterThan(0)
+    expect(metrics.combinedDeliveryRate).toBe(0.75)
+    expect(metrics.combinedByteLossRate).toBeGreaterThan(0)
+    expect(metrics.combinedAverageMessageBytes).toBeGreaterThan(0)
     expect(metrics.combinedAverageLatencyMs).toBe(20)
     expect(metrics.combinedMaxLatencyMs).toBe(20)
     expect(metrics.combinedQueuedMessages).toBe(0)
@@ -128,8 +134,88 @@ describe('simulated peer transport', () => {
     expect(hostMessages).toEqual([{ type: 'ping', nonce: 1 }])
     expect(pair.guest.getMetrics().sentMessages).toBe(2)
     expect(pair.guest.getMetrics().droppedMessages).toBe(1)
+    expect(pair.guest.getMetrics().deliveryRate).toBe(0.5)
     expect(pair.guest.getMetrics().lostBytes).toBeGreaterThan(0)
     expect(pair.host.getMetrics().deliveredMessages).toBe(1)
+  })
+
+  it('preserves ordered delivery under deterministic jitter and records latency', async () => {
+    let nowMs = 5000
+    const randomSamples = [0.99, 0.5, 0.99, 0, 0.99, 1]
+    const pair = createSimulatedPeerTransportPair({
+      hostInboundValidator: clientToHostValidator,
+      guestInboundValidator: hostToClientValidator,
+      now: () => nowMs,
+      random: () => {
+        const sample = randomSamples.shift()
+        return typeof sample === 'number' ? sample : 0.99
+      },
+      network: { latencyMs: 20, jitterMs: 10, dropRate: 0.2 }
+    })
+    const hostMessages: ClientToHostMessage[] = []
+
+    pair.host.subscribe(event => {
+      if (event.type === 'message') hostMessages.push(event.delivery.envelope.message)
+    })
+
+    await pair.host.connect()
+    pair.guest.send({ seq: 1, sentAtMs: nowMs, message: { type: 'ping', nonce: 1 } })
+    pair.guest.send({ seq: 2, sentAtMs: nowMs, message: { type: 'ping', nonce: 2 } })
+    pair.guest.send({ seq: 3, sentAtMs: nowMs, message: { type: 'ping', nonce: 3 } })
+
+    nowMs += 10
+    expect(pair.flushReady()).toBe(0)
+    expect(hostMessages).toEqual([])
+
+    nowMs += 10
+    expect(pair.flushReady()).toBe(2)
+    expect(hostMessages).toEqual([{ type: 'ping', nonce: 1 }, { type: 'ping', nonce: 2 }])
+
+    nowMs += 10
+    expect(pair.flushReady()).toBe(1)
+    expect(hostMessages).toEqual([
+      { type: 'ping', nonce: 1 },
+      { type: 'ping', nonce: 2 },
+      { type: 'ping', nonce: 3 }
+    ])
+
+    const metrics = pair.getAggregateMetrics()
+    expect(metrics.combinedDroppedMessages).toBe(0)
+    expect(metrics.combinedDeliveryRate).toBe(1)
+    expect(metrics.combinedAverageLatencyMs).toBeCloseTo(70 / 3)
+    expect(metrics.combinedMaxLatencyMs).toBe(30)
+  })
+
+  it('reports probabilistic byte loss with an injected random source', async () => {
+    let nowMs = 6000
+    const randomSamples = [0.1, 0.9, 0.1]
+    const pair = createSimulatedPeerTransportPair({
+      hostInboundValidator: clientToHostValidator,
+      guestInboundValidator: hostToClientValidator,
+      now: () => nowMs,
+      random: () => {
+        const sample = randomSamples.shift()
+        return typeof sample === 'number' ? sample : 0.99
+      },
+      network: { latencyMs: 5, dropRate: 0.5 }
+    })
+    const hostMessages: ClientToHostMessage[] = []
+
+    pair.host.subscribe(event => {
+      if (event.type === 'message') hostMessages.push(event.delivery.envelope.message)
+    })
+
+    await pair.host.connect()
+    pair.guest.send({ seq: 1, sentAtMs: nowMs, message: { type: 'ping', nonce: 1 } })
+    pair.guest.send({ seq: 2, sentAtMs: nowMs, message: { type: 'ping', nonce: 2 } })
+    pair.guest.send({ seq: 3, sentAtMs: nowMs, message: { type: 'ping', nonce: 3 } })
+    nowMs += 5
+    pair.flushReady()
+
+    expect(hostMessages).toEqual([{ type: 'ping', nonce: 2 }])
+    expect(pair.guest.getMetrics().droppedMessages).toBe(2)
+    expect(pair.guest.getMetrics().byteLossRate).toBeGreaterThan(0)
+    expect(pair.getAggregateMetrics().combinedDeliveryRate).toBe(1 / 3)
   })
 
   it('bounds queued simulated frames and clears them on dispose', async () => {
