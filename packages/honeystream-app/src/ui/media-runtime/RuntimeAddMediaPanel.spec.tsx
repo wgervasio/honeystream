@@ -5,11 +5,15 @@ import { RuntimeAddMediaPanel } from './RuntimeAddMediaPanel'
 describe('RuntimeAddMediaPanel', () => {
   it('renders URL add controls without local-file controls by default', () => {
     const html = renderToStaticMarkup(
-      <RuntimeAddMediaPanel onAddUrl={jest.fn()} />
+      <RuntimeAddMediaPanel
+        description="Paste a supported website, direct media URL, or local file."
+        onAddUrl={jest.fn()}
+      />
     )
 
     expect(html).toContain('Media URL')
     expect(html).toContain('Add URL')
+    expect(html).toContain('Paste a supported website')
     expect(html).not.toContain('Add local file')
   })
 

@@ -140,6 +140,40 @@ const SYSTEM_ERROR_EVENT_TIMESTAMP_OFFSET = 1
 const BOUNDARY_SYSTEM_ERROR_CAP = 64
 const INVITE_SECRET_BYTES = 16
 const DIRECT_MEDIA_EXTENSION = /\.(mp4|m4v|webm|ogv|ogg|mp3|wav|m3u8)(?:[?#].*)?$/i
+const HAPPY_PATH_STEPS = [
+  {
+    id: 'paste',
+    title: 'Paste a website',
+    detail: 'YouTube, anime pages, movie pages, or anything both browsers can open.'
+  },
+  {
+    id: 'invite',
+    title: 'Invite your person',
+    detail: 'One private link opens the rabbit-side seat and keeps the room tiny.'
+  },
+  {
+    id: 'sync',
+    title: 'Hit play together',
+    detail: 'Host-led controls keep play, pause, seek, and speed changes obvious.'
+  }
+] as const
+const SOURCE_LANES = [
+  {
+    id: 'website',
+    title: 'Website lane',
+    detail: 'Paste the page you already want to watch and let each browser load it locally.'
+  },
+  {
+    id: 'local',
+    title: 'Local file lane',
+    detail: 'Pick a file when both sides have it; Honeystream shares only metadata and controls.'
+  },
+  {
+    id: 'direct',
+    title: 'Direct link lane',
+    detail: 'Drop a clean MP4, WebM, audio, or stream URL straight into the queue.'
+  }
+] as const
 
 class HostLocalPlaybackEngine implements SessionRuntimePlaybackEngine {
   private disposed = false
@@ -553,6 +587,19 @@ const RuntimeSessionRouteSurface = ({
 
     return (
       <div className={styles.roomGrid}>
+        <section
+          id="runtime_watch_deck"
+          className={`${styles.card} ${styles.watchDeck}`}
+          aria-label="Cozy watch-room happy path"
+        >
+          {SOURCE_LANES.map(lane => (
+            <article key={lane.id}>
+              <span>{lane.title}</span>
+              <p>{lane.detail}</p>
+            </article>
+          ))}
+        </section>
+
         <article className={`${styles.card} ${styles.statusCard}`}>
           <div className={styles.cardHeader}>
             <p className={styles.kicker}>Room status</p>
@@ -609,12 +656,12 @@ const RuntimeSessionRouteSurface = ({
         <section className={`${styles.card} ${styles.stageCard}`}>
           <div className={styles.cardHeader}>
             <p className={styles.kicker}>Playback stage</p>
-            <span>Local preview</span>
+            <span>Website + file preview</span>
           </div>
           <video className={styles.videoStage} controls ref={boundary.mediaElementRef} />
           <p>
-            Queue a website, direct media link, or local file. Honeystream keeps the shared room
-            tiny while each browser loads the thing it can play.
+            Queue a website, direct media link, or local file from the panel beside the stage. The
+            room stays small while each browser loads the thing it can actually play.
           </p>
         </section>
 
@@ -622,10 +669,11 @@ const RuntimeSessionRouteSurface = ({
           className={`${styles.card} ${styles.addMediaPanel}`}
           addFileLabel="Queue local file"
           addUrlLabel="Queue link"
+          description="Paste a supported website, a direct media URL, or choose a local file when both sides have it."
           onAddUrl={boundary.addMediaUrl}
           onAddLocalFile={viewModel.snapshot.role === 'host' ? boundary.addLocalFile : undefined}
-          placeholder="https://youtube.com/watch?v=..."
-          title="Add the next thing"
+          placeholder="https://youtube.com/watch?v=... or https://example.com/movie.mp4"
+          title="Drop the next watch"
         />
 
         <QueueShell
@@ -676,16 +724,37 @@ const RuntimeSessionRouteSurface = ({
         <header className={styles.heroCard}>
           <div>
             <p className={styles.kicker}>Cat + rabbit watch room</p>
-            <h1>Runtime session shell</h1>
+            <h1>Cozy watch room</h1>
             <p>
-              One private room, one invite, and a clean shared queue for websites, direct media, and
-              local files.
+              A soft two-person booth for websites, direct media, and local files. Paste the source,
+              send the invite, then let host-led controls keep both sides together.
             </p>
+            <div
+              id="runtime_happy_path"
+              className={styles.happyPath}
+              aria-label="Cozy room happy path"
+            >
+              {HAPPY_PATH_STEPS.map(step => (
+                <span key={step.id}>
+                  <strong>{step.title}</strong>
+                  {step.detail}
+                </span>
+              ))}
+            </div>
           </div>
           <div className={styles.roomSummary} aria-label="Room summary">
-            <span>Lobby: {lobbyId}</span>
-            <span>2 seats max</span>
-            <span>Host-led sync</span>
+            <span>
+              <strong>Room code</strong>
+              <code>{lobbyId}</code>
+            </span>
+            <span>
+              <strong>Seats</strong>
+              Cat + rabbit only
+            </span>
+            <span>
+              <strong>Sync</strong>
+              Host-led controls
+            </span>
           </div>
         </header>
 

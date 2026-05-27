@@ -665,6 +665,68 @@
   font-size: 0.86rem;
 }
 
+.cozyPact {
+  display: grid;
+  grid-template-columns: minmax(18rem, 1.1fr) repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+  padding: 1rem;
+  border: 1px solid var(--app-panel-border);
+  border-radius: 30px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.16), rgba(36, 28, 53, 0.12));
+  box-shadow: var(--app-panel-shadow);
+  backdrop-filter: blur(24px);
+}
+
+.cozyPactIntro,
+.cozyPact article {
+  min-height: 11.5rem;
+  padding: 1.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 24px;
+  background: rgba(36, 28, 53, 0.18);
+}
+
+.cozyPactIntro {
+  background: radial-gradient(circle at 16% 18%, rgba(158, 215, 255, 0.3), transparent 38%),
+    radial-gradient(circle at 92% 84%, rgba(247, 215, 232, 0.28), transparent 42%),
+    rgba(36, 28, 53, 0.2);
+}
+
+.cozyPact h3 {
+  margin: 0;
+  color: #fff;
+  font-size: 1.95rem;
+  line-height: 1.02;
+  letter-spacing: -0.045em;
+}
+
+.cozyPact article {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.cozyPact article span {
+  color: var(--color-honey);
+  font-size: 0.74rem;
+  font-weight: bold;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.cozyPact article strong {
+  margin-top: 0.75rem;
+  color: #fff;
+  font-size: 1.15rem;
+  line-height: 1.1;
+}
+
+.cozyPact article p {
+  margin: 0.7rem 0 0;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.4rem;
+}
+
 .watchFlow {
   display: grid;
   grid-template-columns: minmax(16rem, 0.86fr) minmax(0, 1.14fr);
@@ -877,6 +939,7 @@
 
   .steps,
   .sourceBoard,
+  .cozyPact,
   .watchFlow,
   .featureGrid {
     grid-template-columns: 1fr;

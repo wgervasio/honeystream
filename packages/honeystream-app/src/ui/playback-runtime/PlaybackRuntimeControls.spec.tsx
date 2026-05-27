@@ -1,8 +1,15 @@
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { PlaybackClockModel } from '../../domain/playback-clock'
-import { PlaybackRuntimeControls, createPlaybackRuntimeControlViewModel } from './PlaybackRuntimeControls'
-import { PlaybackRuntimeControlIntents, PlaybackRuntimeControlsProps, PlaybackRuntimeSessionModel } from './types'
+import {
+  PlaybackRuntimeControls,
+  createPlaybackRuntimeControlViewModel
+} from './PlaybackRuntimeControls'
+import {
+  PlaybackRuntimeControlIntents,
+  PlaybackRuntimeControlsProps,
+  PlaybackRuntimeSessionModel
+} from './types'
 
 interface IntentSpies {
   readonly onNext: jest.Mock
@@ -82,6 +89,7 @@ describe('PlaybackRuntimeControls', () => {
     expectIntentDisabled(html, 'rateDown')
     expectIntentDisabled(html, 'rateUp')
     expectIntentDisabled(html, 'next')
+    expect(html).toContain('0:15')
   })
 
   it('keeps next enabled when a following media item exists without a current media item', () => {
