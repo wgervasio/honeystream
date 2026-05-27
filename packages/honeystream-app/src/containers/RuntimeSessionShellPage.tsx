@@ -306,7 +306,24 @@ export const RuntimeSessionShellPage = ({ match }: RouteComponentProps<IRoutePar
         <header className={styles.heroCard}>
           <p className={styles.kicker}>Runtime session shell</p>
           <h1>Cozy watch room for two</h1>
-          <p>{`Lobby: ${lobbyId}`}</p>
+          <p>
+            Host-authoritative playback with a soft cat-side and rabbit-side layout while live
+            transport credentials finish moving into the runtime path.
+          </p>
+          <div
+            id="runtime_room_motif"
+            className={styles.roomMotif}
+            aria-label="Two-person room motif"
+          >
+            <span className={styles.catNode}>Cat-side host</span>
+            <span className={styles.syncLine} />
+            <span className={styles.rabbitNode}>Rabbit-side guest</span>
+          </div>
+          <div id="runtime_room_checklist" className={styles.roomChecklist}>
+            <span>{`Lobby: ${lobbyId}`}</span>
+            <span>Private invite</span>
+            <span>Synced controls</span>
+          </div>
         </header>
         <SessionRuntimeShellContainer
           className={styles.runtimePanel}

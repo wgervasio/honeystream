@@ -83,6 +83,23 @@
   color: rgba(255, 255, 255, 0.76);
 }
 
+.comfortChecks {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 1.25rem;
+}
+
+.comfortChecks span {
+  min-height: 4.4rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 18px;
+  background: rgba(36, 28, 53, 0.18);
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.25rem;
+}
+
 .label {
   margin-bottom: 0.75rem;
 }
@@ -118,6 +135,10 @@
   }
 
   .hintGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .comfortChecks {
     grid-template-columns: 1fr;
   }
 }

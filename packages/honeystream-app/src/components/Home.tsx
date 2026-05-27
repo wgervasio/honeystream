@@ -44,6 +44,28 @@ class Home extends Component<IProps> {
           'Each person loads the media locally, which keeps shared bytes small and playback responsive.'
       }
     ]
+    const watchFlowCards = [
+      {
+        id: 'pick',
+        eyebrow: 'Pick the vibe',
+        title: 'Drop in a link, local file, or supported site.',
+        body:
+          'The room treats everything like one simple queue, so the next thing to watch is never buried.'
+      },
+      {
+        id: 'sync',
+        eyebrow: 'Stay together',
+        title: 'Host-side controls keep both browsers aligned.',
+        body:
+          'Play, pause, seek, and speed changes stay obvious without turning the night into tech support.'
+      },
+      {
+        id: 'settle',
+        eyebrow: 'Settle in',
+        title: 'A tiny two-person room leaves space for the actual hang.',
+        body: 'No public lobby clutter, no random audience, just one invite and one shared stream.'
+      }
+    ]
 
     return (
       <LayoutMain className={styles.container} showBackButton={false}>
@@ -134,7 +156,47 @@ class Home extends Component<IProps> {
                 A soft command center for deciding what to watch, adding it fast, and staying in
                 sync without digging through menus.
               </p>
+              <div className={styles.comfortGrid} aria-label="Room promises">
+                <span>
+                  <strong>2</strong>
+                  people max
+                </span>
+                <span>
+                  <strong>1</strong>
+                  invite link
+                </span>
+                <span>
+                  <strong>0</strong>
+                  public chaos
+                </span>
+              </div>
             </aside>
+          </section>
+
+          <section
+            id="home_watch_flow"
+            className={styles.watchFlow}
+            aria-labelledby="home_watch_flow_title"
+          >
+            <div className={styles.flowIntro}>
+              <p className={styles.kicker}>Made for the two of you</p>
+              <h3 id="home_watch_flow_title">
+                Cat-side picks the vibe, Rabbit-side hops in, and the room keeps watch night moving.
+              </h3>
+              <p>
+                Honeystream should feel like a cozy little control booth: quick to start, clear
+                about who is connected, and relaxed enough for websites, direct links, and files.
+              </p>
+            </div>
+            <div className={styles.flowRail} aria-label="Watch flow">
+              {watchFlowCards.map(card => (
+                <article key={card.id} className={styles.flowCard}>
+                  <span>{card.eyebrow}</span>
+                  <h4>{card.title}</h4>
+                  <p>{card.body}</p>
+                </article>
+              ))}
+            </div>
           </section>
 
           <section className={styles.steps} aria-label="How Honeystream works">

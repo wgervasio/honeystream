@@ -24,6 +24,11 @@ export class SessionJoin extends Component<IProps> {
             Honeystream keeps the shared connection small: one host, one guest, compact playback
             commands, and media loaded locally by each browser.
           </p>
+          <div id="join_comfort_checks" className={styles.comfortChecks}>
+            <span>Cat-side host sends one invite</span>
+            <span>Rabbit-side guest lands here</span>
+            <span>Controls sync after approval</span>
+          </div>
           <form onSubmit={e => e.preventDefault()}>
             <p className={styles.label}>{t('enterJoinDest')}</p>
             <InputGroup>

@@ -1,10 +1,11 @@
 .header {
   composes: row-center from '~styles/layout.css';
+  min-height: 3.25rem;
 }
 
 .titleContainer,
 .actions {
-  padding: 10px;
+  padding: 10px 12px;
 }
 
 .titleContainer {
@@ -20,13 +21,18 @@
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 2px;
-  margin-right: 5px;
+  margin-right: 8px;
   text-overflow: clip;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.86rem;
 }
 
 .tagline {
   border: 1px solid rgba(255, 255, 255, 0.22);
-  padding: 2px 4px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--color-honey);
   font-size: 12px;
   min-width: 18px;
   text-align: center;
