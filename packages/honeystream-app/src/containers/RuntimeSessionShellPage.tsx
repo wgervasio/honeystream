@@ -206,6 +206,28 @@ const ADD_MEDIA_SUGGESTIONS = [
     url: 'https://example.com/watch-night.mp4'
   }
 ] as const
+const ROOM_READY_SIGNALS = [
+  {
+    id: 'source',
+    label: 'Source picked',
+    detail: 'Exact website page, direct media URL, or local file is queued.'
+  },
+  {
+    id: 'invite',
+    label: 'Invite sent',
+    detail: 'Room code plus secret gets only the rabbit-side guest in.'
+  },
+  {
+    id: 'playback',
+    label: 'Controls obvious',
+    detail: 'Host-led play, pause, seek, rate, and next stay in one place.'
+  },
+  {
+    id: 'notes',
+    label: 'Notes visible',
+    detail: 'Errors and room events stay bounded, readable, and calm.'
+  }
+] as const
 
 class HostLocalPlaybackEngine implements SessionRuntimePlaybackEngine {
   private disposed = false
@@ -828,6 +850,20 @@ const RuntimeSessionRouteSurface = ({
             </span>
           </div>
         </header>
+
+        <section
+          id="runtime_room_signals"
+          className={`${styles.card} ${styles.signalDock}`}
+          aria-label="Room readiness signals"
+        >
+          <strong>Room feels ready when</strong>
+          {ROOM_READY_SIGNALS.map(signal => (
+            <article key={signal.id}>
+              <span>{signal.label}</span>
+              <p>{signal.detail}</p>
+            </article>
+          ))}
+        </section>
 
         <SessionRuntimeShellContainer
           store={boundary.store}
