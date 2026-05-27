@@ -33,6 +33,8 @@ const _IdleScreen = (props: PrivateProps) => {
 
   const addMediaCTA = (
     <>
+      <p className={styles.kicker}>Ready for something good?</p>
+      <h2>Queue a cozy watch night.</h2>
       <p>{t('addMediaCTA')}</p>
       <HighlightButton icon="plus" size="large" highlight onClick={props.openMediaBrowser}>
         {t('addMedia')}

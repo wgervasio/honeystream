@@ -8,6 +8,13 @@ interface Props {
   onRequestLocalFile: (file: File) => void
 }
 
+const siteExamples = [
+  { label: 'YouTube', url: 'https://youtube.com' },
+  { label: 'Anime page', url: 'https://example.com/anime-watch' },
+  { label: 'Movie page', url: 'https://example.com/movie-watch' },
+  { label: 'Direct video', url: 'https://example.com/video.mp4' }
+]
+
 export const HomeScreen = (props: Props) => {
   const urlInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -22,10 +29,11 @@ export const HomeScreen = (props: Props) => {
   return (
     <div className={styles.container}>
       <header className={cx(styles.column, styles.hero)}>
-        <h1>Watch videos in sync.</h1>
+        <p className={styles.kicker}>Add media without wasting shared bytes</p>
+        <h1>Pick a local file or paste a site, then stay happily in sync.</h1>
         <p>
-          Start a session, send the invite link, then add a local file, website video, or direct
-          video URL.
+          Start with what both browsers can access. Honeystream sends compact playback commands
+          while each side loads the actual media locally.
         </p>
       </header>
       <main className={styles.main}>
@@ -54,6 +62,23 @@ export const HomeScreen = (props: Props) => {
           <div className={styles.directLink}>
             <h2>Website or direct link</h2>
             <p>Paste a video page or media URL that both browsers can access.</p>
+            <div className={styles.siteChips} aria-label="Site examples">
+              {siteExamples.map(example => (
+                <button
+                  key={example.label}
+                  type="button"
+                  className={styles.siteChip}
+                  onClick={() => {
+                    if (urlInputRef.current) {
+                      urlInputRef.current.value = example.url
+                      urlInputRef.current.focus()
+                    }
+                  }}
+                >
+                  {example.label}
+                </button>
+              ))}
+            </div>
           </div>
           <div className={styles.inputContainer}>
             <input

@@ -54,6 +54,18 @@ class WelcomePage extends Component<Props> {
         >
           <MenuHeader text={t('welcomeToHoneystream')} />
 
+          <section className={styles.welcomePanel} aria-labelledby="welcome_headline">
+            <p className={styles.kicker}>Your watch night control room</p>
+            <h2 id="welcome_headline">
+              Set your name, invite your person, and settle into a cozy synced stream.
+            </h2>
+            <ul className={styles.checklist}>
+              <li>Private invite links for two people.</li>
+              <li>Local files stay local, so shared bytes stay tiny.</li>
+              <li>Website and direct-link playback stays easy to test.</li>
+            </ul>
+          </section>
+
           <div className={styles.formControl}>
             <label htmlFor="profile_username">{t('chooseDisplayName')}</label>
             <TextInput

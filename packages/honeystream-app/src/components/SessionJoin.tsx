@@ -17,7 +17,13 @@ export class SessionJoin extends Component<IProps> {
     return (
       <LayoutMain className={styles.container}>
         <MenuHeader text={t('joinSession')} />
-        <section>
+        <section className={styles.joinPanel} aria-labelledby="join_headline">
+          <p className={styles.kicker}>Joining a cozy stream?</p>
+          <h2 id="join_headline">Paste the invite link and hop into sync.</h2>
+          <p>
+            Honeystream keeps the shared connection small: one host, one guest, compact playback
+            commands, and media loaded locally by each browser.
+          </p>
           <form onSubmit={e => e.preventDefault()}>
             <p>{t('enterJoinDest')}</p>
             <InputGroup>

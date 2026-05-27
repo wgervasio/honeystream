@@ -3,11 +3,13 @@
   background: var(--app-bg-home);
   justify-content: center;
   align-items: center;
+  overflow: auto;
 }
 
 .column {
   width: 100%;
   max-width: 600px;
+  padding: 2rem;
 }
 
 .column label[for] {
@@ -31,4 +33,48 @@
   color: red;
   font-weight: bold;
   margin: 0.2rem;
+}
+
+.welcomePanel {
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 1.25rem;
+  box-shadow: 0 1rem 2.5rem rgba(57, 21, 47, 0.14);
+}
+
+.kicker {
+  margin-bottom: 0.75rem;
+  color: rgba(52, 25, 29, 0.72);
+  font-size: 0.78rem;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.welcomePanel h2 {
+  color: #fff;
+  font-size: 2rem;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.checklist {
+  margin-top: 1rem;
+}
+
+.checklist li {
+  position: relative;
+  margin-top: 0.65rem;
+  padding-left: 1.6rem;
+  color: rgba(255, 255, 255, 0.84);
+  line-height: 1.35;
+}
+
+.checklist li::before {
+  position: absolute;
+  left: 0;
+  content: '+';
+  color: #fff;
+  font-weight: bold;
 }
