@@ -15,6 +15,12 @@ const siteExamples = [
   { label: 'Direct video', url: 'https://example.com/video.mp4' }
 ]
 
+const addSteps = [
+  'Paste a website both browsers can open',
+  'Queue a local file when you both have it',
+  'Press play once and keep the room synced'
+]
+
 export const HomeScreen = (props: Props) => {
   const urlInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -29,15 +35,30 @@ export const HomeScreen = (props: Props) => {
   return (
     <div className={styles.container}>
       <header className={cx(styles.column, styles.hero)}>
-        <p className={styles.kicker}>Add the next cozy thing without wasting shared bytes</p>
-        <h1>Pick a local file or paste a site, then keep the room flowing.</h1>
+        <p className={styles.kicker}>Website nights without the scramble</p>
+        <h1>Paste a site, pick a file, and keep the two-person room flowing.</h1>
         <p>
-          Honeystream sends compact playback commands while each side loads the actual media
-          locally.
+          Honeystream shares compact playback commands while each side loads the actual media
+          locally, so cat-side and rabbit-side stay focused on the watch.
         </p>
+        <div id="media_easy_path" className={styles.mediaPath} aria-label="Easy media path">
+          {addSteps.map((step, index) => (
+            <span key={step}>
+              <strong>{index + 1}</strong>
+              {step}
+            </span>
+          ))}
+        </div>
       </header>
       <main className={styles.main}>
         <section className={styles.panel}>
+          <div className={styles.panelHeader}>
+            <span className={styles.cardTag}>Quick add</span>
+            <h2>Choose the easiest source for tonight.</h2>
+            <p>
+              Websites first, local files when you both have copies, direct URLs when it is clean.
+            </p>
+          </div>
           <div className={styles.localFile}>
             <span className={styles.cardTag}>Cat-side stash</span>
             <h2>Downloaded video</h2>

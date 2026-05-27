@@ -80,6 +80,8 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('Private invite')
     expect(html).toContain('Cat-side host')
     expect(html).toContain('Rabbit-side guest')
+    expect(html).toContain('Host truth')
+    expect(html).toContain('Easy websites')
     expect(html).toContain('Room warming up')
     expect(html).toContain('Cat-side host: Host')
     expect(html).toContain('Rabbit-side guest: Waiting for your watch buddy')
