@@ -456,6 +456,7 @@ const mapProjectionToShellSnapshot = (
   }
 
   return {
+    role: projection.role,
     session,
     systemErrors: [
       ...(includeLocalWarning ? [LOCAL_ONLY_WARNING] : []),
@@ -558,6 +559,7 @@ const RuntimeSessionRouteSurface = ({
         <video controls ref={boundary.mediaElementRef} />
         <RuntimeAddMediaPanel
           onAddUrl={boundary.addMediaUrl}
+          onAddLocalFile={viewModel.snapshot.role === 'host' ? boundary.addLocalFile : undefined}
         />
         <QueueShell {...queueItems} {...boundary.queueIntents} />
         <PlaybackRuntimeControls

@@ -19,6 +19,7 @@ import {
   PlaybackEngineApplyResult,
   PlaybackEngineDesiredState
 } from '../playback/engine/playbackEngineContract'
+import { LocalFileMetadata } from '../playback/adapters/local-file'
 import { createProjectionStore } from '../ui'
 
 interface RouteParams {
@@ -78,6 +79,44 @@ class FakePlaybackEngine implements SessionRuntimePlaybackEngine {
     return
   }
 }
+
+  class FakeLocalFilePlaybackEngine extends FakePlaybackEngine {
+    registerLocalFile(file: File): LocalFileMetadata {
+      return {
+        kind: 'local-file',
+        key: 'local-key',
+        name: file.name,
+        size: file.size,
+        type: file.type || undefined,
+        lastModified: file.lastModified || undefined
+      }
+    }
+  }
+
+  class TestFile implements File {
+    readonly lastModified = 123
+    readonly name = 'local-movie.mp4'
+    readonly size = 10
+    readonly type = 'video/mp4'
+    readonly webkitRelativePath = ''
+    readonly [Symbol.toStringTag] = 'File'
+
+    arrayBuffer(): Promise<ArrayBuffer> {
+      return Promise.resolve(new ArrayBuffer(0))
+    }
+
+    slice(): Blob {
+      throw new Error('TestFile.slice() is not used in this test suite.')
+    }
+
+    stream(): ReadableStream<Uint8Array> {
+      throw new Error('TestFile.stream() is not used in this test suite.')
+    }
+
+    text(): Promise<string> {
+      return Promise.resolve('')
+    }
+  }
 
 const installCryptoMock = (): (() => void) => {
   const originalCrypto = globalThis.crypto
@@ -255,6 +294,58 @@ describe('createRuntimeSessionShellRouteBoundary', () => {
           kind: 'url',
           source: 'https://example.com/movie.mp4',
           title: 'movie.mp4'
+        }
+      })
+    } finally {
+      boundary.dispose()
+    }
+  })
+
+  it('dispatches host local-file media additions through the runtime command path', async () => {
+    const transportPair = createRouteTransportPair(() => 4000)
+    const dispatchHostCommandSpy = jest.fn(async (_command: HostSessionCommand) => undefined)
+    const runtimeProjection: SessionRuntimeProjection = {
+      role: 'host',
+      lifecycle: 'running',
+      transportState: transportPair.host.getState(),
+      diagnostics: [],
+      runtimeErrors: []
+    }
+    const runtime: RuntimeSession = {
+      getSnapshot(): SessionRuntimeProjection {
+        return runtimeProjection
+      },
+      getProjectionStore() {
+        return createProjectionStore(runtimeProjection)
+      },
+      subscribeToSnapshots(): () => void {
+        return () => undefined
+      },
+      startHostSession: async () => undefined,
+      startGuestSession: async () => undefined,
+      dispatchHostCommand: dispatchHostCommandSpy,
+      dispatchGuestCommand: async (_command: ClientCommand) => undefined,
+      dispose: jest.fn()
+    }
+
+    const boundary = createRuntimeSessionShellRouteBoundary('room-local', {
+      createRuntime: (_deps: SessionRuntimeDependencies) => runtime,
+      createPlaybackEngine: () => new FakeLocalFilePlaybackEngine(),
+      createTransportPair: () => transportPair,
+      now: () => 4000
+    })
+
+    try {
+      await boundary.start()
+      boundary.addLocalFile(new TestFile())
+
+      expect(dispatchHostCommandSpy).toHaveBeenCalledWith({
+        type: 'addMedia',
+        media: {
+          mediaId: 'runtime-media-4000-1',
+          kind: 'localFile',
+          source: 'honeystream-local://local-key',
+          title: 'local-movie.mp4'
         }
       })
     } finally {

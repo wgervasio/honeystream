@@ -12,4 +12,12 @@ describe('RuntimeAddMediaPanel', () => {
     expect(html).toContain('Add URL')
     expect(html).not.toContain('Add local file')
   })
+
+  it('renders local-file controls when a local file callback is provided', () => {
+    const html = renderToStaticMarkup(
+      <RuntimeAddMediaPanel onAddUrl={jest.fn()} onAddLocalFile={jest.fn()} />
+    )
+
+    expect(html).toContain('Add local file')
+  })
 })

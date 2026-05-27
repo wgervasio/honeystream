@@ -17,6 +17,7 @@ const buildProjectionSnapshot = (
   status: SessionRuntimeProjectionSnapshot['session']['status'] = 'connected',
   systemErrors: readonly SessionRuntimeSystemErrorSnapshot[] = []
 ): SessionRuntimeProjectionSnapshot => ({
+  role: 'host',
   session: {
     roomId: 'room-1',
     status,
