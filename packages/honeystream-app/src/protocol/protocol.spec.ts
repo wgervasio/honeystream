@@ -70,7 +70,8 @@ describe('protocol foundation parsers', () => {
     expect(result.ok).toBeTruthy()
     if (result.ok) {
       expect(result.value.direction).toBe('host-to-client')
-      if (result.value.direction === 'host-to-client') expect(result.value.event.type).toBe('snapshot')
+      if (result.value.direction === 'host-to-client')
+        expect(result.value.event.type).toBe('snapshot')
     }
   })
 

@@ -43,7 +43,7 @@ const hostToClientValidator: TransportMessageValidator<HostToClientEnvelope> = {
   describeInvalidMessage: value => describeEnvelope(value, 'host-to-client')
 }
 
-const createFlowHarness = () => {
+const createFlowHarness = (hostEventsCap?: number) => {
   const clock = createFakeClock(1000)
   const peerIds = createFixedIdGenerator(['host-peer', 'guest-peer'])
   const flowIds = createFixedIdGenerator(['room-1', 'invite-1'])
@@ -63,7 +63,8 @@ const createFlowHarness = () => {
     clock,
     idGenerator: {
       nextId: flowIds.nextId
-    }
+    },
+    hostEventsCap
   })
 
   return { flow, clock }
@@ -305,6 +306,132 @@ describe('runtime/flows/hostGuestSessionFlow', () => {
       expect(metrics.combinedByteLossRate).toBe(0)
       expect(metrics.combinedMaxLatencyMs).toBe(12)
       expect(metrics.combinedAverageMessageBytes).toBeLessThan(2500)
+    } finally {
+      flow.dispose()
+    }
+  })
+
+  it('rejects lost guest commands, resyncs, and accepts the next contiguous sequence', async () => {
+    const clock = createFakeClock(3000)
+    const peerIds = createFixedIdGenerator(['host-peer', 'guest-peer'])
+    const flowIds = createFixedIdGenerator(['room-1', 'invite-1'])
+    const randomSamples = [0.9, 0.9, 0.9, 0.1, 0.9, 0.9, 0.9]
+    const pair = createSimulatedPeerTransportPair<ClientToHostEnvelope, HostToClientEnvelope>({
+      hostPeerId: peerIds.nextId(),
+      guestPeerId: peerIds.nextId(),
+      hostInboundValidator: clientToHostValidator,
+      guestInboundValidator: hostToClientValidator,
+      now: clock.nowMs,
+      random: () => {
+        const sample = randomSamples.shift()
+        return typeof sample === 'number' ? sample : 0.9
+      },
+      network: {
+        latencyMs: 5,
+        dropRate: 0.5,
+        maxQueuedFrames: 64
+      }
+    })
+    const flow = createHostGuestSessionFlow({
+      hostUsername: 'HostUser',
+      hostTransport: pair.host,
+      guestTransport: pair.guest,
+      clock,
+      idGenerator: {
+        nextId: flowIds.nextId
+      }
+    })
+
+    try {
+      await flow.connect()
+      flow.sendGuestCommand({
+        type: 'join',
+        username: 'GuestUser',
+        inviteSecret: flow.inviteSecret
+      })
+      pair.flushAll()
+
+      flow.sendGuestCommand({
+        type: 'addMedia',
+        media: {
+          mediaId: 'lost-media',
+          kind: 'website',
+          source: 'https://animepahe.ru/play/lost',
+          title: 'Lost command',
+          durationMs: 120000
+        }
+      })
+      flow.sendGuestCommand({
+        type: 'addMedia',
+        media: {
+          mediaId: 'rejected-after-loss',
+          kind: 'website',
+          source: 'https://cineby.app/movie/rejected',
+          title: 'Rejected after loss',
+          durationMs: 120000
+        }
+      })
+      pair.flushAll()
+
+      expect(flow.hostProjection.getSnapshot().currentMediaId).toBeUndefined()
+      expect(flow.getHostEvents()).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            type: 'protocolRejected'
+          })
+        ])
+      )
+
+      flow.sendGuestCommand({
+        type: 'addMedia',
+        media: {
+          mediaId: 'recovered-media',
+          kind: 'website',
+          source: 'https://miruro.to/watch/recovered',
+          title: 'Recovered command',
+          durationMs: 120000
+        }
+      })
+      pair.flushAll()
+
+      expect(flow.hostProjection.getSnapshot().currentMediaId).toBe('recovered-media')
+      expect(flow.guestProjection.getSnapshot().currentMediaId).toBe('recovered-media')
+      expect(pair.getAggregateMetrics().combinedDroppedMessages).toBeGreaterThan(0)
+    } finally {
+      flow.dispose()
+    }
+  })
+
+  it('bounds retained host events while projections keep their latest state', async () => {
+    const { flow } = createFlowHarness(3)
+
+    try {
+      await flow.connect()
+
+      flow.sendGuestCommand({
+        type: 'join',
+        username: 'GuestUser',
+        inviteSecret: flow.inviteSecret
+      })
+      for (let index = 0; index < 4; index += 1) {
+        flow.sendGuestCommand({
+          type: 'addMedia',
+          media: {
+            mediaId: `media-${index}`,
+            kind: 'website',
+            source: `https://www.youtube.com/watch?v=${index}`,
+            title: `Media ${index}`,
+            durationMs: 120000
+          }
+        })
+      }
+
+      expect(flow.getHostEvents()).toHaveLength(3)
+      expect(flow.hostProjection.getSnapshot().queue.map(item => item.mediaId)).toEqual([
+        'media-1',
+        'media-2',
+        'media-3'
+      ])
     } finally {
       flow.dispose()
     }

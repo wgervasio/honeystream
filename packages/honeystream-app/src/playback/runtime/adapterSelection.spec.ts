@@ -66,6 +66,29 @@ describe('selectPlaybackAdapterKind', () => {
     ).toBe('embed-extension')
   })
 
+  it('keeps explicit blocked ports scoped to the matching origin', () => {
+    const blockedEmbedHosts = new Set<string>(['example.com:3000', 'streaming.site:8443'])
+
+    expect(
+      selectPlaybackAdapterKind(
+        createMedia('port-blocked', 'website', 'https://example.com:3000/watch'),
+        { blockedEmbedHosts }
+      )
+    ).toBe('popup')
+    expect(
+      selectPlaybackAdapterKind(
+        createMedia('port-unblocked', 'website', 'https://example.com:3001/watch'),
+        { blockedEmbedHosts }
+      )
+    ).toBe('embed-extension')
+    expect(
+      selectPlaybackAdapterKind(
+        createMedia('subdomain-blocked', 'website', 'https://cdn.streaming.site/watch'),
+        { blockedEmbedHosts }
+      )
+    ).toBe('embed-extension')
+  })
+
   it('allows http embeds when mixed-content blocking is disabled', () => {
     expect(
       selectPlaybackAdapterKind(createMedia('http', 'website', 'http://example.com/watch'), {

@@ -642,7 +642,7 @@ const RuntimeSessionRouteSurface = ({
         <InviteLinkPanel
           baseUrl={getInviteBaseUrl()}
           className={`${styles.card} ${styles.invitePanel}`}
-          copyLabel="Copy"
+          copyLabel="Copy invite"
           invite={boundary.invite}
           inviteLinkLabel="Invite link"
           onCopyInviteLink={boundary.copyText}
@@ -650,7 +650,7 @@ const RuntimeSessionRouteSurface = ({
           onCopySecret={boundary.copyText}
           roomIdLabel="Room code"
           secretLabel="Room secret"
-          title="Invite your person"
+          title="Invite your watch buddy"
         />
 
         <section className={`${styles.card} ${styles.stageCard}`}>
@@ -660,31 +660,32 @@ const RuntimeSessionRouteSurface = ({
           </div>
           <video className={styles.videoStage} controls ref={boundary.mediaElementRef} />
           <p>
-            Queue a website, direct media link, or local file from the panel beside the stage. The
-            room stays small while each browser loads the thing it can actually play.
+            Queue YouTube, AnimePahe, Cineby, Miruro, direct media, or a local file from the panel
+            beside the stage. The room stays small while each browser loads the thing it can actually
+            play.
           </p>
         </section>
 
         <RuntimeAddMediaPanel
           className={`${styles.card} ${styles.addMediaPanel}`}
           addFileLabel="Queue local file"
-          addUrlLabel="Queue link"
-          description="Paste a supported website, a direct media URL, or choose a local file when both sides have it."
+          addUrlLabel="Queue cozy link"
+          description="Paste a supported website like YouTube, AnimePahe, Cineby, or Miruro; use a direct media URL; or choose a local file when both sides have it."
           onAddUrl={boundary.addMediaUrl}
           onAddLocalFile={viewModel.snapshot.role === 'host' ? boundary.addLocalFile : undefined}
-          placeholder="https://youtube.com/watch?v=... or https://example.com/movie.mp4"
-          title="Drop the next watch"
+          placeholder="Paste YouTube, AnimePahe, Cineby, Miruro, or direct media..."
+          title="Pick the next cozy stream"
         />
 
         <QueueShell
           className={`${styles.card} ${styles.queuePanel}`}
           currentItemClassName={styles.queueCurrent}
-          currentItemEmptyLabel="Nothing playing yet"
+          currentItemEmptyLabel="Nothing playing yet. Pick a cozy first stream."
           currentItemLabel="Now watching"
           nextButtonClassName={styles.queueNextButton}
           nextButtonLabel="Play next"
           queuedItemsClassName={styles.queuedItems}
-          queuedItemsEmptyLabel="Queue is empty. Drop in a link to start."
+          queuedItemsEmptyLabel="Queue is open. Drop in a link for the watch buddy."
           queuedItemsLabel="Up next"
           removeLabel="Remove"
           requestedByLabel="Added by"
@@ -698,8 +699,8 @@ const RuntimeSessionRouteSurface = ({
           session={mapSessionSnapshotToPlaybackModel(viewModel.snapshot.session)}
           intents={boundary.playbackIntents}
           labels={{
-            play: 'Play together',
-            pause: 'Pause together',
+            play: "Let's go",
+            pause: 'Pause here',
             seekBackward: 'Back 10s',
             seekForward: 'Forward 10s',
             rateDown: 'Slower',
@@ -710,7 +711,7 @@ const RuntimeSessionRouteSurface = ({
 
         <SystemEventFeed
           className={`${styles.card} ${styles.eventPanel}`}
-          emptyLabel="No issues yet. The room is calm."
+          emptyLabel="All quiet. The room is cozy."
           events={mapSystemErrorsToEvents(viewModel.snapshot.systemErrors)}
           title="Room notes"
         />
@@ -726,8 +727,9 @@ const RuntimeSessionRouteSurface = ({
             <p className={styles.kicker}>Cat + rabbit watch room</p>
             <h1>Cozy watch room</h1>
             <p>
-              A soft two-person booth for websites, direct media, and local files. Paste the source,
-              send the invite, then let host-led controls keep both sides together.
+              A soft two-person booth for YouTube, AnimePahe, Cineby, Miruro, direct media, and
+              local files. Paste the source, send the invite, then let host-led controls keep both
+              sides together.
             </p>
             <div
               id="runtime_happy_path"

@@ -1,8 +1,4 @@
-import {
-  SessionMediaItem,
-  SessionState,
-  createSessionState
-} from 'domain/session-state'
+import { SessionMediaItem, SessionState, createSessionState } from 'domain/session-state'
 import { SystemEvent } from 'domain/event-log'
 import {
   DomainError,
@@ -27,6 +23,7 @@ import {
   ProtocolError,
   SessionSnapshot
 } from 'protocol/types'
+import { validateInboundSequence } from 'protocol/sequence'
 import { PeerTransport, PeerTransportEvent } from 'transport/contracts'
 import { classifyMediaUrl } from 'runtime/protocol/url-classifier'
 import { ProjectionStore, createProjectionStore } from 'ui'
@@ -46,6 +43,7 @@ export interface CreateHostGuestSessionFlowOptions {
   readonly clock: FlowClock
   readonly idGenerator: FlowIdGenerator
   readonly queueCap?: number
+  readonly hostEventsCap?: number
 }
 
 export interface HostGuestSessionFlow {
@@ -60,11 +58,30 @@ export interface HostGuestSessionFlow {
 }
 
 const DEFAULT_QUEUE_CAP = 50
+const DEFAULT_HOST_EVENTS_CAP = 64
 
 const normalizeQueueCap = (value: number | undefined): number => {
-  if (typeof value !== 'number' || !Number.isFinite(value) || !Number.isInteger(value) || value < 1) {
+  if (
+    typeof value !== 'number' ||
+    !Number.isFinite(value) ||
+    !Number.isInteger(value) ||
+    value < 1
+  ) {
     return DEFAULT_QUEUE_CAP
   }
+  return value
+}
+
+const normalizeHostEventsCap = (value: number | undefined): number => {
+  if (
+    typeof value !== 'number' ||
+    !Number.isFinite(value) ||
+    !Number.isInteger(value) ||
+    value < 1
+  ) {
+    return DEFAULT_HOST_EVENTS_CAP
+  }
+
   return value
 }
 
@@ -131,14 +148,17 @@ const toProtocolRejected = (message: string, path: string): ProtocolError => ({
   path
 })
 
-const mapSystemEventToHostEvent = (state: SessionState, event: SystemEvent): HostEvent | undefined => {
+const mapSystemEventToHostEvent = (
+  state: SessionState,
+  event: SystemEvent
+): HostEvent | undefined => {
   if (event.type === 'participantJoined') {
     const participant =
       state.participants.host.id === event.participantId
         ? state.participants.host
         : state.participants.guest && state.participants.guest.id === event.participantId
-          ? state.participants.guest
-          : undefined
+        ? state.participants.guest
+        : undefined
 
     if (!participant) {
       return undefined
@@ -179,6 +199,8 @@ const insertQueuedMedia = (
   return nextQueue
 }
 
+const nextEventCursor = (snapshot: SessionSnapshot): number => snapshot.eventCursor + 1
+
 export const applyHostEventToSnapshot = (
   snapshot: SessionSnapshot,
   event: HostEvent
@@ -192,7 +214,10 @@ export const applyHostEventToSnapshot = (
           snapshot.participants.host.peerId === event.participant.peerId &&
           snapshot.participants.host.username === event.participant.username
         ) {
-          return snapshot
+          return {
+            ...snapshot,
+            eventCursor: nextEventCursor(snapshot)
+          }
         }
 
         return {
@@ -200,7 +225,8 @@ export const applyHostEventToSnapshot = (
           participants: {
             ...snapshot.participants,
             host: event.participant
-          }
+          },
+          eventCursor: nextEventCursor(snapshot)
         }
       }
 
@@ -209,7 +235,10 @@ export const applyHostEventToSnapshot = (
         snapshot.participants.guest.peerId === event.participant.peerId &&
         snapshot.participants.guest.username === event.participant.username
       ) {
-        return snapshot
+        return {
+          ...snapshot,
+          eventCursor: nextEventCursor(snapshot)
+        }
       }
 
       return {
@@ -218,67 +247,86 @@ export const applyHostEventToSnapshot = (
         participants: {
           host: snapshot.participants.host,
           guest: event.participant
-        }
+        },
+        eventCursor: nextEventCursor(snapshot)
       }
     case 'participantLeft':
-      if (
-        snapshot.participants.guest &&
-        snapshot.participants.guest.peerId === event.peerId
-      ) {
+      if (snapshot.participants.guest && snapshot.participants.guest.peerId === event.peerId) {
         return {
           ...snapshot,
           status: 'hosting',
           participants: {
             host: snapshot.participants.host
-          }
+          },
+          eventCursor: nextEventCursor(snapshot)
         }
       }
 
       if (snapshot.participants.host.peerId === event.peerId) {
         return {
           ...snapshot,
-          status: 'ended'
+          status: 'ended',
+          eventCursor: nextEventCursor(snapshot)
         }
       }
 
-      return snapshot
+      return {
+        ...snapshot,
+        eventCursor: nextEventCursor(snapshot)
+      }
     case 'mediaQueued':
       return {
         ...snapshot,
-        queue: insertQueuedMedia(snapshot.queue, event.media, event.position)
+        queue: insertQueuedMedia(snapshot.queue, event.media, event.position),
+        eventCursor: nextEventCursor(snapshot)
       }
     case 'mediaRemoved': {
       const nextQueue = snapshot.queue.filter(item => item.mediaId !== event.mediaId)
       if (nextQueue.length === snapshot.queue.length) {
-        return snapshot
+        return {
+          ...snapshot,
+          eventCursor: nextEventCursor(snapshot)
+        }
       }
 
       return {
         ...snapshot,
-        queue: nextQueue
+        queue: nextQueue,
+        eventCursor: nextEventCursor(snapshot)
       }
     }
     case 'currentMediaChanged':
       if (snapshot.currentMediaId === event.mediaId) {
-        return snapshot
+        return {
+          ...snapshot,
+          eventCursor: nextEventCursor(snapshot)
+        }
       }
 
       return {
         ...snapshot,
-        currentMediaId: event.mediaId
+        currentMediaId: event.mediaId,
+        eventCursor: nextEventCursor(snapshot)
       }
     case 'playbackChanged':
       if (playbackSnapshotEquals(snapshot.playback, event.playback)) {
-        return snapshot
+        return {
+          ...snapshot,
+          eventCursor: nextEventCursor(snapshot)
+        }
       }
 
       return {
         ...snapshot,
-        playback: event.playback
+        playback: event.playback,
+        eventCursor: nextEventCursor(snapshot)
       }
     case 'systemError':
     case 'protocolRejected':
-      return snapshot
+      return {
+        ...snapshot,
+        eventCursor: nextEventCursor(snapshot)
+      }
   }
 }
 
@@ -297,10 +345,7 @@ const deriveCommandEvents = (
         type: 'currentMediaChanged',
         mediaId: nextState.current ? nextState.current.id : undefined
       })
-    } else if (
-      previousState.queue.length < nextState.queue.length &&
-      nextState.queue.length > 0
-    ) {
+    } else if (previousState.queue.length < nextState.queue.length && nextState.queue.length > 0) {
       const queued = nextState.queue[nextState.queue.length - 1]
       events.push({
         type: 'mediaQueued',
@@ -369,6 +414,7 @@ export const createHostGuestSessionFlow = (
   options: CreateHostGuestSessionFlowOptions
 ): HostGuestSessionFlow => {
   const queueCap = normalizeQueueCap(options.queueCap)
+  const hostEventsCap = normalizeHostEventsCap(options.hostEventsCap)
   const roomId = options.idGenerator.nextId()
   const inviteSecret = options.idGenerator.nextId()
 
@@ -386,6 +432,8 @@ export const createHostGuestSessionFlow = (
   const hostEvents: HostEvent[] = []
   let nextClientSeq = 0
   let nextHostSeq = 0
+  let expectedClientSeq: number | undefined
+  let expectedHostSeq: number | undefined
   let disposed = false
 
   const emitHostEvent = (event: HostEvent): void => {
@@ -394,6 +442,9 @@ export const createHostGuestSessionFlow = (
     nextHostSeq += 1
 
     hostEvents.push(event)
+    if (hostEvents.length > hostEventsCap) {
+      hostEvents.splice(0, hostEvents.length - hostEventsCap)
+    }
     const message: HostToClientEnvelope = {
       version: PROTOCOL_VERSION,
       direction: 'host-to-client',
@@ -407,6 +458,18 @@ export const createHostGuestSessionFlow = (
       sentAtMs,
       message
     })
+  }
+
+  const validateClientSequence = (seq: number): ProtocolError | undefined => {
+    const validation = validateInboundSequence(expectedClientSeq, seq)
+    expectedClientSeq = validation.nextExpectedSeq
+    return validation.ok ? undefined : validation.error
+  }
+
+  const validateHostSequence = (seq: number): ProtocolError | undefined => {
+    const validation = validateInboundSequence(expectedHostSeq, seq)
+    expectedHostSeq = validation.nextExpectedSeq
+    return validation.ok ? undefined : validation.error
   }
 
   const emitSnapshot = (): void => {
@@ -446,10 +509,17 @@ export const createHostGuestSessionFlow = (
     })
   }
 
-  const handleClientCommand = (
-    envelope: ClientToHostEnvelope,
-    fromPeerId: string
-  ): void => {
+  const handleClientCommand = (envelope: ClientToHostEnvelope, fromPeerId: string): void => {
+    const sequenceError = validateClientSequence(envelope.seq)
+    if (sequenceError) {
+      emitHostEvent({
+        type: 'protocolRejected',
+        error: sequenceError
+      })
+      emitSnapshot()
+      return
+    }
+
     const command = envelope.command
 
     if (command.type === 'join') {
@@ -507,7 +577,11 @@ export const createHostGuestSessionFlow = (
     }
 
     if (command.type === 'removeMedia') {
-      commitTransition(previousState, transitionRemoveQueuedMedia(state, command.mediaId, nowHostMs), command)
+      commitTransition(
+        previousState,
+        transitionRemoveQueuedMedia(state, command.mediaId, nowHostMs),
+        command
+      )
       return
     }
 
@@ -522,21 +596,51 @@ export const createHostGuestSessionFlow = (
     }
 
     if (command.type === 'seek') {
-      commitTransition(previousState, transitionSeekPlayback(state, command.positionMs, nowHostMs), command)
+      commitTransition(
+        previousState,
+        transitionSeekPlayback(state, command.positionMs, nowHostMs),
+        command
+      )
       return
     }
 
     if (command.type === 'setRate') {
-      commitTransition(previousState, transitionSetPlaybackRate(state, command.rate, nowHostMs), command)
+      commitTransition(
+        previousState,
+        transitionSetPlaybackRate(state, command.rate, nowHostMs),
+        command
+      )
       return
     }
 
     commitTransition(previousState, transitionAdvanceQueue(state, nowHostMs), command)
   }
 
-  const handleHostTransportEvent = (
-    event: PeerTransportEvent<ClientToHostEnvelope>
-  ): void => {
+  const sendGuestCommand = (command: ClientCommand): void => {
+    if (disposed) {
+      throw new Error('Cannot send guest command after host/guest session flow disposal.')
+    }
+
+    const sentAtMs = options.clock.nowMs()
+    const seq = nextClientSeq
+    nextClientSeq += 1
+
+    const message: ClientToHostEnvelope = {
+      version: PROTOCOL_VERSION,
+      direction: 'client-to-host',
+      seq,
+      sentAtMs,
+      command
+    }
+
+    options.guestTransport.send({
+      seq,
+      sentAtMs,
+      message
+    })
+  }
+
+  const handleHostTransportEvent = (event: PeerTransportEvent<ClientToHostEnvelope>): void => {
     if (event.type !== 'message') {
       return
     }
@@ -544,17 +648,24 @@ export const createHostGuestSessionFlow = (
     handleClientCommand(event.delivery.envelope.message, event.delivery.fromPeerId)
   }
 
-  const handleGuestTransportEvent = (
-    event: PeerTransportEvent<HostToClientEnvelope>
-  ): void => {
+  const handleGuestTransportEvent = (event: PeerTransportEvent<HostToClientEnvelope>): void => {
     if (event.type !== 'message') {
       return
     }
 
-    const nextSnapshot = applyHostEventToSnapshot(
-      guestProjection.getSnapshot(),
-      event.delivery.envelope.message.event
-    )
+    const message = event.delivery.envelope.message
+    const sequenceError = validateHostSequence(message.seq)
+    if (sequenceError) {
+      const nextSnapshot = applyHostEventToSnapshot(guestProjection.getSnapshot(), {
+        type: 'protocolRejected',
+        error: sequenceError
+      })
+      guestProjection.setSnapshot(nextSnapshot)
+      sendGuestCommand({ type: 'requestSnapshot', reason: 'resync' })
+      return
+    }
+
+    const nextSnapshot = applyHostEventToSnapshot(guestProjection.getSnapshot(), message.event)
     guestProjection.setSnapshot(nextSnapshot)
   }
 
@@ -573,29 +684,7 @@ export const createHostGuestSessionFlow = (
 
       return options.hostTransport.connect()
     },
-    sendGuestCommand(command: ClientCommand): void {
-      if (disposed) {
-        throw new Error('Cannot send guest command after host/guest session flow disposal.')
-      }
-
-      const sentAtMs = options.clock.nowMs()
-      const seq = nextClientSeq
-      nextClientSeq += 1
-
-      const message: ClientToHostEnvelope = {
-        version: PROTOCOL_VERSION,
-        direction: 'client-to-host',
-        seq,
-        sentAtMs,
-        command
-      }
-
-      options.guestTransport.send({
-        seq,
-        sentAtMs,
-        message
-      })
-    },
+    sendGuestCommand,
     getHostEvents(): readonly HostEvent[] {
       return hostEvents.slice()
     },

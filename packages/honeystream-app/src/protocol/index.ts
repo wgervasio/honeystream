@@ -9,3 +9,4 @@ export {
   WireEnvelope
 } from './types'
 export * from './parsers'
+export { validateInboundSequence, InboundSequenceValidation } from './sequence'

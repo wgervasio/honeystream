@@ -44,7 +44,7 @@ describe('session', () => {
       await waitForRuntimeText(page, 'Hosting room')
       await waitForRuntimeText(page, 'Invite link')
       await waitForRuntimeText(page, 'Website lane')
-      await waitForRuntimeText(page, 'Drop the next watch')
+      await waitForRuntimeText(page, 'Pick the next cozy stream')
       await ms.screenshot('session_host')
     })
 

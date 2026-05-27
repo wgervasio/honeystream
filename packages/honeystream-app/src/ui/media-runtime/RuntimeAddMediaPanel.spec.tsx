@@ -24,4 +24,17 @@ describe('RuntimeAddMediaPanel', () => {
 
     expect(html).toContain('Add local file')
   })
+
+  it('renders custom happy-path title and placeholder copy', () => {
+    const html = renderToStaticMarkup(
+      <RuntimeAddMediaPanel
+        onAddUrl={jest.fn()}
+        title="Pick the next cozy stream"
+        placeholder="Paste YouTube, AnimePahe, Cineby, Miruro, or direct media"
+      />
+    )
+
+    expect(html).toContain('Pick the next cozy stream')
+    expect(html).toContain('Paste YouTube, AnimePahe, Cineby, Miruro, or direct media')
+  })
 })

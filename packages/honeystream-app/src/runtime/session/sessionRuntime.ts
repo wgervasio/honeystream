@@ -19,10 +19,20 @@ import {
   MediaSnapshot,
   PROTOCOL_VERSION,
   ProtocolError,
+  SnapshotRequestReason,
   WireEnvelope
 } from 'protocol/types'
-import { PeerTransportEvent, PeerTransportMessageDelivery, TransportUnsubscribe } from 'transport/contracts'
-import { createProjectionStore, ProjectionStore, ProjectionUnsubscribe } from 'ui/externalStoreProjection'
+import { validateInboundSequence } from 'protocol/sequence'
+import {
+  PeerTransportEvent,
+  PeerTransportMessageDelivery,
+  TransportUnsubscribe
+} from 'transport/contracts'
+import {
+  createProjectionStore,
+  ProjectionStore,
+  ProjectionUnsubscribe
+} from 'ui/externalStoreProjection'
 import {
   HostSessionCommand,
   SessionRuntime,
@@ -45,7 +55,12 @@ const DEFAULT_RUNTIME_ERROR_CAP = 32
 const DEFAULT_MEDIA_CACHE_CAP = 64
 
 const normalizeCap = (value: number | undefined, fallback: number): number => {
-  if (typeof value !== 'number' || !Number.isFinite(value) || !Number.isInteger(value) || value < 1) {
+  if (
+    typeof value !== 'number' ||
+    !Number.isFinite(value) ||
+    !Number.isInteger(value) ||
+    value < 1
+  ) {
     return fallback
   }
   return value
@@ -103,6 +118,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
   private runtimeErrors: readonly string[] = []
   private eventCursor = 0
   private sequence = 0
+  private expectedInboundSeq: number | undefined
   private disposed = false
   private inboundQueue: Promise<void> = Promise.resolve()
 
@@ -151,6 +167,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
     this.lifecycle = 'starting'
     this.hostInviteSecret = input.inviteSecret.trim()
     this.eventCursor = 0
+    this.expectedInboundSeq = undefined
     this.hostState = createSessionState({
       roomId: input.roomId,
       hostId: this.transport.localPeerId,
@@ -175,6 +192,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
     this.role = 'guest'
     this.lifecycle = 'starting'
     this.expectedGuestRoomId = input.roomId
+    this.expectedInboundSeq = undefined
     this.updateProjection()
 
     await this.transport.connect()
@@ -242,11 +260,14 @@ export class DefaultSessionRuntime implements SessionRuntime {
       })
   }
 
-  private async handleInboundDelivery(delivery: PeerTransportMessageDelivery<unknown>): Promise<void> {
+  private async handleInboundDelivery(
+    delivery: PeerTransportMessageDelivery<unknown>
+  ): Promise<void> {
     const parsed = parseWireEnvelope(delivery.envelope.message)
     if (!parsed.ok) {
       this.recordProtocolDiagnostic(parsed.error)
-      if (this.role === 'host') this.trySendHostEvent({ type: 'protocolRejected', error: parsed.error })
+      if (this.role === 'host')
+        this.trySendHostEvent({ type: 'protocolRejected', error: parsed.error })
       return
     }
 
@@ -257,6 +278,11 @@ export class DefaultSessionRuntime implements SessionRuntime {
         this.trySendHostEvent({ type: 'protocolRejected', error: protocolError })
         return
       }
+      const sequenceError = this.validateInboundDeliverySequence(parsed.value.seq)
+      if (sequenceError) {
+        this.trySendHostEvent({ type: 'protocolRejected', error: sequenceError })
+        return
+      }
       await this.applyHostClientCommand(parsed.value.command, delivery.fromPeerId, true)
       return
     }
@@ -264,6 +290,11 @@ export class DefaultSessionRuntime implements SessionRuntime {
     if (this.role === 'guest') {
       if (parsed.value.direction !== 'host-to-client') {
         this.recordProtocolDiagnostic(invalidDirectionError(parsed.value.direction))
+        return
+      }
+      const sequenceError = this.validateInboundDeliverySequence(parsed.value.seq)
+      if (sequenceError) {
+        this.tryRequestGuestSnapshot('resync')
         return
       }
       await this.applyGuestHostEvent(parsed.value.event)
@@ -287,21 +318,30 @@ export class DefaultSessionRuntime implements SessionRuntime {
     switch (command.type) {
       case 'join':
         if (command.inviteSecret !== this.hostInviteSecret) {
-          const protocolError = invalidCommandError('Invite secret was rejected by host.', 'command.inviteSecret')
+          const protocolError = invalidCommandError(
+            'Invite secret was rejected by host.',
+            'command.inviteSecret'
+          )
           this.recordProtocolDiagnostic(protocolError)
           this.trySendHostEvent({ type: 'protocolRejected', error: protocolError })
           return
         }
-        ;({ state: nextState, errors: domainErrors } = transitionGuestJoined(state, fromPeerId, command.username, nowHostMs))
+        ;({ state: nextState, errors: domainErrors } = transitionGuestJoined(
+          state,
+          fromPeerId,
+          command.username,
+          nowHostMs
+        ))
         break
       case 'leave':
-        ;({ state: nextState, errors: domainErrors } = transitionGuestLeft(state, fromPeerId, nowHostMs))
+        ;({ state: nextState, errors: domainErrors } = transitionGuestLeft(
+          state,
+          fromPeerId,
+          nowHostMs
+        ))
         break
       case 'addMedia':
-        ;({
-          state: nextState,
-          errors: domainErrors
-        } = transitionQueueMedia(
+        ;({ state: nextState, errors: domainErrors } = transitionQueueMedia(
           state,
           toSessionMediaItem(command.media, fromPeerId),
           nowHostMs,
@@ -309,17 +349,29 @@ export class DefaultSessionRuntime implements SessionRuntime {
         ))
         break
       case 'removeMedia':
-        ;({ state: nextState, errors: domainErrors } = transitionRemoveQueuedMedia(state, command.mediaId, nowHostMs))
+        ;({ state: nextState, errors: domainErrors } = transitionRemoveQueuedMedia(
+          state,
+          command.mediaId,
+          nowHostMs
+        ))
         break
       case 'playPause':
         if ((state.playback.state === 'playing') === command.playing) break
         ;({ state: nextState, errors: domainErrors } = transitionTogglePlayback(state, nowHostMs))
         break
       case 'seek':
-        ;({ state: nextState, errors: domainErrors } = transitionSeekPlayback(state, command.positionMs, nowHostMs))
+        ;({ state: nextState, errors: domainErrors } = transitionSeekPlayback(
+          state,
+          command.positionMs,
+          nowHostMs
+        ))
         break
       case 'setRate':
-        ;({ state: nextState, errors: domainErrors } = transitionSetPlaybackRate(state, command.rate, nowHostMs))
+        ;({ state: nextState, errors: domainErrors } = transitionSetPlaybackRate(
+          state,
+          command.rate,
+          nowHostMs
+        ))
         break
       case 'next':
         ;({ state: nextState, errors: domainErrors } = transitionAdvanceQueue(state, nowHostMs))
@@ -342,7 +394,11 @@ export class DefaultSessionRuntime implements SessionRuntime {
     for (const domainError of domainErrors) {
       const protocolError = toProtocolErrorFromDomainError(domainError)
       this.recordProtocolDiagnostic(protocolError)
-      this.trySendHostEvent({ type: 'systemError', errorCode: domainError.code, message: domainError.message })
+      this.trySendHostEvent({
+        type: 'systemError',
+        errorCode: domainError.code,
+        message: domainError.message
+      })
     }
 
     const snapshot = toSessionSnapshot(this.requireHostState(), this.eventCursor)
@@ -356,6 +412,9 @@ export class DefaultSessionRuntime implements SessionRuntime {
   private async applyGuestHostEvent(event: HostEvent): Promise<void> {
     if (event.type === 'protocolRejected') {
       this.recordProtocolDiagnostic(event.error)
+      if (event.error.code === 'unsupportedVersion') {
+        this.recordRuntimeError('Protocol version mismatch. Reload the room to reconnect safely.')
+      }
     } else if (event.type === 'systemError') {
       this.recordRuntimeError(`[host:${event.errorCode}] ${event.message}`)
     }
@@ -364,7 +423,9 @@ export class DefaultSessionRuntime implements SessionRuntime {
     if (!nextSession) return
     if (this.expectedGuestRoomId && nextSession.roomId !== this.expectedGuestRoomId) {
       this.recordRuntimeError(
-        `Received snapshot room "${nextSession.roomId}" while expecting "${this.expectedGuestRoomId}".`
+        `Received snapshot room "${nextSession.roomId}" while expecting "${
+          this.expectedGuestRoomId
+        }".`
       )
       return
     }
@@ -401,6 +462,23 @@ export class DefaultSessionRuntime implements SessionRuntime {
     })
   }
 
+  private tryRequestGuestSnapshot(reason: SnapshotRequestReason): void {
+    if (this.disposed) return
+    if (this.role !== 'guest') return
+    if (this.transport.getState().status !== 'connected') return
+
+    this.sendWireEnvelope({
+      version: PROTOCOL_VERSION,
+      direction: 'client-to-host',
+      seq: this.nextSequence(),
+      sentAtMs: this.now(),
+      command: {
+        type: 'requestSnapshot',
+        reason
+      }
+    })
+  }
+
   private sendWireEnvelope(envelope: WireEnvelope): void {
     this.transport.send({
       seq: envelope.seq,
@@ -414,9 +492,18 @@ export class DefaultSessionRuntime implements SessionRuntime {
     return this.sequence
   }
 
-  private updateProjection(
-    overrides: Partial<SessionRuntimeProjection> = {}
-  ): void {
+  private validateInboundDeliverySequence(seq: number): ProtocolError | undefined {
+    const validation = validateInboundSequence(this.expectedInboundSeq, seq)
+    this.expectedInboundSeq = validation.nextExpectedSeq
+    if (validation.ok) {
+      return undefined
+    }
+
+    this.recordProtocolDiagnostic(validation.error)
+    return validation.error
+  }
+
+  private updateProjection(overrides: Partial<SessionRuntimeProjection> = {}): void {
     this.projection = {
       role: this.role,
       lifecycle: this.lifecycle,
@@ -440,14 +527,17 @@ export class DefaultSessionRuntime implements SessionRuntime {
   private recordRuntimeError(message: string): void {
     this.runtimeErrors = [...this.runtimeErrors, message]
     if (this.runtimeErrors.length > this.runtimeErrorCap) {
-      this.runtimeErrors = this.runtimeErrors.slice(this.runtimeErrors.length - this.runtimeErrorCap)
+      this.runtimeErrors = this.runtimeErrors.slice(
+        this.runtimeErrors.length - this.runtimeErrorCap
+      )
     }
     this.updateProjection()
   }
 
   private assertCanStart(action: string): void {
     if (this.disposed) throw new Error(`[SessionRuntime] [disposed] ${action} called after dispose`)
-    if (this.role !== 'uninitialized') throw new Error(`[SessionRuntime] ${action} may only run once`)
+    if (this.role !== 'uninitialized')
+      throw new Error(`[SessionRuntime] ${action} may only run once`)
   }
 
   private assertHostRunning(action: string): void {
