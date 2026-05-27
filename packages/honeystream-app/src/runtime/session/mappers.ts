@@ -2,6 +2,7 @@ import { SessionMediaItem, SessionMediaKind, SessionState } from 'domain/session
 import { PlaybackEngineDesiredState } from 'playback/engine/playbackEngineContract'
 import { PlaybackMediaSource } from 'playback/adapters/shared/playbackAdapter'
 import { HostEvent, MediaSnapshot, SessionSnapshot } from 'protocol/types'
+import { classifyMediaUrl } from 'runtime/protocol/url-classifier'
 
 const toSessionMediaKind = (kind: MediaSnapshot['kind'] | SessionMediaKind | undefined): SessionMediaKind =>
   kind === 'localFile' || kind === 'website' ? kind : 'url'
@@ -21,7 +22,7 @@ const toPlaybackMediaSource = (
 
 const toMediaSnapshot = (media: SessionMediaItem): MediaSnapshot => ({
   mediaId: media.id,
-  kind: toSessionMediaKind(media.kind),
+  kind: toSessionMediaKind(media.kind || classifyMediaUrl(media.url)),
   source: media.url,
   title: media.title,
   durationMs: media.durationMs

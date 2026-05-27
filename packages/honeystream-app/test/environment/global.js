@@ -12,7 +12,7 @@ async function setup(jestConfig = {}) {
   if (isCI) {
     await setupServer([
       {
-        command: 'yarn start',
+        command: 'cross-env HONEYSTREAM_SIGNAL_SERVER=ws://localhost:27064 yarn start',
         launchTimeout: 120e3,
         port: 8080,
         waitOnScheme: {

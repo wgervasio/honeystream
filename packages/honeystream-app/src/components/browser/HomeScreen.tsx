@@ -10,8 +10,8 @@ interface Props {
 
 const siteExamples = [
   { label: 'YouTube', url: 'https://youtube.com' },
-  { label: 'Anime page', url: 'https://example.com/anime-watch' },
-  { label: 'Movie page', url: 'https://example.com/movie-watch' },
+  { label: 'Anime night', url: 'https://example.com/anime-watch' },
+  { label: 'Movie night', url: 'https://example.com/movie-watch' },
   { label: 'Direct video', url: 'https://example.com/video.mp4' }
 ]
 
@@ -48,6 +48,21 @@ export const HomeScreen = (props: Props) => {
               {step}
             </span>
           ))}
+        </div>
+        <div
+          id="media_pair_preview"
+          className={styles.pairPreview}
+          aria-label="Two-person media flow"
+        >
+          <span className={styles.catCard}>
+            <strong>Cat-side</strong>
+            Picks the source
+          </span>
+          <span className={styles.syncBadge}>Tiny sync commands</span>
+          <span className={styles.rabbitCard}>
+            <strong>Rabbit-side</strong>
+            Loads it locally
+          </span>
         </div>
       </header>
       <main className={styles.main}>
