@@ -129,6 +129,26 @@ class Home extends Component<IProps> {
         label: 'simple controls'
       }
     ]
+    const cozyPactCards = [
+      {
+        id: 'cat-side',
+        label: 'Cat-side',
+        title: 'Keeps the queue tidy',
+        body: 'Paste the site, line up the next pick, and steer playback without clutter.'
+      },
+      {
+        id: 'rabbit-side',
+        label: 'Rabbit-side',
+        title: 'Hops in from the invite',
+        body: 'Join the exact room, see what is queued, and stay synced without guessing.'
+      },
+      {
+        id: 'together',
+        label: 'Together',
+        title: 'One warm control booth',
+        body: 'Websites, direct links, and local files live in the same simple watch flow.'
+      }
+    ]
 
     return (
       <LayoutMain className={styles.container} showBackButton={false}>
@@ -313,6 +333,26 @@ class Home extends Component<IProps> {
                 <span key={item}>{item}</span>
               ))}
             </div>
+          </section>
+
+          <section
+            id="home_cozy_pact"
+            className={styles.cozyPact}
+            aria-labelledby="home_cozy_pact_title"
+          >
+            <div className={styles.cozyPactIntro}>
+              <p className={styles.kicker}>Couple-mode UX</p>
+              <h3 id="home_cozy_pact_title">
+                Cute enough to feel personal, clear enough to start watching fast.
+              </h3>
+            </div>
+            {cozyPactCards.map(card => (
+              <article key={card.id}>
+                <span>{card.label}</span>
+                <strong>{card.title}</strong>
+                <p>{card.body}</p>
+              </article>
+            ))}
           </section>
 
           <section

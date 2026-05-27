@@ -4,6 +4,7 @@ export interface RuntimeAddMediaPanelProps {
   readonly addFileLabel?: string
   readonly addUrlLabel?: string
   readonly className?: string
+  readonly description?: string
   readonly onAddLocalFile?: (file: File) => void
   readonly onAddUrl: (url: string) => void
   readonly placeholder?: string
@@ -30,6 +31,7 @@ export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
   return (
     <section className={props.className}>
       <p>{props.title || 'Add media'}</p>
+      {props.description ? <p data-add-media-description="true">{props.description}</p> : null}
       <form onSubmit={submitUrl}>
         <label htmlFor="runtime-add-media-url">Media URL</label>
         <input
@@ -38,6 +40,7 @@ export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
           value={url}
           placeholder={props.placeholder || 'https://example.com/video.mp4'}
           onChange={event => setUrl(event.currentTarget.value)}
+          required
         />
         <button type="submit">{props.addUrlLabel || 'Add URL'}</button>
       </form>
@@ -61,4 +64,3 @@ export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
     </section>
   )
 })
-

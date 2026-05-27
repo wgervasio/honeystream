@@ -156,12 +156,16 @@ describe('RuntimeSessionShellPage', () => {
       restoreCrypto()
     }
 
-    expect(html).toContain('Runtime session shell')
-    expect(html).toContain('Lobby: room-123')
+    expect(html).toContain('Cozy watch room')
+    expect(html).toContain('Room code')
+    expect(html).toContain('room-123')
+    expect(html).toContain('Paste a website')
+    expect(html).toContain('Website lane')
     expect(html).toContain('Warming up')
     expect(html).toContain('Cat-side: Host')
     expect(html).toContain('Rabbit-side: Waiting for rabbit-side guest')
     expect(html).toContain('Invite your person')
+    expect(html).toContain('Drop the next watch')
     expect((html.match(/>Copy</g) || []).length).toBe(3)
   })
 })

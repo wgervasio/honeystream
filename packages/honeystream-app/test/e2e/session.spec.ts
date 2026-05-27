@@ -38,9 +38,13 @@ describe('session', () => {
     it('should start a session', async () => {
       await ms.visit(`/join/${hostId}`)
       await page.waitForSelector(RUNTIME_SHELL_SELECTOR)
+      await page.waitForSelector('#runtime_happy_path')
+      await page.waitForSelector('#runtime_watch_deck')
+      await waitForRuntimeText(page, 'Cozy watch room')
       await waitForRuntimeText(page, 'Hosting room')
       await waitForRuntimeText(page, 'Invite link')
-      await waitForRuntimeText(page, 'Add the next thing')
+      await waitForRuntimeText(page, 'Website lane')
+      await waitForRuntimeText(page, 'Drop the next watch')
       await ms.screenshot('session_host')
     })
 
