@@ -83,6 +83,35 @@ class Home extends Component<IProps> {
         detail: 'Play, pause, seek, and speed changes stay obvious.'
       }
     ]
+    const sourceLaneCards = [
+      {
+        id: 'websites',
+        label: 'Website lane',
+        title: 'Paste the page you already want to watch.',
+        body:
+          'Best for YouTube, anime sites, movie pages, and anything both browsers can open with the same login.'
+      },
+      {
+        id: 'files',
+        label: 'Local lane',
+        title: 'Pick a local file when you both have the download.',
+        body:
+          'The room shares the title and playback commands while each side keeps private files on-device.'
+      },
+      {
+        id: 'direct',
+        label: 'Direct lane',
+        title: 'Use clean media URLs when the source is simple.',
+        body:
+          'A direct MP4, WebM, or audio link goes straight into the queue without making the UI feel busy.'
+      }
+    ]
+    const vibeDockItems = [
+      'One invite link',
+      'Two comfy seats',
+      'Website-ready queue',
+      'Host-led controls'
+    ]
     const heroMetrics = [
       {
         id: 'invite',
@@ -252,6 +281,38 @@ class Home extends Component<IProps> {
                 </span>
               </div>
             </aside>
+          </section>
+
+          <section
+            id="home_source_board"
+            className={styles.sourceBoard}
+            aria-labelledby="home_source_board_title"
+          >
+            <div className={styles.sourceBoardIntro}>
+              <p className={styles.kicker}>No-fuss watch setup</p>
+              <h3 id="home_source_board_title">
+                Websites first, files when they are yours, direct links when the URL is clean.
+              </h3>
+              <p>
+                The UX should feel like a tiny shared booth: choose the source, share the invite,
+                then let the cat-side host keep the room in sync for the rabbit-side guest.
+              </p>
+            </div>
+            <div className={styles.sourceLanes} aria-label="Source lanes">
+              {sourceLaneCards.map(card => (
+                <article key={card.id} id={`home_source_${card.id}`} className={styles.sourceLane}>
+                  <span>{card.label}</span>
+                  <h4>{card.title}</h4>
+                  <p>{card.body}</p>
+                </article>
+              ))}
+            </div>
+            <div id="home_vibe_dock" className={styles.vibeDock} aria-label="Room vibe dock">
+              <strong>Tonight's happy path</strong>
+              {vibeDockItems.map(item => (
+                <span key={item}>{item}</span>
+              ))}
+            </div>
           </section>
 
           <section

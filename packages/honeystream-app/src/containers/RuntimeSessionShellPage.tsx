@@ -81,6 +81,20 @@ const RUNTIME_ROOM_PROMISES = Object.freeze([
     text: 'Both browsers load the same page locally while sync messages stay tiny.'
   }
 ])
+const RUNTIME_SETUP_STEPS = Object.freeze([
+  {
+    label: 'Start',
+    text: 'Host opens the room and keeps the source of truth.'
+  },
+  {
+    label: 'Invite',
+    text: 'Guest uses the private link and takes the second seat.'
+  },
+  {
+    label: 'Watch',
+    text: 'Websites, direct links, and local files flow through one queue.'
+  }
+])
 const STARTUP_ERROR_ID = 'runtime-shell-startup'
 const DEFAULT_SEEK_TOLERANCE_MS = 250
 
@@ -338,6 +352,15 @@ export const RuntimeSessionShellPage = ({ match }: RouteComponentProps<IRoutePar
             <span>Private invite</span>
             <span>Synced controls</span>
           </div>
+          <ol id="runtime_setup_rail" className={styles.setupRail} aria-label="Runtime setup path">
+            {RUNTIME_SETUP_STEPS.map((step, index) => (
+              <li key={step.label}>
+                <span>{index + 1}</span>
+                <strong>{step.label}</strong>
+                <p>{step.text}</p>
+              </li>
+            ))}
+          </ol>
           <div
             id="runtime_room_promises"
             className={styles.roomPromises}
