@@ -12,12 +12,16 @@ describe('runtime/protocol URL classifier', () => {
       'https://www.youtube.com/watch?v=abc123',
       'https://youtu.be/abc123',
       'https://m.youtube.com/shorts/abc123',
+      'https://www.youtube.com/shorts/abc123',
+      'https://youtube.com/watch?v=abc123&list=watch-party',
       'https://animepahe.ru/play/example',
       'https://animepahe.si/anime/example',
+      'https://animepahe.com/watch/example',
       'https://cineby.app/movie/example',
       'https://www.cineby.ru/tv/example',
       'https://www.miruro.tv/watch/example',
-      'https://miruro.to/watch/example'
+      'https://miruro.to/watch/example',
+      'https://miruro.tv/watch/example?episode=1'
     ]
 
     for (const url of websitePages) {

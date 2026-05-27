@@ -1,5 +1,8 @@
-import { PlaybackEngineApplyResult, PlaybackEngineDesiredState } from 'playback/engine/playbackEngineContract'
-import { MediaSnapshot } from 'protocol/types'
+import {
+  PlaybackEngineApplyResult,
+  PlaybackEngineDesiredState
+} from 'playback/engine/playbackEngineContract'
+import { ClientToHostEnvelope, MediaSnapshot, PROTOCOL_VERSION } from 'protocol/types'
 import { TransportMessageValidator } from 'transport/contracts'
 import { createInMemoryPeerTransportPair } from 'transport/in-memory-peer-transport-pair'
 import { SessionRuntimePlaybackEngine } from './contracts'
@@ -184,6 +187,82 @@ describe('runtime/session/SessionRuntime', () => {
     expect(projection.diagnostics[0].code).toBe('invalidEnvelope')
   })
 
+  it('rejects skipped inbound command sequences without applying stale commands', async () => {
+    let nowMs = 6000
+    const pair = createInMemoryPeerTransportPair({
+      hostInboundValidator: acceptsUnknownMessage,
+      guestInboundValidator: acceptsUnknownMessage
+    })
+    const hostRuntime = createSessionRuntime({
+      transport: pair.host,
+      playback: new FakePlaybackEngine(),
+      now: () => nowMs++
+    })
+    const guestRuntime = createSessionRuntime({
+      transport: pair.guest,
+      playback: new FakePlaybackEngine(),
+      now: () => nowMs++
+    })
+
+    await hostRuntime.startHostSession({
+      roomId: 'room-1',
+      hostUsername: 'Host',
+      inviteSecret: 'invite-secret'
+    })
+    await guestRuntime.startGuestSession({
+      roomId: 'room-1',
+      username: 'Guest',
+      inviteSecret: 'invite-secret'
+    })
+    await flushRuntime()
+
+    const skippedCommand: ClientToHostEnvelope = {
+      version: PROTOCOL_VERSION,
+      direction: 'client-to-host',
+      seq: 3,
+      sentAtMs: nowMs,
+      command: {
+        type: 'addMedia',
+        media: createMedia('skipped-media')
+      }
+    }
+    pair.guest.send({
+      seq: skippedCommand.seq,
+      sentAtMs: skippedCommand.sentAtMs,
+      message: skippedCommand
+    })
+    await flushRuntime()
+
+    let hostProjection = hostRuntime.getSnapshot()
+    expect(hostProjection.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'invalidSequence'
+        })
+      ])
+    )
+    expect(hostProjection.session && hostProjection.session.currentMediaId).toBeUndefined()
+
+    const recoveredCommand: ClientToHostEnvelope = {
+      ...skippedCommand,
+      seq: 4,
+      sentAtMs: nowMs,
+      command: {
+        type: 'addMedia',
+        media: createMedia('recovered-media')
+      }
+    }
+    pair.guest.send({
+      seq: recoveredCommand.seq,
+      sentAtMs: recoveredCommand.sentAtMs,
+      message: recoveredCommand
+    })
+    await flushRuntime()
+
+    hostProjection = hostRuntime.getSnapshot()
+    expect(hostProjection.session && hostProjection.session.currentMediaId).toBe('recovered-media')
+  })
+
   it('keeps host snapshots moving when playback application fails', async () => {
     let nowMs = 9000
     const pair = createInMemoryPeerTransportPair({
@@ -227,9 +306,7 @@ describe('runtime/session/SessionRuntime', () => {
     expect(hostSession && hostSession.currentMediaId).toBe('guest-local')
     expect(guestSession && guestSession.currentMediaId).toBe('guest-local')
     expect(hostRuntime.getSnapshot().runtimeErrors).toEqual(
-      expect.arrayContaining([
-        expect.stringContaining('Playback target unavailable.')
-      ])
+      expect.arrayContaining([expect.stringContaining('Playback target unavailable.')])
     )
   })
 
