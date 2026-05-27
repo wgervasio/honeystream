@@ -111,8 +111,8 @@ export class WebControls extends Component<IProps, IState> {
           highlight={this.state.canRequest}
           title={
             <MediumText>
-              When you&rsquo;re ready to share a link, press the{' '}
-              <HighlightText>Add To Session</HighlightText> button.
+              Browse until the right page is open, then press{' '}
+              <HighlightText>Add to room</HighlightText> so both sides can load it.
             </MediumText>
           }
           tooltipProps={
@@ -165,6 +165,9 @@ export class WebControls extends Component<IProps, IState> {
             autoFocus
           />
         </div>
+        <span className={styles.locationHint} aria-hidden="true">
+          Enter opens / Add shares
+        </span>
       </div>
     )
   }

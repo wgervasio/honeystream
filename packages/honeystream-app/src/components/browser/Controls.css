@@ -15,6 +15,7 @@
 }
 
 .locationContainer {
+  position: relative;
   flex: 1 0 auto;
   height: 100%;
   padding: 6px;
@@ -39,7 +40,7 @@
   border: none;
   outline: none;
 
-  padding: 0 8px;
+  padding: 0 9rem 0 0.75rem;
 }
 
 .addressInput:not(:focus) {
@@ -48,6 +49,25 @@
 
 .addressInput:focus {
   box-shadow: var(--app-focus-ring);
+}
+
+.locationHint {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.72rem;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  pointer-events: none;
+  text-transform: uppercase;
+  transform: translateY(-50%);
+  transition: opacity 120ms ease-out;
+}
+
+.locationContainer:focus-within .locationHint {
+  opacity: 0;
 }
 
 .button:disabled {
@@ -69,4 +89,14 @@
   max-width: 360px !important;
   padding: 1rem 2rem !important;
   border: 2px solid var(--color-highlight);
+}
+
+@media only screen and (max-width: 760px) {
+  .addressInput {
+    padding-right: 0.75rem;
+  }
+
+  .locationHint {
+    display: none;
+  }
 }

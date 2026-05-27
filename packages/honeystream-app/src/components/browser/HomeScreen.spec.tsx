@@ -25,6 +25,7 @@ jest.mock('./HomeScreen.css', () => ({
   siteChips: 'siteChips',
   sourceTips: 'sourceTips',
   catCard: 'catCard',
+  comfortNotes: 'comfortNotes',
   syncBadge: 'syncBadge',
   urlInput: 'urlInput',
   uppercase: 'uppercase'
@@ -48,6 +49,8 @@ describe('browser/HomeScreen', () => {
     expect(html).toContain('Website tab')
     expect(html).toContain('Local copy')
     expect(html).toContain('Direct media')
+    expect(html).toContain('One invite')
+    expect(html).toContain('Clear next step')
     expect(html).toContain('Choose the easiest source for tonight')
     expect(html).toContain('YouTube')
     expect(html).toContain('Anime night')

@@ -10,9 +10,12 @@ interface Props {
 
 const siteExamples = [
   { label: 'YouTube', url: 'https://youtube.com' },
-  { label: 'Anime night', url: 'https://example.com/anime-watch' },
-  { label: 'Movie night', url: 'https://example.com/movie-watch' },
-  { label: 'Direct video', url: 'https://example.com/video.mp4' }
+  { label: 'Anime night', url: 'https://www.crunchyroll.com' },
+  { label: 'Movie night', url: 'https://www.netflix.com' },
+  {
+    label: 'Direct video',
+    url: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4'
+  }
 ]
 
 const addSteps = [
@@ -33,6 +36,21 @@ const sourceTips = [
   {
     label: 'Direct media',
     detail: 'Best when the URL ends in a playable video or audio file.'
+  }
+]
+
+const comfortNotes = [
+  {
+    label: 'One invite',
+    detail: 'Keep the room private and send the link to one watch buddy.'
+  },
+  {
+    label: 'Two roles',
+    detail: 'Cat-side chooses the source, rabbit-side hops in and stays synced.'
+  },
+  {
+    label: 'Clear next step',
+    detail: 'Pick a site, file, or direct URL without hunting through menus.'
   }
 ]
 
@@ -62,6 +80,15 @@ export const HomeScreen = (props: Props) => {
     }
 
     props.onRequestUrl(url)
+  }
+
+  const requestUrlOnEnter = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== 'Enter') {
+      return
+    }
+
+    event.preventDefault()
+    requestUrl()
   }
 
   return (
@@ -101,6 +128,14 @@ export const HomeScreen = (props: Props) => {
             <article key={tip.label}>
               <strong>{tip.label}</strong>
               <span>{tip.detail}</span>
+            </article>
+          ))}
+        </div>
+        <div className={styles.comfortNotes} aria-label="Cozy room reminders">
+          {comfortNotes.map(note => (
+            <article key={note.label}>
+              <strong>{note.label}</strong>
+              <span>{note.detail}</span>
             </article>
           ))}
         </div>
@@ -170,6 +205,7 @@ export const HomeScreen = (props: Props) => {
               aria-invalid={urlInputInvalid || undefined}
               spellCheck={false}
               onChange={() => setUrlInputInvalid(false)}
+              onKeyDown={requestUrlOnEnter}
             />
             <button
               id="addbtn"

@@ -58,8 +58,15 @@ class SessionSettings extends Component<PrivateProps, IState> {
 
   private renderSessionLink() {
     return (
-      <>
-        <p>{t('shareSessionUrl')}</p>
+      <section className={styles.inviteCard} aria-label="Private invite link">
+        <p className={styles.kicker}>Private invite</p>
+        <h2>Send one cozy room link.</h2>
+        <p className={styles.inviteCopy}>{t('shareSessionUrl')}</p>
+        <div className={styles.inviteRoute} aria-hidden="true">
+          <span>Cat-side host</span>
+          <strong>1 link</strong>
+          <span>Rabbit-side guest</span>
+        </div>
 
         <ClipboardTextInput
           className={styles.idContainer}
@@ -68,7 +75,7 @@ class SessionSettings extends Component<PrivateProps, IState> {
           disabled
           style={{ marginBottom: '1rem' }}
         />
-      </>
+      </section>
     )
   }
 
@@ -161,7 +168,6 @@ class SessionSettings extends Component<PrivateProps, IState> {
       </Dialog>
     )
   }
-
 }
 
 export default connect(

@@ -36,8 +36,26 @@ const _IdleScreen = (props: PrivateProps) => {
       <p className={styles.kicker}>Ready for something good?</p>
       <h2>Queue a cozy watch night.</h2>
       <p>{t('addMediaCTA')}</p>
+      <div className={styles.petPair} aria-hidden="true">
+        <span className={`${styles.petOrb} ${styles.catOrb}`}>
+          <span className={styles.petFace}>
+            <i />
+            <i />
+            <b />
+          </span>
+        </span>
+        <span className={styles.syncBeam} />
+        <span className={`${styles.petOrb} ${styles.rabbitOrb}`}>
+          <span className={styles.petFace}>
+            <i />
+            <i />
+            <b />
+          </span>
+        </span>
+      </div>
       <div className={styles.pills} aria-hidden="true">
         <span>Website links</span>
+        <span>One private invite</span>
         <span>Cat-side queue</span>
         <span>Rabbit-side sync</span>
       </div>

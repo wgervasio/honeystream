@@ -274,12 +274,16 @@ class _GameLobby extends React.Component<PrivateProps, IState> {
   }
 
   private renderRoomStatus(): JSX.Element {
-    const mediaStatus = this.props.currentMedia ? 'Now watching' : 'Ready for the first link'
-    const guestStatus = this.props.isMultiplayer ? 'Rabbit-side synced' : 'Rabbit-side waiting'
+    const mediaStatus = this.props.currentMedia
+      ? 'Now watching together'
+      : 'Add a website, file, or direct link'
+    const guestStatus = this.props.isMultiplayer
+      ? 'Rabbit-side synced'
+      : 'Rabbit-side waiting for invite'
     const centerLabel = this.props.isMultiplayer ? 'Together' : 'Invite buddy'
 
     return (
-      <div className={styles.roomStatus} aria-label="Cozy room status">
+      <div data-room-status="cozy" className={styles.roomStatus} aria-label="Cozy room status">
         <span className={styles.catStatus}>Cat-side {this.props.host ? 'hosting' : 'host'}</span>
         <strong>{centerLabel}</strong>
         <span className={styles.rabbitStatus}>{guestStatus}</span>
