@@ -1,15 +1,16 @@
 .highlightBtn {
   width: auto;
-  padding: 0 5px;
+  padding: 0 0.625rem;
 
   display: inline-flex;
   flex-direction: row;
   align-items: center;
 
-  border-radius: 4px;
+  border-radius: 999px;
   text-decoration: none;
   text-transform: uppercase;
   letter-spacing: 1px;
+  transition: background 140ms ease, box-shadow 140ms ease, transform 140ms ease;
 }
 
 .highlightBtn:disabled {
@@ -18,19 +19,22 @@
 }
 
 .outline {
-  box-shadow: inset 0 0 0 1px currentColor;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
 }
 .outline:hover,
 .outline:active {
-  box-shadow: none;
-  background: var(--color-highlight);
+  background: rgba(255, 255, 255, 0.22);
+  box-shadow: var(--app-focus-ring);
 }
 
 .highlight {
-  background: var(--color-highlight);
+  background: var(--app-button-gradient);
+  box-shadow: 0 14px 36px rgba(255, 127, 150, 0.28);
 }
 .highlight:hover {
-  filter: brightness(1.1);
+  filter: brightness(1.04);
+  transform: translateY(-1px);
 }
 .highlight:active,
 .outline:active {

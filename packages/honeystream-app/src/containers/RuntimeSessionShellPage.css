@@ -1,0 +1,93 @@
+.container {
+  min-height: 100%;
+  background: var(--app-bg-lobby);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+}
+
+.shell {
+  width: calc(100% - 3rem);
+  max-width: 920px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(17rem, 24rem);
+  gap: 1rem;
+}
+
+.heroCard,
+.runtimePanel {
+  border: 1px solid var(--app-panel-border);
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.13);
+  box-shadow: var(--app-panel-shadow);
+  backdrop-filter: blur(24px);
+}
+
+.heroCard {
+  padding: 2rem;
+  background: radial-gradient(circle at 12% 10%, rgba(158, 215, 255, 0.28), transparent 34%),
+    radial-gradient(circle at 92% 90%, rgba(255, 216, 138, 0.2), transparent 38%),
+    rgba(255, 255, 255, 0.13);
+}
+
+.kicker {
+  margin: 0 0 0.75rem;
+  color: var(--color-honey);
+  font-size: 0.78rem;
+  font-weight: bold;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.heroCard h1 {
+  max-width: 30rem;
+  margin: 0 0 1rem;
+  color: #fff;
+  font-size: 3rem;
+  line-height: 0.95;
+  letter-spacing: -0.06em;
+}
+
+.heroCard p:not(.kicker) {
+  color: rgba(255, 255, 255, 0.76);
+}
+
+.runtimePanel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+.runtimePanel [data-session-state] {
+  align-self: flex-start;
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  background: var(--app-button-gradient);
+  color: #fff;
+  font-weight: bold;
+  letter-spacing: 0.04em;
+}
+
+.runtimePanel div {
+  color: rgba(255, 255, 255, 0.84);
+  line-height: 1.5rem;
+}
+
+.runtimePanel section {
+  padding: 1rem;
+  border-radius: 18px;
+  background: rgba(36, 28, 53, 0.22);
+}
+
+.runtimePanel ul {
+  margin-top: 0.5rem;
+}
+
+@media only screen and (max-width: 760px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+}

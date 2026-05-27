@@ -47,70 +47,113 @@ class Home extends Component<IProps> {
 
     return (
       <LayoutMain className={styles.container} showBackButton={false}>
-        <MenuHeader
-          className={styles.header}
-          text={
-            <>
-              <img
-                src={assetUrl('icons/honeystream-icon.svg')}
-                className={styles.logo}
-                width="48"
-                alt=""
-              />
-              {PRODUCT_NAME}
+        <div className={styles.shell}>
+          <MenuHeader
+            className={styles.header}
+            text={
+              <>
+                <span className={styles.brandMark}>
+                  <img
+                    src={assetUrl('icons/honeystream-icon.svg')}
+                    className={styles.logo}
+                    width="48"
+                    alt=""
+                  />
+                </span>
+                <span>{PRODUCT_NAME}</span>
 
-              <div className={styles.buildInfo}>
-                <h3>
-                  Beta {VERSION}
-                  {DEV && ` (${gitv})`}
-                </h3>
-                {DEV && <h3>Development build</h3>}
-              </div>
-            </>
-          }
-        />
-        <section className={styles.nav}>
-          <ul>
-            <li>
-              <MenuButton
-                id="startsession"
-                to={`/join/${localUserId()}`}
-                className={styles.btn}
-                icon="play"
-              >
-                {t('startSession')}
-              </MenuButton>
-            </li>
-            <li>
-              <MenuButton id="joinsession" to="/join" className={styles.btn} icon="globe">
-                {t('joinSession')}
-              </MenuButton>
-            </li>
-            <li>
-              <MenuButton id="settings" to="/settings" className={styles.btn} icon="settings">
-                {t('settings')}
-              </MenuButton>
-            </li>
-            {this.props.installable && (
-              <li>
-                <MenuButton icon="download" onClick={this.props.install}>
-                  {t('installToDesktop')}
+                <div className={styles.buildInfo}>
+                  <h3>
+                    Beta {VERSION}
+                    {DEV && ` (${gitv})`}
+                  </h3>
+                  {DEV && <h3>Development build</h3>}
+                </div>
+              </>
+            }
+          >
+            <span className={styles.headerPill}>Cat-side + rabbit-side watch room</span>
+          </MenuHeader>
+
+          <section className={styles.hero} data-home-hero="cozy">
+            <div className={styles.heroCopy}>
+              <p className={styles.kicker}>Private synced playback for two</p>
+              <h2 id="home_headline">
+                Happy streams, soft vibes, and fewer "are you ahead?" moments.
+              </h2>
+              <p>
+                Start a room, share one invite, and keep files, direct media links, and supported
+                websites moving in lockstep. The host keeps things tidy while both sides get an
+                easy, low-drama watch flow.
+              </p>
+
+              <nav className={styles.actionGrid} aria-label="Primary actions">
+                <MenuButton
+                  id="startsession"
+                  to={`/join/${localUserId()}`}
+                  className={`${styles.btn} ${styles.primaryAction}`}
+                  icon="play"
+                >
+                  Start cozy room
                 </MenuButton>
-              </li>
-            )}
-          </ul>
-        </section>
+                <MenuButton
+                  id="joinsession"
+                  to="/join"
+                  className={`${styles.btn} ${styles.secondaryAction}`}
+                  icon="globe"
+                >
+                  Join with invite
+                </MenuButton>
+                <MenuButton
+                  id="settings"
+                  to="/settings"
+                  className={`${styles.btn} ${styles.ghostAction}`}
+                  icon="settings"
+                >
+                  {t('settings')}
+                </MenuButton>
+                {this.props.installable && (
+                  <MenuButton
+                    icon="download"
+                    onClick={this.props.install}
+                    className={`${styles.btn} ${styles.ghostAction}`}
+                  >
+                    {t('installToDesktop')}
+                  </MenuButton>
+                )}
+              </nav>
+            </div>
 
-        <section className={styles.intro} aria-labelledby="home_headline">
-          <p className={styles.kicker}>Cozy private watch nights</p>
-          <h2 id="home_headline">
-            Happy streams, tiny sync messages, and fewer "are you ahead?" moments.
-          </h2>
-          <p>
-            Start a session, invite your person, then add a downloaded video, website video, or
-            direct media URL. Honeystream keeps the shared state small and lets both browsers load
-            the media they can access.
-          </p>
+            <aside className={styles.companionCard} aria-label="Cozy room motif">
+              <div className={styles.petPair}>
+                <span className={`${styles.petOrb} ${styles.catOrb}`} />
+                <span className={`${styles.petOrb} ${styles.rabbitOrb}`} />
+              </div>
+              <p className={styles.companionTitle}>One cat person. One bunny person.</p>
+              <p className={styles.companionText}>
+                A soft command center for deciding what to watch, adding it fast, and staying in
+                sync without digging through menus.
+              </p>
+            </aside>
+          </section>
+
+          <section className={styles.steps} aria-label="How Honeystream works">
+            <article className={styles.step}>
+              <strong>1. Open a private room</strong>
+              <span>Honeystream creates one host-owned room for you and one guest.</span>
+            </article>
+            <article className={styles.step}>
+              <strong>2. Share the invite</strong>
+              <span>Paste the link once, then approve the person joining your room.</span>
+            </article>
+            <article className={styles.step}>
+              <strong>3. Add what you want</strong>
+              <span>
+                Use local files, website videos, or direct media URLs from one clean panel.
+              </span>
+            </article>
+          </section>
+
           <div id="home_site_examples" className={styles.siteExamples} aria-label="Site examples">
             <span>Good test paths:</span>
             <strong>YouTube</strong>
@@ -118,7 +161,8 @@ class Home extends Component<IProps> {
             <strong>anime pages</strong>
             <strong>movie pages</strong>
           </div>
-          <div className={styles.featureGrid} aria-label="Honeystream focus areas">
+
+          <section className={styles.featureGrid} aria-label="Honeystream focus areas">
             {featureCards.map(card => (
               <article key={card.id} id={`home_feature_${card.id}`} className={styles.featureCard}>
                 <span>{card.label}</span>
@@ -126,8 +170,8 @@ class Home extends Component<IProps> {
                 <p>{card.body}</p>
               </article>
             ))}
-          </div>
-        </section>
+          </section>
+        </div>
       </LayoutMain>
     )
   }

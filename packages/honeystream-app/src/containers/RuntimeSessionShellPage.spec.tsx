@@ -72,15 +72,14 @@ class FakePlaybackEngine implements SessionRuntimePlaybackEngine {
 
 describe('RuntimeSessionShellPage', () => {
   it('renders route-owned runtime session shell details for the lobby route', () => {
-    const html = renderToStaticMarkup(
-      <RuntimeSessionShellPage {...createRouteProps('room-123')} />
-    )
+    const html = renderToStaticMarkup(<RuntimeSessionShellPage {...createRouteProps('room-123')} />)
 
     expect(html).toContain('Runtime session shell')
+    expect(html).toContain('Cozy watch room for two')
     expect(html).toContain('Lobby: room-123')
-    expect(html).toContain('Idle')
-    expect(html).toContain('Host: Host')
-    expect(html).toContain('Guest: Waiting for guest')
+    expect(html).toContain('Room warming up')
+    expect(html).toContain('Cat-side host: Host')
+    expect(html).toContain('Rabbit-side guest: Waiting for your watch buddy')
     expect(html).toContain('host/local only')
   })
 })

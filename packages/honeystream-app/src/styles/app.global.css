@@ -18,28 +18,34 @@ Variables
   --app-titlebar-height: 30px;
   --app-titlebar-background-color: rgba(0, 0, 0, 0.6);
 
-  /* --color-highlight: #f98673; */
-  --color-highlight: rgb(249, 134, 115);
-  --color-highlight-transparent: rgb(249, 134, 115, 0.7);
+  --color-highlight: rgb(255, 127, 150);
+  --color-highlight-transparent: rgba(255, 127, 150, 0.72);
+  --color-honey: #ffd88a;
+  --color-bunny: #f7d7e8;
+  --color-cat: #9ed7ff;
+  --color-ink: #241c35;
   --color-chat-text-outline: var(--color-transparent-dark-80);
 
   --app-bg-home: radial-gradient(
-    circle at 10% -40%,
-    #6f749e 0%,
-    #9a8daf 31%,
-    #d0a8b9 58%,
-    #f8bbb1 80%,
-    #fde6b1 100%
-  );
-  --app-bg-other: linear-gradient(200deg, #42275a, #734b6d);
+      circle at 12% 8%,
+      rgba(158, 215, 255, 0.95) 0%,
+      rgba(158, 215, 255, 0) 30%
+    ),
+    radial-gradient(circle at 88% 16%, rgba(247, 215, 232, 0.95) 0%, rgba(247, 215, 232, 0) 28%),
+    linear-gradient(135deg, #322452 0%, #6f4b8b 34%, #f39f9f 70%, #ffd88a 100%);
+  --app-bg-other: linear-gradient(145deg, #251a40 0%, #5f3f7b 52%, #f08ca4 100%);
   --app-bg-lobby: linear-gradient(
-    170deg,
-    #20202f 0%,
-    #273550 16%,
-    #416081 41%,
-    #adacb2 78%,
-    #eac3a2 100%
+    150deg,
+    rgba(36, 28, 53, 0.98) 0%,
+    rgba(53, 54, 98, 0.96) 36%,
+    rgba(122, 82, 137, 0.92) 68%,
+    rgba(255, 191, 164, 0.9) 100%
   );
+  --app-panel-bg: rgba(255, 255, 255, 0.14);
+  --app-panel-border: rgba(255, 255, 255, 0.24);
+  --app-panel-shadow: 0 24px 80px rgba(36, 28, 53, 0.28);
+  --app-focus-ring: 0 0 0 3px rgba(255, 216, 138, 0.42);
+  --app-button-gradient: linear-gradient(135deg, #ff7f96 0%, #ffd88a 100%);
 }
 
 /*

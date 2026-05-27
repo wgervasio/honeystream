@@ -1,8 +1,9 @@
 .container {
-  background: var(--app-bg-home);
+  background: var(--app-bg-other);
   height: 100%;
   display: flex;
   flex-direction: column;
+  align-items: center;
   justify-content: center;
   overflow: auto;
 }
@@ -30,36 +31,93 @@
 .peerId {
   vertical-align: bottom;
   width: 100%;
-  max-width: 400px;
+  min-width: 18rem;
+  max-width: 34rem;
   border-color: rgba(255, 255, 255, 0.3);
 }
 
-.joinPanel {
-  max-width: 44rem;
-  padding: 1.5rem;
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.32);
-  border-radius: 1.25rem;
-  box-shadow: 0 1rem 2.5rem rgba(57, 21, 47, 0.14);
+.card {
+  width: calc(100% - 2rem);
+  max-width: 740px;
+  padding: 2.5rem;
+  border: 1px solid var(--app-panel-border);
+  border-radius: 34px;
+  background: radial-gradient(circle at 20% 12%, rgba(158, 215, 255, 0.28), transparent 32%),
+    radial-gradient(circle at 88% 86%, rgba(247, 215, 232, 0.28), transparent 36%),
+    rgba(255, 255, 255, 0.13);
+  box-shadow: var(--app-panel-shadow);
+  backdrop-filter: blur(24px);
 }
 
-.joinPanel h2 {
+.card header {
+  margin-bottom: 1rem;
+}
+
+.card h1,
+.card h2 {
+  letter-spacing: -0.04em;
+}
+
+.card h2 {
   margin-bottom: 0.75rem;
   color: #fff;
   font-size: 2.25rem;
   line-height: 1.05;
-  letter-spacing: -0.03em;
 }
 
-.joinPanel form {
+.card form {
   margin-top: 1.5rem;
 }
 
-.kicker {
-  margin-bottom: 0.75rem;
-  color: rgba(52, 25, 29, 0.72);
-  font-size: 0.78rem;
+.kicker,
+.label {
+  color: var(--color-honey);
+  font-size: 0.82rem;
   font-weight: bold;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
+}
+
+.lede {
+  max-width: 34rem;
+  color: rgba(255, 255, 255, 0.76);
+}
+
+.label {
+  margin-bottom: 0.75rem;
+}
+
+.joinButton {
+  white-space: nowrap;
+}
+
+.hintGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin-top: 1.5rem;
+}
+
+.hintGrid span {
+  padding: 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(36, 28, 53, 0.18);
+  color: rgba(255, 255, 255, 0.76);
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+@media only screen and (max-width: 640px) {
+  .card {
+    padding: 1.5rem;
+  }
+
+  .peerId {
+    min-width: 0;
+  }
+
+  .hintGrid {
+    grid-template-columns: 1fr;
+  }
 }

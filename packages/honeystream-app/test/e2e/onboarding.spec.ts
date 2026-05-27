@@ -16,10 +16,17 @@ describe('onboarding', () => {
   })
 
   it('should show home on next visit', async () => {
+    await page.evaluate(() => localStorage.setItem('welcomed', 'true'))
+    await page.reload()
     await page.waitForSelector('#startsession')
+    await page.waitForSelector('[data-home-hero="cozy"]')
     await page.waitForSelector('#home_headline')
+    const heroText = await page.$eval('[data-home-hero="cozy"]', e => e.textContent)
     const headline = await page.$eval('#home_headline', e => e.textContent)
     const siteExamples = await page.$eval('#home_site_examples', e => e.textContent)
+    expect(heroText).toContain('Start cozy room')
+    expect(heroText).toContain('Join with invite')
+    expect(heroText).toContain('One cat person. One bunny person.')
     expect(headline).toContain('Happy streams')
     expect(siteExamples).toContain('YouTube')
     await page.waitForSelector('#home_feature_private')

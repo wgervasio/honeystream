@@ -1,18 +1,42 @@
 .container {
   composes: fill-center from '~styles/layout.css';
   background: var(--app-bg-lobby);
+  position: relative;
+  overflow: hidden;
+}
+
+.container::before {
+  content: '';
+  position: absolute;
+  right: -8rem;
+  bottom: -8rem;
+  width: 26rem;
+  height: 26rem;
+  border-radius: 50%;
+  background: rgba(255, 216, 138, 0.24);
+  pointer-events: none;
 }
 
 .header {
   composes: h2 from '~styles/typography.css';
+  position: relative;
+  z-index: 1;
   margin-bottom: 1rem;
+  letter-spacing: -0.04em;
 }
 
 .info {
   composes: center-vertical from '~styles/layout.css';
   composes: select-text from '~styles/text.css';
-  padding: 0 1rem;
+  position: relative;
+  z-index: 1;
+  padding: 1rem 1.2rem;
   max-width: 600px;
+  border: 1px solid var(--app-panel-border);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.13);
+  box-shadow: var(--app-panel-shadow);
+  backdrop-filter: blur(24px);
 }
 
 .info svg {
@@ -30,4 +54,10 @@
 
 .buttonrow > *:not(:last-child) {
   margin-right: 1rem;
+}
+
+.buttonrow {
+  position: relative;
+  z-index: 1;
+  margin-top: 1.25rem;
 }

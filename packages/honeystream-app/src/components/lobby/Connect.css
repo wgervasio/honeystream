@@ -1,11 +1,51 @@
 .container {
   composes: fill-center from '~styles/layout.css';
   background: var(--app-bg-lobby);
+  position: relative;
+  overflow: hidden;
+}
+
+.container::before,
+.container::after {
+  content: '';
+  position: absolute;
+  width: 20rem;
+  height: 20rem;
+  border-radius: 50%;
+  opacity: 0.38;
+  pointer-events: none;
+}
+
+.container::before {
+  left: -6rem;
+  bottom: 12%;
+  background: var(--color-cat);
+}
+
+.container::after {
+  right: -6rem;
+  top: 12%;
+  background: var(--color-bunny);
 }
 
 .info {
   composes: center-vertical from '~styles/layout.css';
+  position: relative;
+  z-index: 1;
+  padding: 1.2rem 1.4rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--app-panel-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.13);
+  box-shadow: var(--app-panel-shadow);
   font-size: 1.2rem;
+  backdrop-filter: blur(24px);
+}
+
+.container > button,
+.container > a {
+  position: relative;
+  z-index: 1;
 }
 
 .titlebar {
