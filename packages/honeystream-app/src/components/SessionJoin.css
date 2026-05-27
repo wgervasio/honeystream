@@ -179,6 +179,33 @@
   box-shadow: 0 12px 26px rgba(255, 127, 150, 0.22);
 }
 
+.linkBreakdown {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.linkBreakdown span {
+  min-height: 4.4rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.13), rgba(36, 28, 53, 0.14));
+  color: rgba(255, 255, 255, 0.76);
+  line-height: 1.2;
+}
+
+.linkBreakdown strong {
+  margin-bottom: 0.3rem;
+  color: #fff;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .label {
   margin-bottom: 0.75rem;
 }
@@ -232,6 +259,10 @@
   }
 
   .comfortChecks {
+    grid-template-columns: 1fr;
+  }
+
+  .linkBreakdown {
     grid-template-columns: 1fr;
   }
 }

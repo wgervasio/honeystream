@@ -36,6 +36,13 @@ const sourceTips = [
   }
 ]
 
+const readinessItems = [
+  'Same page on both browsers',
+  'One host-owned queue',
+  'Guest sees what changed',
+  'Controls stay obvious'
+]
+
 export const HomeScreen = (props: Props) => {
   const urlInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -104,6 +111,12 @@ export const HomeScreen = (props: Props) => {
             </article>
           ))}
         </div>
+        <div id="media_room_dock" className={styles.roomDock} aria-label="Room readiness">
+          <strong>Ready when</strong>
+          {readinessItems.map(item => (
+            <span key={item}>{item}</span>
+          ))}
+        </div>
       </header>
       <main className={styles.main}>
         <section className={styles.panel}>
@@ -157,6 +170,11 @@ export const HomeScreen = (props: Props) => {
                 </button>
               ))}
             </div>
+          </div>
+          <div id="media_source_helper" className={styles.sourceHelper}>
+            <span>
+              Best UX: paste the exact watch page, test it once, then press play from host-side.
+            </span>
           </div>
           <div className={styles.inputContainer}>
             <input

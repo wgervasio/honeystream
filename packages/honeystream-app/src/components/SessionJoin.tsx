@@ -14,6 +14,21 @@ export class SessionJoin extends Component<IProps> {
   private sessionInput: HTMLInputElement | null = null
 
   render(): JSX.Element | null {
+    const linkBreakdown = [
+      {
+        label: 'Invite link',
+        detail: 'Brings you to the private room'
+      },
+      {
+        label: 'Room ID',
+        detail: 'Finds the cat-side host'
+      },
+      {
+        label: 'Secret',
+        detail: 'Keeps the rabbit-side seat private'
+      }
+    ]
+
     return (
       <LayoutMain className={styles.container}>
         <section className={styles.card} aria-labelledby="join_headline">
@@ -44,6 +59,18 @@ export class SessionJoin extends Component<IProps> {
               <strong>Rabbit-side</strong>
               Lands together
             </span>
+          </div>
+          <div
+            id="join_link_breakdown"
+            className={styles.linkBreakdown}
+            aria-label="Invite link breakdown"
+          >
+            {linkBreakdown.map(item => (
+              <span key={item.label}>
+                <strong>{item.label}</strong>
+                {item.detail}
+              </span>
+            ))}
           </div>
           <form
             onSubmit={e => {
