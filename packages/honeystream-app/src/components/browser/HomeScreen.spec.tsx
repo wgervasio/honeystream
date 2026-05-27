@@ -16,9 +16,13 @@ jest.mock('./HomeScreen.css', () => ({
   mediaPath: 'mediaPath',
   panel: 'panel',
   panelHeader: 'panelHeader',
+  pairPreview: 'pairPreview',
   primaryButton: 'primaryButton',
+  rabbitCard: 'rabbitCard',
   siteChip: 'siteChip',
   siteChips: 'siteChips',
+  catCard: 'catCard',
+  syncBadge: 'syncBadge',
   uppercase: 'uppercase'
 }))
 
@@ -34,6 +38,9 @@ describe('browser/HomeScreen', () => {
     expect(html).toContain('Website nights without the scramble')
     expect(html).toContain('compact playback commands')
     expect(html).toContain('Press play once and keep the room synced')
+    expect(html).toContain('Cat-side')
+    expect(html).toContain('Tiny sync commands')
+    expect(html).toContain('Rabbit-side')
     expect(html).toContain('Choose the easiest source for tonight')
     expect(html).toContain('YouTube')
     expect(html).toContain('Anime night')

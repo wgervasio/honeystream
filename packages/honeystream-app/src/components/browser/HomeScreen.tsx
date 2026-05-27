@@ -49,6 +49,21 @@ export const HomeScreen = (props: Props) => {
             </span>
           ))}
         </div>
+        <div
+          id="media_pair_preview"
+          className={styles.pairPreview}
+          aria-label="Two-person media flow"
+        >
+          <span className={styles.catCard}>
+            <strong>Cat-side</strong>
+            Picks the source
+          </span>
+          <span className={styles.syncBadge}>Tiny sync commands</span>
+          <span className={styles.rabbitCard}>
+            <strong>Rabbit-side</strong>
+            Loads it locally
+          </span>
+        </div>
       </header>
       <main className={styles.main}>
         <section className={styles.panel}>
