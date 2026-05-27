@@ -6,6 +6,8 @@
   "productName": "Honeystream",
   "license": "MIT",
   "scripts": {
+    "build:signal-server": "yarn --cwd ../honeystream-signal-server build",
+    "prebuild": "yarn run build:signal-server",
     "build": "node scripts/with-legacy-openssl.js cross-env NODE_ENV=production webpack-cli --config webpack.config.prod.js",
     "locale:diff": "node scripts/localeDiff.js",
     "start": "node scripts/with-legacy-openssl.js cross-env NODE_ENV=development webpack-dev-server --config webpack.config.dev.js",
@@ -14,7 +16,9 @@
     "start:signal-server": "node scripts/signal-server.js",
     "test": "npm run test:unit && npm run test:e2e",
     "test:clean": "del-cli \"./test/artifacts/*\"",
+    "pretest:unit": "yarn run build:signal-server",
     "test:unit": "jest --runInBand --verbose",
+    "pretest:e2e": "yarn run build:signal-server",
     "test:e2e": "npm run test:clean && jest --runInBand --verbose -c jest-e2e.config.js",
     "test:watch": "jest --watch --runInBand --verbose"
   },

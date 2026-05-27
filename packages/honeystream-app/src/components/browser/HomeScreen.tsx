@@ -42,6 +42,11 @@ const readinessItems = [
   'Guest sees what changed',
   'Controls stay obvious'
 ]
+const sourceConfidenceItems = [
+  'Full watch-page URLs work best',
+  'Local files stay on each device',
+  'Direct media links skip extra clutter'
+]
 
 const isHttpUrl = (value: string): boolean => {
   try {
@@ -134,6 +139,11 @@ export const HomeScreen = (props: Props) => {
         <div id="media_room_dock" className={styles.roomDock} aria-label="Room readiness">
           <strong>Ready when</strong>
           {readinessItems.map(item => (
+            <span key={item}>{item}</span>
+          ))}
+        </div>
+        <div className={styles.confidenceRail} aria-label="Source confidence tips">
+          {sourceConfidenceItems.map(item => (
             <span key={item}>{item}</span>
           ))}
         </div>

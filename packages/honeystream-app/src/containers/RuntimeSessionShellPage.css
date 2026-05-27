@@ -5,9 +5,40 @@
     radial-gradient(circle at 76% 88%, rgba(255, 216, 138, 0.34), transparent 34%),
     var(--app-bg-lobby);
   color: var(--app-text-color);
+  position: relative;
+  overflow: auto;
+  isolation: isolate;
+}
+
+.container::before,
+.container::after {
+  content: '';
+  position: fixed;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 999px;
+  filter: blur(2px);
+}
+
+.container::before {
+  width: 28rem;
+  height: 28rem;
+  left: -8rem;
+  top: 12%;
+  background: radial-gradient(circle, rgba(158, 215, 255, 0.34), rgba(158, 215, 255, 0));
+}
+
+.container::after {
+  width: 32rem;
+  height: 32rem;
+  right: -10rem;
+  bottom: -4rem;
+  background: radial-gradient(circle, rgba(247, 215, 232, 0.34), rgba(247, 215, 232, 0));
 }
 
 .shell {
+  position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 1280px;
   margin: 0 auto;
@@ -41,6 +72,11 @@
   background: radial-gradient(circle at 12% 12%, rgba(158, 215, 255, 0.3), transparent 34%),
     radial-gradient(circle at 90% 84%, rgba(247, 215, 232, 0.28), transparent 38%),
     rgba(255, 255, 255, 0.14);
+}
+
+.heroCard > * {
+  position: relative;
+  z-index: 1;
 }
 
 .heroCard::after {
@@ -98,6 +134,16 @@
   font-size: 0.9rem;
   line-height: 1.25rem;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.happyPath span::before {
+  content: '';
+  width: 2.1rem;
+  height: 0.3rem;
+  margin-bottom: 0.4rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--color-cat), var(--color-honey), var(--color-bunny));
+  box-shadow: 0 0 18px rgba(255, 216, 138, 0.35);
 }
 
 .happyPath strong {
@@ -207,6 +253,22 @@
   margin: 0.65rem 0 0;
   color: rgba(255, 255, 255, 0.76);
   line-height: 1.4rem;
+}
+
+.watchDeck article,
+.happyPath span,
+.sourceLane,
+.flowCard {
+  transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease;
+}
+
+.watchDeck article:hover,
+.happyPath span:hover,
+.sourceLane:hover,
+.flowCard:hover {
+  border-color: rgba(255, 255, 255, 0.28);
+  background-color: rgba(255, 255, 255, 0.14);
+  transform: translateY(-2px);
 }
 
 .statusCard {
@@ -566,6 +628,102 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
+.videoStageFrame {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+}
+
+.videoStageFrame::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(158, 215, 255, 0.16), transparent 30%),
+    linear-gradient(315deg, rgba(247, 215, 232, 0.16), transparent 34%);
+  z-index: 1;
+}
+
+.stageEmptyState {
+  position: absolute;
+  inset: 1rem;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  padding: 1rem;
+  border: 1px dashed rgba(255, 255, 255, 0.24);
+  border-radius: 20px;
+  background: radial-gradient(circle at 50% 20%, rgba(255, 216, 138, 0.2), transparent 36%),
+    rgba(36, 28, 53, 0.36);
+  text-align: center;
+}
+
+.stageEmptyState span {
+  color: var(--color-honey);
+  font-size: 0.8rem;
+  font-weight: bold;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.stageEmptyState strong {
+  max-width: 28rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1.2rem;
+  line-height: 1.2;
+}
+
+.stageNowBar,
+.stageComfortRail {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.stageNowBar {
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 18px;
+  background: rgba(36, 28, 53, 0.18);
+}
+
+.stageNowBar span,
+.stageComfortRail span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0 0.65rem;
+  border-radius: 999px;
+}
+
+.stageNowBar span {
+  background: var(--app-button-gradient);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.stageNowBar strong {
+  min-width: 0;
+  color: rgba(255, 255, 255, 0.9);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stageComfortRail span {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 0.84rem;
+}
+
 .stageCard p:not(.kicker) {
   margin: 0;
   color: rgba(255, 255, 255, 0.72);
@@ -613,7 +771,8 @@
 }
 
 .addMediaPanel [data-source-suggestion='animepahe'],
-.addMediaPanel [data-source-suggestion='cineby'] {
+.addMediaPanel [data-source-suggestion='cineby'],
+.addMediaPanel [data-source-suggestion='miruro'] {
   background: radial-gradient(circle at 82% 18%, rgba(247, 215, 232, 0.28), transparent 46%),
     rgba(255, 255, 255, 0.1);
 }
@@ -816,6 +975,43 @@
   font-weight: bold;
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  .syncBeam {
+    background-size: 200% 100%;
+    animation: runtime-sync-shimmer 2400ms ease-in-out infinite;
+  }
+
+  .catOrb {
+    animation: runtime-pet-float 3400ms ease-in-out infinite;
+  }
+
+  .rabbitOrb {
+    animation: runtime-pet-float 3400ms ease-in-out 420ms infinite;
+  }
+}
+
+@keyframes runtime-sync-shimmer {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes runtime-pet-float {
+  0%,
+  100% {
+    margin-top: 0;
+  }
+
+  50% {
+    margin-top: -0.35rem;
+  }
+}
+
 @media only screen and (max-width: 1040px) {
   .heroCard {
     grid-template-columns: 1fr;
@@ -861,5 +1057,14 @@
 
   .videoStage {
     min-height: 16rem;
+  }
+
+  .stageNowBar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .stageNowBar strong {
+    white-space: normal;
   }
 }

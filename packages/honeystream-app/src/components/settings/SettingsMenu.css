@@ -10,26 +10,33 @@
 
 .columns {
   width: 100%;
-  max-width: 800px;
+  max-width: 860px;
   display: flex;
   flex-flow: row nowrap;
   flex: 1 0 auto;
+  gap: 1rem;
 }
 
 .tabSidebar {
-  width: 12rem;
+  width: 13rem;
 }
 
 .tabItem {
   width: 100%;
-  opacity: 0.4;
+  opacity: 0.72;
 }
 
 .tabItem button {
   width: 100%;
-  padding: 0.5rem 0;
-  margin-bottom: 0.2rem;
+  min-height: 2.65rem;
+  padding: 0 0.85rem;
+  margin-bottom: 0.35rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(36, 28, 53, 0.18);
+  color: rgba(255, 255, 255, 0.78);
   text-align: left;
+  transition: background 140ms ease, transform 140ms ease, opacity 140ms ease;
 }
 
 .selectedTab {
@@ -37,16 +44,37 @@
   font-weight: bold;
 }
 
+.selectedTab button {
+  background: var(--app-button-gradient);
+  color: #fff;
+  box-shadow: 0 12px 28px rgba(255, 127, 150, 0.22);
+}
+
+.tabItem button:hover {
+  background: rgba(255, 255, 255, 0.16);
+  transform: translateY(-1px);
+}
+
+.selectedTab button:hover {
+  background: var(--app-button-gradient);
+}
+
 .content {
   width: 100%;
   max-width: 38rem;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 24px;
+  background: rgba(36, 28, 53, 0.16);
 }
 
 .content h2 {
-  font-size: 18px;
+  color: #fff;
+  font-size: 1.65rem;
   font-weight: bold;
-  letter-spacing: 1px;
-  margin-bottom: 0.8rem;
+  letter-spacing: -0.035em;
+  margin-bottom: 1rem;
 }
 
 .section {
@@ -55,8 +83,10 @@
 
 .section > label {
   display: block;
-  font-size: 12px;
-  letter-spacing: 0.5px;
+  color: var(--color-honey);
+  font-size: 0.78rem;
+  font-weight: bold;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   margin-bottom: 4px;
 }
@@ -99,4 +129,28 @@
 
 .blend {
   composes: blend-text-invert from '~styles/text.css';
+}
+
+@media only screen and (max-width: 700px) {
+  .columns {
+    flex-direction: column;
+  }
+
+  .tabSidebar {
+    width: 100%;
+  }
+
+  .tabSidebar ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .tabItem {
+    width: auto;
+  }
+
+  .tabItem button {
+    margin-bottom: 0;
+  }
 }

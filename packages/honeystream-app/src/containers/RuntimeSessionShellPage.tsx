@@ -194,6 +194,12 @@ const ADD_MEDIA_SUGGESTIONS = [
     url: 'https://cineby.app/movie/example'
   },
   {
+    id: 'miruro',
+    label: 'Miruro',
+    detail: 'Anime watch page',
+    url: 'https://www.miruro.tv/watch/example'
+  },
+  {
     id: 'direct',
     label: 'Direct MP4',
     detail: 'Clean media URL',
@@ -585,6 +591,19 @@ const getMediaTitleFromUrl = (mediaUrl: URL): string => {
 const getMediaKindFromUrl = (mediaUrl: URL): MediaSnapshot['kind'] =>
   DIRECT_MEDIA_EXTENSION.test(mediaUrl.pathname) ? 'url' : 'website'
 
+const getStageKindLabel = (media: MediaSnapshot | undefined): string => {
+  if (!media) return 'Ready for websites'
+
+  switch (media.kind) {
+    case 'localFile':
+      return 'Local file loaded'
+    case 'url':
+      return 'Direct media loaded'
+    case 'website':
+      return 'Website loaded'
+  }
+}
+
 const hasLocalFileRegistry = (
   playback: SessionRuntimePlaybackEngine
 ): playback is SessionRuntimePlaybackEngine & LocalFilePlaybackRegistry =>
@@ -604,6 +623,7 @@ const RuntimeSessionRouteSurface = ({
 
   const renderRuntimeSurface = (viewModel: SessionRuntimeShellViewModel): React.ReactNode => {
     const queueItems = mapSessionSnapshotToQueueItems(viewModel.snapshot.session)
+    const currentMedia = viewModel.snapshot.session.current
     const roleLabel =
       viewModel.snapshot.role === 'host'
         ? 'Cat-side host'
@@ -668,7 +688,7 @@ const RuntimeSessionRouteSurface = ({
         <InviteLinkPanel
           baseUrl={getInviteBaseUrl()}
           className={`${styles.card} ${styles.invitePanel}`}
-          copyLabel="Copy invite"
+          copyLabel="Copy"
           invite={boundary.invite}
           inviteLinkLabel="Invite link"
           onCopyInviteLink={boundary.copyText}
@@ -684,7 +704,27 @@ const RuntimeSessionRouteSurface = ({
             <p className={styles.kicker}>Playback stage</p>
             <span>Website + file preview</span>
           </div>
-          <video className={styles.videoStage} controls ref={boundary.mediaElementRef} />
+          <div
+            className={styles.videoStageFrame}
+            data-stage-state={currentMedia ? 'ready' : 'empty'}
+          >
+            <video className={styles.videoStage} controls ref={boundary.mediaElementRef} />
+            {!currentMedia ? (
+              <div className={styles.stageEmptyState} aria-hidden="true">
+                <span>Drop the first pick</span>
+                <strong>Websites, direct links, or a local file all land here.</strong>
+              </div>
+            ) : null}
+          </div>
+          <div className={styles.stageNowBar} aria-label="Current playback source">
+            <span>{getStageKindLabel(currentMedia)}</span>
+            <strong>{currentMedia ? currentMedia.title : 'Pick a cozy first stream'}</strong>
+          </div>
+          <div className={styles.stageComfortRail} aria-label="Stage promises">
+            <span>Host-led playback</span>
+            <span>Guest follows clearly</span>
+            <span>Queue stays tiny</span>
+          </div>
           <p>
             Queue YouTube, AnimePahe, Cineby, Miruro, direct media, or a local file from the panel
             beside the stage. The room stays small while each browser loads the thing it can

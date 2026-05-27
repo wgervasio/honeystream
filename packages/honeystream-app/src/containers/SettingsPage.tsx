@@ -32,8 +32,24 @@ class _SettingsPage extends Component<PrivateProps, State> {
     if (this.state.hide) return null
     return (
       <LayoutMain className={styles.container}>
-        <MenuHeader text={t('settings')} />
-        <SettingsMenu invalidate={this.invalidate} />
+        <section className={styles.shell}>
+          <header className={styles.hero}>
+            <p className={styles.kicker}>Room comfort settings</p>
+            <MenuHeader text={t('settings')} />
+            <p>
+              Tune the basics before watch night: your display name, cozy visuals, and safe website
+              behavior stay easy to find.
+            </p>
+            <div className={styles.settingPills} aria-label="Settings highlights">
+              <span>Cat-side identity</span>
+              <span>Rabbit-side comfort</span>
+              <span>Website safety</span>
+            </div>
+          </header>
+          <div className={styles.menuCard}>
+            <SettingsMenu invalidate={this.invalidate} />
+          </div>
+        </section>
       </LayoutMain>
     )
   }

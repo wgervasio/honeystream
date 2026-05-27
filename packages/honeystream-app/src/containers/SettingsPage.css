@@ -1,6 +1,100 @@
 .container {
-  background: var(--app-bg-other);
+  background: radial-gradient(circle at 12% 10%, rgba(158, 215, 255, 0.32), transparent 32%),
+    radial-gradient(circle at 86% 18%, rgba(247, 215, 232, 0.34), transparent 34%),
+    var(--app-bg-other);
   height: 100%;
+  overflow: auto;
+}
+
+.shell {
+  width: calc(100% - 2rem);
+  max-width: 920px;
+  min-height: calc(100vh - var(--app-titlebar-height));
+  margin: 0 auto;
+  padding: 2rem 0;
+  display: grid;
+  align-content: center;
+  gap: 1rem;
+}
+
+.hero,
+.menuCard {
+  border: 1px solid var(--app-panel-border);
+  background: var(--app-panel-bg);
+  box-shadow: var(--app-panel-shadow);
+  backdrop-filter: blur(24px);
+}
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: 1.5rem;
+  border-radius: 30px;
+  background: radial-gradient(circle at 12% 18%, rgba(158, 215, 255, 0.28), transparent 34%),
+    radial-gradient(circle at 90% 78%, rgba(247, 215, 232, 0.28), transparent 36%),
+    rgba(255, 255, 255, 0.14);
+}
+
+.hero::after {
+  content: '';
+  position: absolute;
+  right: -3rem;
+  bottom: -4rem;
+  width: 13rem;
+  height: 13rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 216, 138, 0.34), rgba(255, 216, 138, 0));
+}
+
+.hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.hero header {
+  margin-bottom: 0.75rem;
+}
+
+.hero p:not(.kicker) {
+  max-width: 38rem;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.kicker {
+  margin: 0 0 0.75rem;
+  color: var(--color-honey);
+  font-size: 0.8rem;
+  font-weight: bold;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.settingPills {
   display: flex;
-  flex-flow: column;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 1rem;
+}
+
+.settingPills span {
+  min-height: 2.2rem;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 0.75rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.86rem;
+}
+
+.menuCard {
+  padding: 1.25rem;
+  border-radius: 30px;
+}
+
+@media only screen and (max-width: 700px) {
+  .shell {
+    align-content: start;
+  }
 }

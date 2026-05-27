@@ -44,6 +44,11 @@ export class SessionJoin extends Component<IProps> {
             <span>Rabbit-side guest lands here</span>
             <span>Controls sync after approval</span>
           </div>
+          <div className={styles.joinPreview} aria-label="Join preview">
+            <span className={styles.joinBubbleCat}>Cat-side is hosting</span>
+            <strong>one private hop</strong>
+            <span className={styles.joinBubbleRabbit}>Rabbit-side joins</span>
+          </div>
           <div id="join_invite_ribbon" className={styles.inviteRibbon} aria-label="Invite flow">
             <span>Paste invite</span>
             <span>Confirm your name</span>

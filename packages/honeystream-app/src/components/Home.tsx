@@ -129,6 +129,11 @@ class Home extends Component<IProps> {
         label: 'simple controls'
       }
     ]
+    const dateNightRail = [
+      'Pick the exact site',
+      'Share the room once',
+      'Keep snacks first, tech second'
+    ]
     const cozyPactCards = [
       {
         id: 'cat-side',
@@ -285,6 +290,12 @@ class Home extends Component<IProps> {
                   <span>Invite copied</span>
                   <span>Controls ready</span>
                 </div>
+              </div>
+              <div className={styles.dateNightRail} aria-label="Date night rail">
+                <strong>Tonight flow</strong>
+                {dateNightRail.map(item => (
+                  <span key={item}>{item}</span>
+                ))}
               </div>
               <div className={styles.comfortGrid} aria-label="Room promises">
                 <span>
