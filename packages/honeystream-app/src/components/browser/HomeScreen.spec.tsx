@@ -5,6 +5,7 @@ jest.mock('./HomeScreen.css', () => ({
   button: 'button',
   column: 'column',
   container: 'container',
+  decisionFlow: 'decisionFlow',
   directLink: 'directLink',
   divider: 'divider',
   fileInput: 'fileInput',
@@ -55,6 +56,9 @@ describe('browser/HomeScreen', () => {
     expect(html).toContain('One host-owned queue')
     expect(html).toContain('Full watch-page URLs work best')
     expect(html).toContain('Direct media links skip extra clutter')
+    expect(html).toContain('Website opens for both')
+    expect(html).toContain('You both downloaded it')
+    expect(html).toContain('URL is already media')
     expect(html).toContain('Choose the easiest source for tonight')
     expect(html).toContain('paste the exact watch page')
     expect(html).toContain('YouTube')

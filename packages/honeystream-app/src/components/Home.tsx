@@ -154,6 +154,26 @@ class Home extends Component<IProps> {
         body: 'Websites, direct links, and local files live in the same simple watch flow.'
       }
     ]
+    const commandCenterCards = [
+      {
+        id: 'source',
+        label: 'Source',
+        value: 'Exact watch page',
+        detail: 'Paste the real page first so both browsers know what to open.'
+      },
+      {
+        id: 'invite',
+        label: 'Invite',
+        value: 'One private hop',
+        detail: 'Room code plus secret keeps the rabbit-side seat clear.'
+      },
+      {
+        id: 'sync',
+        label: 'Sync',
+        value: 'Host presses play',
+        detail: 'Cat-side controls keep play, pause, seek, and speed changes obvious.'
+      }
+    ]
 
     return (
       <LayoutMain className={styles.container} showBackButton={false}>
@@ -290,6 +310,23 @@ class Home extends Component<IProps> {
                   <span>Invite copied</span>
                   <span>Controls ready</span>
                 </div>
+              </div>
+              <div
+                id="home_command_center"
+                className={styles.commandCenter}
+                aria-label="Cozy command center"
+              >
+                <div className={styles.commandCenterHeader}>
+                  <span>Tiny command center</span>
+                  <strong>Ready in 3 taps</strong>
+                </div>
+                {commandCenterCards.map(card => (
+                  <article key={card.id}>
+                    <span>{card.label}</span>
+                    <strong>{card.value}</strong>
+                    <p>{card.detail}</p>
+                  </article>
+                ))}
               </div>
               <div className={styles.dateNightRail} aria-label="Date night rail">
                 <strong>Tonight flow</strong>

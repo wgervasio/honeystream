@@ -47,6 +47,20 @@ const sourceConfidenceItems = [
   'Local files stay on each device',
   'Direct media links skip extra clutter'
 ]
+const decisionFlowCards = [
+  {
+    label: 'Website opens for both',
+    detail: 'Paste the exact page and let each browser load it locally.'
+  },
+  {
+    label: 'You both downloaded it',
+    detail: 'Choose the local file lane and keep the video private.'
+  },
+  {
+    label: 'URL is already media',
+    detail: 'Drop the direct MP4, WebM, audio, or stream link.'
+  }
+]
 
 const isHttpUrl = (value: string): boolean => {
   try {
@@ -145,6 +159,18 @@ export const HomeScreen = (props: Props) => {
         <div className={styles.confidenceRail} aria-label="Source confidence tips">
           {sourceConfidenceItems.map(item => (
             <span key={item}>{item}</span>
+          ))}
+        </div>
+        <div
+          id="media_decision_flow"
+          className={styles.decisionFlow}
+          aria-label="Media source decision flow"
+        >
+          {decisionFlowCards.map(card => (
+            <article key={card.label}>
+              <strong>{card.label}</strong>
+              <span>{card.detail}</span>
+            </article>
           ))}
         </div>
       </header>

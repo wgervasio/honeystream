@@ -213,6 +213,63 @@
   gap: 1rem;
 }
 
+.signalDock {
+  display: grid;
+  grid-template-columns: auto repeat(4, minmax(0, 1fr));
+  gap: 0.7rem;
+  align-items: stretch;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(36, 28, 53, 0.14));
+}
+
+.signalDock > strong,
+.signalDock article {
+  min-height: 5.6rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 20px;
+}
+
+.signalDock > strong {
+  min-width: 11rem;
+  padding: 0.9rem 1rem;
+  background: var(--app-button-gradient);
+  color: #fff;
+  font-size: 0.82rem;
+  letter-spacing: 0.1em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  box-shadow: 0 14px 32px rgba(255, 127, 150, 0.22);
+}
+
+.signalDock article {
+  gap: 0.4rem;
+  padding: 0.85rem;
+  background: radial-gradient(circle at 18% 18%, rgba(158, 215, 255, 0.22), transparent 42%),
+    rgba(255, 255, 255, 0.08);
+}
+
+.signalDock article:nth-of-type(2),
+.signalDock article:nth-of-type(4) {
+  background: radial-gradient(circle at 82% 18%, rgba(247, 215, 232, 0.24), transparent 42%),
+    rgba(255, 255, 255, 0.08);
+}
+
+.signalDock span {
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: bold;
+  line-height: 1.1;
+}
+
+.signalDock p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.86rem;
+  line-height: 1.24rem;
+}
+
 .watchDeck {
   grid-column: 1 / -1;
   display: grid;
@@ -257,6 +314,7 @@
 
 .watchDeck article,
 .happyPath span,
+.signalDock article,
 .sourceLane,
 .flowCard {
   transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease;
@@ -264,6 +322,7 @@
 
 .watchDeck article:hover,
 .happyPath span:hover,
+.signalDock article:hover,
 .sourceLane:hover,
 .flowCard:hover {
   border-color: rgba(255, 255, 255, 0.28);
@@ -1018,6 +1077,7 @@
   }
 
   .happyPath,
+  .signalDock,
   .watchDeck {
     grid-template-columns: 1fr;
   }
