@@ -368,6 +368,13 @@ export class DefaultSessionRuntime implements SessionRuntime {
     if (event.type === 'mediaQueued') {
       this.knownGuestMedia = upsertKnownMedia(this.knownGuestMedia, event.media, this.mediaCacheCap)
     }
+    if (nextSession.currentMedia) {
+      this.knownGuestMedia = upsertKnownMedia(
+        this.knownGuestMedia,
+        nextSession.currentMedia,
+        this.mediaCacheCap
+      )
+    }
     for (const media of nextSession.queue) {
       this.knownGuestMedia = upsertKnownMedia(this.knownGuestMedia, media, this.mediaCacheCap)
     }

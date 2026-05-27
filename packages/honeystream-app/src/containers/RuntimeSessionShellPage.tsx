@@ -95,6 +95,33 @@ const RUNTIME_SETUP_STEPS = Object.freeze([
     text: 'Websites, direct links, and local files flow through one queue.'
   }
 ])
+const STREAMING_SITE_CARDS = Object.freeze([
+  {
+    name: 'YouTube',
+    url: 'youtube.com',
+    note: 'baseline web-video path'
+  },
+  {
+    name: 'AnimePahe',
+    url: 'animepahe.ru',
+    note: 'anime episode pages'
+  },
+  {
+    name: 'Cineby',
+    url: 'cineby.app',
+    note: 'movie and TV pages'
+  },
+  {
+    name: 'Miruro',
+    url: 'miruro.to',
+    note: 'HD anime watch pages'
+  }
+])
+const SYNC_QUALITY_CHIPS = Object.freeze([
+  '0% byte loss target',
+  '24 ms lab latency budget',
+  'Tiny host snapshots'
+])
 const STARTUP_ERROR_ID = 'runtime-shell-startup'
 const DEFAULT_SEEK_TOLERANCE_MS = 250
 
@@ -372,6 +399,30 @@ export const RuntimeSessionShellPage = ({ match }: RouteComponentProps<IRoutePar
                 <span>{promise.text}</span>
               </article>
             ))}
+          </div>
+          <div
+            id="runtime_streaming_site_lab"
+            className={styles.siteLab}
+            aria-label="Streaming site test lab"
+          >
+            <div className={styles.siteLabHeader}>
+              <strong>Happy streaming lab</strong>
+              <span>URL safety checked test paths</span>
+            </div>
+            <div className={styles.siteGrid}>
+              {STREAMING_SITE_CARDS.map(site => (
+                <article key={site.name}>
+                  <strong>{site.name}</strong>
+                  <span>{site.url}</span>
+                  <em>{site.note}</em>
+                </article>
+              ))}
+            </div>
+            <div id="runtime_sync_quality" className={styles.syncQuality}>
+              {SYNC_QUALITY_CHIPS.map(chip => (
+                <span key={chip}>{chip}</span>
+              ))}
+            </div>
           </div>
         </header>
         <SessionRuntimeShellContainer

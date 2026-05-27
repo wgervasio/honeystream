@@ -62,6 +62,7 @@ export const toSessionSnapshot = (
   },
   queue: state.queue.map(toMediaSnapshot),
   currentMediaId: state.current ? state.current.id : undefined,
+  currentMedia: state.current ? toMediaSnapshot(state.current) : undefined,
   playback: {
     state: state.playback.state,
     positionMs: state.playback.positionMs,
@@ -112,6 +113,10 @@ export const resolveCurrentMediaSnapshot = (
 ): MediaSnapshot | undefined => {
   const currentMediaId = snapshot.currentMediaId
   if (!currentMediaId) return undefined
+
+  if (snapshot.currentMedia && snapshot.currentMedia.mediaId === currentMediaId) {
+    return snapshot.currentMedia
+  }
 
   const queueMatch = snapshot.queue.find(media => media.mediaId === currentMediaId)
   if (queueMatch) return queueMatch

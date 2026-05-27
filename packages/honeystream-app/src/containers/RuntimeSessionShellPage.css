@@ -181,6 +181,88 @@
   line-height: 1.3rem;
 }
 
+.siteLab {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 24px;
+  background: linear-gradient(135deg, rgba(255, 216, 138, 0.16), rgba(158, 215, 255, 0.12));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.siteLabHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-bottom: 0.8rem;
+}
+
+.siteLabHeader strong {
+  color: #fff;
+}
+
+.siteLabHeader span {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.siteGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.siteGrid article {
+  min-height: 6.4rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 18px;
+  background: rgba(36, 28, 53, 0.18);
+}
+
+.siteGrid strong,
+.siteGrid span,
+.siteGrid em {
+  display: block;
+}
+
+.siteGrid strong {
+  color: #fff;
+  line-height: 1.1;
+}
+
+.siteGrid span {
+  margin-top: 0.35rem;
+  color: var(--color-honey);
+  font-size: 0.82rem;
+}
+
+.siteGrid em {
+  margin-top: 0.3rem;
+  color: rgba(255, 255, 255, 0.66);
+  font-size: 0.78rem;
+  font-style: normal;
+  line-height: 1.15rem;
+}
+
+.syncQuality {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.8rem;
+}
+
+.syncQuality span {
+  padding: 0.38rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.8rem;
+}
+
 .runtimePanel {
   display: flex;
   flex-direction: column;
@@ -228,6 +310,15 @@
   }
 
   .setupRail {
+    grid-template-columns: 1fr;
+  }
+
+  .siteLabHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .siteGrid {
     grid-template-columns: 1fr;
   }
 
