@@ -83,6 +83,7 @@ module.exports = {
   output: {
     path: path.join(__dirname, 'dist'),
     filename: 'app.dev.js',
+    hashFunction: 'sha256',
     // https://github.com/webpack/webpack/issues/1114
     libraryTarget: 'commonjs2'
   },
