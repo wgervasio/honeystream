@@ -40,6 +40,20 @@ describe('SessionParticipantUsernames', () => {
 
     expect(html).toContain('Guest: Awaiting guest')
   })
+
+  it('keeps cozy Cat-side and Rabbit-side labels visible for runtime rooms', () => {
+    const html = renderToStaticMarkup(
+      <SessionParticipantUsernames
+        hostLabel="Cat-side host"
+        guestLabel="Rabbit-side guest"
+        participants={{ hostUsername: 'HoneyHost' }}
+        waitingForGuestLabel="Waiting for your watch buddy"
+      />
+    )
+
+    expect(html).toContain('Cat-side host: HoneyHost')
+    expect(html).toContain('Rabbit-side guest: Waiting for your watch buddy')
+  })
 })
 
 describe('SessionSystemErrors', () => {

@@ -59,6 +59,7 @@ describe('protocol foundation parsers', () => {
           participants: { host, guest },
           queue: [media],
           currentMediaId: media.mediaId,
+          currentMedia: media,
           playback,
           eventCursor: 7
         }
@@ -126,6 +127,25 @@ describe('protocol foundation parsers', () => {
 
     expect(result.ok).toBeFalsy()
     if (!result.ok) expect(result.error.code).toBe('malformedValue')
+  })
+
+  it('rejects snapshots whose current media does not match the current media id', () => {
+    const result = parseHostEvent({
+      type: 'snapshot',
+      snapshot: {
+        roomId,
+        status: 'connected',
+        participants: { host },
+        queue: [],
+        currentMediaId: 'media-2',
+        currentMedia: media,
+        playback,
+        eventCursor: 1
+      }
+    })
+
+    expect(result.ok).toBeFalsy()
+    if (!result.ok) expect(result.error.path).toBe('event.snapshot.currentMedia')
   })
 
   it('parses protocol error payloads', () => {

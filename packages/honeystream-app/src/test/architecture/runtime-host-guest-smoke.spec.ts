@@ -52,6 +52,15 @@ const toSessionSnapshot = (state: SessionState): SessionSnapshot => ({
     durationMs: media.durationMs
   })),
   currentMediaId: state.current ? state.current.id : undefined,
+  currentMedia: state.current
+    ? {
+        mediaId: state.current.id,
+        kind: 'url',
+        source: state.current.url,
+        title: state.current.title,
+        durationMs: state.current.durationMs
+      }
+    : undefined,
   playback: {
     state: state.playback.state,
     positionMs: state.playback.positionMs,

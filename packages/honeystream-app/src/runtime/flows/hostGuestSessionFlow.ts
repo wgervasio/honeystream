@@ -28,6 +28,7 @@ import {
   SessionSnapshot
 } from 'protocol/types'
 import { PeerTransport, PeerTransportEvent } from 'transport/contracts'
+import { classifyMediaUrl } from 'runtime/protocol/url-classifier'
 import { ProjectionStore, createProjectionStore } from 'ui'
 
 export interface FlowClock {
@@ -69,7 +70,7 @@ const normalizeQueueCap = (value: number | undefined): number => {
 
 const toMediaSnapshot = (media: SessionMediaItem): MediaSnapshot => ({
   mediaId: media.id,
-  kind: 'url',
+  kind: media.kind || classifyMediaUrl(media.url),
   source: media.url,
   title: media.title,
   durationMs: media.durationMs
@@ -79,6 +80,7 @@ const toSessionMediaItem = (media: MediaSnapshot, requestedBy: string): SessionM
   id: media.mediaId,
   url: media.source,
   title: media.title,
+  kind: media.kind,
   durationMs: media.durationMs,
   requestedBy
 })
@@ -117,6 +119,7 @@ const toSessionSnapshot = (state: SessionState): SessionSnapshot => ({
   },
   queue: state.queue.map(toMediaSnapshot),
   currentMediaId: state.current ? state.current.id : undefined,
+  currentMedia: state.current ? toMediaSnapshot(state.current) : undefined,
   playback: toPlaybackSnapshot(state),
   eventCursor: state.events.length
 })
@@ -253,7 +256,11 @@ export const applyHostEventToSnapshot = (
 
       return {
         ...snapshot,
-        queue: nextQueue
+        queue: nextQueue,
+        currentMedia:
+          snapshot.currentMedia && snapshot.currentMedia.mediaId === event.mediaId
+            ? undefined
+            : snapshot.currentMedia
       }
     }
     case 'currentMediaChanged':
@@ -263,7 +270,11 @@ export const applyHostEventToSnapshot = (
 
       return {
         ...snapshot,
-        currentMediaId: event.mediaId
+        currentMediaId: event.mediaId,
+        currentMedia:
+          snapshot.currentMedia && snapshot.currentMedia.mediaId === event.mediaId
+            ? snapshot.currentMedia
+            : undefined
       }
     case 'playbackChanged':
       if (playbackSnapshotEquals(snapshot.playback, event.playback)) {

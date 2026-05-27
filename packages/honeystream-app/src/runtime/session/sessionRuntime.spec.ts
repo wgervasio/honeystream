@@ -2,6 +2,7 @@ import { PlaybackEngineApplyResult, PlaybackEngineDesiredState } from 'playback/
 import { MediaSnapshot } from 'protocol/types'
 import { TransportMessageValidator } from 'transport/contracts'
 import { createInMemoryPeerTransportPair } from 'transport/in-memory-peer-transport-pair'
+import { createSimulatedPeerTransportPair } from 'transport/simulated-peer-transport-pair'
 import { SessionRuntimePlaybackEngine } from './contracts'
 import { createSessionRuntime } from './sessionRuntime'
 
@@ -39,6 +40,13 @@ const createMedia = (mediaId: string): MediaSnapshot => ({
   source: `https://example.com/${mediaId}.mp4`,
   title: mediaId,
   durationMs: 120000
+})
+
+const createWebsiteMedia = (mediaId: string, source: string, title: string): MediaSnapshot => ({
+  mediaId,
+  kind: 'website',
+  source,
+  title
 })
 
 const flushRuntime = async (): Promise<void> => {
@@ -95,9 +103,10 @@ describe('runtime/session/SessionRuntime', () => {
       playback: new FakePlaybackEngine(),
       now: () => nowMs++
     })
+    const guestPlayback = new FakePlaybackEngine()
     const guestRuntime = createSessionRuntime({
       transport: pair.guest,
-      playback: new FakePlaybackEngine(),
+      playback: guestPlayback,
       now: () => nowMs++
     })
 
@@ -135,6 +144,97 @@ describe('runtime/session/SessionRuntime', () => {
     }
     expect(hostSession.currentMediaId).toBe('media-guest')
     expect(guestSession.currentMediaId).toBe('media-guest')
+    expect(guestPlayback.desiredStates[guestPlayback.desiredStates.length - 1].media).toEqual({
+      mediaId: 'media-guest',
+      source: 'direct-media',
+      url: 'https://example.com/media-guest.mp4'
+    })
+  })
+
+  it('syncs website media over a simulated low-latency host/guest transport without byte loss', async () => {
+    let nowMs = 9000
+    const pair = createSimulatedPeerTransportPair({
+      hostInboundValidator: acceptsUnknownMessage,
+      guestInboundValidator: acceptsUnknownMessage,
+      now: () => nowMs,
+      network: { latencyMs: 14, maxQueuedFrames: 64 }
+    })
+    const hostRuntime = createSessionRuntime({
+      transport: pair.host,
+      playback: new FakePlaybackEngine(),
+      now: () => nowMs
+    })
+    const guestPlayback = new FakePlaybackEngine()
+    const guestRuntime = createSessionRuntime({
+      transport: pair.guest,
+      playback: guestPlayback,
+      now: () => nowMs
+    })
+
+    const settleTransport = async (): Promise<void> => {
+      pair.flushAll()
+      await flushRuntime()
+      pair.flushAll()
+      await flushRuntime()
+    }
+
+    const siteCases = [
+      createWebsiteMedia('site-youtube', 'https://www.youtube.com/watch?v=honeystream-test', 'YouTube'),
+      createWebsiteMedia('site-animepahe', 'https://animepahe.ru/play/honeystream-test', 'AnimePahe'),
+      createWebsiteMedia('site-cineby', 'https://cineby.app/movie/honeystream-test', 'Cineby'),
+      createWebsiteMedia('site-miruro', 'https://www.miruro.tv/watch/honeystream-test', 'Miruro')
+    ]
+
+    try {
+      await hostRuntime.startHostSession({
+        roomId: 'room-1',
+        hostUsername: 'Host',
+        inviteSecret: 'invite-secret'
+      })
+      await guestRuntime.startGuestSession({
+        roomId: 'room-1',
+        username: 'Guest',
+        inviteSecret: 'invite-secret'
+      })
+      await settleTransport()
+
+      for (let index = 0; index < siteCases.length; index += 1) {
+        nowMs += 20
+        await guestRuntime.dispatchGuestCommand({
+          type: 'addMedia',
+          media: siteCases[index]
+        })
+        await settleTransport()
+      }
+
+      const guestSession = guestRuntime.getSnapshot().session
+      expect(guestSession).toBeDefined()
+      if (!guestSession) {
+        throw new Error('Expected guest session after simulated website sync.')
+      }
+      expect(guestSession.currentMedia).toEqual(siteCases[0])
+      expect(guestSession.queue.map(media => media.mediaId)).toEqual([
+        'site-animepahe',
+        'site-cineby',
+        'site-miruro'
+      ])
+      expect(guestPlayback.desiredStates[guestPlayback.desiredStates.length - 1].media).toEqual({
+        mediaId: 'site-youtube',
+        source: 'website',
+        url: 'https://www.youtube.com/watch?v=honeystream-test'
+      })
+
+      const metrics = pair.getAggregateMetrics()
+      expect(metrics.combinedDroppedMessages).toBe(0)
+      expect(metrics.combinedLostBytes).toBe(0)
+      expect(metrics.combinedDeliveryRatio).toBe(1)
+      expect(metrics.combinedByteLossRatio).toBe(0)
+      expect(metrics.combinedMaxLatencyMs).toBeLessThanOrEqual(14)
+      expect(metrics.combinedSentBytes).toBeLessThan(12000)
+    } finally {
+      hostRuntime.dispose()
+      guestRuntime.dispose()
+    }
   })
 
   it('records protocol diagnostics for malformed inbound envelopes', async () => {

@@ -1,6 +1,10 @@
 import { TransportMessageValidator } from './contracts'
 import { SimulatedPeerTransport } from './simulated-peer-transport'
-import { Clock, SimulatedPeerNetworkProfile } from './simulated-peer-transport-types'
+import {
+  Clock,
+  SimulatedPeerNetworkProfile,
+  SimulatedPeerTransportMetrics
+} from './simulated-peer-transport-types'
 
 export interface SimulatedPeerTransportPairOptions<TClientToHostMessage, THostToClientMessage> {
   readonly hostPeerId?: string
@@ -16,7 +20,38 @@ export interface SimulatedPeerTransportPair<TClientToHostMessage, THostToClientM
   readonly guest: SimulatedPeerTransport<THostToClientMessage, TClientToHostMessage>
   flushReady(nowMs?: number): number
   flushAll(): number
+  getAggregateMetrics(): AggregateSimulatedPeerTransportMetrics
 }
+
+export interface AggregateSimulatedPeerTransportMetrics {
+  readonly host: SimulatedPeerTransportMetrics
+  readonly guest: SimulatedPeerTransportMetrics
+  readonly combinedSentBytes: number
+  readonly combinedDeliveredBytes: number
+  readonly combinedLostBytes: number
+  readonly combinedSentMessages: number
+  readonly combinedDeliveredMessages: number
+  readonly combinedDroppedMessages: number
+  readonly combinedDeliveryRatio: number
+  readonly combinedByteLossRatio: number
+  readonly combinedAverageLatencyMs: number
+  readonly combinedMaxLatencyMs: number
+  readonly combinedQueuedMessages: number
+}
+
+const combineAverageLatency = (
+  host: SimulatedPeerTransportMetrics,
+  guest: SimulatedPeerTransportMetrics
+): number => {
+  const deliveredMessages = host.deliveredMessages + guest.deliveredMessages
+  if (deliveredMessages === 0) return 0
+  const totalLatencyMs =
+    host.averageLatencyMs * host.deliveredMessages + guest.averageLatencyMs * guest.deliveredMessages
+  return totalLatencyMs / deliveredMessages
+}
+
+const ratioOrZero = (numerator: number, denominator: number): number =>
+  denominator === 0 ? 0 : numerator / denominator
 
 export const createSimulatedPeerTransportPair = <TClientToHostMessage, THostToClientMessage>(
   options: SimulatedPeerTransportPairOptions<TClientToHostMessage, THostToClientMessage>
@@ -41,6 +76,32 @@ export const createSimulatedPeerTransportPair = <TClientToHostMessage, THostToCl
     host,
     guest,
     flushReady: nowMs => host.flushReady(nowMs) + guest.flushReady(nowMs),
-    flushAll: () => host.flushAll() + guest.flushAll()
+    flushAll: () => host.flushAll() + guest.flushAll(),
+    getAggregateMetrics: () => {
+      const hostMetrics = host.getMetrics()
+      const guestMetrics = guest.getMetrics()
+      const combinedSentBytes = hostMetrics.sentBytes + guestMetrics.sentBytes
+      const combinedDeliveredBytes = hostMetrics.deliveredBytes + guestMetrics.deliveredBytes
+      const combinedLostBytes = hostMetrics.lostBytes + guestMetrics.lostBytes
+      const combinedSentMessages = hostMetrics.sentMessages + guestMetrics.sentMessages
+      const combinedDeliveredMessages =
+        hostMetrics.deliveredMessages + guestMetrics.deliveredMessages
+      const combinedDroppedMessages = hostMetrics.droppedMessages + guestMetrics.droppedMessages
+      return {
+        host: hostMetrics,
+        guest: guestMetrics,
+        combinedSentBytes,
+        combinedDeliveredBytes,
+        combinedLostBytes,
+        combinedSentMessages,
+        combinedDeliveredMessages,
+        combinedDroppedMessages,
+        combinedDeliveryRatio: ratioOrZero(combinedDeliveredMessages, combinedSentMessages),
+        combinedByteLossRatio: ratioOrZero(combinedLostBytes, combinedSentBytes),
+        combinedAverageLatencyMs: combineAverageLatency(hostMetrics, guestMetrics),
+        combinedMaxLatencyMs: Math.max(hostMetrics.maxLatencyMs, guestMetrics.maxLatencyMs),
+        combinedQueuedMessages: hostMetrics.queuedMessages + guestMetrics.queuedMessages
+      }
+    }
   }
 }

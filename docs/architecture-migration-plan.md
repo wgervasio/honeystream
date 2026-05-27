@@ -223,6 +223,30 @@ Protocol rules:
 - Never use ambient string registries for commands.
 - Every parser returns `Result<T, ProtocolError>`.
 
+Current media snapshot rationale:
+
+```text
+Context:
+Guests need the active media URL/kind/title to load website and direct-media playback after the
+host promotes an item from queue to current.
+Invariant:
+currentMedia, when present, must match currentMediaId and remain compact metadata only.
+Options considered:
+Rely on currentMediaId plus queue lookup; send a full snapshot on every current change; include
+current media metadata in the snapshot.
+Decision:
+SessionSnapshot carries optional currentMedia metadata while HostEvent deltas stay compact.
+Performance impact:
+Adds at most one small MediaSnapshot to host snapshots and avoids extra round-trips/resync asks.
+Memory/lifecycle ownership:
+Protocol/runtime own serializable metadata only; files, DOM handles, object URLs, and adapters stay
+outside shared state.
+Failure mode:
+Runtime validation rejects snapshots where currentMedia.mediaId differs from currentMediaId.
+Validation:
+Protocol parser and SessionRuntime tests cover current media delivery to guest playback.
+```
+
 ## Pure and impure boundaries
 
 Pure folders:

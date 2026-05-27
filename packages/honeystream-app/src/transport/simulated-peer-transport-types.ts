@@ -1,4 +1,5 @@
 import { PeerTransportEnvelope, TransportMessageValidator } from './contracts'
+import { serializedByteLength } from './transport-byte-length'
 
 export type Clock = () => number
 
@@ -38,5 +39,4 @@ export interface PendingFrame<TMessage> {
   readonly envelope: PeerTransportEnvelope<TMessage>
 }
 
-export const byteLength = (value: unknown): number =>
-  Buffer.byteLength(JSON.stringify(value), 'utf-8')
+export const byteLength = serializedByteLength

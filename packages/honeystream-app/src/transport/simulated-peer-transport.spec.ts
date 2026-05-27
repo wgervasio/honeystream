@@ -1,5 +1,6 @@
 import { TransportMessageValidator } from './contracts'
 import { createSimulatedPeerTransportPair } from './simulated-peer-transport-pair'
+import { byteLength } from './simulated-peer-transport-types'
 
 type ClientToHostMessage = {
   readonly type: 'ping'
@@ -35,6 +36,16 @@ const hostToClientValidator: TransportMessageValidator<HostToClientMessage> = {
 }
 
 describe('simulated peer transport', () => {
+  it('measures bytes with the same JSON envelope used by the simulated wire', () => {
+    const envelope = {
+      seq: 1,
+      sentAtMs: 1000,
+      message: { type: 'ping' as const, nonce: 1 }
+    }
+
+    expect(byteLength(envelope)).toBe(Buffer.byteLength(JSON.stringify(envelope), 'utf-8'))
+  })
+
   it('delays delivery until the latency budget is met and records byte metrics', async () => {
     let nowMs = 1000
     const pair = createSimulatedPeerTransportPair({
@@ -63,6 +74,38 @@ describe('simulated peer transport', () => {
     expect(pair.guest.getMetrics().lostBytes).toBe(0)
     expect(pair.host.getMetrics().deliveredBytes).toBeGreaterThan(0)
     expect(pair.host.getMetrics().averageLatencyMs).toBe(25)
+  })
+
+  it('aggregates host and guest latency, delivery, and byte-loss metrics', async () => {
+    let nowMs = 4000
+    const pair = createSimulatedPeerTransportPair({
+      hostInboundValidator: clientToHostValidator,
+      guestInboundValidator: hostToClientValidator,
+      now: () => nowMs,
+      network: { latencyMs: 20, dropEveryNthMessage: 3 }
+    })
+
+    await pair.host.connect()
+    pair.guest.send({ seq: 1, sentAtMs: nowMs, message: { type: 'ping', nonce: 1 } })
+    pair.guest.send({ seq: 2, sentAtMs: nowMs, message: { type: 'ping', nonce: 2 } })
+    pair.guest.send({ seq: 3, sentAtMs: nowMs, message: { type: 'ping', nonce: 3 } })
+    pair.host.send({ seq: 4, sentAtMs: nowMs, message: { type: 'pong', nonce: 4 } })
+
+    nowMs += 20
+    expect(pair.flushReady()).toBe(3)
+
+    const metrics = pair.getAggregateMetrics()
+    expect(metrics.combinedSentMessages).toBe(4)
+    expect(metrics.combinedDeliveredMessages).toBe(3)
+    expect(metrics.combinedDroppedMessages).toBe(1)
+    expect(metrics.combinedDeliveryRatio).toBe(0.75)
+    expect(metrics.combinedSentBytes).toBeGreaterThan(metrics.combinedDeliveredBytes)
+    expect(metrics.combinedLostBytes).toBeGreaterThan(0)
+    expect(metrics.combinedByteLossRatio).toBeGreaterThan(0)
+    expect(metrics.combinedByteLossRatio).toBeLessThan(1)
+    expect(metrics.combinedAverageLatencyMs).toBe(20)
+    expect(metrics.combinedMaxLatencyMs).toBe(20)
+    expect(metrics.combinedQueuedMessages).toBe(0)
   })
 
   it('can drop every nth message and report byte loss without corrupting ordering', async () => {

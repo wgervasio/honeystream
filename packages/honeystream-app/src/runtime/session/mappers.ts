@@ -2,6 +2,7 @@ import { SessionMediaItem, SessionMediaKind, SessionState } from 'domain/session
 import { PlaybackEngineDesiredState } from 'playback/engine/playbackEngineContract'
 import { PlaybackMediaSource } from 'playback/adapters/shared/playbackAdapter'
 import { HostEvent, MediaSnapshot, SessionSnapshot } from 'protocol/types'
+import { classifyMediaUrl } from 'runtime/protocol/url-classifier'
 
 const toSessionMediaKind = (kind: MediaSnapshot['kind'] | SessionMediaKind | undefined): SessionMediaKind =>
   kind === 'localFile' || kind === 'website' ? kind : 'url'
@@ -21,7 +22,7 @@ const toPlaybackMediaSource = (
 
 const toMediaSnapshot = (media: SessionMediaItem): MediaSnapshot => ({
   mediaId: media.id,
-  kind: toSessionMediaKind(media.kind),
+  kind: toSessionMediaKind(media.kind || classifyMediaUrl(media.url)),
   source: media.url,
   title: media.title,
   durationMs: media.durationMs
@@ -61,6 +62,7 @@ export const toSessionSnapshot = (
   },
   queue: state.queue.map(toMediaSnapshot),
   currentMediaId: state.current ? state.current.id : undefined,
+  currentMedia: state.current ? toMediaSnapshot(state.current) : undefined,
   playback: {
     state: state.playback.state,
     positionMs: state.playback.positionMs,
@@ -111,6 +113,9 @@ export const resolveCurrentMediaSnapshot = (
 ): MediaSnapshot | undefined => {
   const currentMediaId = snapshot.currentMediaId
   if (!currentMediaId) return undefined
+  if (snapshot.currentMedia && snapshot.currentMedia.mediaId === currentMediaId) {
+    return snapshot.currentMedia
+  }
 
   const queueMatch = snapshot.queue.find(media => media.mediaId === currentMediaId)
   if (queueMatch) return queueMatch
@@ -209,12 +214,20 @@ export const applyHostEventToSessionSnapshot = (
           current.currentMediaId && current.currentMediaId === event.mediaId
             ? undefined
             : current.currentMediaId,
+        currentMedia:
+          current.currentMedia && current.currentMedia.mediaId === event.mediaId
+            ? undefined
+            : current.currentMedia,
         eventCursor: nextCursor(current)
       }
     case 'currentMediaChanged':
       return {
         ...current,
         currentMediaId: event.mediaId,
+        currentMedia:
+          current.currentMedia && current.currentMedia.mediaId === event.mediaId
+            ? current.currentMedia
+            : undefined,
         eventCursor: nextCursor(current)
       }
     case 'playbackChanged':
