@@ -229,6 +229,29 @@
   font-size: 0.84rem;
 }
 
+.confidenceRail {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+  max-width: 43rem;
+  margin: 0.8rem auto 0;
+}
+
+.confidenceRail span {
+  min-height: 3.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.12), rgba(36, 28, 53, 0.12));
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.86rem;
+  line-height: 1.2rem;
+  text-align: center;
+}
+
 .panel {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -377,7 +400,8 @@
 @media only screen and (max-width: 760px) {
   .mediaPath,
   .pairPreview,
-  .sourceTips {
+  .sourceTips,
+  .confidenceRail {
     grid-template-columns: 1fr;
   }
 

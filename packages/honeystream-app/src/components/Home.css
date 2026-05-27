@@ -515,6 +515,34 @@
   text-align: center;
 }
 
+.dateNightRail {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.8rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 22px;
+  background: linear-gradient(90deg, rgba(158, 215, 255, 0.14), rgba(247, 215, 232, 0.14));
+}
+
+.dateNightRail strong {
+  color: var(--color-honey);
+  font-size: 0.76rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.dateNightRail span {
+  min-height: 2.2rem;
+  display: flex;
+  align-items: center;
+  padding: 0 0.7rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 0.88rem;
+}
+
 .comfortGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -902,13 +930,56 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .featureCard {
+  .featureCard,
+  .sourceLane,
+  .flowCard,
+  .cozyPact article,
+  .step {
     transition: transform 160ms ease-out, background-color 160ms ease-out;
   }
 
-  .featureCard:hover {
+  .featureCard:hover,
+  .sourceLane:hover,
+  .flowCard:hover,
+  .cozyPact article:hover,
+  .step:hover {
     transform: translateY(-3px);
     background: rgba(255, 255, 255, 0.2);
+  }
+
+  .syncBeam {
+    background-size: 200% 100%;
+    animation: home-sync-shimmer 2400ms ease-in-out infinite;
+  }
+
+  .catOrb {
+    animation: home-pet-float 3400ms ease-in-out infinite;
+  }
+
+  .rabbitOrb {
+    animation: home-pet-float 3400ms ease-in-out 420ms infinite;
+  }
+}
+
+@keyframes home-sync-shimmer {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes home-pet-float {
+  0%,
+  100% {
+    margin-top: 0;
+  }
+
+  50% {
+    margin-top: -0.35rem;
   }
 }
 
