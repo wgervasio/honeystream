@@ -1,5 +1,25 @@
 import { Page, BrowserContext } from 'playwright-core'
 
+const RUNTIME_SHELL_SELECTOR = '[data-runtime-session-shell="true"]'
+
+async function getRuntimeInviteSecret(page: Page): Promise<string> {
+  const inviteLink = await page.$eval('[data-invite-field="invite-link"] code', e => e.textContent || '')
+  const inviteUrl = new URL(inviteLink)
+  const secret = inviteUrl.searchParams.get('secret')
+  if (!secret) {
+    throw new Error('Expected runtime invite link to include a secret.')
+  }
+
+  return secret
+}
+
+async function waitForRuntimeText(page: Page, text: string): Promise<void> {
+  await page.waitForFunction(
+    expectedText => Boolean(document.body && document.body.textContent && document.body.textContent.includes(expectedText)),
+    text
+  )
+}
+
 describe('session', () => {
   const hostId = ms.useProfile()
 
@@ -10,7 +30,10 @@ describe('session', () => {
   describe('host', () => {
     it('should start a session', async () => {
       await ms.visit(`/join/${hostId}`)
-      await page.waitForSelector(`#userlist [data-user=${hostId}]`)
+      await page.waitForSelector(RUNTIME_SHELL_SELECTOR)
+      await waitForRuntimeText(page, 'Hosting')
+      await waitForRuntimeText(page, 'Invite link')
+      await waitForRuntimeText(page, 'Add media')
       await ms.screenshot('session_host')
     })
 
@@ -21,9 +44,8 @@ describe('session', () => {
       try {
         await ms.setProfile('default', guestPage)
         await guestPage.goto(`http://localhost:8080/#/join/deadbeafdeadbeafdeadbeafdeadbeaf`)
-        await guestPage.waitForSelector('#disconnect_reason')
-        const reason = await guestPage.$eval('#disconnect_reason', e => e.textContent)
-        expect(reason).toBe('Session not found.')
+        await guestPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
+        await waitForRuntimeText(guestPage, 'Network error')
       } finally {
         await guestPage.close()
         await guestContext.close()
@@ -47,15 +69,14 @@ describe('session', () => {
       await clientContext.close()
     })
 
-    it('should require allowing client to connect', async () => {
+    it('should require the private invite secret for clients', async () => {
       await ms.visit(`/join/${hostId}`)
       const hostPage = page
-      await hostPage.waitForSelector(`#userlist [data-user=${hostId}]`)
+      await hostPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
 
       await clientPage.goto(`http://localhost:8080/#/join/${hostId}`)
-
-      await hostPage.click(`#userlist [data-pending="true"] [data-id="allow"]`)
-      await hostPage.waitForSelector(`[data-user="${clientId}"][data-pending="false"]`)
+      await clientPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
+      await waitForRuntimeText(clientPage, 'Invite secret is required')
 
       await ms.screenshot('session_host+client')
     }, 10e3)
@@ -63,18 +84,13 @@ describe('session', () => {
     it('should accept connecting client', async () => {
       await ms.visit(`/join/${hostId}`)
       const hostPage = page
-      await hostPage.waitForSelector(`#userlist [data-user=${hostId}]`)
+      await hostPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
+      const inviteSecret = await getRuntimeInviteSecret(hostPage)
 
-      // set public session
-      await hostPage.evaluate(() =>
-        (window as any).app.store.dispatch({
-          type: 'SET_SETTING',
-          payload: { key: 'sessionMode', value: 0 }
-        })
-      )
-
-      await clientPage.goto(`http://localhost:8080/#/join/${hostId}`)
-      await hostPage.waitForSelector(`[data-user="${clientId}"][data-pending="false"]`)
+      await clientPage.goto(`http://localhost:8080/#/join/${hostId}?secret=${encodeURIComponent(inviteSecret)}`)
+      await clientPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
+      await waitForRuntimeText(hostPage, 'Connected')
+      await waitForRuntimeText(clientPage, 'Connected')
     })
   })
 })

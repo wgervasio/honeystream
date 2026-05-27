@@ -57,6 +57,18 @@ export const createLocalFileMetadata = (file: File): LocalFileMetadata => ({
 export const localFileToMediaUrl = (metadata: LocalFileMetadata): string =>
   `${LOCAL_FILE_SCHEME}${encodeURIComponent(metadata.key)}`
 
+export const localFileMediaUrlToKey = (url: string): string | undefined => {
+  if (url.indexOf(LOCAL_FILE_SCHEME) !== 0) return undefined
+
+  const encodedKey = url.slice(LOCAL_FILE_SCHEME.length)
+  try {
+    const key = decodeURIComponent(encodedKey)
+    return key.length > 0 ? key : undefined
+  } catch {
+    return undefined
+  }
+}
+
 export const validateLocalFileMetadata = (value: unknown): LocalFileMetadata | undefined => {
   if (!isRecord(value)) return
   if (value.kind !== LOCAL_FILE_KIND) return
@@ -103,6 +115,11 @@ export class LocalFileAdapter {
   getLocalFileUrl(metadata: LocalFileMetadata): string | undefined {
     this.assertNotDisposed()
     return this.objectUrls.get(metadata.key)
+  }
+
+  getLocalFileUrlByKey(key: string): string | undefined {
+    this.assertNotDisposed()
+    return this.objectUrls.get(key)
   }
 
   getLocalFileMetadata(value: unknown): LocalFileMetadata | undefined {

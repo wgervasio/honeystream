@@ -6,8 +6,8 @@ import {
   SessionSnapshot,
   SnapshotRequestReason
 } from 'protocol/types'
-import { PeerTransportConnectionState } from 'transport/connection-state'
 import { PeerTransport } from 'transport/contracts'
+import { PeerTransportConnectionState } from 'transport/connection-state'
 import { ProjectionStore, ProjectionUnsubscribe } from 'ui/externalStoreProjection'
 
 export type SessionRuntimeRole = 'uninitialized' | 'host' | 'guest'
@@ -78,9 +78,7 @@ export interface SessionRuntimeDependencies {
 }
 
 export interface SessionRuntimeProjectionSource {
-  subscribeToSnapshots(
-    listener: (snapshot: SessionRuntimeProjection) => void
-  ): ProjectionUnsubscribe
+  subscribeToSnapshots(listener: (snapshot: SessionRuntimeProjection) => void): ProjectionUnsubscribe
 }
 
 export interface SessionRuntime extends SessionRuntimeProjectionSource {

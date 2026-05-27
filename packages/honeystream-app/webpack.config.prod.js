@@ -9,9 +9,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const { GenerateSW } = require('workbox-webpack-plugin')
 const merge = require('webpack-merge')
 const baseConfig = require('./webpack.config.base')
-
 const LOCAL_SRC = path.join(__dirname, 'src')
-const FEATURE_RUNTIME_SESSION_SHELL = process.env.FEATURE_RUNTIME_SESSION_SHELL === 'true'
 
 module.exports = merge.smart(baseConfig, {
   devtool: 'source-map',
@@ -76,8 +74,7 @@ module.exports = merge.smart(baseConfig, {
      */
     new webpack.DefinePlugin({
       FEATURE_SESSION_BROWSER: JSON.stringify(false),
-      FEATURE_POPUP_PLAYER: JSON.stringify(true),
-      FEATURE_RUNTIME_SESSION_SHELL: JSON.stringify(FEATURE_RUNTIME_SESSION_SHELL)
+      FEATURE_POPUP_PLAYER: JSON.stringify(true)
     }),
 
     new BundleAnalyzerPlugin({

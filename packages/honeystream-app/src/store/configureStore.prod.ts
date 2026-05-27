@@ -7,7 +7,6 @@ import { configureAppMiddleware } from 'store/appMiddleware'
 import { createReducer } from '../reducers'
 import persistConfig from './persistStore'
 import { ConfigureStoreOptions } from './types'
-import { createLegacySessionProjectionBridge } from 'legacy/session-bridge'
 
 const history = createBrowserHistory()
 
@@ -18,13 +17,12 @@ function configureStore(opts: ConfigureStoreOptions) {
   const persistedReducer = persistReducer<any, any>(persistConfig, createReducer(history))
 
   const router = routerMiddleware(history)
-  const enhancer = applyMiddleware(thunkMiddleware, ...configureAppMiddleware(opts), router)
+  const enhancer = applyMiddleware(thunkMiddleware, ...configureAppMiddleware(), router)
 
   const store = createStore(persistedReducer, opts.initialState || {}, enhancer)
   const persistor = persistStore(store, undefined, opts.persistCallback)
-  const legacySessionBridge = createLegacySessionProjectionBridge({ reduxStore: store })
 
-  return { store, persistor, legacySessionBridge }
+  return { store, persistor }
 }
 
 export { configureStore, history }

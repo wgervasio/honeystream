@@ -8,7 +8,6 @@ import { configureAppMiddleware } from 'store/appMiddleware'
 import { createReducer } from '../reducers'
 import persistConfig from './persistStore'
 import { ConfigureStoreOptions } from './types'
-import { createLegacySessionProjectionBridge } from 'legacy/session-bridge'
 
 const history = createHashHistory()
 
@@ -22,7 +21,7 @@ const configureStore = (opts: ConfigureStoreOptions) => {
   middleware.push(thunkMiddleware)
 
   // App Middleware
-  middleware.push(...configureAppMiddleware(opts))
+  middleware.push(...configureAppMiddleware())
 
   // Logging Middleware
   const logger = createLogger({
@@ -57,7 +56,6 @@ const configureStore = (opts: ConfigureStoreOptions) => {
   // Create Store
   const store = createStore(persistedReducer, opts.initialState || {}, enhancer)
   const persistor = persistStore(store, undefined, opts.persistCallback)
-  const legacySessionBridge = createLegacySessionProjectionBridge({ reduxStore: store })
 
   if (module.hot) {
     module.hot.accept('../reducers', () => {
@@ -66,7 +64,7 @@ const configureStore = (opts: ConfigureStoreOptions) => {
     })
   }
 
-  return { store, persistor, legacySessionBridge }
+  return { store, persistor }
 }
 
 export { configureStore, history }

@@ -17,6 +17,7 @@ const buildProjectionSnapshot = (
   status: SessionRuntimeProjectionSnapshot['session']['status'] = 'connected',
   systemErrors: readonly SessionRuntimeSystemErrorSnapshot[] = []
 ): SessionRuntimeProjectionSnapshot => ({
+  role: 'host',
   session: {
     roomId: 'room-1',
     status,
@@ -88,6 +89,7 @@ describe('sessionShellViewModel', () => {
     const viewModel = createSessionRuntimeShellViewModel(snapshot, intents)
 
     expect(viewModel.intents).toBe(intents)
+    expect(viewModel.snapshot).toBe(snapshot)
   })
 })
 

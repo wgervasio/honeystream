@@ -31,7 +31,7 @@ export const formatSessionPath = (uri: string): string => {
     const { pathname } = url
     const hash = pathname.startsWith('/join/') && pathname.split('/').pop()
     if (hash && isP2PHash(hash)) {
-      return hash
+      return `${hash}${url.search}`
     }
   }
 

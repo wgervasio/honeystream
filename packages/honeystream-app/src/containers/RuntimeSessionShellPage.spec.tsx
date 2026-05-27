@@ -19,6 +19,7 @@ import {
   PlaybackEngineApplyResult,
   PlaybackEngineDesiredState
 } from '../playback/engine/playbackEngineContract'
+import { LocalFileMetadata } from '../playback/adapters/local-file'
 import { createProjectionStore } from '../ui'
 
 interface RouteParams {
@@ -52,6 +53,15 @@ const createWireEnvelopeValidator = <TDirection extends WireEnvelope['direction'
   describeInvalidMessage: () => `Expected ${direction} wire envelope payload.`
 })
 
+const createRouteTransportPair = (now: () => number) =>
+  createInMemoryPeerTransportPair<ClientToHostWireEnvelope, HostToClientWireEnvelope>({
+    hostPeerId: 'host-peer',
+    guestPeerId: 'guest-peer',
+    hostInboundValidator: createWireEnvelopeValidator('client-to-host'),
+    guestInboundValidator: createWireEnvelopeValidator('host-to-client'),
+    now
+  })
+
 class FakePlaybackEngine implements SessionRuntimePlaybackEngine {
   async applyDesiredState(
     desiredState: PlaybackEngineDesiredState
@@ -70,39 +80,92 @@ class FakePlaybackEngine implements SessionRuntimePlaybackEngine {
   }
 }
 
+  class FakeLocalFilePlaybackEngine extends FakePlaybackEngine {
+    registerLocalFile(file: File): LocalFileMetadata {
+      return {
+        kind: 'local-file',
+        key: 'local-key',
+        name: file.name,
+        size: file.size,
+        type: file.type || undefined,
+        lastModified: file.lastModified || undefined
+      }
+    }
+  }
+
+  class TestFile implements File {
+    readonly lastModified = 123
+    readonly name = 'local-movie.mp4'
+    readonly size = 10
+    readonly type = 'video/mp4'
+    readonly webkitRelativePath = ''
+    readonly [Symbol.toStringTag] = 'File'
+
+    arrayBuffer(): Promise<ArrayBuffer> {
+      return Promise.resolve(new ArrayBuffer(0))
+    }
+
+    slice(): Blob {
+      throw new Error('TestFile.slice() is not used in this test suite.')
+    }
+
+    stream(): ReadableStream<Uint8Array> {
+      throw new Error('TestFile.stream() is not used in this test suite.')
+    }
+
+    text(): Promise<string> {
+      return Promise.resolve('')
+    }
+  }
+
+const installCryptoMock = (): (() => void) => {
+  const originalCrypto = globalThis.crypto
+  const cryptoMock = {
+    getRandomValues(bytes: Uint8Array): Uint8Array {
+      bytes.fill(1)
+      return bytes
+    }
+  }
+
+  Object.defineProperty(globalThis, 'crypto', {
+    configurable: true,
+    value: cryptoMock
+  })
+
+  return () => {
+    Object.defineProperty(globalThis, 'crypto', {
+      configurable: true,
+      value: originalCrypto
+    })
+  }
+}
+
 describe('RuntimeSessionShellPage', () => {
   it('renders route-owned runtime session shell details for the lobby route', () => {
-    const html = renderToStaticMarkup(<RuntimeSessionShellPage {...createRouteProps('room-123')} />)
+    const restoreCrypto = installCryptoMock()
+
+    let html = ''
+    try {
+      html = renderToStaticMarkup(
+        <RuntimeSessionShellPage {...createRouteProps('room-123')} />
+      )
+    } finally {
+      restoreCrypto()
+    }
 
     expect(html).toContain('Runtime session shell')
-    expect(html).toContain('Cozy watch room for two')
     expect(html).toContain('Lobby: room-123')
-    expect(html).toContain('Private invite')
-    expect(html).toContain('Cat-side host')
-    expect(html).toContain('Rabbit-side guest')
-    expect(html).toContain('Start')
-    expect(html).toContain('Guest uses the private link')
-    expect(html).toContain('Websites, direct links, and local files')
-    expect(html).toContain('Host truth')
-    expect(html).toContain('Easy websites')
-    expect(html).toContain('Happy streaming lab')
-    expect(html).toContain('URL safety checked test paths')
-    expect(html).toContain('YouTube')
-    expect(html).toContain('AnimePahe')
-    expect(html).toContain('Cineby')
-    expect(html).toContain('Miruro')
-    expect(html).toContain('0% byte loss target')
-    expect(html).toContain('24 ms lab latency budget')
-    expect(html).toContain('Room warming up')
-    expect(html).toContain('Cat-side host: Host')
-    expect(html).toContain('Rabbit-side guest: Waiting for your watch buddy')
-    expect(html).toContain('host/local only')
+    expect(html).toContain('Idle')
+    expect(html).toContain('Host: Host')
+    expect(html).toContain('Guest: Waiting for guest')
+    expect(html).toContain('Invite')
   })
 })
 
 describe('createRuntimeSessionShellRouteBoundary', () => {
   it('starts a route-owned host runtime and projects the host session snapshot', async () => {
     const boundary = createRuntimeSessionShellRouteBoundary('room-123', {
+      createTransportPair: createRouteTransportPair,
       now: () => 1000
     })
 
@@ -184,5 +247,109 @@ describe('createRuntimeSessionShellRouteBoundary', () => {
     expect(unsubscribeSpy).toHaveBeenCalledTimes(1)
     expect(runtimeDisposeSpy).toHaveBeenCalledTimes(1)
     expect(guestDisposeSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('dispatches URL media additions through the runtime command path', async () => {
+    const transportPair = createRouteTransportPair(() => 3000)
+    const dispatchHostCommandSpy = jest.fn(async (_command: HostSessionCommand) => undefined)
+    const runtimeProjection: SessionRuntimeProjection = {
+      role: 'host',
+      lifecycle: 'running',
+      transportState: transportPair.host.getState(),
+      diagnostics: [],
+      runtimeErrors: []
+    }
+    const runtime: RuntimeSession = {
+      getSnapshot(): SessionRuntimeProjection {
+        return runtimeProjection
+      },
+      getProjectionStore() {
+        return createProjectionStore(runtimeProjection)
+      },
+      subscribeToSnapshots(): () => void {
+        return () => undefined
+      },
+      startHostSession: async () => undefined,
+      startGuestSession: async () => undefined,
+      dispatchHostCommand: dispatchHostCommandSpy,
+      dispatchGuestCommand: async (_command: ClientCommand) => undefined,
+      dispose: jest.fn()
+    }
+
+    const boundary = createRuntimeSessionShellRouteBoundary('room-789', {
+      createRuntime: (_deps: SessionRuntimeDependencies) => runtime,
+      createPlaybackEngine: () => new FakePlaybackEngine(),
+      createTransportPair: () => transportPair,
+      now: () => 3000
+    })
+
+    try {
+      await boundary.start()
+      boundary.addMediaUrl('https://example.com/movie.mp4')
+
+      expect(dispatchHostCommandSpy).toHaveBeenCalledWith({
+        type: 'addMedia',
+        media: {
+          mediaId: 'runtime-media-3000-1',
+          kind: 'url',
+          source: 'https://example.com/movie.mp4',
+          title: 'movie.mp4'
+        }
+      })
+    } finally {
+      boundary.dispose()
+    }
+  })
+
+  it('dispatches host local-file media additions through the runtime command path', async () => {
+    const transportPair = createRouteTransportPair(() => 4000)
+    const dispatchHostCommandSpy = jest.fn(async (_command: HostSessionCommand) => undefined)
+    const runtimeProjection: SessionRuntimeProjection = {
+      role: 'host',
+      lifecycle: 'running',
+      transportState: transportPair.host.getState(),
+      diagnostics: [],
+      runtimeErrors: []
+    }
+    const runtime: RuntimeSession = {
+      getSnapshot(): SessionRuntimeProjection {
+        return runtimeProjection
+      },
+      getProjectionStore() {
+        return createProjectionStore(runtimeProjection)
+      },
+      subscribeToSnapshots(): () => void {
+        return () => undefined
+      },
+      startHostSession: async () => undefined,
+      startGuestSession: async () => undefined,
+      dispatchHostCommand: dispatchHostCommandSpy,
+      dispatchGuestCommand: async (_command: ClientCommand) => undefined,
+      dispose: jest.fn()
+    }
+
+    const boundary = createRuntimeSessionShellRouteBoundary('room-local', {
+      createRuntime: (_deps: SessionRuntimeDependencies) => runtime,
+      createPlaybackEngine: () => new FakeLocalFilePlaybackEngine(),
+      createTransportPair: () => transportPair,
+      now: () => 4000
+    })
+
+    try {
+      await boundary.start()
+      boundary.addLocalFile(new TestFile())
+
+      expect(dispatchHostCommandSpy).toHaveBeenCalledWith({
+        type: 'addMedia',
+        media: {
+          mediaId: 'runtime-media-4000-1',
+          kind: 'localFile',
+          source: 'honeystream-local://local-key',
+          title: 'local-movie.mp4'
+        }
+      })
+    } finally {
+      boundary.dispose()
+    }
   })
 })

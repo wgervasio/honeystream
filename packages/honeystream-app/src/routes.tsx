@@ -3,14 +3,13 @@ import { Switch, Route, RouteProps } from 'react-router'
 
 import App from './containers/App'
 import { HomePage } from './containers/HomePage'
-import { LobbyPage } from './containers/LobbyPage'
 import { RuntimeSessionShellPage } from './containers/RuntimeSessionShellPage'
 import { SessionJoinPage } from './containers/SessionJoinPage'
 import { SettingsPage } from './containers/SettingsPage'
 import WelcomePage from './containers/WelcomePage'
 
 export const getLobbyRouteComponent = (): React.ComponentType<any> =>
-  FEATURE_RUNTIME_SESSION_SHELL ? RuntimeSessionShellPage : LobbyPage
+  RuntimeSessionShellPage
 
 export default () => (
   <App>

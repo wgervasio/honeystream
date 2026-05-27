@@ -27,6 +27,22 @@ class FakePlaybackEngine implements SessionRuntimePlaybackEngine {
   }
 }
 
+class FailingPlaybackEngine extends FakePlaybackEngine {
+  private applyCount = 0
+
+  async applyDesiredState(
+    desiredState: PlaybackEngineDesiredState
+  ): Promise<PlaybackEngineApplyResult> {
+    this.applyCount += 1
+    if (this.applyCount === 1) {
+      return super.applyDesiredState(desiredState)
+    }
+
+    this.desiredStates.push(desiredState)
+    throw new Error('Playback target unavailable.')
+  }
+}
+
 const acceptsUnknownMessage: TransportMessageValidator<unknown> = {
   validate(_value: unknown): _value is unknown {
     return true
@@ -135,6 +151,7 @@ describe('runtime/session/SessionRuntime', () => {
     }
     expect(hostSession.currentMediaId).toBe('media-guest')
     expect(guestSession.currentMediaId).toBe('media-guest')
+    expect(guestSession.current).toEqual(createMedia('media-guest'))
   })
 
   it('records protocol diagnostics for malformed inbound envelopes', async () => {
@@ -165,6 +182,55 @@ describe('runtime/session/SessionRuntime', () => {
     const projection = hostRuntime.getSnapshot()
     expect(projection.diagnostics).toHaveLength(1)
     expect(projection.diagnostics[0].code).toBe('invalidEnvelope')
+  })
+
+  it('keeps host snapshots moving when playback application fails', async () => {
+    let nowMs = 9000
+    const pair = createInMemoryPeerTransportPair({
+      hostInboundValidator: acceptsUnknownMessage,
+      guestInboundValidator: acceptsUnknownMessage
+    })
+    const hostRuntime = createSessionRuntime({
+      transport: pair.host,
+      playback: new FailingPlaybackEngine(),
+      now: () => nowMs++
+    })
+    const guestRuntime = createSessionRuntime({
+      transport: pair.guest,
+      playback: new FakePlaybackEngine(),
+      now: () => nowMs++
+    })
+
+    await hostRuntime.startHostSession({
+      roomId: 'room-1',
+      hostUsername: 'Host',
+      inviteSecret: 'invite-secret'
+    })
+    await guestRuntime.startGuestSession({
+      roomId: 'room-1',
+      username: 'Guest',
+      inviteSecret: 'invite-secret'
+    })
+    await flushRuntime()
+
+    await guestRuntime.dispatchGuestCommand({
+      type: 'addMedia',
+      media: {
+        ...createMedia('guest-local'),
+        kind: 'localFile',
+        source: 'honeystream-local://guest-local'
+      }
+    })
+    await flushRuntime()
+    const hostSession = hostRuntime.getSnapshot().session
+    const guestSession = guestRuntime.getSnapshot().session
+    expect(hostSession && hostSession.currentMediaId).toBe('guest-local')
+    expect(guestSession && guestSession.currentMediaId).toBe('guest-local')
+    expect(hostRuntime.getSnapshot().runtimeErrors).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('Playback target unavailable.')
+      ])
+    )
   })
 
   it('disposes runtime resources and rejects commands after disposal', async () => {

@@ -1,6 +1,5 @@
 declare var FEATURE_SESSION_BROWSER: boolean
 declare var FEATURE_POPUP_PLAYER: boolean
-declare var FEATURE_RUNTIME_SESSION_SHELL: boolean
 
 declare var ga: any
 

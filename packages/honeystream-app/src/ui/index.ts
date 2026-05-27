@@ -34,6 +34,7 @@ export {
 } from './runtime'
 export type { SessionRuntime, SessionRuntimeContextValue, SessionRuntimeSnapshot } from './runtime'
 export * from './settings-runtime'
+export * from './media-runtime'
 export { SessionRuntimeShellContainer, createSessionRuntimeShellViewModel, mapProjectionSnapshotToSessionShellProps } from './session-runtime'
 export type {
   HostSessionIntent,

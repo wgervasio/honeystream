@@ -332,7 +332,11 @@ export class DefaultSessionRuntime implements SessionRuntime {
     if (stateChanged) {
       this.hostState = nextState
       this.eventCursor += 1
-      await this.playback.applyDesiredState(toPlaybackDesiredStateFromDomain(nextState))
+      try {
+        await this.playback.applyDesiredState(toPlaybackDesiredStateFromDomain(nextState))
+      } catch (error) {
+        this.recordRuntimeError(`[playback] ${toErrorMessage(error)}`)
+      }
     }
 
     for (const domainError of domainErrors) {

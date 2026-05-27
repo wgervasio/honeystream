@@ -6,8 +6,7 @@ interface RoutesModule {
   getLobbyRouteComponent(): RouteComponent
 }
 
-function resolveLobbyRouteComponentName(featureEnabled: boolean): string {
-  FEATURE_RUNTIME_SESSION_SHELL = featureEnabled
+function resolveLobbyRouteComponentName(): string {
   let componentName = ''
 
   jest.isolateModules(() => {
@@ -26,9 +25,6 @@ function resolveLobbyRouteComponentName(featureEnabled: boolean): string {
     function WelcomePage() {
       return null
     }
-    function LegacyLobbyPage() {
-      return null
-    }
     function RuntimeSessionShellPage() {
       return null
     }
@@ -44,7 +40,6 @@ function resolveLobbyRouteComponentName(featureEnabled: boolean): string {
       __esModule: true,
       default: WelcomePage
     }))
-    jest.doMock('./containers/LobbyPage', () => ({ LobbyPage: LegacyLobbyPage }))
     jest.doMock('./containers/RuntimeSessionShellPage', () => ({
       RuntimeSessionShellPage
     }))
@@ -61,11 +56,7 @@ describe('routes feature flag selection', () => {
     jest.resetModules()
   })
 
-  it('uses legacy lobby route when runtime session shell flag is disabled', () => {
-    expect(resolveLobbyRouteComponentName(false)).toBe('LegacyLobbyPage')
-  })
-
-  it('uses runtime session shell route when flag is enabled', () => {
-    expect(resolveLobbyRouteComponentName(true)).toBe('RuntimeSessionShellPage')
+  it('uses runtime session shell route by default', () => {
+    expect(resolveLobbyRouteComponentName()).toBe('RuntimeSessionShellPage')
   })
 })

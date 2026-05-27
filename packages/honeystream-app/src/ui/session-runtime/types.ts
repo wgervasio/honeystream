@@ -1,5 +1,7 @@
 import { ClientCommand, SessionSnapshot } from 'protocol'
 
+type SessionRuntimeProjectionRole = 'uninitialized' | 'host' | 'guest'
+
 export interface SessionRuntimeSystemErrorSnapshot {
   readonly id: string
   readonly code: string
@@ -7,6 +9,7 @@ export interface SessionRuntimeSystemErrorSnapshot {
 }
 
 export interface SessionRuntimeProjectionSnapshot {
+  readonly role: SessionRuntimeProjectionRole
   readonly session: SessionSnapshot
   readonly systemErrors: readonly SessionRuntimeSystemErrorSnapshot[]
 }

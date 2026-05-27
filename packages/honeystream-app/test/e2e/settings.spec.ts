@@ -21,16 +21,12 @@ describe('settings', () => {
   })
 
   describe('in-session', () => {
-    it('should announce name change', async () => {
+    it('should edit runtime username settings', async () => {
       await ms.visit(`/join/${userId}`)
-      await page.click('#settings_btn')
-      await page.fill('#profile_username', 'coolguy')
-      await page.click('#settings_tab_session')
-      const messages = await page.$$eval('#chat_messages > li', elems =>
-        elems.map(e => e.textContent)
-      )
-      expect(messages).toHaveLength(1)
-      expect(messages[0]).toBe('host is now known as coolguy.')
+      await page.waitForSelector('[data-runtime-session-shell="true"]')
+      await page.fill('#settings-runtime-username', 'coolguy')
+      const username = await page.$eval('#settings-runtime-username', e => (e as HTMLInputElement).value)
+      expect(username).toBe('coolguy')
     })
   })
 })

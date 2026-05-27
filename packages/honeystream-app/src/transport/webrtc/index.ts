@@ -2,13 +2,13 @@ export {
   NetConnectionPeerTransport,
   NetConnectionPeerTransportOptions,
   PeerTransportConnection,
-  PeerTransportError,
-  PeerTransportErrorCode
+  PeerTransportError as WebRtcPeerTransportError,
+  PeerTransportErrorCode as WebRtcPeerTransportErrorCode
 } from './net-connection-peer-transport'
 export {
-  PeerTransport,
-  PeerTransportConnectionState,
-  PeerTransportMessage,
-  PeerTransportMessageValidator,
-  isPeerTransportMessage
+  PeerTransport as WebRtcPeerTransport,
+  PeerTransportConnectionState as WebRtcPeerTransportConnectionState,
+  PeerTransportMessage as WebRtcPeerTransportMessage,
+  PeerTransportMessageValidator as WebRtcPeerTransportMessageValidator,
+  isPeerTransportMessage as isWebRtcPeerTransportMessage
 } from './peer-transport.contract'
