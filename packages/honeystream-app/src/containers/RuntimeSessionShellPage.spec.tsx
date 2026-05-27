@@ -1,6 +1,11 @@
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { RouteComponentProps } from 'react-router'
+
+jest.mock('components/TitleBar', () => ({
+  TitleBar: () => null
+}))
+
 import {
   createRuntimeSessionShellRouteBoundary,
   RuntimeSessionShellPage
@@ -80,43 +85,43 @@ class FakePlaybackEngine implements SessionRuntimePlaybackEngine {
   }
 }
 
-  class FakeLocalFilePlaybackEngine extends FakePlaybackEngine {
-    registerLocalFile(file: File): LocalFileMetadata {
-      return {
-        kind: 'local-file',
-        key: 'local-key',
-        name: file.name,
-        size: file.size,
-        type: file.type || undefined,
-        lastModified: file.lastModified || undefined
-      }
+class FakeLocalFilePlaybackEngine extends FakePlaybackEngine {
+  registerLocalFile(file: File): LocalFileMetadata {
+    return {
+      kind: 'local-file',
+      key: 'local-key',
+      name: file.name,
+      size: file.size,
+      type: file.type || undefined,
+      lastModified: file.lastModified || undefined
     }
   }
+}
 
-  class TestFile implements File {
-    readonly lastModified = 123
-    readonly name = 'local-movie.mp4'
-    readonly size = 10
-    readonly type = 'video/mp4'
-    readonly webkitRelativePath = ''
-    readonly [Symbol.toStringTag] = 'File'
+class TestFile implements File {
+  readonly lastModified = 123
+  readonly name = 'local-movie.mp4'
+  readonly size = 10
+  readonly type = 'video/mp4'
+  readonly webkitRelativePath = '';
+  readonly [Symbol.toStringTag] = 'File'
 
-    arrayBuffer(): Promise<ArrayBuffer> {
-      return Promise.resolve(new ArrayBuffer(0))
-    }
-
-    slice(): Blob {
-      throw new Error('TestFile.slice() is not used in this test suite.')
-    }
-
-    stream(): ReadableStream<Uint8Array> {
-      throw new Error('TestFile.stream() is not used in this test suite.')
-    }
-
-    text(): Promise<string> {
-      return Promise.resolve('')
-    }
+  arrayBuffer(): Promise<ArrayBuffer> {
+    return Promise.resolve(new ArrayBuffer(0))
   }
+
+  slice(): Blob {
+    throw new Error('TestFile.slice() is not used in this test suite.')
+  }
+
+  stream(): ReadableStream<Uint8Array> {
+    throw new Error('TestFile.stream() is not used in this test suite.')
+  }
+
+  text(): Promise<string> {
+    return Promise.resolve('')
+  }
+}
 
 const installCryptoMock = (): (() => void) => {
   const originalCrypto = globalThis.crypto
@@ -146,19 +151,18 @@ describe('RuntimeSessionShellPage', () => {
 
     let html = ''
     try {
-      html = renderToStaticMarkup(
-        <RuntimeSessionShellPage {...createRouteProps('room-123')} />
-      )
+      html = renderToStaticMarkup(<RuntimeSessionShellPage {...createRouteProps('room-123')} />)
     } finally {
       restoreCrypto()
     }
 
     expect(html).toContain('Runtime session shell')
     expect(html).toContain('Lobby: room-123')
-    expect(html).toContain('Idle')
-    expect(html).toContain('Host: Host')
-    expect(html).toContain('Guest: Waiting for guest')
-    expect(html).toContain('Invite')
+    expect(html).toContain('Warming up')
+    expect(html).toContain('Cat-side: Host')
+    expect(html).toContain('Rabbit-side: Waiting for rabbit-side guest')
+    expect(html).toContain('Invite your person')
+    expect((html.match(/>Copy</g) || []).length).toBe(3)
   })
 })
 

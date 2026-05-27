@@ -1,20 +1,9 @@
 import React, { useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
-import {
-  createErrorSystemEvent,
-  createSystemEventLog,
-  SystemEvent
-} from '../domain/event-log'
-import {
-  createDefaultMinimalSettings,
-  MinimalSettings
-} from '../domain/settings/minimalSettings'
-import {
-  ProtocolError,
-  SessionSnapshot,
-  WireEnvelope,
-  parseWireEnvelope
-} from '../protocol'
+import LayoutMain from 'components/layout/Main'
+import { createErrorSystemEvent, createSystemEventLog, SystemEvent } from '../domain/event-log'
+import { createDefaultMinimalSettings, MinimalSettings } from '../domain/settings/minimalSettings'
+import { ProtocolError, SessionSnapshot, WireEnvelope, parseWireEnvelope } from '../protocol'
 import { ClientCommand, MediaSnapshot } from '../protocol/types'
 import {
   PlaybackEngineApplyResult,
@@ -67,6 +56,7 @@ import {
 } from '../ui'
 import { SessionShell } from '../ui/session'
 import { useProjectionSelector } from '../ui/useProjectionSelector'
+import styles from './RuntimeSessionShellPage.css'
 
 interface IRouteParams {
   lobbyId: string
@@ -131,6 +121,7 @@ export interface RuntimeSessionShellRouteBoundary extends Disposable {
   readonly sessionIntents: SessionRuntimeIntentCallbacks
   addLocalFile(file: File): void
   addMediaUrl(url: string): void
+  copyText(value: string): void
   updateSettings(nextSettings: MinimalSettings): void
   start(): Promise<void>
 }
@@ -195,7 +186,9 @@ const createSecureInviteSecret = (): string => {
 
   const bytes = new Uint8Array(INVITE_SECRET_BYTES)
   crypto.getRandomValues(bytes)
-  return Array.from(bytes).map(toHexByte).join('')
+  return Array.from(bytes)
+    .map(toHexByte)
+    .join('')
 }
 
 const createWireEnvelopeValidator = <TDirection extends WireEnvelope['direction']>(
@@ -365,10 +358,7 @@ const mapLifecycleToSessionStatus = (
   }
 }
 
-const createFallbackSessionSnapshot = (
-  roomId: string,
-  hostUsername: string
-): SessionSnapshot => ({
+const createFallbackSessionSnapshot = (roomId: string, hostUsername: string): SessionSnapshot => ({
   roomId,
   status: 'idle',
   participants: {
@@ -467,9 +457,7 @@ const mapProjectionToShellSnapshot = (
   }
 }
 
-const mapMediaSnapshotToQueueItem = (
-  media: MediaSnapshot
-): QueueMediaItemViewModel => ({
+const mapMediaSnapshotToQueueItem = (media: MediaSnapshot): QueueMediaItemViewModel => ({
   id: media.mediaId,
   title: media.title,
   requestedBy: QUEUE_REQUESTED_BY_LABEL,
@@ -482,9 +470,7 @@ const mapSessionSnapshotToQueueItems = (
   readonly currentItem?: QueueMediaItemViewModel
   readonly queuedItems: readonly QueueMediaItemViewModel[]
 } => ({
-  currentItem: snapshot.current
-    ? mapMediaSnapshotToQueueItem(snapshot.current)
-    : undefined,
+  currentItem: snapshot.current ? mapMediaSnapshotToQueueItem(snapshot.current) : undefined,
   queuedItems: snapshot.queue.map(mapMediaSnapshotToQueueItem)
 })
 
@@ -502,16 +488,20 @@ const mapSystemErrorsToEvents = (
 ): readonly SystemEvent[] =>
   createSystemEventLog(
     errors.map((error, index) =>
-      createErrorSystemEvent(
-        error.message,
-        index + SYSTEM_ERROR_EVENT_TIMESTAMP_OFFSET,
-        error.code
-      )
+      createErrorSystemEvent(error.message, index + SYSTEM_ERROR_EVENT_TIMESTAMP_OFFSET, error.code)
     )
   )
 
 const getInviteBaseUrl = (): string =>
   typeof window === 'undefined' ? DEFAULT_INVITE_BASE_URL : window.location.origin
+
+const getClipboardWriter = (): Clipboard | undefined => {
+  if (typeof navigator === 'undefined') {
+    return undefined
+  }
+
+  return navigator.clipboard
+}
 
 const readInviteSecret = (search: string | undefined): string | undefined => {
   if (typeof search !== 'string' || search.length === 0) {
@@ -525,7 +515,10 @@ const readInviteSecret = (search: string | undefined): string | undefined => {
 
 const getMediaTitleFromUrl = (mediaUrl: URL): string => {
   const pathName = mediaUrl.pathname.replace(/\/+$/, '')
-  const lastSegment = pathName.split('/').filter(Boolean).pop()
+  const lastSegment = pathName
+    .split('/')
+    .filter(Boolean)
+    .pop()
   return lastSegment || mediaUrl.hostname || mediaUrl.toString()
 }
 
@@ -551,41 +544,164 @@ const RuntimeSessionRouteSurface = ({
 
   const renderRuntimeSurface = (viewModel: SessionRuntimeShellViewModel): React.ReactNode => {
     const queueItems = mapSessionSnapshotToQueueItems(viewModel.snapshot.session)
+    const roleLabel =
+      viewModel.snapshot.role === 'host'
+        ? 'Cat-side host'
+        : viewModel.snapshot.role === 'guest'
+        ? 'Rabbit-side guest'
+        : 'Room warming up'
 
     return (
-      <>
-        <SessionShell errorTitle="Session issues" {...viewModel.sessionShellProps} />
-        <InviteLinkPanel baseUrl={getInviteBaseUrl()} invite={boundary.invite} title="Invite" />
-        <video controls ref={boundary.mediaElementRef} />
+      <div className={styles.roomGrid}>
+        <article className={`${styles.card} ${styles.statusCard}`}>
+          <div className={styles.cardHeader}>
+            <p className={styles.kicker}>Room status</p>
+            <span>{roleLabel}</span>
+          </div>
+          <SessionShell
+            className={styles.sessionShell}
+            errorTitle="Session issues"
+            hostLabel="Cat-side"
+            guestLabel="Rabbit-side"
+            waitingForGuestLabel="Waiting for rabbit-side guest"
+            stateLabels={{
+              idle: 'Warming up',
+              hosting: 'Hosting room',
+              joining: 'Joining room',
+              connected: 'Synced',
+              ended: 'Ended'
+            }}
+            {...viewModel.sessionShellProps}
+          />
+          <div className={styles.petConnector} aria-hidden="true">
+            <span className={`${styles.petOrb} ${styles.catOrb}`}>
+              <span className={styles.petFace}>
+                <i />
+                <i />
+                <b />
+              </span>
+            </span>
+            <span className={styles.syncBeam} />
+            <span className={`${styles.petOrb} ${styles.rabbitOrb}`}>
+              <span className={styles.petFace}>
+                <i />
+                <i />
+                <b />
+              </span>
+            </span>
+          </div>
+        </article>
+
+        <InviteLinkPanel
+          baseUrl={getInviteBaseUrl()}
+          className={`${styles.card} ${styles.invitePanel}`}
+          copyLabel="Copy"
+          invite={boundary.invite}
+          inviteLinkLabel="Invite link"
+          onCopyInviteLink={boundary.copyText}
+          onCopyRoomId={boundary.copyText}
+          onCopySecret={boundary.copyText}
+          roomIdLabel="Room code"
+          secretLabel="Room secret"
+          title="Invite your person"
+        />
+
+        <section className={`${styles.card} ${styles.stageCard}`}>
+          <div className={styles.cardHeader}>
+            <p className={styles.kicker}>Playback stage</p>
+            <span>Local preview</span>
+          </div>
+          <video className={styles.videoStage} controls ref={boundary.mediaElementRef} />
+          <p>
+            Queue a website, direct media link, or local file. Honeystream keeps the shared room
+            tiny while each browser loads the thing it can play.
+          </p>
+        </section>
+
         <RuntimeAddMediaPanel
+          className={`${styles.card} ${styles.addMediaPanel}`}
+          addFileLabel="Queue local file"
+          addUrlLabel="Queue link"
           onAddUrl={boundary.addMediaUrl}
           onAddLocalFile={viewModel.snapshot.role === 'host' ? boundary.addLocalFile : undefined}
+          placeholder="https://youtube.com/watch?v=..."
+          title="Add the next thing"
         />
-        <QueueShell {...queueItems} {...boundary.queueIntents} />
+
+        <QueueShell
+          className={`${styles.card} ${styles.queuePanel}`}
+          currentItemClassName={styles.queueCurrent}
+          currentItemEmptyLabel="Nothing playing yet"
+          currentItemLabel="Now watching"
+          nextButtonClassName={styles.queueNextButton}
+          nextButtonLabel="Play next"
+          queuedItemsClassName={styles.queuedItems}
+          queuedItemsEmptyLabel="Queue is empty. Drop in a link to start."
+          queuedItemsLabel="Up next"
+          removeLabel="Remove"
+          requestedByLabel="Added by"
+          {...queueItems}
+          {...boundary.queueIntents}
+        />
+
         <PlaybackRuntimeControls
+          className={`${styles.card} ${styles.playbackPanel}`}
           playback={viewModel.snapshot.session.playback}
           session={mapSessionSnapshotToPlaybackModel(viewModel.snapshot.session)}
           intents={boundary.playbackIntents}
+          labels={{
+            play: 'Play together',
+            pause: 'Pause together',
+            seekBackward: 'Back 10s',
+            seekForward: 'Forward 10s',
+            rateDown: 'Slower',
+            rateUp: 'Faster',
+            next: 'Next pick'
+          }}
         />
-        <SystemEventFeed events={mapSystemErrorsToEvents(viewModel.snapshot.systemErrors)} />
-      </>
+
+        <SystemEventFeed
+          className={`${styles.card} ${styles.eventPanel}`}
+          emptyLabel="No issues yet. The room is calm."
+          events={mapSystemErrorsToEvents(viewModel.snapshot.systemErrors)}
+          title="Room notes"
+        />
+      </div>
     )
   }
 
   return (
-    <section data-runtime-session-shell="true">
-      <h1>Runtime session shell</h1>
-      <p>{`Lobby: ${lobbyId}`}</p>
-      <SessionRuntimeShellContainer
-        store={boundary.store}
-        intents={boundary.sessionIntents}
-        render={renderRuntimeSurface}
-      />
-      <SettingsRuntimePanel
-        settings={settings}
-        onSettingsChange={boundary.updateSettings}
-      />
-    </section>
+    <LayoutMain className={styles.container} showBackButton={false}>
+      <section className={styles.shell} data-runtime-session-shell="true">
+        <header className={styles.heroCard}>
+          <div>
+            <p className={styles.kicker}>Cat + rabbit watch room</p>
+            <h1>Runtime session shell</h1>
+            <p>
+              One private room, one invite, and a clean shared queue for websites, direct media, and
+              local files.
+            </p>
+          </div>
+          <div className={styles.roomSummary} aria-label="Room summary">
+            <span>Lobby: {lobbyId}</span>
+            <span>2 seats max</span>
+            <span>Host-led sync</span>
+          </div>
+        </header>
+
+        <SessionRuntimeShellContainer
+          store={boundary.store}
+          intents={boundary.sessionIntents}
+          render={renderRuntimeSurface}
+        />
+
+        <SettingsRuntimePanel
+          className={`${styles.card} ${styles.settingsPanel}`}
+          settings={settings}
+          onSettingsChange={boundary.updateSettings}
+        />
+      </section>
+    </LayoutMain>
   )
 }
 
@@ -619,7 +735,11 @@ export const createRuntimeSessionShellRouteBoundary = (
   let startEpoch = 0
   let mediaCounter = 0
   const store = createProjectionStore(
-    mapProjectionToShellSnapshot(createFallbackRuntimeProjection(now), fallbackSession, includeLocalWarning)
+    mapProjectionToShellSnapshot(
+      createFallbackRuntimeProjection(now),
+      fallbackSession,
+      includeLocalWarning
+    )
   )
 
   let started = false
@@ -705,6 +825,19 @@ export const createRuntimeSessionShellRouteBoundary = (
 
   const dispatchMedia = (media: MediaSnapshot): void => {
     dispatchCommand({ type: 'addMedia', media })
+  }
+
+  const copyText = (value: string): void => {
+    const clipboard = getClipboardWriter()
+
+    if (!clipboard) {
+      recordBoundaryError('Clipboard copy is unavailable in this browser.')
+      return
+    }
+
+    void clipboard.writeText(value).catch(error => {
+      recordBoundaryError(toErrorMessage(error))
+    })
   }
 
   const addMediaUrl = (url: string): void => {
@@ -802,6 +935,7 @@ export const createRuntimeSessionShellRouteBoundary = (
     sessionIntents,
     addLocalFile,
     addMediaUrl,
+    copyText,
     updateSettings(nextSettings: MinimalSettings): void {
       settingsStore.setSnapshot(nextSettings)
     },
@@ -877,10 +1011,7 @@ export const createRuntimeSessionShellRouteBoundary = (
   }
 }
 
-export const RuntimeSessionShellPage = ({
-  location,
-  match
-}: RouteComponentProps<IRouteParams>) => {
+export const RuntimeSessionShellPage = ({ location, match }: RouteComponentProps<IRouteParams>) => {
   const lobbyId = match.params.lobbyId
   const inviteSecret = useMemo(() => readInviteSecret(location.search), [location.search])
   const boundary = useMemo(
@@ -896,7 +1027,5 @@ export const RuntimeSessionShellPage = ({
     }
   }, [boundary])
 
-  return (
-    <RuntimeSessionRouteSurface boundary={boundary} lobbyId={lobbyId} />
-  )
+  return <RuntimeSessionRouteSurface boundary={boundary} lobbyId={lobbyId} />
 }

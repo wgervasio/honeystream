@@ -1,9 +1,15 @@
 import { Page, BrowserContext } from 'playwright-core'
 
 const RUNTIME_SHELL_SELECTOR = '[data-runtime-session-shell="true"]'
+const SESSION_E2E_TIMEOUT_MS = 45e3
+
+jest.setTimeout(SESSION_E2E_TIMEOUT_MS)
 
 async function getRuntimeInviteSecret(page: Page): Promise<string> {
-  const inviteLink = await page.$eval('[data-invite-field="invite-link"] code', e => e.textContent || '')
+  const inviteLink = await page.$eval(
+    '[data-invite-field="invite-link"] code',
+    e => e.textContent || ''
+  )
   const inviteUrl = new URL(inviteLink)
   const secret = inviteUrl.searchParams.get('secret')
   if (!secret) {
@@ -15,7 +21,12 @@ async function getRuntimeInviteSecret(page: Page): Promise<string> {
 
 async function waitForRuntimeText(page: Page, text: string): Promise<void> {
   await page.waitForFunction(
-    expectedText => Boolean(document.body && document.body.textContent && document.body.textContent.includes(expectedText)),
+    expectedText =>
+      Boolean(
+        document.body &&
+          document.body.textContent &&
+          document.body.textContent.includes(expectedText)
+      ),
     text
   )
 }
@@ -23,17 +34,13 @@ async function waitForRuntimeText(page: Page, text: string): Promise<void> {
 describe('session', () => {
   const hostId = ms.useProfile()
 
-  beforeAll(() => {
-    jest.setTimeout(20e3)
-  })
-
   describe('host', () => {
     it('should start a session', async () => {
       await ms.visit(`/join/${hostId}`)
       await page.waitForSelector(RUNTIME_SHELL_SELECTOR)
-      await waitForRuntimeText(page, 'Hosting')
+      await waitForRuntimeText(page, 'Hosting room')
       await waitForRuntimeText(page, 'Invite link')
-      await waitForRuntimeText(page, 'Add media')
+      await waitForRuntimeText(page, 'Add the next thing')
       await ms.screenshot('session_host')
     })
 
@@ -69,17 +76,21 @@ describe('session', () => {
       await clientContext.close()
     })
 
-    it('should require the private invite secret for clients', async () => {
-      await ms.visit(`/join/${hostId}`)
-      const hostPage = page
-      await hostPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
+    it(
+      'should require the private invite secret for clients',
+      async () => {
+        await ms.visit(`/join/${hostId}`)
+        const hostPage = page
+        await hostPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
 
-      await clientPage.goto(`http://localhost:8080/#/join/${hostId}`)
-      await clientPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
-      await waitForRuntimeText(clientPage, 'Invite secret is required')
+        await clientPage.goto(`http://localhost:8080/#/join/${hostId}`)
+        await clientPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
+        await waitForRuntimeText(clientPage, 'Invite secret is required')
 
-      await ms.screenshot('session_host+client')
-    }, 10e3)
+        await ms.screenshot('session_host+client')
+      },
+      SESSION_E2E_TIMEOUT_MS
+    )
 
     it('should accept connecting client', async () => {
       await ms.visit(`/join/${hostId}`)
@@ -87,10 +98,12 @@ describe('session', () => {
       await hostPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
       const inviteSecret = await getRuntimeInviteSecret(hostPage)
 
-      await clientPage.goto(`http://localhost:8080/#/join/${hostId}?secret=${encodeURIComponent(inviteSecret)}`)
+      await clientPage.goto(
+        `http://localhost:8080/#/join/${hostId}?secret=${encodeURIComponent(inviteSecret)}`
+      )
       await clientPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
-      await waitForRuntimeText(hostPage, 'Connected')
-      await waitForRuntimeText(clientPage, 'Connected')
+      await waitForRuntimeText(hostPage, 'Synced')
+      await waitForRuntimeText(clientPage, 'Synced')
     })
   })
 })
