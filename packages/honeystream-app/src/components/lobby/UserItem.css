@@ -3,12 +3,19 @@
   padding: 8px 10px;
   flex-direction: row;
   align-items: center;
-  height: 50px;
+  min-height: 50px;
+  transition: background-color 140ms ease, transform 140ms ease;
+}
+
+.container:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(2px);
 }
 
 .avatar {
   margin-right: 10px;
   flex-shrink: 0;
+  filter: drop-shadow(0 8px 16px rgba(36, 28, 53, 0.22));
 }
 
 .name {
@@ -33,9 +40,10 @@
 }
 
 .pendingBtn {
-  border-radius: 4px;
+  border-radius: 999px;
   width: 32px;
   height: 32px;
+  box-shadow: 0 10px 22px rgba(36, 28, 53, 0.22);
 }
 
 .allowBtn {
