@@ -16,6 +16,36 @@ const parseMediaUrl = (url: string): URL | undefined => {
   }
 }
 
+const normalizeHost = (host: string): string =>
+  host
+    .trim()
+    .toLowerCase()
+    .replace(/^\./, '')
+
+const hostMatches = (parsedUrl: URL, blockedHost: string): boolean => {
+  const normalizedBlockedHost = normalizeHost(blockedHost)
+  if (!normalizedBlockedHost) return false
+
+  const normalizedHost = normalizeHost(parsedUrl.host)
+  if (normalizedHost === normalizedBlockedHost) return true
+
+  const normalizedHostname = normalizeHost(parsedUrl.hostname)
+  return (
+    normalizedHostname === normalizedBlockedHost ||
+    normalizedHostname.endsWith(`.${normalizedBlockedHost}`)
+  )
+}
+
+const isBlockedEmbedHost = (parsedUrl: URL, blockedEmbedHosts?: ReadonlySet<string>): boolean => {
+  if (!blockedEmbedHosts) return false
+
+  for (const blockedHost of blockedEmbedHosts) {
+    if (hostMatches(parsedUrl, blockedHost)) return true
+  }
+
+  return false
+}
+
 const canUseEmbedAdapter = (
   media: DesiredPlaybackMedia,
   options: PlaybackAdapterSelectionOptions
@@ -27,8 +57,7 @@ const canUseEmbedAdapter = (
     return false
   }
 
-  const blockedEmbedHosts = options.blockedEmbedHosts
-  if (blockedEmbedHosts && blockedEmbedHosts.has(parsedUrl.host)) {
+  if (isBlockedEmbedHost(parsedUrl, options.blockedEmbedHosts)) {
     return false
   }
 

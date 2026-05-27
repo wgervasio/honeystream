@@ -8,9 +8,20 @@ describe('runtime/protocol URL classifier', () => {
     expect(classifyMediaUrl('not-a-url')).toBe('url')
     expect(classifyMediaUrl('ftp://example.com/video.mp4')).toBe('url')
 
-    expect(classifyMediaUrl('https://www.youtube.com/watch?v=abc123')).toBe('website')
-    expect(classifyMediaUrl('https://animepahe.ru/play/example')).toBe('website')
-    expect(classifyMediaUrl('https://cineby.app/movie/example')).toBe('website')
-    expect(classifyMediaUrl('https://www.miruro.tv/watch/example')).toBe('website')
+    const websitePages = [
+      'https://www.youtube.com/watch?v=abc123',
+      'https://youtu.be/abc123',
+      'https://m.youtube.com/shorts/abc123',
+      'https://animepahe.ru/play/example',
+      'https://animepahe.si/anime/example',
+      'https://cineby.app/movie/example',
+      'https://www.cineby.ru/tv/example',
+      'https://www.miruro.tv/watch/example',
+      'https://miruro.to/watch/example'
+    ]
+
+    for (const url of websitePages) {
+      expect(classifyMediaUrl(url)).toBe('website')
+    }
   })
 })

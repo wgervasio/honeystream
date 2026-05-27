@@ -300,9 +300,10 @@ class Home extends Component<IProps> {
           <div id="home_site_examples" className={styles.siteExamples} aria-label="Site examples">
             <span>Good test paths:</span>
             <strong>YouTube</strong>
+            <strong>AnimePahe</strong>
+            <strong>Cineby</strong>
+            <strong>Miruro</strong>
             <strong>direct MP4</strong>
-            <strong>anime pages</strong>
-            <strong>movie pages</strong>
           </div>
 
           <section className={styles.featureGrid} aria-label="Honeystream focus areas">

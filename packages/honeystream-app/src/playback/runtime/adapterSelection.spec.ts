@@ -27,14 +27,43 @@ describe('selectPlaybackAdapterKind', () => {
 
   it('routes blocked embed hosts and mixed-content websites to popup', () => {
     expect(
-      selectPlaybackAdapterKind(createMedia('blocked', 'website', 'https://blocked.example/watch'), {
-        blockedEmbedHosts: new Set<string>(['blocked.example'])
-      })
+      selectPlaybackAdapterKind(
+        createMedia('blocked', 'website', 'https://www.blocked.example/watch'),
+        {
+          blockedEmbedHosts: new Set<string>(['blocked.example'])
+        }
+      )
     ).toBe('popup')
 
-    expect(selectPlaybackAdapterKind(createMedia('http', 'website', 'http://example.com/watch'))).toBe(
-      'popup'
-    )
+    expect(
+      selectPlaybackAdapterKind(createMedia('http', 'website', 'http://example.com/watch'))
+    ).toBe('popup')
+  })
+
+  it('matches blocked embed hosts across case, subdomains, and explicit ports', () => {
+    const blockedEmbedHosts = new Set<string>(['YouTube.com', 'cineby.app:8443'])
+
+    expect(
+      selectPlaybackAdapterKind(
+        createMedia('youtube', 'website', 'https://www.youtube.com/watch?v=abc'),
+        {
+          blockedEmbedHosts
+        }
+      )
+    ).toBe('popup')
+    expect(
+      selectPlaybackAdapterKind(
+        createMedia('cineby', 'website', 'https://cineby.app:8443/movie/demo'),
+        {
+          blockedEmbedHosts
+        }
+      )
+    ).toBe('popup')
+    expect(
+      selectPlaybackAdapterKind(createMedia('miruro', 'website', 'https://miruro.tv/watch/demo'), {
+        blockedEmbedHosts
+      })
+    ).toBe('embed-extension')
   })
 
   it('allows http embeds when mixed-content blocking is disabled', () => {
@@ -46,12 +75,12 @@ describe('selectPlaybackAdapterKind', () => {
   })
 
   it('routes embeddable media to embed-extension by default, including non-URL strings', () => {
-    expect(selectPlaybackAdapterKind(createMedia('embed-1', 'website', 'https://example.com/watch'))).toBe(
-      'embed-extension'
-    )
-    expect(selectPlaybackAdapterKind(createMedia('embed-2', 'direct-media', 'not-a-valid-url'))).toBe(
-      'embed-extension'
-    )
+    expect(
+      selectPlaybackAdapterKind(createMedia('embed-1', 'website', 'https://example.com/watch'))
+    ).toBe('embed-extension')
+    expect(
+      selectPlaybackAdapterKind(createMedia('embed-2', 'direct-media', 'not-a-valid-url'))
+    ).toBe('embed-extension')
   })
 
   it('routes classified website pages through the embed adapter when HTTPS is allowed', () => {
@@ -78,9 +107,12 @@ describe('selectPlaybackAdapterKind', () => {
 
   it('falls back to popup for classified websites on blocked hosts', () => {
     expect(
-      selectPlaybackAdapterKind(createClassifiedMedia('blocked-site', 'https://cineby.app/movie/example'), {
-        blockedEmbedHosts: new Set<string>(['cineby.app'])
-      })
+      selectPlaybackAdapterKind(
+        createClassifiedMedia('blocked-site', 'https://cineby.app/movie/example'),
+        {
+          blockedEmbedHosts: new Set<string>(['cineby.app'])
+        }
+      )
     ).toBe('popup')
   })
 

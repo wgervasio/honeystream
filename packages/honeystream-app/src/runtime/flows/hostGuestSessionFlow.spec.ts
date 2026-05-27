@@ -1,8 +1,10 @@
 import { parseWireEnvelope } from 'protocol'
 import { ClientToHostEnvelope, HostToClientEnvelope } from 'protocol/types'
+import { classifyMediaUrl } from 'runtime/protocol/url-classifier'
 import { createFakeClock, createFixedIdGenerator } from 'test/architecture'
 import { TransportMessageValidator } from 'transport/contracts'
 import { createInMemoryPeerTransportPair } from 'transport/in-memory-peer-transport-pair'
+import { createSimulatedPeerTransportPair } from 'transport/simulated-peer-transport-pair'
 import { createHostGuestSessionFlow } from './hostGuestSessionFlow'
 
 const isClientToHostEnvelope = (value: unknown): value is ClientToHostEnvelope => {
@@ -15,7 +17,10 @@ const isHostToClientEnvelope = (value: unknown): value is HostToClientEnvelope =
   return parsed.ok && parsed.value.direction === 'host-to-client'
 }
 
-const describeEnvelope = (value: unknown, direction: 'client-to-host' | 'host-to-client'): string => {
+const describeEnvelope = (
+  value: unknown,
+  direction: 'client-to-host' | 'host-to-client'
+): string => {
   const parsed = parseWireEnvelope(value)
   if (!parsed.ok) {
     return parsed.error.message
@@ -64,6 +69,61 @@ const createFlowHarness = () => {
   return { flow, clock }
 }
 
+const streamingSiteFixtures = [
+  {
+    mediaId: 'site-youtube',
+    title: 'YouTube watch page',
+    source: 'https://www.youtube.com/watch?v=abc123'
+  },
+  {
+    mediaId: 'site-animepahe',
+    title: 'AnimePahe watch page',
+    source: 'https://animepahe.ru/play/example'
+  },
+  {
+    mediaId: 'site-cineby',
+    title: 'Cineby movie page',
+    source: 'https://cineby.app/movie/example'
+  },
+  {
+    mediaId: 'site-miruro',
+    title: 'Miruro watch page',
+    source: 'https://www.miruro.tv/watch/example'
+  }
+]
+
+const createSimulatedFlowHarness = () => {
+  const clock = createFakeClock(2000)
+  const peerIds = createFixedIdGenerator(['host-peer', 'guest-peer'])
+  const flowIds = createFixedIdGenerator(['room-1', 'invite-1'])
+
+  const pair = createSimulatedPeerTransportPair<ClientToHostEnvelope, HostToClientEnvelope>({
+    hostPeerId: peerIds.nextId(),
+    guestPeerId: peerIds.nextId(),
+    hostInboundValidator: clientToHostValidator,
+    guestInboundValidator: hostToClientValidator,
+    now: clock.nowMs,
+    random: () => 0.5,
+    network: {
+      latencyMs: 12,
+      jitterMs: 4,
+      maxQueuedFrames: 64
+    }
+  })
+
+  const flow = createHostGuestSessionFlow({
+    hostUsername: 'HostUser',
+    hostTransport: pair.host,
+    guestTransport: pair.guest,
+    clock,
+    idGenerator: {
+      nextId: flowIds.nextId
+    }
+  })
+
+  return { flow, clock, pair }
+}
+
 describe('runtime/flows/hostGuestSessionFlow', () => {
   it('creates host session, joins guest by invite secret, and updates both projections', async () => {
     const { flow, clock } = createFlowHarness()
@@ -104,7 +164,9 @@ describe('runtime/flows/hostGuestSessionFlow', () => {
       expect(hostGuestParticipant).toBeDefined()
       expect(guestGuestParticipant).toBeDefined()
       if (!hostGuestParticipant || !guestGuestParticipant) {
-        throw new Error('Expected both host and guest projections to include guest participant data.')
+        throw new Error(
+          'Expected both host and guest projections to include guest participant data.'
+        )
       }
       expect(hostGuestParticipant.peerId).toBe('guest-peer')
       expect(guestGuestParticipant.peerId).toBe('guest-peer')
@@ -184,6 +246,65 @@ describe('runtime/flows/hostGuestSessionFlow', () => {
       expect(flow.guestProjection.getSnapshot().status).toBe('hosting')
       expect(flow.hostProjection.getSnapshot().currentMediaId).toBeUndefined()
       expect(flow.guestProjection.getSnapshot().currentMediaId).toBeUndefined()
+    } finally {
+      flow.dispose()
+    }
+  })
+
+  it('keeps streaming-site commands lossless under simulated low-latency transport', async () => {
+    const { flow, clock, pair } = createSimulatedFlowHarness()
+
+    try {
+      await flow.connect()
+
+      flow.sendGuestCommand({
+        type: 'join',
+        username: 'GuestUser',
+        inviteSecret: flow.inviteSecret
+      })
+      pair.flushAll()
+
+      for (let index = 0; index < streamingSiteFixtures.length; index += 1) {
+        const fixture = streamingSiteFixtures[index]
+        clock.advanceBy(16)
+        flow.sendGuestCommand({
+          type: 'addMedia',
+          media: {
+            mediaId: fixture.mediaId,
+            kind: classifyMediaUrl(fixture.source),
+            source: fixture.source,
+            title: fixture.title,
+            durationMs: 120000
+          }
+        })
+        pair.flushAll()
+      }
+
+      const hostSnapshot = flow.hostProjection.getSnapshot()
+      const guestSnapshot = flow.guestProjection.getSnapshot()
+      const queuedSources = streamingSiteFixtures.slice(1).map(fixture => fixture.source)
+
+      expect(hostSnapshot.status).toBe('connected')
+      expect(guestSnapshot.status).toBe('connected')
+      expect(hostSnapshot.currentMediaId).toBe('site-youtube')
+      expect(guestSnapshot.currentMediaId).toBe('site-youtube')
+      expect(hostSnapshot.queue.map(media => media.source)).toEqual(queuedSources)
+      expect(guestSnapshot.queue.map(media => media.source)).toEqual(queuedSources)
+      expect(hostSnapshot.queue.map(media => media.kind)).toEqual(['website', 'website', 'website'])
+      expect(guestSnapshot.queue.map(media => media.kind)).toEqual([
+        'website',
+        'website',
+        'website'
+      ])
+
+      const metrics = pair.getAggregateMetrics()
+      expect(metrics.combinedSentMessages).toBeGreaterThan(0)
+      expect(metrics.combinedDroppedMessages).toBe(0)
+      expect(metrics.combinedLostBytes).toBe(0)
+      expect(metrics.combinedDeliveryRate).toBe(1)
+      expect(metrics.combinedByteLossRate).toBe(0)
+      expect(metrics.combinedMaxLatencyMs).toBe(12)
+      expect(metrics.combinedAverageMessageBytes).toBeLessThan(2500)
     } finally {
       flow.dispose()
     }

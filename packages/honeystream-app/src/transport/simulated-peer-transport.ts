@@ -1,8 +1,35 @@
-import { PeerTransport, PeerTransportEnvelope, PeerTransportEvent, PeerTransportListener, TransportMessageValidator, TransportUnsubscribe, validatePeerTransportEnvelope } from './contracts'
-import { PeerTransportConnectionState, PeerTransportDisconnectReason, PeerTransportError } from './connection-state'
+import {
+  PeerTransport,
+  PeerTransportEnvelope,
+  PeerTransportEvent,
+  PeerTransportListener,
+  TransportMessageValidator,
+  TransportUnsubscribe,
+  validatePeerTransportEnvelope
+} from './contracts'
+import {
+  PeerTransportConnectionState,
+  PeerTransportDisconnectReason,
+  PeerTransportError
+} from './connection-state'
 import { createDisposableGroup } from './lifecycle'
-import { byteLength, Clock, MAX_SIMULATED_FRAMES, PendingFrame, SimulatedPeerNetworkProfile, SimulatedPeerTransportMetrics, SimulatedPeerTransportOptions } from './simulated-peer-transport-types'
-
+import {
+  createSimulatedPeerTransportMetricsRecorder,
+  SimulatedPeerTransportMetricsRecorder
+} from './simulated-peer-transport-metrics'
+import {
+  resolveFrameLatencyMs,
+  resolveMaxQueuedFrames,
+  shouldDropFrame
+} from './simulated-peer-transport-network'
+import {
+  byteLength,
+  Clock,
+  PendingFrame,
+  SimulatedPeerNetworkProfile,
+  SimulatedPeerTransportMetrics,
+  SimulatedPeerTransportOptions
+} from './simulated-peer-transport-types'
 export class SimulatedPeerTransport<TInboundMessage, TOutboundMessage>
   implements PeerTransport<TInboundMessage, TOutboundMessage> {
   readonly localPeerId: string
@@ -10,28 +37,24 @@ export class SimulatedPeerTransport<TInboundMessage, TOutboundMessage>
 
   private readonly inboundValidator: TransportMessageValidator<TInboundMessage>
   private readonly now: Clock
+  private readonly random: Clock
   private readonly network: SimulatedPeerNetworkProfile
+  private readonly metrics: SimulatedPeerTransportMetricsRecorder
   private readonly listeners = new Set<PeerTransportListener<TInboundMessage>>()
   private readonly disposables = createDisposableGroup()
   private readonly pendingFrames: PendingFrame<TInboundMessage>[] = []
   private peer?: SimulatedPeerTransport<TOutboundMessage, TInboundMessage>
   private state: PeerTransportConnectionState
   private connectAttempt = 0
-  private sentMessages = 0
-  private deliveredMessages = 0
-  private droppedMessages = 0
-  private sentBytes = 0
-  private deliveredBytes = 0
-  private droppedBytes = 0
-  private totalLatencyMs = 0
-  private maxLatencyMs = 0
 
   constructor(options: SimulatedPeerTransportOptions<TInboundMessage>) {
     this.localPeerId = options.localPeerId
     this.remotePeerId = options.remotePeerId
     this.inboundValidator = options.inboundValidator
     this.now = options.now || Date.now
+    this.random = options.random || Math.random
     this.network = options.network || {}
+    this.metrics = createSimulatedPeerTransportMetricsRecorder()
     this.state = { status: 'idle', changedAtMs: this.now() }
   }
 
@@ -75,42 +98,35 @@ export class SimulatedPeerTransport<TInboundMessage, TOutboundMessage>
   }
 
   getMetrics(): SimulatedPeerTransportMetrics {
-    return {
-      sentMessages: this.sentMessages,
-      deliveredMessages: this.deliveredMessages,
-      droppedMessages: this.droppedMessages,
-      sentBytes: this.sentBytes,
-      deliveredBytes: this.deliveredBytes,
-      lostBytes: this.droppedBytes,
-      averageLatencyMs:
-        this.deliveredMessages === 0 ? 0 : this.totalLatencyMs / this.deliveredMessages,
-      maxLatencyMs: this.maxLatencyMs,
-      queuedMessages: this.pendingFrames.length
-    }
+    return this.metrics.snapshot(this.pendingFrames.length)
   }
 
   send(envelope: PeerTransportEnvelope<TOutboundMessage>): void {
     this.ensureCanSend()
     const peer = this.requirePeer()
     const bytes = byteLength(envelope)
-    this.sentMessages += 1
-    this.sentBytes += bytes
-    if (this.shouldDropMessage() || !peer.enqueueFrame(envelope, this.localPeerId, bytes)) {
-      this.droppedMessages += 1
-      this.droppedBytes += bytes
+    const sentMessageCount = this.metrics.recordSent(bytes)
+    if (
+      shouldDropFrame(sentMessageCount, this.network, this.random) ||
+      !peer.enqueueFrame(envelope, this.localPeerId, bytes)
+    ) {
+      this.metrics.recordDropped(bytes)
     }
   }
 
   flushReady(nowMs: number = this.now()): number {
-    let delivered = 0
-    while (this.pendingFrames.length > 0 && this.pendingFrames[0].dueAtMs <= nowMs) {
-      const frame = this.pendingFrames.shift()
-      if (frame) {
-        this.deliverFrame(frame, nowMs)
-        delivered += 1
-      }
+    let readyFrames = 0
+    while (
+      readyFrames < this.pendingFrames.length &&
+      this.pendingFrames[readyFrames].dueAtMs <= nowMs
+    ) {
+      readyFrames += 1
     }
-    return delivered
+    if (readyFrames === 0) return 0
+
+    const frames = this.pendingFrames.splice(0, readyFrames)
+    for (const frame of frames) this.deliverFrame(frame, nowMs)
+    return frames.length
   }
 
   flushAll(): number {
@@ -148,9 +164,10 @@ export class SimulatedPeerTransport<TInboundMessage, TOutboundMessage>
     bytes: number
   ): boolean {
     if (this.state.status !== 'connected') return false
-    if (this.pendingFrames.length >= this.maxQueuedFrames()) return false
-    const dueAtMs = this.now() + Math.max(0, this.network.latencyMs || 0)
-    this.pendingFrames.push({ dueAtMs, sentAtMs: this.now(), bytes, fromPeerId, envelope })
+    if (this.pendingFrames.length >= resolveMaxQueuedFrames(this.network)) return false
+    const sentAtMs = this.now()
+    const dueAtMs = sentAtMs + resolveFrameLatencyMs(this.network, this.random)
+    this.pendingFrames.push({ dueAtMs, sentAtMs, bytes, fromPeerId, envelope })
     return true
   }
 
@@ -162,10 +179,7 @@ export class SimulatedPeerTransport<TInboundMessage, TOutboundMessage>
       return
     }
     const latencyMs = Math.max(0, receivedAtMs - frame.sentAtMs)
-    this.deliveredMessages += 1
-    this.deliveredBytes += frame.bytes
-    this.totalLatencyMs += latencyMs
-    this.maxLatencyMs = Math.max(this.maxLatencyMs, latencyMs)
+    this.metrics.recordDelivered(frame.bytes, latencyMs)
     this.emit({
       type: 'message',
       delivery: {
@@ -192,15 +206,6 @@ export class SimulatedPeerTransport<TInboundMessage, TOutboundMessage>
     if (this.peer && this.peer.state.status !== 'disposed') {
       this.peer.onRemoteDisconnect('peer-disconnected')
     }
-  }
-
-  private shouldDropMessage(): boolean {
-    const every = this.network.dropEveryNthMessage
-    return typeof every === 'number' && every > 0 && this.sentMessages % every === 0
-  }
-
-  private maxQueuedFrames(): number {
-    return this.network.maxQueuedFrames || MAX_SIMULATED_FRAMES
   }
 
   private markConnected(peerId: string): void {
