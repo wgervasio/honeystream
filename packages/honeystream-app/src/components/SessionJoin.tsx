@@ -34,7 +34,23 @@ export class SessionJoin extends Component<IProps> {
             <span>Confirm your name</span>
             <span>Hop into the room</span>
           </div>
-          <form onSubmit={e => e.preventDefault()}>
+          <div className={styles.inviteIllustration} aria-label="Cat and rabbit invite handoff">
+            <span className={styles.catPocket}>
+              <strong>Cat-side</strong>
+              Sends the room
+            </span>
+            <span className={styles.hopTrail}>sync</span>
+            <span className={styles.rabbitPocket}>
+              <strong>Rabbit-side</strong>
+              Lands together
+            </span>
+          </div>
+          <form
+            onSubmit={e => {
+              e.preventDefault()
+              this.submit()
+            }}
+          >
             <p className={styles.label}>{t('enterJoinDest')}</p>
             <InputGroup>
               <TextInput
@@ -43,6 +59,11 @@ export class SessionJoin extends Component<IProps> {
                 placeholder="e.g. https://app.gethoneystream.com/join/abcd123…"
                 defaultValue={localStorage.getItem('prevFriendCode') || undefined}
                 spellCheck={false}
+                onChange={() => {
+                  if (this.sessionInput) {
+                    this.sessionInput.classList.remove('invalid')
+                  }
+                }}
                 autoFocus
                 required
               />
@@ -50,16 +71,7 @@ export class SessionJoin extends Component<IProps> {
                 icon="globe"
                 size="medium"
                 className={styles.joinButton}
-                onClick={() => {
-                  const valid = Boolean(this.sessionInput && this.sessionInput.checkValidity())
-                  if (valid) {
-                    const value = this.sessionInput!.value.trim()
-                    localStorage.setItem('prevFriendCode', value)
-                    this.props.connect(value)
-                  } else {
-                    this.sessionInput!.classList.add('invalid')
-                  }
-                }}
+                onClick={this.submit}
               >
                 {t('join')}
               </MenuButton>
@@ -73,5 +85,21 @@ export class SessionJoin extends Component<IProps> {
         </section>
       </LayoutMain>
     )
+  }
+
+  private submit = () => {
+    if (!this.sessionInput) {
+      return
+    }
+
+    const valid = this.sessionInput.checkValidity()
+    if (valid) {
+      const value = this.sessionInput.value.trim()
+      localStorage.setItem('prevFriendCode', value)
+      this.props.connect(value)
+    } else {
+      this.sessionInput.classList.add('invalid')
+      this.sessionInput.focus()
+    }
   }
 }

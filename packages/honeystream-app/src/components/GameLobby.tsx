@@ -194,6 +194,7 @@ class _GameLobby extends React.Component<PrivateProps, IState> {
             }}
           />
         )}
+        {this.isInteracting ? null : this.renderRoomStatus()}
       </section>
     )
   }
@@ -269,6 +270,21 @@ class _GameLobby extends React.Component<PrivateProps, IState> {
           this.openModal(LobbyModal.Settings)
         }}
       />
+    )
+  }
+
+  private renderRoomStatus(): JSX.Element {
+    const mediaStatus = this.props.currentMedia ? 'Now watching' : 'Ready for the first link'
+    const guestStatus = this.props.isMultiplayer ? 'Rabbit-side synced' : 'Rabbit-side waiting'
+    const centerLabel = this.props.isMultiplayer ? 'Together' : 'Invite buddy'
+
+    return (
+      <div className={styles.roomStatus} aria-label="Cozy room status">
+        <span className={styles.catStatus}>Cat-side {this.props.host ? 'hosting' : 'host'}</span>
+        <strong>{centerLabel}</strong>
+        <span className={styles.rabbitStatus}>{guestStatus}</span>
+        <em>{mediaStatus}</em>
+      </div>
     )
   }
 

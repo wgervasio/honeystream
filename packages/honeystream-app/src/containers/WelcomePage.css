@@ -145,6 +145,67 @@
   box-shadow: inset 0 1rem 2rem rgba(255, 255, 255, 0.22), 0 18px 38px rgba(36, 28, 53, 0.24);
 }
 
+.petFace {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.petFace i,
+.petFace b,
+.petFace::before,
+.petFace::after {
+  position: absolute;
+  display: block;
+  content: '';
+}
+
+.petFace i {
+  top: 2.2rem;
+  width: 0.48rem;
+  height: 0.68rem;
+  border-radius: 50%;
+  background: var(--color-ink);
+  box-shadow: 0 0.08rem 0 rgba(255, 255, 255, 0.32);
+}
+
+.petFace i:first-child {
+  left: 1.92rem;
+}
+
+.petFace i:nth-child(2) {
+  right: 1.92rem;
+}
+
+.petFace b {
+  left: 50%;
+  top: 3.25rem;
+  width: 1.1rem;
+  height: 0.58rem;
+  border-bottom: 3px solid rgba(36, 28, 53, 0.72);
+  border-radius: 0 0 999px 999px;
+  transform: translateX(-50%);
+}
+
+.petFace::before,
+.petFace::after {
+  top: 3rem;
+  width: 0.65rem;
+  height: 0.38rem;
+  border-radius: 50%;
+  background: rgba(255, 127, 150, 0.3);
+}
+
+.petFace::before {
+  left: 1.08rem;
+}
+
+.petFace::after {
+  right: 1.08rem;
+}
+
 .catOrb {
   left: 2rem;
   top: 2.5rem;

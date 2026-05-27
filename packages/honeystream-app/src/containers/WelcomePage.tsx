@@ -54,8 +54,20 @@ class WelcomePage extends Component<Props> {
               stream, rabbit-side hops in with the invite, and the controls stay easy to find.
             </p>
             <div className={styles.petPreview} aria-hidden="true">
-              <span className={`${styles.petOrb} ${styles.catOrb}`} />
-              <span className={`${styles.petOrb} ${styles.rabbitOrb}`} />
+              <span className={`${styles.petOrb} ${styles.catOrb}`}>
+                <span className={styles.petFace}>
+                  <i />
+                  <i />
+                  <b />
+                </span>
+              </span>
+              <span className={`${styles.petOrb} ${styles.rabbitOrb}`}>
+                <span className={styles.petFace}>
+                  <i />
+                  <i />
+                  <b />
+                </span>
+              </span>
             </div>
           </aside>
 
