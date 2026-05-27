@@ -1,7 +1,7 @@
 export default {
   add: 'Add',
   addMedia: 'Add Video',
-  addMediaCTA: 'Choose a downloaded video, website video, or direct video link.',
+  addMediaCTA: 'Choose a downloaded video, YouTube page, website video, or direct video link.',
   admin: 'Admin',
   advanced: 'Advanced',
   allow: 'Allow',

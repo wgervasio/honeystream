@@ -2,6 +2,7 @@ import { SessionMediaItem, SessionMediaKind, SessionState } from 'domain/session
 import { PlaybackEngineDesiredState } from 'playback/engine/playbackEngineContract'
 import { PlaybackMediaSource } from 'playback/adapters/shared/playbackAdapter'
 import { HostEvent, MediaSnapshot, SessionSnapshot } from 'protocol/types'
+import { classifyMediaUrl } from 'runtime/protocol/url-classifier'
 
 const toSessionMediaKind = (kind: MediaSnapshot['kind'] | SessionMediaKind | undefined): SessionMediaKind =>
   kind === 'localFile' || kind === 'website' ? kind : 'url'
@@ -21,7 +22,7 @@ const toPlaybackMediaSource = (
 
 const toMediaSnapshot = (media: SessionMediaItem): MediaSnapshot => ({
   mediaId: media.id,
-  kind: toSessionMediaKind(media.kind),
+  kind: toSessionMediaKind(media.kind || classifyMediaUrl(media.url)),
   source: media.url,
   title: media.title,
   durationMs: media.durationMs
@@ -62,6 +63,7 @@ export const toSessionSnapshot = (
   queue: state.queue.map(toMediaSnapshot),
   current: state.current ? toMediaSnapshot(state.current) : undefined,
   currentMediaId: state.current ? state.current.id : undefined,
+  currentMedia: state.current ? toMediaSnapshot(state.current) : undefined,
   playback: {
     state: state.playback.state,
     positionMs: state.playback.positionMs,
@@ -113,6 +115,10 @@ export const resolveCurrentMediaSnapshot = (
   const currentMediaId = snapshot.currentMediaId
   if (!currentMediaId) return undefined
   if (snapshot.current && snapshot.current.mediaId === currentMediaId) return snapshot.current
+
+  if (snapshot.currentMedia && snapshot.currentMedia.mediaId === currentMediaId) {
+    return snapshot.currentMedia
+  }
 
   const queueMatch = snapshot.queue.find(media => media.mediaId === currentMediaId)
   if (queueMatch) return queueMatch

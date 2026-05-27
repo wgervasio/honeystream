@@ -298,15 +298,6 @@ export class DefaultSessionRuntime implements SessionRuntime {
         ;({ state: nextState, errors: domainErrors } = transitionGuestLeft(state, fromPeerId, nowHostMs))
         break
       case 'addMedia':
-        if (fromRemote && command.media.kind === 'localFile') {
-          const protocolError = invalidCommandError(
-            'Guests cannot queue local files because the host cannot access guest-local file bytes.',
-            'command.addMedia.media.kind'
-          )
-          this.recordProtocolDiagnostic(protocolError)
-          this.trySendHostEvent({ type: 'protocolRejected', error: protocolError })
-          return
-        }
         ;({
           state: nextState,
           errors: domainErrors
@@ -341,7 +332,11 @@ export class DefaultSessionRuntime implements SessionRuntime {
     if (stateChanged) {
       this.hostState = nextState
       this.eventCursor += 1
-      await this.playback.applyDesiredState(toPlaybackDesiredStateFromDomain(nextState))
+      try {
+        await this.playback.applyDesiredState(toPlaybackDesiredStateFromDomain(nextState))
+      } catch (error) {
+        this.recordRuntimeError(`[playback] ${toErrorMessage(error)}`)
+      }
     }
 
     for (const domainError of domainErrors) {
@@ -376,6 +371,13 @@ export class DefaultSessionRuntime implements SessionRuntime {
 
     if (event.type === 'mediaQueued') {
       this.knownGuestMedia = upsertKnownMedia(this.knownGuestMedia, event.media, this.mediaCacheCap)
+    }
+    if (nextSession.currentMedia) {
+      this.knownGuestMedia = upsertKnownMedia(
+        this.knownGuestMedia,
+        nextSession.currentMedia,
+        this.mediaCacheCap
+      )
     }
     for (const media of nextSession.queue) {
       this.knownGuestMedia = upsertKnownMedia(this.knownGuestMedia, media, this.mediaCacheCap)

@@ -1,4 +1,63 @@
 .container {
   composes: absolute-full from '~styles/layout.css';
   composes: fill-center from '~styles/layout.css';
+  padding: 2rem;
+  pointer-events: none;
+  text-align: center;
+  background: radial-gradient(circle at 50% 20%, rgba(255, 255, 255, 0.16), transparent 45%);
+}
+
+.panel {
+  max-width: 36rem;
+  padding: 2rem;
+  border: 1px solid var(--app-panel-border);
+  border-radius: 30px;
+  background: radial-gradient(circle at 18% 8%, rgba(158, 215, 255, 0.26), transparent 34%),
+    radial-gradient(circle at 90% 90%, rgba(255, 216, 138, 0.2), transparent 38%),
+    rgba(36, 28, 53, 0.3);
+  box-shadow: var(--app-panel-shadow);
+  backdrop-filter: blur(24px);
+  text-align: center;
+  pointer-events: auto;
+}
+
+.kicker {
+  margin: 0 0 0.6rem;
+  color: var(--color-honey);
+  font-size: 0.78rem;
+  font-weight: bold;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.panel h2 {
+  margin-bottom: 0.75rem;
+  color: #fff;
+  font-size: 2.4rem;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.panel p:not(.kicker) {
+  color: rgba(255, 255, 255, 0.76);
+}
+
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+  margin: 1.25rem 0;
+}
+
+.pills span {
+  padding: 0.45rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.74);
+  font-size: 0.82rem;
+}
+
+.cta {
+  justify-content: center;
 }

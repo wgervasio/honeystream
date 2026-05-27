@@ -13,8 +13,10 @@
 .content {
   flex: 1 0 auto;
   margin: 1rem 1.5rem 1.5rem 1.5rem;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 1.35rem;
+  box-shadow: 0 24px 70px rgba(36, 28, 53, 0.32);
+  overflow: hidden;
 }
 
 @media only screen and (max-width: 840px) {

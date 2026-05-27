@@ -6,30 +6,44 @@
   flex-direction: row;
   align-items: center;
 
-  background: var(--color-transparent-light-30);
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 999px;
   text-decoration: none;
   text-transform: uppercase;
   letter-spacing: 1px;
+  box-shadow: 0 12px 32px rgba(36, 28, 53, 0.18);
+  transition: background-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
 }
 
 .btn:hover {
-  background-color: var(--color-transparent-light-40);
+  background-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 16px 40px rgba(36, 28, 53, 0.24);
+  transform: translateY(-1px);
+}
+
+.btn:focus {
+  box-shadow: var(--app-focus-ring), 0 16px 40px rgba(36, 28, 53, 0.24);
+}
+
+.btn:active {
+  transform: translateY(0);
 }
 
 .btn *:not(svg) {
-  color: black;
+  color: #fff;
   vertical-align: middle;
 }
 
 .btn span {
-  mix-blend-mode: soft-light;
+  mix-blend-mode: normal;
   text-decoration: none;
 }
 
 .btn svg {
-  mix-blend-mode: soft-light;
+  mix-blend-mode: normal;
   margin-right: 14px;
+  color: #fff;
 }
 
 @media (prefers-contrast: high) {

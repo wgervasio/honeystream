@@ -14,6 +14,7 @@ import {
   PeerTransportErrorCode
 } from './connection-state'
 import { createDisposableGroup } from './lifecycle'
+import { createInMemoryPeerTransportMetrics, InMemoryPeerTransportMetrics, InMemoryPeerTransportMetricsRecorder } from './in-memory-peer-transport-metrics'
 
 type Clock = () => number
 
@@ -22,19 +23,20 @@ export interface InMemoryPeerTransportOptions<TInboundMessage> {
   readonly remotePeerId: string
   readonly inboundValidator: TransportMessageValidator<TInboundMessage>
   readonly now?: Clock
+  readonly collectMetrics?: boolean
 }
 
 export class InMemoryPeerTransport<TInboundMessage, TOutboundMessage>
   implements PeerTransport<TInboundMessage, TOutboundMessage> {
   readonly localPeerId: string
   readonly remotePeerId: string
-
   private readonly inboundValidator: TransportMessageValidator<TInboundMessage>
   private readonly now: Clock
   private readonly listeners = new Set<PeerTransportListener<TInboundMessage>>()
   private readonly disposables = createDisposableGroup()
+  private readonly metrics?: InMemoryPeerTransportMetricsRecorder
   private state: PeerTransportConnectionState
-  private connectAttempt: number = 0
+  private connectAttempt = 0
   private peer?: InMemoryPeerTransport<TOutboundMessage, TInboundMessage>
 
   constructor(options: InMemoryPeerTransportOptions<TInboundMessage>) {
@@ -42,6 +44,7 @@ export class InMemoryPeerTransport<TInboundMessage, TOutboundMessage>
     this.remotePeerId = options.remotePeerId
     this.inboundValidator = options.inboundValidator
     this.now = options.now || Date.now
+    this.metrics = options.collectMetrics ? createInMemoryPeerTransportMetrics() : undefined
     this.state = {
       status: 'idle',
       changedAtMs: this.now()
@@ -52,7 +55,6 @@ export class InMemoryPeerTransport<TInboundMessage, TOutboundMessage>
     if (this.peer && this.peer !== peer) {
       throw new Error(`[InMemoryPeerTransport:${this.localPeerId}] peer link already configured`)
     }
-
     this.peer = peer
   }
 
@@ -98,6 +100,8 @@ export class InMemoryPeerTransport<TInboundMessage, TOutboundMessage>
     return this.state
   }
 
+  getMetrics(): InMemoryPeerTransportMetrics | undefined { return this.metrics ? this.metrics.snapshot() : undefined }
+
   send(envelope: PeerTransportEnvelope<TOutboundMessage>): void {
     this.ensureNotDisposed('send')
     if (this.state.status !== 'connected') {
@@ -105,6 +109,7 @@ export class InMemoryPeerTransport<TInboundMessage, TOutboundMessage>
     }
 
     const peer = this.requirePeer()
+    if (this.metrics) this.metrics.recordSent(envelope)
     peer.receiveEnvelope(envelope, this.localPeerId)
   }
 
@@ -185,6 +190,7 @@ export class InMemoryPeerTransport<TInboundMessage, TOutboundMessage>
         receivedAtMs: this.now()
       }
     }
+    if (this.metrics) this.metrics.recordDelivered(rawEnvelope, this.now() - validatedEnvelope.envelope.sentAtMs)
     this.emit(event)
   }
 

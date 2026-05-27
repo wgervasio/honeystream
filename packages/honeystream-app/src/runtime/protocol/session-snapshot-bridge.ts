@@ -1,5 +1,6 @@
 import { Participant, SessionMediaItem, SessionState } from '../../domain'
 import { HostEvent, MediaSnapshot, ParticipantSnapshot, PlaybackSnapshot, SessionSnapshot } from '../../protocol/types'
+import { classifyMediaUrl } from './url-classifier'
 
 export type ResolveMediaKind = (media: SessionMediaItem) => MediaSnapshot['kind']
 
@@ -8,7 +9,7 @@ export interface SessionSnapshotBridgeOptions {
   readonly resolveMediaKind?: ResolveMediaKind
 }
 
-const defaultResolveMediaKind: ResolveMediaKind = () => 'url'
+const defaultResolveMediaKind: ResolveMediaKind = media => media.kind || classifyMediaUrl(media.url)
 
 const toParticipantSnapshot = (participant: Participant): ParticipantSnapshot => ({
   peerId: participant.id,

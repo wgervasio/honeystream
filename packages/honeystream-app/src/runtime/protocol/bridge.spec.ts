@@ -65,7 +65,6 @@ describe('runtime/protocol bridge helpers', () => {
     ])
     expect(snapshot.playback.state).toBe('playing')
     expect(snapshot.eventCursor).toBe(12)
-
     const snapshotEvent = toProtocolSnapshotHostEvent(second.state)
     expect(snapshotEvent.type).toBe('snapshot')
   })
@@ -85,7 +84,7 @@ describe('runtime/protocol bridge helpers', () => {
     expect(queuedEvent.position).toBe(0)
     expect(queuedEvent.media).toEqual({
       mediaId: 'm2',
-      kind: 'url',
+      kind: 'website',
       source: 'https://example.com/m2',
       title: 'Media m2',
       durationMs: 120000

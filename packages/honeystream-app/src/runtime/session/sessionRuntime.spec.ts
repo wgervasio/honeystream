@@ -27,6 +27,22 @@ class FakePlaybackEngine implements SessionRuntimePlaybackEngine {
   }
 }
 
+class FailingPlaybackEngine extends FakePlaybackEngine {
+  private applyCount = 0
+
+  async applyDesiredState(
+    desiredState: PlaybackEngineDesiredState
+  ): Promise<PlaybackEngineApplyResult> {
+    this.applyCount += 1
+    if (this.applyCount === 1) {
+      return super.applyDesiredState(desiredState)
+    }
+
+    this.desiredStates.push(desiredState)
+    throw new Error('Playback target unavailable.')
+  }
+}
+
 const acceptsUnknownMessage: TransportMessageValidator<unknown> = {
   validate(_value: unknown): _value is unknown {
     return true
@@ -168,7 +184,7 @@ describe('runtime/session/SessionRuntime', () => {
     expect(projection.diagnostics[0].code).toBe('invalidEnvelope')
   })
 
-  it('rejects guest local-file media because host cannot resolve guest file bytes', async () => {
+  it('keeps host snapshots moving when playback application fails', async () => {
     let nowMs = 9000
     const pair = createInMemoryPeerTransportPair({
       hostInboundValidator: acceptsUnknownMessage,
@@ -176,7 +192,7 @@ describe('runtime/session/SessionRuntime', () => {
     })
     const hostRuntime = createSessionRuntime({
       transport: pair.host,
-      playback: new FakePlaybackEngine(),
+      playback: new FailingPlaybackEngine(),
       now: () => nowMs++
     })
     const guestRuntime = createSessionRuntime({
@@ -206,15 +222,13 @@ describe('runtime/session/SessionRuntime', () => {
       }
     })
     await flushRuntime()
-
     const hostSession = hostRuntime.getSnapshot().session
-    expect(hostSession && hostSession.currentMediaId).toBeUndefined()
-    expect(hostRuntime.getSnapshot().diagnostics).toEqual(
+    const guestSession = guestRuntime.getSnapshot().session
+    expect(hostSession && hostSession.currentMediaId).toBe('guest-local')
+    expect(guestSession && guestSession.currentMediaId).toBe('guest-local')
+    expect(hostRuntime.getSnapshot().runtimeErrors).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({
-          code: 'invalidCommand',
-          path: 'command.addMedia.media.kind'
-        })
+        expect.stringContaining('Playback target unavailable.')
       ])
     )
   })

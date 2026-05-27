@@ -32,12 +32,25 @@ const _IdleScreen = (props: PrivateProps) => {
   const isAddAllowed = props.dj || !props.queueLocked
 
   const addMediaCTA = (
-    <>
+    <div className={styles.panel}>
+      <p className={styles.kicker}>Ready for something good?</p>
+      <h2>Queue a cozy watch night.</h2>
       <p>{t('addMediaCTA')}</p>
-      <HighlightButton icon="plus" size="large" highlight onClick={props.openMediaBrowser}>
+      <div className={styles.pills} aria-hidden="true">
+        <span>Website links</span>
+        <span>Cat-side queue</span>
+        <span>Rabbit-side sync</span>
+      </div>
+      <HighlightButton
+        icon="plus"
+        size="large"
+        highlight
+        className={styles.cta}
+        onClick={props.openMediaBrowser}
+      >
         {t('addMedia')}
       </HighlightButton>
-    </>
+    </div>
   )
 
   return <div className={cx(styles.container, props.className)}>{isAddAllowed && addMediaCTA}</div>

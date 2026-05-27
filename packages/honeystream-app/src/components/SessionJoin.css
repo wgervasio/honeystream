@@ -1,8 +1,11 @@
 .container {
-  background: linear-gradient(200deg, #42275a, #734b6d);
+  background: var(--app-bg-other);
   height: 100%;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
 }
 
 .table {
@@ -28,6 +31,238 @@
 .peerId {
   vertical-align: bottom;
   width: 100%;
-  max-width: 400px;
+  min-width: 18rem;
+  max-width: 34rem;
   border-color: rgba(255, 255, 255, 0.3);
+}
+
+.card {
+  width: calc(100% - 2rem);
+  max-width: 740px;
+  padding: 2.5rem;
+  border: 1px solid var(--app-panel-border);
+  border-radius: 34px;
+  background: radial-gradient(circle at 20% 12%, rgba(158, 215, 255, 0.28), transparent 32%),
+    radial-gradient(circle at 88% 86%, rgba(247, 215, 232, 0.28), transparent 36%),
+    rgba(255, 255, 255, 0.13);
+  box-shadow: var(--app-panel-shadow);
+  backdrop-filter: blur(24px);
+}
+
+.card header {
+  margin-bottom: 1rem;
+}
+
+.card h1,
+.card h2 {
+  letter-spacing: -0.04em;
+}
+
+.card h2 {
+  margin-bottom: 0.75rem;
+  color: #fff;
+  font-size: 2.25rem;
+  line-height: 1.05;
+}
+
+.card form {
+  margin-top: 1.5rem;
+}
+
+.kicker,
+.label {
+  color: var(--color-honey);
+  font-size: 0.82rem;
+  font-weight: bold;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.lede {
+  max-width: 34rem;
+  color: rgba(255, 255, 255, 0.76);
+}
+
+.comfortChecks {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 1.25rem;
+}
+
+.comfortChecks span {
+  min-height: 4.4rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 18px;
+  background: rgba(36, 28, 53, 0.18);
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.25rem;
+}
+
+.inviteRibbon {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin-top: 1rem;
+  padding: 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(158, 215, 255, 0.14), rgba(247, 215, 232, 0.14));
+}
+
+.inviteRibbon span {
+  padding: 0.45rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.82);
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.inviteIllustration {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 0.7rem;
+  align-items: center;
+  margin-top: 1rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 24px;
+  background: rgba(36, 28, 53, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.catPocket,
+.rabbitPocket {
+  min-height: 4.8rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0.9rem;
+  border-radius: 18px;
+  color: rgba(255, 255, 255, 0.76);
+  line-height: 1.2;
+}
+
+.catPocket {
+  background: radial-gradient(circle at 18% 18%, rgba(158, 215, 255, 0.46), transparent 48%),
+    rgba(255, 255, 255, 0.1);
+}
+
+.rabbitPocket {
+  background: radial-gradient(circle at 84% 18%, rgba(247, 215, 232, 0.48), transparent 48%),
+    rgba(255, 255, 255, 0.1);
+}
+
+.catPocket strong,
+.rabbitPocket strong {
+  margin-bottom: 0.3rem;
+  color: #fff;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hopTrail {
+  display: inline-flex;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.8rem;
+  border-radius: 999px;
+  background: var(--app-button-gradient);
+  color: #fff;
+  font-size: 0.74rem;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: 0 12px 26px rgba(255, 127, 150, 0.22);
+}
+
+.linkBreakdown {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.linkBreakdown span {
+  min-height: 4.4rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.13), rgba(36, 28, 53, 0.14));
+  color: rgba(255, 255, 255, 0.76);
+  line-height: 1.2;
+}
+
+.linkBreakdown strong {
+  margin-bottom: 0.3rem;
+  color: #fff;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.label {
+  margin-bottom: 0.75rem;
+}
+
+.joinButton {
+  white-space: nowrap;
+}
+
+.hintGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin-top: 1.5rem;
+}
+
+.hintGrid span {
+  padding: 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(36, 28, 53, 0.18);
+  color: rgba(255, 255, 255, 0.76);
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+@media only screen and (max-width: 640px) {
+  .card {
+    padding: 1.5rem;
+  }
+
+  .peerId {
+    min-width: 0;
+  }
+
+  .hintGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .inviteRibbon {
+    grid-template-columns: 1fr;
+    border-radius: 22px;
+  }
+
+  .inviteIllustration {
+    grid-template-columns: 1fr;
+  }
+
+  .hopTrail {
+    justify-self: center;
+    min-width: 5.5rem;
+  }
+
+  .comfortChecks {
+    grid-template-columns: 1fr;
+  }
+
+  .linkBreakdown {
+    grid-template-columns: 1fr;
+  }
 }

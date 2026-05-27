@@ -28,6 +28,7 @@ import {
   SessionSnapshot
 } from 'protocol/types'
 import { PeerTransport, PeerTransportEvent } from 'transport/contracts'
+import { classifyMediaUrl } from 'runtime/protocol/url-classifier'
 import { ProjectionStore, createProjectionStore } from 'ui'
 
 export interface FlowClock {
@@ -69,7 +70,7 @@ const normalizeQueueCap = (value: number | undefined): number => {
 
 const toMediaSnapshot = (media: SessionMediaItem): MediaSnapshot => ({
   mediaId: media.id,
-  kind: 'url',
+  kind: media.kind || classifyMediaUrl(media.url),
   source: media.url,
   title: media.title,
   durationMs: media.durationMs
@@ -79,6 +80,7 @@ const toSessionMediaItem = (media: MediaSnapshot, requestedBy: string): SessionM
   id: media.mediaId,
   url: media.source,
   title: media.title,
+  kind: media.kind,
   durationMs: media.durationMs,
   requestedBy
 })

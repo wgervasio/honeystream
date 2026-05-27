@@ -122,19 +122,25 @@ describe('mediaPlayer reducer', () => {
     })
 
     it('restores session with appropriate time', () => {
+      const now = Date.now()
+      const nowSpy = jest.spyOn(Date, 'now').mockReturnValue(now)
       const store = configureTestStore({ initialState: INITIAL_TEST_APP_STATE })
 
-      store.dispatch(playPauseMedia()) // start playing
-      store.dispatch(setPlaybackRate(PlaybackRate.Max))
+      try {
+        store.dispatch(playPauseMedia()) // start playing
+        store.dispatch(setPlaybackRate(PlaybackRate.Max))
 
-      const initialTime = getPlaybackTime(store.getState() as any)
+        const initialTime = getPlaybackTime(store.getState() as any)
 
-      // save and restore session
-      store.dispatch(resetLobby({ host: true }))
-      store.dispatch(initLobby({ host: true }))
+        // save and restore session
+        store.dispatch(resetLobby({ host: true }))
+        store.dispatch(initLobby({ host: true }))
 
-      const curTime = getPlaybackTime(store.getState() as any)
-      expect(curTime).toBeCloseTo(initialTime)
+        const curTime = getPlaybackTime(store.getState() as any)
+        expect(curTime).toBeCloseTo(initialTime)
+      } finally {
+        nowSpy.mockRestore()
+      }
     })
   })
 })

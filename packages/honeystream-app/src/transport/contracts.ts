@@ -5,6 +5,12 @@ import {
 } from './connection-state'
 import { Disposable } from './lifecycle'
 
+export {
+  PeerTransportConnectionState,
+  PeerTransportDisconnectReason,
+  PeerTransportError
+} from './connection-state'
+
 export interface PeerTransportEnvelope<TMessage> {
   readonly seq: number
   readonly sentAtMs: number

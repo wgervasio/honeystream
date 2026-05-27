@@ -1,0 +1,330 @@
+.container {
+  min-height: 100%;
+  background: var(--app-bg-lobby);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+}
+
+.shell {
+  width: calc(100% - 3rem);
+  max-width: 920px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(17rem, 24rem);
+  gap: 1rem;
+}
+
+.heroCard,
+.runtimePanel {
+  border: 1px solid var(--app-panel-border);
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.13);
+  box-shadow: var(--app-panel-shadow);
+  backdrop-filter: blur(24px);
+}
+
+.heroCard {
+  padding: 2rem;
+  background: radial-gradient(circle at 12% 10%, rgba(158, 215, 255, 0.28), transparent 34%),
+    radial-gradient(circle at 92% 90%, rgba(255, 216, 138, 0.2), transparent 38%),
+    rgba(255, 255, 255, 0.13);
+}
+
+.kicker {
+  margin: 0 0 0.75rem;
+  color: var(--color-honey);
+  font-size: 0.78rem;
+  font-weight: bold;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.heroCard h1 {
+  max-width: 30rem;
+  margin: 0 0 1rem;
+  color: #fff;
+  font-size: 3rem;
+  line-height: 0.95;
+  letter-spacing: -0.06em;
+}
+
+.heroCard p:not(.kicker) {
+  max-width: 30rem;
+  color: rgba(255, 255, 255, 0.76);
+  line-height: 1.55rem;
+}
+
+.roomMotif {
+  display: grid;
+  grid-template-columns: minmax(8rem, 1fr) 4rem minmax(8rem, 1fr);
+  gap: 0.7rem;
+  align-items: center;
+  margin-top: 1.5rem;
+}
+
+.catNode,
+.rabbitNode {
+  min-height: 5.8rem;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 22px;
+  color: #fff;
+  font-weight: bold;
+  line-height: 1.2;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.catNode {
+  background: radial-gradient(circle at 24% 20%, rgba(158, 215, 255, 0.46), transparent 42%),
+    rgba(36, 28, 53, 0.18);
+}
+
+.rabbitNode {
+  background: radial-gradient(circle at 74% 24%, rgba(247, 215, 232, 0.48), transparent 42%),
+    rgba(36, 28, 53, 0.18);
+}
+
+.syncLine {
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--color-cat), var(--color-honey), var(--color-bunny));
+  box-shadow: 0 0 20px rgba(255, 216, 138, 0.44);
+}
+
+.roomChecklist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.roomChecklist span {
+  padding: 0.45rem 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.86rem;
+}
+
+.setupRail {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.setupRail li {
+  min-height: 7.6rem;
+  padding: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 20px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(36, 28, 53, 0.16));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.setupRail span {
+  display: inline-flex;
+  width: 1.8rem;
+  height: 1.8rem;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.6rem;
+  border-radius: 50%;
+  background: var(--app-button-gradient);
+  color: #fff;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.setupRail strong {
+  display: block;
+  color: #fff;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.setupRail p {
+  margin: 0.45rem 0 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.9rem;
+  line-height: 1.3rem;
+}
+
+.roomPromises {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.roomPromises article {
+  min-height: 8.1rem;
+  padding: 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 20px;
+  background: rgba(36, 28, 53, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.roomPromises strong {
+  display: block;
+  margin-bottom: 0.45rem;
+  color: #fff;
+  line-height: 1.1;
+}
+
+.roomPromises span {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.9rem;
+  line-height: 1.3rem;
+}
+
+.siteLab {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 24px;
+  background: linear-gradient(135deg, rgba(255, 216, 138, 0.16), rgba(158, 215, 255, 0.12));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.siteLabHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-bottom: 0.8rem;
+}
+
+.siteLabHeader strong {
+  color: #fff;
+}
+
+.siteLabHeader span {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.siteGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.siteGrid article {
+  min-height: 6.4rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 18px;
+  background: rgba(36, 28, 53, 0.18);
+}
+
+.siteGrid strong,
+.siteGrid span,
+.siteGrid em {
+  display: block;
+}
+
+.siteGrid strong {
+  color: #fff;
+  line-height: 1.1;
+}
+
+.siteGrid span {
+  margin-top: 0.35rem;
+  color: var(--color-honey);
+  font-size: 0.82rem;
+}
+
+.siteGrid em {
+  margin-top: 0.3rem;
+  color: rgba(255, 255, 255, 0.66);
+  font-size: 0.78rem;
+  font-style: normal;
+  line-height: 1.15rem;
+}
+
+.syncQuality {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.8rem;
+}
+
+.syncQuality span {
+  padding: 0.38rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.8rem;
+}
+
+.runtimePanel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+.runtimePanel [data-session-state] {
+  align-self: flex-start;
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  background: var(--app-button-gradient);
+  color: #fff;
+  font-weight: bold;
+  letter-spacing: 0.04em;
+}
+
+.runtimePanel div {
+  color: rgba(255, 255, 255, 0.84);
+  line-height: 1.5rem;
+}
+
+.runtimePanel section {
+  padding: 1rem;
+  border-radius: 18px;
+  background: rgba(36, 28, 53, 0.22);
+}
+
+.runtimePanel ul {
+  margin-top: 0.5rem;
+}
+
+@media only screen and (max-width: 760px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .roomMotif {
+    grid-template-columns: 1fr;
+  }
+
+  .roomPromises {
+    grid-template-columns: 1fr;
+  }
+
+  .setupRail {
+    grid-template-columns: 1fr;
+  }
+
+  .siteLabHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .siteGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .syncLine {
+    width: 2px;
+    height: 2.2rem;
+    margin: 0 auto;
+  }
+}
