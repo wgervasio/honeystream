@@ -66,6 +66,23 @@ class Home extends Component<IProps> {
         body: 'No public lobby clutter, no random audience, just one invite and one shared stream.'
       }
     ]
+    const quickPathCards = [
+      {
+        id: 'paste',
+        label: 'Paste a site',
+        detail: 'YouTube, anime pages, movie pages, or a direct MP4.'
+      },
+      {
+        id: 'queue',
+        label: 'Queue it once',
+        detail: 'The host keeps the source of truth small and clear.'
+      },
+      {
+        id: 'sync',
+        label: 'Watch together',
+        detail: 'Play, pause, seek, and speed changes stay obvious.'
+      }
+    ]
 
     return (
       <LayoutMain className={styles.container} showBackButton={false}>
@@ -144,18 +161,44 @@ class Home extends Component<IProps> {
                   </MenuButton>
                 )}
               </nav>
+
+              <div id="home_easy_path" className={styles.easyPath} aria-label="Easy watch path">
+                {quickPathCards.map(card => (
+                  <article key={card.id}>
+                    <strong>{card.label}</strong>
+                    <span>{card.detail}</span>
+                  </article>
+                ))}
+              </div>
             </div>
 
             <aside className={styles.companionCard} aria-label="Cozy room motif">
               <div className={styles.petPair}>
                 <span className={`${styles.petOrb} ${styles.catOrb}`} />
                 <span className={`${styles.petOrb} ${styles.rabbitOrb}`} />
+                <span className={styles.syncBeam} />
               </div>
               <p className={styles.companionTitle}>One cat person. One bunny person.</p>
               <p className={styles.companionText}>
                 A soft command center for deciding what to watch, adding it fast, and staying in
                 sync without digging through menus.
               </p>
+              <div id="home_room_preview" className={styles.roomPreview} aria-label="Room preview">
+                <div className={styles.previewBar}>
+                  <span>Now setting up</span>
+                  <strong>Cozy room</strong>
+                </div>
+                <div className={styles.previewPeople}>
+                  <span className={styles.catBadge}>Cat-side host</span>
+                  <span className={styles.previewPulse}>sync</span>
+                  <span className={styles.rabbitBadge}>Rabbit-side guest</span>
+                </div>
+                <div className={styles.previewQueue}>
+                  <span>Website queued</span>
+                  <span>Invite copied</span>
+                  <span>Controls ready</span>
+                </div>
+              </div>
               <div className={styles.comfortGrid} aria-label="Room promises">
                 <span>
                   <strong>2</strong>

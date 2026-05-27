@@ -36,6 +36,11 @@ class _Disconnect extends Component<IProps> {
             {msg}
           </span>
         </p>
+        <div id="disconnect_next_steps" className={styles.nextSteps} aria-hidden="true">
+          <span>Retry the invite</span>
+          <span>Check host tab</span>
+          <span>Keep the room private</span>
+        </div>
         <div className={styles.buttonrow}>
           <MenuButton to="/" size="medium">{t('ok')}</MenuButton>
           <MenuButton size="medium" onClick={reconnect}>{t('retry')}</MenuButton>

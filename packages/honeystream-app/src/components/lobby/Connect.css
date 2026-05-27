@@ -28,6 +28,20 @@
   background: var(--color-bunny);
 }
 
+.card {
+  position: relative;
+  z-index: 1;
+  width: calc(100% - 2rem);
+  max-width: 38rem;
+  padding: 1.2rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--app-panel-border);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.13);
+  box-shadow: var(--app-panel-shadow);
+  backdrop-filter: blur(24px);
+}
+
 .info {
   composes: center-vertical from '~styles/layout.css';
   position: relative;
@@ -42,6 +56,22 @@
   backdrop-filter: blur(24px);
 }
 
+.comfortChecks {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.comfortChecks span {
+  padding: 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 16px;
+  background: rgba(36, 28, 53, 0.18);
+  color: rgba(255, 255, 255, 0.76);
+  text-align: center;
+  font-size: 0.84rem;
+}
+
 .container > button,
 .container > a {
   position: relative;
@@ -50,4 +80,10 @@
 
 .titlebar {
   composes: titlebar from '../GameLobby.css';
+}
+
+@media only screen and (max-width: 620px) {
+  .comfortChecks {
+    grid-template-columns: 1fr;
+  }
 }

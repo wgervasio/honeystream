@@ -67,6 +67,20 @@ const LOCAL_ONLY_WARNING: SessionRuntimeSystemErrorSnapshot = Object.freeze({
   message:
     'Runtime session shell is currently host/local only while live runtime transport credentials are pending.'
 })
+const RUNTIME_ROOM_PROMISES = Object.freeze([
+  {
+    label: 'Host truth',
+    text: 'Cat-side owns playback state so the room never becomes a tug-of-war.'
+  },
+  {
+    label: 'Guest comfort',
+    text: 'Rabbit-side sees simple status and sends typed intents instead of mystery state.'
+  },
+  {
+    label: 'Easy websites',
+    text: 'Both browsers load the same page locally while sync messages stay tiny.'
+  }
+])
 const STARTUP_ERROR_ID = 'runtime-shell-startup'
 const DEFAULT_SEEK_TOLERANCE_MS = 250
 
@@ -323,6 +337,18 @@ export const RuntimeSessionShellPage = ({ match }: RouteComponentProps<IRoutePar
             <span>{`Lobby: ${lobbyId}`}</span>
             <span>Private invite</span>
             <span>Synced controls</span>
+          </div>
+          <div
+            id="runtime_room_promises"
+            className={styles.roomPromises}
+            aria-label="Runtime room promises"
+          >
+            {RUNTIME_ROOM_PROMISES.map(promise => (
+              <article key={promise.label}>
+                <strong>{promise.label}</strong>
+                <span>{promise.text}</span>
+              </article>
+            ))}
           </div>
         </header>
         <SessionRuntimeShellContainer

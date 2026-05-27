@@ -37,6 +37,7 @@ const _IdleScreen = (props: PrivateProps) => {
       <h2>Queue a cozy watch night.</h2>
       <p>{t('addMediaCTA')}</p>
       <div className={styles.pills} aria-hidden="true">
+        <span>Website links</span>
         <span>Cat-side queue</span>
         <span>Rabbit-side sync</span>
       </div>

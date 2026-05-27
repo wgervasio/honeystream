@@ -29,6 +29,11 @@ export class SessionJoin extends Component<IProps> {
             <span>Rabbit-side guest lands here</span>
             <span>Controls sync after approval</span>
           </div>
+          <div id="join_invite_ribbon" className={styles.inviteRibbon} aria-label="Invite flow">
+            <span>Paste invite</span>
+            <span>Confirm your name</span>
+            <span>Hop into the room</span>
+          </div>
           <form onSubmit={e => e.preventDefault()}>
             <p className={styles.label}>{t('enterJoinDest')}</p>
             <InputGroup>

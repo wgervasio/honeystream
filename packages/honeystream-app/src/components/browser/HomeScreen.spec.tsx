@@ -13,7 +13,9 @@ jest.mock('./HomeScreen.css', () => ({
   kicker: 'kicker',
   localFile: 'localFile',
   main: 'main',
+  mediaPath: 'mediaPath',
   panel: 'panel',
+  panelHeader: 'panelHeader',
   primaryButton: 'primaryButton',
   siteChip: 'siteChip',
   siteChips: 'siteChips',
@@ -28,8 +30,11 @@ describe('browser/HomeScreen', () => {
       <HomeScreen onRequestUrl={() => undefined} onRequestLocalFile={() => undefined} />
     )
 
-    expect(html).toContain('Pick a local file or paste a site')
+    expect(html).toContain('Paste a site, pick a file')
+    expect(html).toContain('Website nights without the scramble')
     expect(html).toContain('compact playback commands')
+    expect(html).toContain('Press play once and keep the room synced')
+    expect(html).toContain('Choose the easiest source for tonight')
     expect(html).toContain('YouTube')
     expect(html).toContain('Anime page')
     expect(html).toContain('Movie page')
