@@ -59,6 +59,7 @@ describe('protocol foundation parsers', () => {
           participants: { host, guest },
           queue: [media],
           currentMediaId: media.mediaId,
+          currentMedia: media,
           playback,
           eventCursor: 7
         }
@@ -96,6 +97,28 @@ describe('protocol foundation parsers', () => {
 
     expect(result.ok).toBeFalsy()
     if (!result.ok) expect(result.error.code).toBe('malformedValue')
+  })
+
+  it('rejects snapshots whose current media metadata does not match currentMediaId', () => {
+    const result = parseHostEvent({
+      type: 'snapshot',
+      snapshot: {
+        roomId,
+        status: 'connected',
+        participants: { host, guest },
+        queue: [],
+        currentMediaId: media.mediaId,
+        currentMedia: {
+          ...media,
+          mediaId: 'other-media'
+        },
+        playback,
+        eventCursor: 8
+      }
+    })
+
+    expect(result.ok).toBeFalsy()
+    if (!result.ok) expect(result.error.path).toBe('event.snapshot.currentMedia.mediaId')
   })
 
   it('rejects join commands with invalid invite secrets', () => {

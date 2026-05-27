@@ -45,6 +45,7 @@ export type SessionSnapshot = {
   }
   readonly queue: readonly MediaSnapshot[]
   readonly currentMediaId?: string
+  readonly currentMedia?: MediaSnapshot
   readonly playback: PlaybackSnapshot
   readonly eventCursor: number
 }

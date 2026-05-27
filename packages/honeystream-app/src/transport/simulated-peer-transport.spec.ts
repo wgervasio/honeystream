@@ -64,6 +64,7 @@ describe('simulated peer transport', () => {
     pair.guest.send({ seq: 1, sentAtMs: nowMs, message: { type: 'ping', nonce: 1 } })
 
     expect(pair.flushReady()).toBe(0)
+    expect(pair.host.getMetrics().queuedMessages).toBe(1)
     nowMs += 24
     expect(pair.flushReady()).toBe(0)
     nowMs += 1

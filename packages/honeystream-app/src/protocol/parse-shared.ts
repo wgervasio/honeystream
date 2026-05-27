@@ -105,6 +105,21 @@ export const parseSessionSnapshot = (
   if (value.currentMediaId !== undefined && !isNonEmptyString(value.currentMediaId)) {
     return err(malformedValueError(`${path}.currentMediaId`, 'Expected non-empty string when provided.'))
   }
+  const currentMediaResult =
+    value.currentMedia === undefined
+      ? undefined
+      : parseMediaSnapshot(value.currentMedia, `${path}.currentMedia`)
+  if (currentMediaResult && !currentMediaResult.ok) return currentMediaResult
+  if (currentMediaResult && value.currentMediaId === undefined) {
+    return err(malformedValueError(`${path}.currentMedia`, 'Expected currentMediaId when current media is provided.'))
+  }
+  if (
+    currentMediaResult &&
+    value.currentMediaId !== undefined &&
+    currentMediaResult.value.mediaId !== value.currentMediaId
+  ) {
+    return err(malformedValueError(`${path}.currentMedia.mediaId`, 'Expected current media id to match currentMediaId.'))
+  }
   const playbackResult = parsePlaybackSnapshot(value.playback, `${path}.playback`)
   if (!playbackResult.ok) return playbackResult
   if (!isNonNegativeInteger(value.eventCursor)) {
@@ -116,6 +131,7 @@ export const parseSessionSnapshot = (
     participants: { host: hostResult.value, guest: guestResult ? guestResult.value : undefined },
     queue,
     currentMediaId: value.currentMediaId,
+    currentMedia: currentMediaResult ? currentMediaResult.value : undefined,
     playback: playbackResult.value,
     eventCursor: value.eventCursor
   })
