@@ -9,6 +9,8 @@ jest.mock('./HomeScreen.css', () => ({
   divider: 'divider',
   fileInput: 'fileInput',
   hero: 'hero',
+  helpLine: 'helpLine',
+  invalidInput: 'invalidInput',
   inputContainer: 'inputContainer',
   kicker: 'kicker',
   localFile: 'localFile',
@@ -21,8 +23,10 @@ jest.mock('./HomeScreen.css', () => ({
   rabbitCard: 'rabbitCard',
   siteChip: 'siteChip',
   siteChips: 'siteChips',
+  sourceTips: 'sourceTips',
   catCard: 'catCard',
   syncBadge: 'syncBadge',
+  urlInput: 'urlInput',
   uppercase: 'uppercase'
 }))
 
@@ -41,6 +45,9 @@ describe('browser/HomeScreen', () => {
     expect(html).toContain('Cat-side')
     expect(html).toContain('Tiny sync commands')
     expect(html).toContain('Rabbit-side')
+    expect(html).toContain('Website tab')
+    expect(html).toContain('Local copy')
+    expect(html).toContain('Direct media')
     expect(html).toContain('Choose the easiest source for tonight')
     expect(html).toContain('YouTube')
     expect(html).toContain('Anime night')

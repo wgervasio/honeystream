@@ -83,6 +83,23 @@ class Home extends Component<IProps> {
         detail: 'Play, pause, seek, and speed changes stay obvious.'
       }
     ]
+    const heroMetrics = [
+      {
+        id: 'invite',
+        value: '1 link',
+        label: 'private invite'
+      },
+      {
+        id: 'seats',
+        value: '2 seats',
+        label: 'cat + rabbit'
+      },
+      {
+        id: 'sync',
+        value: 'Host-led',
+        label: 'simple controls'
+      }
+    ]
 
     return (
       <LayoutMain className={styles.container} showBackButton={false}>
@@ -170,12 +187,33 @@ class Home extends Component<IProps> {
                   </article>
                 ))}
               </div>
+
+              <div className={styles.heroMetrics} aria-label="Room basics">
+                {heroMetrics.map(metric => (
+                  <article key={metric.id}>
+                    <strong>{metric.value}</strong>
+                    <span>{metric.label}</span>
+                  </article>
+                ))}
+              </div>
             </div>
 
             <aside className={styles.companionCard} aria-label="Cozy room motif">
               <div className={styles.petPair}>
-                <span className={`${styles.petOrb} ${styles.catOrb}`} />
-                <span className={`${styles.petOrb} ${styles.rabbitOrb}`} />
+                <span className={`${styles.petOrb} ${styles.catOrb}`}>
+                  <span className={styles.petFace}>
+                    <i />
+                    <i />
+                    <b />
+                  </span>
+                </span>
+                <span className={`${styles.petOrb} ${styles.rabbitOrb}`}>
+                  <span className={styles.petFace}>
+                    <i />
+                    <i />
+                    <b />
+                  </span>
+                </span>
                 <span className={styles.syncBeam} />
               </div>
               <p className={styles.companionTitle}>One cat person. One bunny person.</p>

@@ -22,6 +22,14 @@
   transform: translateY(-1px);
 }
 
+.btn:focus {
+  box-shadow: var(--app-focus-ring), 0 16px 40px rgba(36, 28, 53, 0.24);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
 .btn *:not(svg) {
   color: #fff;
   vertical-align: middle;

@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import React, { useRef, useState } from 'react'
 import cx from 'classnames'
 
 import styles from './HomeScreen.css'
@@ -21,15 +21,47 @@ const addSteps = [
   'Press play once and keep the room synced'
 ]
 
+const sourceTips = [
+  {
+    label: 'Website tab',
+    detail: 'Best when both browsers can sign in and open the same page.'
+  },
+  {
+    label: 'Local copy',
+    detail: 'Best for downloaded files you both already have.'
+  },
+  {
+    label: 'Direct media',
+    detail: 'Best when the URL ends in a playable video or audio file.'
+  }
+]
+
 export const HomeScreen = (props: Props) => {
   const urlInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [urlInputInvalid, setUrlInputInvalid] = useState(false)
 
   const requestLocalFile = () => {
     const file = fileInputRef.current && fileInputRef.current.files && fileInputRef.current.files[0]
     if (file) {
       props.onRequestLocalFile(file)
     }
+  }
+
+  const requestUrl = () => {
+    const urlInput = urlInputRef.current
+    if (!urlInput) {
+      return
+    }
+
+    const url = urlInput.value.trim()
+    if (!url) {
+      setUrlInputInvalid(true)
+      urlInput.focus()
+      return
+    }
+
+    props.onRequestUrl(url)
   }
 
   return (
@@ -63,6 +95,14 @@ export const HomeScreen = (props: Props) => {
             <strong>Rabbit-side</strong>
             Loads it locally
           </span>
+        </div>
+        <div className={styles.sourceTips} aria-label="Source picking tips">
+          {sourceTips.map(tip => (
+            <article key={tip.label}>
+              <strong>{tip.label}</strong>
+              <span>{tip.detail}</span>
+            </article>
+          ))}
         </div>
       </header>
       <main className={styles.main}>
@@ -122,22 +162,27 @@ export const HomeScreen = (props: Props) => {
             <input
               ref={urlInputRef}
               id="urlinput"
+              className={cx(styles.urlInput, {
+                [styles.invalidInput]: urlInputInvalid
+              })}
               placeholder="https://example.com/watch-or-video.mp4"
               autoComplete="url"
+              aria-invalid={urlInputInvalid || undefined}
               spellCheck={false}
+              onChange={() => setUrlInputInvalid(false)}
             />
             <button
               id="addbtn"
               className={cx(styles.button, styles.uppercase)}
-              onClick={() => {
-                if (urlInputRef.current) {
-                  props.onRequestUrl(urlInputRef.current.value)
-                }
-              }}
+              type="button"
+              onClick={requestUrl}
             >
-              Add to Session
+              Add to room
             </button>
           </div>
+          {urlInputInvalid && (
+            <p className={styles.helpLine}>Paste a website or direct media URL first.</p>
+          )}
         </section>
       </main>
     </div>
