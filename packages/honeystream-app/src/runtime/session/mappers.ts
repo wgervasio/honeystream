@@ -2,10 +2,11 @@ import { SessionMediaItem, SessionMediaKind, SessionState } from 'domain/session
 import { PlaybackEngineDesiredState } from 'playback/engine/playbackEngineContract'
 import { PlaybackMediaSource } from 'playback/adapters/shared/playbackAdapter'
 import { HostEvent, MediaSnapshot, SessionSnapshot } from 'protocol/types'
-import { classifyMediaUrl } from 'runtime/protocol/url-classifier'
+import { classifyMediaUrl } from 'protocol/url-classifier'
 
-const toSessionMediaKind = (kind: MediaSnapshot['kind'] | SessionMediaKind | undefined): SessionMediaKind =>
-  kind === 'localFile' || kind === 'website' ? kind : 'url'
+const toSessionMediaKind = (
+  kind: MediaSnapshot['kind'] | SessionMediaKind | undefined
+): SessionMediaKind => (kind === 'localFile' || kind === 'website' ? kind : 'url')
 
 const toPlaybackMediaSource = (
   kind: MediaSnapshot['kind'] | SessionMediaKind | undefined
@@ -40,10 +41,7 @@ export const toSessionMediaItem = (
   requestedBy
 })
 
-export const toSessionSnapshot = (
-  state: SessionState,
-  eventCursor: number
-): SessionSnapshot => ({
+export const toSessionSnapshot = (state: SessionState, eventCursor: number): SessionSnapshot => ({
   roomId: state.roomId,
   status: state.status,
   participants: {
@@ -94,9 +92,7 @@ const toPlaybackDesiredState = (
   }
 })
 
-export const toPlaybackDesiredStateFromDomain = (
-  state: SessionState
-): PlaybackEngineDesiredState =>
+export const toPlaybackDesiredStateFromDomain = (state: SessionState): PlaybackEngineDesiredState =>
   toPlaybackDesiredState(
     {
       state: state.playback.state,
@@ -182,8 +178,7 @@ export const applyHostEventToSessionSnapshot = (
             eventCursor: nextCursor(current)
           }
     case 'participantLeft':
-      return current.participants.guest &&
-        current.participants.guest.peerId === event.peerId
+      return current.participants.guest && current.participants.guest.peerId === event.peerId
         ? {
             ...current,
             status: 'hosting',

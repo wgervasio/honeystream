@@ -219,6 +219,7 @@ export const HomeScreen = (props: Props) => {
                     if (urlInputRef.current) {
                       urlInputRef.current.value = example.url
                       urlInputRef.current.focus()
+                      setUrlInputInvalid(false)
                     }
                   }}
                 >

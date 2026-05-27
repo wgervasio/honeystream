@@ -91,4 +91,35 @@ describe('RuntimeAddMediaPanel', () => {
       container.remove()
     }
   })
+
+  it('previews whether a typed source will use the website or direct-media lane', () => {
+    const container = document.createElement('div')
+    document.body.appendChild(container)
+
+    try {
+      ReactDOM.render(<RuntimeAddMediaPanel onAddUrl={jest.fn()} />, container)
+
+      const input = container.querySelector('#runtime-add-media-url') as HTMLInputElement
+
+      input.value = 'https://www.youtube.com/watch?v=honeystream-demo'
+      Simulate.change(input)
+      expect(container.querySelector('[data-add-media-source-preview="website"]')).not.toBeNull()
+      expect(container.textContent).toContain('Website lane')
+
+      input.value = 'https://cdn.example.com/watch-night.mp4'
+      Simulate.change(input)
+      expect(
+        container.querySelector('[data-add-media-source-preview="direct-media"]')
+      ).not.toBeNull()
+      expect(container.textContent).toContain('Direct media lane')
+
+      input.value = 'example.com/watch-night'
+      Simulate.change(input)
+      expect(container.querySelector('[data-add-media-source-preview="invalid"]')).not.toBeNull()
+      expect(container.textContent).toContain('Needs full link')
+    } finally {
+      ReactDOM.unmountComponentAtNode(container)
+      container.remove()
+    }
+  })
 })

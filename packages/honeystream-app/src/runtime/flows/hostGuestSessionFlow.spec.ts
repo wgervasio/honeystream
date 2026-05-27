@@ -1,6 +1,6 @@
 import { parseWireEnvelope } from 'protocol'
 import { ClientToHostEnvelope, HostToClientEnvelope } from 'protocol/types'
-import { classifyMediaUrl } from 'runtime/protocol/url-classifier'
+import { classifyMediaUrl } from 'protocol/url-classifier'
 import { createFakeClock, createFixedIdGenerator } from 'test/architecture'
 import { TransportMessageValidator } from 'transport/contracts'
 import { createInMemoryPeerTransportPair } from 'transport/in-memory-peer-transport-pair'

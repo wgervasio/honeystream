@@ -1,5 +1,5 @@
 import { DesiredPlaybackMedia } from '../adapters/shared/playbackAdapter'
-import { classifyMediaUrl } from 'runtime/protocol/url-classifier'
+import { classifyMediaUrl } from 'protocol/url-classifier'
 import { selectPlaybackAdapterKind } from './adapterSelection'
 
 const createMedia = (
