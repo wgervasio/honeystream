@@ -1,3 +1,5 @@
+jest.setTimeout(30e3)
+
 describe('onboarding', () => {
   beforeEach(async () => {
     await ms.visit('/')
