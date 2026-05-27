@@ -1,6 +1,6 @@
 import { classifyMediaUrl } from './url-classifier'
 
-describe('runtime/protocol URL classifier', () => {
+describe('protocol URL classifier', () => {
   it('classifies local files, direct media URLs, and browser website pages', () => {
     expect(classifyMediaUrl('honeystream-local://clip-1')).toBe('localFile')
     expect(classifyMediaUrl('https://cdn.example.com/video.MP4?token=abc')).toBe('url')

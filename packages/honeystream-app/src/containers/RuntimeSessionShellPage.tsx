@@ -3,7 +3,13 @@ import { RouteComponentProps } from 'react-router'
 import LayoutMain from 'components/layout/Main'
 import { createErrorSystemEvent, createSystemEventLog, SystemEvent } from '../domain/event-log'
 import { createDefaultMinimalSettings, MinimalSettings } from '../domain/settings/minimalSettings'
-import { ProtocolError, SessionSnapshot, WireEnvelope, parseWireEnvelope } from '../protocol'
+import {
+  ProtocolError,
+  SessionSnapshot,
+  WireEnvelope,
+  classifyMediaUrl,
+  parseWireEnvelope
+} from '../protocol'
 import { ClientCommand, MediaSnapshot } from '../protocol/types'
 import {
   PlaybackEngineApplyResult,
@@ -139,7 +145,6 @@ const QUEUE_REQUESTED_BY_LABEL = 'Session'
 const SYSTEM_ERROR_EVENT_TIMESTAMP_OFFSET = 1
 const BOUNDARY_SYSTEM_ERROR_CAP = 64
 const INVITE_SECRET_BYTES = 16
-const DIRECT_MEDIA_EXTENSION = /\.(mp4|m4v|webm|ogv|ogg|mp3|wav|m3u8)(?:[?#].*)?$/i
 const HAPPY_PATH_STEPS = [
   {
     id: 'paste',
@@ -611,7 +616,7 @@ const getMediaTitleFromUrl = (mediaUrl: URL): string => {
 }
 
 const getMediaKindFromUrl = (mediaUrl: URL): MediaSnapshot['kind'] =>
-  DIRECT_MEDIA_EXTENSION.test(mediaUrl.pathname) ? 'url' : 'website'
+  classifyMediaUrl(mediaUrl.toString())
 
 const getStageKindLabel = (media: MediaSnapshot | undefined): string => {
   if (!media) return 'Ready for websites'
@@ -625,6 +630,21 @@ const getStageKindLabel = (media: MediaSnapshot | undefined): string => {
       return 'Website loaded'
   }
 }
+
+const getPlaybackStateLabel = (state: SessionSnapshot['playback']['state']): string => {
+  switch (state) {
+    case 'playing':
+      return 'Playing together'
+    case 'paused':
+      return 'Paused together'
+    case 'idle':
+    default:
+      return 'Waiting for play'
+  }
+}
+
+const formatQueuedCountLabel = (count: number): string =>
+  count === 1 ? '1 pick queued' : `${count} picks queued`
 
 const hasLocalFileRegistry = (
   playback: SessionRuntimePlaybackEngine
@@ -646,6 +666,11 @@ const RuntimeSessionRouteSurface = ({
   const renderRuntimeSurface = (viewModel: SessionRuntimeShellViewModel): React.ReactNode => {
     const queueItems = mapSessionSnapshotToQueueItems(viewModel.snapshot.session)
     const currentMedia = viewModel.snapshot.session.current
+    const guest = viewModel.snapshot.session.participants.guest
+    const guestSeatLabel = guest ? guest.username : 'Waiting for rabbit-side'
+    const queuedCountLabel = formatQueuedCountLabel(viewModel.snapshot.session.queue.length)
+    const stageKindLabel = getStageKindLabel(currentMedia)
+    const playbackStateLabel = getPlaybackStateLabel(viewModel.snapshot.session.playback.state)
     const roleLabel =
       viewModel.snapshot.role === 'host'
         ? 'Cat-side host'
@@ -655,6 +680,43 @@ const RuntimeSessionRouteSurface = ({
 
     return (
       <div className={styles.roomGrid}>
+        <section
+          id="runtime_room_runway"
+          className={`${styles.card} ${styles.roomRunway}`}
+          aria-label="Tonight dashboard"
+        >
+          <div className={styles.cardHeader}>
+            <p className={styles.kicker}>Tonight dashboard</p>
+            <span>{stageKindLabel}</span>
+          </div>
+          <div className={styles.runwayGrid}>
+            <article data-runway-card="source">
+              <span>Now source</span>
+              <strong>{currentMedia ? currentMedia.title : 'Choose a first stream'}</strong>
+              <p>
+                {currentMedia
+                  ? 'Ready on the shared stage.'
+                  : 'Paste a website, direct link, or local file to start the room.'}
+              </p>
+            </article>
+            <article data-runway-card="guest">
+              <span>Guest seat</span>
+              <strong>{guestSeatLabel}</strong>
+              <p>Cat-side hosts, rabbit-side lands from the private invite.</p>
+            </article>
+            <article data-runway-card="queue">
+              <span>Queue</span>
+              <strong>{queuedCountLabel}</strong>
+              <p>Keep the next pick visible without making the room busy.</p>
+            </article>
+            <article data-runway-card="sync">
+              <span>Sync</span>
+              <strong>{playbackStateLabel}</strong>
+              <p>Play, pause, seek, speed, and next all stay host-led.</p>
+            </article>
+          </div>
+        </section>
+
         <section
           id="runtime_watch_deck"
           className={`${styles.card} ${styles.watchDeck}`}

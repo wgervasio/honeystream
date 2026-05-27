@@ -1,10 +1,19 @@
 import React, { FormEvent, memo, useState } from 'react'
+import { classifyMediaUrl } from '../../protocol'
 
 export interface RuntimeAddMediaSuggestion {
   readonly detail: string
   readonly id: string
   readonly label: string
   readonly url: string
+}
+
+type RuntimeAddMediaSourcePreviewKind = 'direct-media' | 'invalid' | 'website'
+
+interface RuntimeAddMediaSourcePreview {
+  readonly detail: string
+  readonly kind: RuntimeAddMediaSourcePreviewKind
+  readonly label: string
 }
 
 export interface RuntimeAddMediaPanelProps {
@@ -33,6 +42,35 @@ const isHttpUrl = (value: string): boolean => {
   }
 }
 
+const createSourcePreview = (value: string): RuntimeAddMediaSourcePreview | undefined => {
+  const trimmedValue = value.trim()
+  if (trimmedValue.length === 0) {
+    return undefined
+  }
+
+  if (!isHttpUrl(trimmedValue)) {
+    return {
+      kind: 'invalid',
+      label: 'Needs full link',
+      detail: 'Paste the complete http:// or https:// watch page.'
+    }
+  }
+
+  if (classifyMediaUrl(trimmedValue) === 'website') {
+    return {
+      kind: 'website',
+      label: 'Website lane',
+      detail: 'Each browser opens this page locally while controls stay synced.'
+    }
+  }
+
+  return {
+    kind: 'direct-media',
+    label: 'Direct media lane',
+    detail: 'This looks like a playable media URL for the shared queue.'
+  }
+}
+
 export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
   props: RuntimeAddMediaPanelProps
 ) {
@@ -40,6 +78,7 @@ export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
   const [errorMessage, setErrorMessage] = useState<string | undefined>()
 
   const sourceSuggestions = props.sourceSuggestions || []
+  const sourcePreview = createSourcePreview(url)
 
   const submitUrl = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -96,6 +135,16 @@ export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
           aria-invalid={errorMessage ? true : undefined}
           aria-describedby={errorMessage ? 'runtime-add-media-error' : undefined}
         />
+        {sourcePreview ? (
+          <div
+            data-add-media-source-preview={sourcePreview.kind}
+            aria-live="polite"
+            aria-label="Media source preview"
+          >
+            <strong>{sourcePreview.label}</strong>
+            <span>{sourcePreview.detail}</span>
+          </div>
+        ) : null}
         <button type="submit">{props.addUrlLabel || 'Add URL'}</button>
       </form>
       {errorMessage ? (

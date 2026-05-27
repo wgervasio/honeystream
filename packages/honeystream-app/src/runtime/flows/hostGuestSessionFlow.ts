@@ -25,7 +25,7 @@ import {
 } from 'protocol/types'
 import { validateInboundSequence } from 'protocol/sequence'
 import { PeerTransport, PeerTransportEvent } from 'transport/contracts'
-import { classifyMediaUrl } from 'runtime/protocol/url-classifier'
+import { classifyMediaUrl } from 'protocol/url-classifier'
 import { ProjectionStore, createProjectionStore } from 'ui'
 
 export interface FlowClock {

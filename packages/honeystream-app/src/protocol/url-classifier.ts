@@ -1,4 +1,4 @@
-import { MediaKind } from '../../protocol/types'
+import { MediaKind } from './types'
 
 const LOCAL_FILE_PROTOCOL = 'honeystream-local:'
 const DIRECT_MEDIA_EXTENSIONS = Object.freeze([
