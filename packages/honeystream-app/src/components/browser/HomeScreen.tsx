@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react'
+import React, { FormEvent, useRef, useState } from 'react'
 import cx from 'classnames'
 
 import styles from './HomeScreen.css'
@@ -43,6 +43,15 @@ const readinessItems = [
   'Controls stay obvious'
 ]
 
+const isHttpUrl = (value: string): boolean => {
+  try {
+    const parsedUrl = new URL(value)
+    return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
 export const HomeScreen = (props: Props) => {
   const urlInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -68,7 +77,18 @@ export const HomeScreen = (props: Props) => {
       return
     }
 
+    if (!isHttpUrl(url)) {
+      setUrlInputInvalid(true)
+      urlInput.focus()
+      return
+    }
+
     props.onRequestUrl(url)
+  }
+
+  const submitUrl = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    requestUrl()
   }
 
   return (
@@ -176,10 +196,11 @@ export const HomeScreen = (props: Props) => {
               Best UX: paste the exact watch page, test it once, then press play from host-side.
             </span>
           </div>
-          <div className={styles.inputContainer}>
+          <form className={styles.inputContainer} onSubmit={submitUrl} noValidate>
             <input
               ref={urlInputRef}
               id="urlinput"
+              type="url"
               className={cx(styles.urlInput, {
                 [styles.invalidInput]: urlInputInvalid
               })}
@@ -189,17 +210,12 @@ export const HomeScreen = (props: Props) => {
               spellCheck={false}
               onChange={() => setUrlInputInvalid(false)}
             />
-            <button
-              id="addbtn"
-              className={cx(styles.button, styles.uppercase)}
-              type="button"
-              onClick={requestUrl}
-            >
+            <button id="addbtn" className={cx(styles.button, styles.uppercase)} type="submit">
               Add to room
             </button>
-          </div>
+          </form>
           {urlInputInvalid && (
-            <p className={styles.helpLine}>Paste a website or direct media URL first.</p>
+            <p className={styles.helpLine}>Paste a full http:// or https:// watch link first.</p>
           )}
         </section>
       </main>

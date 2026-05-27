@@ -545,6 +545,11 @@
   box-shadow: var(--app-focus-ring);
 }
 
+.invitePanel button[data-copy-state='copied'] {
+  background: linear-gradient(135deg, rgba(158, 215, 255, 0.92), rgba(247, 215, 232, 0.92));
+  color: var(--color-ink);
+}
+
 .queuePanel button:disabled,
 .playbackPanel button:disabled {
   opacity: 0.45;
@@ -570,6 +575,47 @@
 .addMediaPanel form {
   display: grid;
   gap: 0.7rem;
+}
+
+.addMediaPanel [data-source-suggestions='true'] {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.addMediaPanel [data-source-suggestion] {
+  min-height: 4.7rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.28rem;
+  padding: 0.75rem;
+  border-radius: 18px;
+  background: radial-gradient(circle at 16% 18%, rgba(158, 215, 255, 0.26), transparent 46%),
+    rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  text-align: left;
+  text-transform: none;
+}
+
+.addMediaPanel [data-source-suggestion] strong {
+  color: #fff;
+  font-size: 0.92rem;
+  letter-spacing: 0.02em;
+}
+
+.addMediaPanel [data-source-suggestion] span {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.78rem;
+  font-weight: normal;
+  letter-spacing: 0;
+}
+
+.addMediaPanel [data-source-suggestion='animepahe'],
+.addMediaPanel [data-source-suggestion='cineby'] {
+  background: radial-gradient(circle at 82% 18%, rgba(247, 215, 232, 0.28), transparent 46%),
+    rgba(255, 255, 255, 0.1);
 }
 
 .addMediaPanel label,
@@ -605,6 +651,22 @@
 .settingsPanel select:focus {
   border-color: rgba(255, 216, 138, 0.9);
   box-shadow: var(--app-focus-ring);
+}
+
+.addMediaPanel input[aria-invalid='true'] {
+  border-color: rgba(255, 216, 138, 0.95);
+  box-shadow: var(--app-focus-ring);
+}
+
+.addMediaPanel [data-add-media-error='true'] {
+  margin: 0;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid rgba(255, 216, 138, 0.36);
+  border-radius: 16px;
+  background: rgba(255, 216, 138, 0.14);
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 0.9rem;
+  line-height: 1.3rem;
 }
 
 .addMediaPanel > label {
@@ -786,6 +848,7 @@
 
   .sessionShell > div,
   .invitePanel [data-invite-field],
+  .addMediaPanel [data-source-suggestions='true'],
   .playbackPanel,
   .settingsPanel fieldset {
     grid-template-columns: 1fr;

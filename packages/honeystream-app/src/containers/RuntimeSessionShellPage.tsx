@@ -174,6 +174,32 @@ const SOURCE_LANES = [
     detail: 'Drop a clean MP4, WebM, audio, or stream URL straight into the queue.'
   }
 ] as const
+const ADD_MEDIA_SUGGESTIONS = [
+  {
+    id: 'youtube',
+    label: 'YouTube',
+    detail: 'Video page',
+    url: 'https://www.youtube.com/watch?v=honeystream-demo'
+  },
+  {
+    id: 'animepahe',
+    label: 'AnimePahe',
+    detail: 'Anime watch page',
+    url: 'https://animepahe.ru/play/example'
+  },
+  {
+    id: 'cineby',
+    label: 'Cineby',
+    detail: 'Movie page',
+    url: 'https://cineby.app/movie/example'
+  },
+  {
+    id: 'direct',
+    label: 'Direct MP4',
+    detail: 'Clean media URL',
+    url: 'https://example.com/watch-night.mp4'
+  }
+] as const
 
 class HostLocalPlaybackEngine implements SessionRuntimePlaybackEngine {
   private disposed = false
@@ -671,9 +697,12 @@ const RuntimeSessionRouteSurface = ({
           addFileLabel="Queue local file"
           addUrlLabel="Queue cozy link"
           description="Paste a supported website like YouTube, AnimePahe, Cineby, or Miruro; use a direct media URL; or choose a local file when both sides have it."
+          invalidUrlLabel="Use a full http:// or https:// watch link."
+          missingUrlLabel="Paste a website, direct media link, or pick one of the quick source chips."
           onAddUrl={boundary.addMediaUrl}
           onAddLocalFile={viewModel.snapshot.role === 'host' ? boundary.addLocalFile : undefined}
           placeholder="Paste YouTube, AnimePahe, Cineby, Miruro, or direct media..."
+          sourceSuggestions={ADD_MEDIA_SUGGESTIONS}
           title="Pick the next cozy stream"
         />
 

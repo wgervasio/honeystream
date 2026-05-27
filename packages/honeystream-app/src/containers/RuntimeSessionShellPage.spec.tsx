@@ -161,6 +161,8 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('room-123')
     expect(html).toContain('Paste a supported website')
     expect(html).toContain('Website lane')
+    expect(html).toContain('Direct MP4')
+    expect(html).toContain('data-source-suggestion="youtube"')
     expect(html).toContain('Warming up')
     expect(html).toContain('Cat-side: Host')
     expect(html).toContain('Rabbit-side: Waiting for rabbit-side guest')
