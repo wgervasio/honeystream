@@ -30,7 +30,7 @@ export const HomeScreen = (props: Props) => {
     <div className={styles.container}>
       <header className={cx(styles.column, styles.hero)}>
         <p className={styles.kicker}>Add the next cozy thing without wasting shared bytes</p>
-        <h1>Pick a local file, paste a site, and keep the room flowing.</h1>
+        <h1>Pick a local file or paste a site, then keep the room flowing.</h1>
         <p>
           Honeystream sends compact playback commands while each side loads the actual media
           locally.
