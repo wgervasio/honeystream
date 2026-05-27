@@ -661,8 +661,8 @@ const RuntimeSessionRouteSurface = ({
           <video className={styles.videoStage} controls ref={boundary.mediaElementRef} />
           <p>
             Queue YouTube, AnimePahe, Cineby, Miruro, direct media, or a local file from the panel
-            beside the stage. The room stays small while each browser loads the thing it can actually
-            play.
+            beside the stage. The room stays small while each browser loads the thing it can
+            actually play.
           </p>
         </section>
 
