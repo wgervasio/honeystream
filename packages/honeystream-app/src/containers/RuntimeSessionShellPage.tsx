@@ -1,11 +1,6 @@
 import React, { useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
-import {
-  ProtocolError,
-  SessionSnapshot,
-  WireEnvelope,
-  parseWireEnvelope
-} from '../protocol'
+import { ProtocolError, SessionSnapshot, WireEnvelope, parseWireEnvelope } from '../protocol'
 import {
   PlaybackEngineApplyResult,
   PlaybackEngineDesiredState
@@ -32,6 +27,7 @@ import {
   SessionRuntimeShellContainer,
   SessionRuntimeSystemErrorSnapshot
 } from '../ui'
+import styles from './RuntimeSessionShellPage.css'
 
 interface IRouteParams {
   lobbyId: string
@@ -58,6 +54,13 @@ export interface RuntimeSessionShellRouteBoundary extends Disposable {
 }
 
 const HOST_USERNAME = 'Host'
+const RUNTIME_SESSION_STATE_LABELS = Object.freeze({
+  idle: 'Room warming up',
+  hosting: 'Hosting a cozy room',
+  joining: 'Joining the invite',
+  connected: 'Synced together',
+  ended: 'Room ended'
+})
 const LOCAL_ONLY_WARNING: SessionRuntimeSystemErrorSnapshot = Object.freeze({
   id: 'runtime-shell-local-only',
   code: 'unsupported-runtime-network',
@@ -145,10 +148,7 @@ const mapLifecycleToSessionStatus = (
   }
 }
 
-const createFallbackSessionSnapshot = (
-  roomId: string,
-  hostUsername: string
-): SessionSnapshot => ({
+const createFallbackSessionSnapshot = (roomId: string, hostUsername: string): SessionSnapshot => ({
   roomId,
   status: 'idle',
   participants: {
@@ -214,7 +214,8 @@ export const createRuntimeSessionShellRouteBoundary = (
   const hostUsername = dependencies.hostUsername || HOST_USERNAME
   const transportPairFactory = dependencies.createTransportPair || createRuntimeRouteTransportPair
   const runtimeFactory = dependencies.createRuntime || createSessionRuntime
-  const playbackEngineFactory = dependencies.createPlaybackEngine || (() => new HostLocalPlaybackEngine())
+  const playbackEngineFactory =
+    dependencies.createPlaybackEngine || (() => new HostLocalPlaybackEngine())
 
   const transportPair = transportPairFactory(now)
   const runtime = runtimeFactory({
@@ -287,9 +288,7 @@ export const createRuntimeSessionShellRouteBoundary = (
   }
 }
 
-export const RuntimeSessionShellPage = ({
-  match
-}: RouteComponentProps<IRouteParams>) => {
+export const RuntimeSessionShellPage = ({ match }: RouteComponentProps<IRouteParams>) => {
   const lobbyId = match.params.lobbyId
   const boundary = useMemo(() => createRuntimeSessionShellRouteBoundary(lobbyId), [lobbyId])
 
@@ -302,10 +301,24 @@ export const RuntimeSessionShellPage = ({
   }, [boundary])
 
   return (
-    <section data-runtime-session-shell="true">
-      <h1>Runtime session shell</h1>
-      <p>{`Lobby: ${lobbyId}`}</p>
-      <SessionRuntimeShellContainer store={boundary.store} intents={NOOP_INTENTS} errorTitle="Session issues" />
+    <section className={styles.container}>
+      <div data-runtime-session-shell="true" className={styles.shell}>
+        <header className={styles.heroCard}>
+          <p className={styles.kicker}>Runtime session shell</p>
+          <h1>Cozy watch room for two</h1>
+          <p>{`Lobby: ${lobbyId}`}</p>
+        </header>
+        <SessionRuntimeShellContainer
+          className={styles.runtimePanel}
+          store={boundary.store}
+          intents={NOOP_INTENTS}
+          errorTitle="Sync notes"
+          hostLabel="Cat-side host"
+          guestLabel="Rabbit-side guest"
+          waitingForGuestLabel="Waiting for your watch buddy"
+          stateLabels={RUNTIME_SESSION_STATE_LABELS}
+        />
+      </div>
     </section>
   )
 }

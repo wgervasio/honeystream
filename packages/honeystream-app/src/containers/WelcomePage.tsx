@@ -45,68 +45,83 @@ class WelcomePage extends Component<Props> {
 
     return (
       <LayoutMain className={styles.container}>
-        <form
-          className={styles.column}
-          onSubmit={e => {
-            e.preventDefault()
-            submit()
-          }}
-        >
-          <MenuHeader text={t('welcomeToHoneystream')} />
+        <section className={styles.shell}>
+          <aside className={styles.storyCard}>
+            <p className={styles.kicker}>Welcome to the cozy side</p>
+            <h1>{t('welcomeToHoneystream')}</h1>
+            <p>
+              Set a simple name, then you can open a private room for two. Cat-side starts the
+              stream, rabbit-side hops in with the invite, and the controls stay easy to find.
+            </p>
+            <div className={styles.petPreview} aria-hidden="true">
+              <span className={`${styles.petOrb} ${styles.catOrb}`} />
+              <span className={`${styles.petOrb} ${styles.rabbitOrb}`} />
+            </div>
+          </aside>
 
-          <section className={styles.welcomePanel} aria-labelledby="welcome_headline">
-            <p className={styles.kicker}>Your watch night control room</p>
-            <h2 id="welcome_headline">
-              Set your name, invite your person, and settle into a cozy synced stream.
-            </h2>
-            <ul className={styles.checklist}>
-              <li>Private invite links for two people.</li>
-              <li>Local files stay local, so shared bytes stay tiny.</li>
-              <li>Website and direct-link playback stays easy to test.</li>
-            </ul>
-          </section>
+          <form
+            className={styles.column}
+            onSubmit={e => {
+              e.preventDefault()
+              submit()
+            }}
+          >
+            <section className={styles.welcomePanel} aria-labelledby="welcome_headline">
+              <p className={styles.kicker}>Your watch night control room</p>
+              <h2 id="welcome_headline">
+                Set your name, invite your person, and settle into a cozy synced stream.
+              </h2>
+              <ul className={styles.checklist}>
+                <li>Private invite links for two people.</li>
+                <li>Local files stay local, so shared bytes stay tiny.</li>
+                <li>Website and direct-link playback stays easy to test.</li>
+              </ul>
+            </section>
 
-          <div className={styles.formControl}>
-            <label htmlFor="profile_username">{t('chooseDisplayName')}</label>
-            <TextInput
-              id="profile_username"
-              autoComplete="username"
-              spellCheck={false}
-              defaultValue={this.props.settings.username}
-              maxLength={USERNAME_MAX_LEN}
-              onChange={e => {
-                const username = (e.target as HTMLInputElement).value
-                if (username) {
-                  dispatch(setUsername(username))
-                }
-              }}
-              onBlur={e => {
-                if (this.props.settings.username) {
-                  ;(e.target as HTMLInputElement).value = this.props.settings.username
-                }
-              }}
-              autoFocus
+            <MenuHeader text="Make it yours" />
+
+            <div className={styles.formControl}>
+              <label htmlFor="profile_username">{t('chooseDisplayName')}</label>
+              <TextInput
+                id="profile_username"
+                autoComplete="username"
+                spellCheck={false}
+                defaultValue={this.props.settings.username}
+                maxLength={USERNAME_MAX_LEN}
+                onChange={e => {
+                  const username = (e.target as HTMLInputElement).value
+                  if (username) {
+                    dispatch(setUsername(username))
+                  }
+                }}
+                onBlur={e => {
+                  if (this.props.settings.username) {
+                    ;(e.target as HTMLInputElement).value = this.props.settings.username
+                  }
+                }}
+                autoFocus
+              />
+            </div>
+
+            <div className={styles.formControl}>
+              <LanguageSetting />
+            </div>
+
+            <SwitchOption
+              inputId="advanced_tracking"
+              title={t('allowTracking')}
+              description={t('allowTrackingDesc')}
+              checked={this.props.settings.allowTracking}
+              onChange={checked => dispatch(setSetting('allowTracking', checked))}
+              className={styles.formControl}
+              divider={false}
             />
-          </div>
 
-          <div className={styles.formControl}>
-            <LanguageSetting />
-          </div>
-
-          <SwitchOption
-            inputId="advanced_tracking"
-            title={t('allowTracking')}
-            description={t('allowTrackingDesc')}
-            checked={this.props.settings.allowTracking}
-            onChange={checked => dispatch(setSetting('allowTracking', checked))}
-            className={styles.formControl}
-            divider={false}
-          />
-
-          <MenuButton id="getstarted" icon="check-circle" onClick={submit}>
-            {t('getStarted')}
-          </MenuButton>
-        </form>
+            <MenuButton id="getstarted" icon="check-circle" onClick={submit}>
+              {t('getStarted')}
+            </MenuButton>
+          </form>
+        </section>
       </LayoutMain>
     )
   }

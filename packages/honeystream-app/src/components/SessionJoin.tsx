@@ -16,16 +16,16 @@ export class SessionJoin extends Component<IProps> {
   render(): JSX.Element | null {
     return (
       <LayoutMain className={styles.container}>
-        <MenuHeader text={t('joinSession')} />
-        <section className={styles.joinPanel} aria-labelledby="join_headline">
+        <section className={styles.card} aria-labelledby="join_headline">
           <p className={styles.kicker}>Joining a cozy stream?</p>
+          <MenuHeader text={t('joinSession')} />
           <h2 id="join_headline">Paste the invite link and hop into sync.</h2>
-          <p>
+          <p className={styles.lede}>
             Honeystream keeps the shared connection small: one host, one guest, compact playback
             commands, and media loaded locally by each browser.
           </p>
           <form onSubmit={e => e.preventDefault()}>
-            <p>{t('enterJoinDest')}</p>
+            <p className={styles.label}>{t('enterJoinDest')}</p>
             <InputGroup>
               <TextInput
                 theRef={el => (this.sessionInput = el)}
@@ -39,6 +39,7 @@ export class SessionJoin extends Component<IProps> {
               <MenuButton
                 icon="globe"
                 size="medium"
+                className={styles.joinButton}
                 onClick={() => {
                   const valid = Boolean(this.sessionInput && this.sessionInput.checkValidity())
                   if (valid) {
@@ -54,6 +55,11 @@ export class SessionJoin extends Component<IProps> {
               </MenuButton>
             </InputGroup>
           </form>
+          <div className={styles.hintGrid} aria-hidden="true">
+            <span>Private invite</span>
+            <span>One guest</span>
+            <span>Synced controls</span>
+          </div>
         </section>
       </LayoutMain>
     )

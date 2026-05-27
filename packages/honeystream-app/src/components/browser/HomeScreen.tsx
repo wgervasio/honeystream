@@ -29,18 +29,19 @@ export const HomeScreen = (props: Props) => {
   return (
     <div className={styles.container}>
       <header className={cx(styles.column, styles.hero)}>
-        <p className={styles.kicker}>Add media without wasting shared bytes</p>
-        <h1>Pick a local file or paste a site, then stay happily in sync.</h1>
+        <p className={styles.kicker}>Add the next cozy thing without wasting shared bytes</p>
+        <h1>Pick a local file, paste a site, and keep the room flowing.</h1>
         <p>
-          Start with what both browsers can access. Honeystream sends compact playback commands
-          while each side loads the actual media locally.
+          Honeystream sends compact playback commands while each side loads the actual media
+          locally.
         </p>
       </header>
       <main className={styles.main}>
         <section className={styles.panel}>
           <div className={styles.localFile}>
+            <span className={styles.cardTag}>Cat-side stash</span>
             <h2>Downloaded video</h2>
-            <p>Best for private watch sessions: both people keep the file locally.</p>
+            <p>Best for private watch sessions: both people keep the same file locally.</p>
             <button
               className={cx(styles.button, styles.primaryButton)}
               type="button"
@@ -60,6 +61,7 @@ export const HomeScreen = (props: Props) => {
           </div>
           <div className={styles.divider}>or</div>
           <div className={styles.directLink}>
+            <span className={styles.cardTag}>Rabbit hop</span>
             <h2>Website or direct link</h2>
             <p>Paste a video page or media URL that both browsers can access.</p>
             <div className={styles.siteChips} aria-label="Site examples">
