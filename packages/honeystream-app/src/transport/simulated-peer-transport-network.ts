@@ -35,6 +35,19 @@ export const shouldDropFrame = (
   return dropRate > 0 && unitSample(random()) < dropRate
 }
 
+/*
+Context: Mock host/guest connection tests model asymmetric links for streaming-site tuning.
+Invariant: A directional profile describes frames arriving at that endpoint, including latency,
+drop, and queue pressure.
+Options considered: Sender-side drops, receiver-side drops, or a separate link object.
+Decision: Apply drop decisions on the receiving transport so hostNetwork and guestNetwork mean one
+direction consistently without adding another runtime owner.
+Performance impact: Drop checks remain O(1), and dropped frames never enter the bounded queue.
+Memory/lifecycle ownership: No new resources; pending frames remain capped by the receiver profile.
+Failure mode: Dropped frames return a typed network-drop outcome in sender metrics.
+Validation: Covered by simulated-peer-transport asymmetric profile tests.
+*/
+
 export const resolveFrameLatencyMs = (
   network: SimulatedPeerNetworkProfile,
   random: RandomSource
