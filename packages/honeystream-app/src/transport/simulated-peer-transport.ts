@@ -27,7 +27,6 @@ export class SimulatedPeerTransport<TInboundMessage, TOutboundMessage>
   implements PeerTransport<TInboundMessage, TOutboundMessage> {
   readonly localPeerId: string
   readonly remotePeerId: string
-
   private readonly inboundValidator: TransportMessageValidator<TInboundMessage>
   private readonly now: Clock
   private readonly random: Clock
@@ -47,7 +46,7 @@ export class SimulatedPeerTransport<TInboundMessage, TOutboundMessage>
     this.now = options.now || Date.now
     this.random = options.random || Math.random
     this.network = options.network || {}
-    this.metrics = createSimulatedPeerTransportMetricsRecorder()
+    this.metrics = createSimulatedPeerTransportMetricsRecorder(this.localPeerId, this.remotePeerId)
     this.state = { status: 'idle', changedAtMs: this.now() }
   }
 
@@ -177,7 +176,9 @@ export class SimulatedPeerTransport<TInboundMessage, TOutboundMessage>
       return
     }
     const latencyMs = Math.max(0, receivedAtMs - frame.sentAtMs)
-    this.metrics.recordDelivered(frame.bytes, latencyMs, frame.envelope.seq, receivedAtMs)
+    this.metrics.recordDelivered(
+      frame.bytes, latencyMs, frame.envelope.seq, receivedAtMs, frame.fromPeerId
+    )
     this.emit({
       type: 'message',
       delivery: {

@@ -21,6 +21,7 @@ export type SimulatedPeerTransportDropReason =
 
 export interface SimulatedPeerTransportFrameSample {
   readonly bytes: number
+  readonly direction: string
   readonly latencyMs?: number
   readonly outcome: SimulatedPeerTransportFrameOutcome
   readonly reason?: SimulatedPeerTransportDropReason

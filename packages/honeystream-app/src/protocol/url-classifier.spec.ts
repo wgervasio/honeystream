@@ -22,7 +22,11 @@ describe('protocol URL classifier', () => {
       'https://www.cineby.ru/tv/example',
       'https://www.miruro.tv/watch/example',
       'https://miruro.to/watch/example',
-      'https://miruro.tv/watch/example?episode=1'
+      'https://miruro.tv/watch/example?episode=1',
+      'https://www.youtube.com/watch/demo.mp4',
+      'https://animepahe.ru/play/demo.m3u8',
+      'https://cineby.app/movie/demo.webm',
+      'https://miruro.to/watch/demo.mp4'
     ]
 
     for (const url of websitePages) {

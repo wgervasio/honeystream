@@ -81,7 +81,8 @@ describe('simulated peer transport queue pressure', () => {
       maxDirectionalQueuedMessages: 0,
       maxCombinedPeakQueuedMessages: 1,
       maxDirectionalPeakQueuedMessages: 1,
-      maxEstimatedRoundTripP95LatencyMs: 100
+      maxEstimatedRoundTripP95LatencyMs: 100,
+      maxEstimatedRoundTripMaxLatencyMs: 100
     })
     expect(budgetResult.ok).toBe(false)
     expect(budgetResult.failures).toEqual(

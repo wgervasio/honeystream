@@ -202,6 +202,7 @@ describe('runtime/session streaming-site simulation', () => {
       expect(metrics.combinedPeakQueuedMessages).toBeLessThanOrEqual(64)
       expect(metrics.maxDirectionalPeakQueuedMessages).toBeLessThanOrEqual(32)
       expect(metrics.estimatedRoundTripP95LatencyMs).toBeLessThanOrEqual(32)
+      expect(metrics.estimatedRoundTripMaxLatencyMs).toBeLessThanOrEqual(32)
       expect(metrics.combinedAverageMessageBytes).toBeLessThan(1200)
       expect(metrics.combinedP95LatencyMs).toBeLessThanOrEqual(16)
       expect(metrics.combinedMaxLatencyMs).toBeLessThanOrEqual(16)
@@ -311,6 +312,7 @@ describe('runtime/session streaming-site simulation', () => {
       expect(metrics.combinedPeakQueuedMessages).toBeLessThanOrEqual(64)
       expect(metrics.maxDirectionalPeakQueuedMessages).toBeLessThanOrEqual(32)
       expect(metrics.estimatedRoundTripP95LatencyMs).toBeLessThanOrEqual(24)
+      expect(metrics.estimatedRoundTripMaxLatencyMs).toBeLessThanOrEqual(24)
       expect(metrics.combinedAverageLatencyMs).toBeLessThanOrEqual(12)
       expect(metrics.combinedP95LatencyMs).toBeLessThanOrEqual(12)
       expect(evaluateSimulatedPeerTransportBudget(metrics)).toEqual({

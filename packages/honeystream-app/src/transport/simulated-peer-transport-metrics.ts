@@ -17,7 +17,13 @@ export interface SimulatedPeerTransportMetricsRecorder {
     reason: SimulatedPeerTransportDropReason,
     recordedAtMs: number
   ): void
-  recordDelivered(bytes: number, latencyMs: number, seq: number, recordedAtMs: number): void
+  recordDelivered(
+    bytes: number,
+    latencyMs: number,
+    seq: number,
+    recordedAtMs: number,
+    fromPeerId: string
+  ): void
   snapshot(queuedMessages: number): SimulatedPeerTransportMetrics
 }
 
@@ -26,12 +32,14 @@ const ratio = (part: number, whole: number): number => (whole === 0 ? 0 : part /
 const createFrameSample = (
   outcome: SimulatedPeerTransportFrameOutcome,
   bytes: number,
+  direction: string,
   seq: number,
   recordedAtMs: number,
   latencyMs?: number,
   reason?: SimulatedPeerTransportDropReason
 ): SimulatedPeerTransportFrameSample => ({
   bytes,
+  direction,
   latencyMs,
   outcome,
   reason,
@@ -50,7 +58,10 @@ const percentile = (samples: readonly number[], percentileValue: number): number
   return sortedSamples[index]
 }
 
-export const createSimulatedPeerTransportMetricsRecorder = (): SimulatedPeerTransportMetricsRecorder => {
+export const createSimulatedPeerTransportMetricsRecorder = (
+  localPeerId: string,
+  remotePeerId: string
+): SimulatedPeerTransportMetricsRecorder => {
   let sentMessages = 0
   let deliveredMessages = 0
   let droppedMessages = 0
@@ -69,12 +80,14 @@ export const createSimulatedPeerTransportMetricsRecorder = (): SimulatedPeerTran
       recentFrames.shift()
     }
   }
+  const outboundDirection = `${localPeerId}->${remotePeerId}`
+  const inboundDirection = (fromPeerId: string): string => `${fromPeerId}->${localPeerId}`
 
   return {
     recordSent(bytes: number, seq: number, recordedAtMs: number): number {
       sentMessages += 1
       sentBytes += bytes
-      recordFrameSample(createFrameSample('sent', bytes, seq, recordedAtMs))
+      recordFrameSample(createFrameSample('sent', bytes, outboundDirection, seq, recordedAtMs))
       return sentMessages
     },
     recordQueuedDepth(queuedMessages: number): void {
@@ -88,9 +101,17 @@ export const createSimulatedPeerTransportMetricsRecorder = (): SimulatedPeerTran
     ): void {
       droppedMessages += 1
       lostBytes += bytes
-      recordFrameSample(createFrameSample('dropped', bytes, seq, recordedAtMs, undefined, reason))
+      recordFrameSample(
+        createFrameSample('dropped', bytes, outboundDirection, seq, recordedAtMs, undefined, reason)
+      )
     },
-    recordDelivered(bytes: number, latencyMs: number, seq: number, recordedAtMs: number): void {
+    recordDelivered(
+      bytes: number,
+      latencyMs: number,
+      seq: number,
+      recordedAtMs: number,
+      fromPeerId: string
+    ): void {
       const normalizedLatencyMs = Math.max(0, latencyMs)
       deliveredMessages += 1
       deliveredBytes += bytes
@@ -101,7 +122,14 @@ export const createSimulatedPeerTransportMetricsRecorder = (): SimulatedPeerTran
         latencySamples.shift()
       }
       recordFrameSample(
-        createFrameSample('delivered', bytes, seq, recordedAtMs, normalizedLatencyMs)
+        createFrameSample(
+          'delivered',
+          bytes,
+          inboundDirection(fromPeerId),
+          seq,
+          recordedAtMs,
+          normalizedLatencyMs
+        )
       )
     },
     snapshot(queuedMessages: number): SimulatedPeerTransportMetrics {
