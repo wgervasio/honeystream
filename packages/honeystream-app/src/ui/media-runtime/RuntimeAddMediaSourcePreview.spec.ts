@@ -48,7 +48,8 @@ describe('RuntimeAddMediaSourcePreview', () => {
           ),
           expect.stringContaining('not the video bytes'),
           expect.stringContaining('mock round trip budgeted under 32ms'),
-          expect.stringContaining('peak queues capped')
+          expect.stringContaining('peak queues'),
+          expect.stringContaining('max control-frame size')
         ])
       )
     }
@@ -56,9 +57,7 @@ describe('RuntimeAddMediaSourcePreview', () => {
 
   it('keeps unknown websites honest without claiming provider coverage', () => {
     const preview = createRuntimeAddMediaSourcePreview('https://youtube.com.evil/watch')
-    const confidenceDetails = createRuntimeAddMediaConfidenceItems(preview).map(
-      item => item.detail
-    )
+    const confidenceDetails = createRuntimeAddMediaConfidenceItems(preview).map(item => item.detail)
 
     expect(preview).toEqual(
       expect.objectContaining({

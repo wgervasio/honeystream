@@ -122,6 +122,7 @@ describe('RuntimeAddMediaPanel', () => {
       expect(container.textContent).toContain('Low-latency sync path')
       expect(container.textContent).toContain('not the video bytes')
       expect(container.textContent).toContain('mock round trip budgeted under 32ms')
+      expect(container.textContent).toContain('max control-frame size')
 
       input.value = 'https://youtube.com.evil/watch?v=honeystream-demo'
       Simulate.change(input)

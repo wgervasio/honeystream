@@ -77,6 +77,7 @@ describe('session', () => {
       await waitForRuntimeText(page, 'typed control stream')
       await waitForRuntimeText(page, 'Low-latency control lane')
       await waitForRuntimeText(page, 'Zero video-byte sharing')
+      await waitForRuntimeText(page, 'Jitter-guarded frames')
       await waitForRuntimeText(page, 'Pick the next cozy stream')
       await waitForRuntimeText(page, 'Copy the full invite link first')
       await waitForRuntimeText(page, 'Sync controls')

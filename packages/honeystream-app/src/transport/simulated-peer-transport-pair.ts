@@ -36,13 +36,16 @@ export interface AggregateSimulatedPeerTransportMetrics {
   readonly combinedDeliveryRate: number
   readonly combinedByteLossRate: number
   readonly combinedAverageMessageBytes: number
+  readonly combinedMaxMessageBytes: number
   readonly combinedSentMessages: number
   readonly combinedDeliveredMessages: number
   readonly combinedDroppedMessages: number
   readonly combinedAverageLatencyMs: number
+  readonly maxDirectionalAverageLatencyJitterMs: number
   readonly combinedP50LatencyMs: number
   readonly combinedP95LatencyMs: number
   readonly combinedMaxLatencyMs: number
+  readonly maxDirectionalLatencyJitterMs: number
   readonly combinedQueuedMessages: number
   readonly combinedPeakQueuedMessages: number
   readonly maxDirectionalAverageLatencyMs: number
@@ -139,13 +142,25 @@ export const createSimulatedPeerTransportPair = <TClientToHostMessage, THostToCl
         combinedDeliveryRate: ratio(combinedDeliveredMessages, combinedSentMessages),
         combinedByteLossRate: ratio(combinedLostBytes, combinedSentBytes),
         combinedAverageMessageBytes: ratio(combinedSentBytes, combinedSentMessages),
+        combinedMaxMessageBytes: Math.max(
+          hostMetrics.maxMessageBytes,
+          guestMetrics.maxMessageBytes
+        ),
         combinedSentMessages,
         combinedDeliveredMessages,
         combinedDroppedMessages,
         combinedAverageLatencyMs: combineAverageLatency(hostMetrics, guestMetrics),
+        maxDirectionalAverageLatencyJitterMs: Math.max(
+          hostMetrics.averageLatencyJitterMs,
+          guestMetrics.averageLatencyJitterMs
+        ),
         combinedP50LatencyMs: Math.max(hostMetrics.p50LatencyMs, guestMetrics.p50LatencyMs),
         combinedP95LatencyMs: Math.max(hostMetrics.p95LatencyMs, guestMetrics.p95LatencyMs),
         combinedMaxLatencyMs: Math.max(hostMetrics.maxLatencyMs, guestMetrics.maxLatencyMs),
+        maxDirectionalLatencyJitterMs: Math.max(
+          hostMetrics.maxLatencyJitterMs,
+          guestMetrics.maxLatencyJitterMs
+        ),
         combinedQueuedMessages: hostMetrics.queuedMessages + guestMetrics.queuedMessages,
         combinedPeakQueuedMessages,
         maxDirectionalAverageLatencyMs,

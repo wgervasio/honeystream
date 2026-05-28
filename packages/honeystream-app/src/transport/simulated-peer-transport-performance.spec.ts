@@ -57,7 +57,10 @@ describe('simulated peer transport performance budget', () => {
 
     const metrics = pair.getAggregateMetrics()
     expect(metrics.maxDirectionalByteLossRate).toBe(0)
+    expect(metrics.combinedMaxMessageBytes).toBeGreaterThan(0)
     expect(metrics.maxDirectionalAverageLatencyMs).toBe(16)
+    expect(metrics.maxDirectionalAverageLatencyJitterMs).toBe(0)
+    expect(metrics.maxDirectionalLatencyJitterMs).toBe(0)
     expect(metrics.directionalAverageLatencySkewMs).toBe(0)
     expect(metrics.estimatedRoundTripP95LatencyMs).toBe(32)
     expect(metrics.estimatedRoundTripMaxLatencyMs).toBe(32)
@@ -92,15 +95,31 @@ describe('simulated peer transport performance budget', () => {
       ])
     )
 
-    const oversizedMessageBudget = evaluateSimulatedPeerTransportBudget(pair.getAggregateMetrics(), {
-      ...STREAMING_SITE_TRANSPORT_BUDGET,
-      maxAverageMessageBytes: 1
-    })
+    const oversizedMessageBudget = evaluateSimulatedPeerTransportBudget(
+      pair.getAggregateMetrics(),
+      {
+        ...STREAMING_SITE_TRANSPORT_BUDGET,
+        maxAverageMessageBytes: 1
+      }
+    )
     expect(oversizedMessageBudget.ok).toBe(false)
     expect(oversizedMessageBudget.failures).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           metric: 'combinedAverageMessageBytes'
+        })
+      ])
+    )
+
+    const oversizedFrameBudget = evaluateSimulatedPeerTransportBudget(pair.getAggregateMetrics(), {
+      ...STREAMING_SITE_TRANSPORT_BUDGET,
+      maxMessageBytes: 1
+    })
+    expect(oversizedFrameBudget.ok).toBe(false)
+    expect(oversizedFrameBudget.failures).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          metric: 'combinedMaxMessageBytes'
         })
       ])
     )

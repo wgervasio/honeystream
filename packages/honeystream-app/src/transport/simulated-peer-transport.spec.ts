@@ -91,10 +91,13 @@ describe('simulated peer transport', () => {
     expect(pair.guest.getMetrics().lostBytes).toBe(0)
     expect(pair.guest.getMetrics().byteLossRate).toBe(0)
     expect(pair.guest.getMetrics().averageMessageBytes).toBeGreaterThan(0)
+    expect(pair.guest.getMetrics().maxMessageBytes).toBeGreaterThan(0)
     expect(pair.host.getMetrics().deliveredBytes).toBeGreaterThan(0)
     expect(pair.host.getMetrics().averageLatencyMs).toBe(25)
+    expect(pair.host.getMetrics().averageLatencyJitterMs).toBe(0)
     expect(pair.host.getMetrics().p50LatencyMs).toBe(25)
     expect(pair.host.getMetrics().p95LatencyMs).toBe(25)
+    expect(pair.host.getMetrics().maxLatencyJitterMs).toBe(0)
   })
 
   it('aggregates host and guest latency, delivery, and byte-loss metrics', async () => {
@@ -124,10 +127,13 @@ describe('simulated peer transport', () => {
     expect(metrics.combinedDeliveryRate).toBe(0.75)
     expect(metrics.combinedByteLossRate).toBeGreaterThan(0)
     expect(metrics.combinedAverageMessageBytes).toBeGreaterThan(0)
+    expect(metrics.combinedMaxMessageBytes).toBeGreaterThan(0)
     expect(metrics.combinedAverageLatencyMs).toBe(20)
+    expect(metrics.maxDirectionalAverageLatencyJitterMs).toBe(0)
     expect(metrics.combinedP50LatencyMs).toBe(20)
     expect(metrics.combinedP95LatencyMs).toBe(20)
     expect(metrics.combinedMaxLatencyMs).toBe(20)
+    expect(metrics.maxDirectionalLatencyJitterMs).toBe(0)
     expect(metrics.combinedQueuedMessages).toBe(0)
   })
 
@@ -203,10 +209,13 @@ describe('simulated peer transport', () => {
     expect(metrics.combinedDroppedMessages).toBe(0)
     expect(metrics.combinedDeliveryRate).toBe(1)
     expect(metrics.combinedAverageLatencyMs).toBeCloseTo(70 / 3)
+    expect(metrics.host.averageLatencyJitterMs).toBe(5)
     expect(metrics.host.p50LatencyMs).toBe(20)
     expect(metrics.host.p95LatencyMs).toBe(30)
+    expect(metrics.host.maxLatencyJitterMs).toBe(10)
     expect(metrics.combinedP95LatencyMs).toBe(30)
     expect(metrics.combinedMaxLatencyMs).toBe(30)
+    expect(metrics.maxDirectionalLatencyJitterMs).toBe(10)
   })
 
   it('reports probabilistic byte loss with an injected random source', async () => {
