@@ -236,7 +236,8 @@ const ROOM_READY_SIGNALS = [
   {
     id: 'sync-budget',
     label: 'Sync budget green',
-    detail: 'Mock host/guest control round trips stay under 32ms with zero byte loss.'
+    detail:
+      'Mock host/guest control round trips stay under 32ms with zero byte loss, capped jitter, and compact frames.'
   },
   {
     id: 'notes',
@@ -254,7 +255,8 @@ const ROOM_MOOD_CHIPS = [
   'Rabbit-side hop',
   'Website-ready queue',
   'Zero-byte-loss controls',
-  '32ms mock round trip'
+  '32ms mock round trip',
+  'Jitter-guarded frames'
 ] as const
 /*
 Context: The runtime route chooses browser playback adapters for mixed streaming sites.

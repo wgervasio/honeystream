@@ -68,8 +68,13 @@ export const createSimulatedPeerTransportMetricsRecorder = (
   let sentBytes = 0
   let deliveredBytes = 0
   let lostBytes = 0
+  let maxMessageBytes = 0
   let totalLatencyMs = 0
   let maxLatencyMs = 0
+  let totalLatencyJitterMs = 0
+  let maxLatencyJitterMs = 0
+  let latencyJitterSamples = 0
+  let lastLatencyMs: number | undefined
   let peakQueuedMessages = 0
   const latencySamples: number[] = []
   const recentFrames: SimulatedPeerTransportFrameSample[] = []
@@ -87,6 +92,7 @@ export const createSimulatedPeerTransportMetricsRecorder = (
     recordSent(bytes: number, seq: number, recordedAtMs: number): number {
       sentMessages += 1
       sentBytes += bytes
+      maxMessageBytes = Math.max(maxMessageBytes, bytes)
       recordFrameSample(createFrameSample('sent', bytes, outboundDirection, seq, recordedAtMs))
       return sentMessages
     },
@@ -117,6 +123,13 @@ export const createSimulatedPeerTransportMetricsRecorder = (
       deliveredBytes += bytes
       totalLatencyMs += normalizedLatencyMs
       maxLatencyMs = Math.max(maxLatencyMs, normalizedLatencyMs)
+      if (typeof lastLatencyMs === 'number') {
+        const latencyJitterMs = Math.abs(normalizedLatencyMs - lastLatencyMs)
+        totalLatencyJitterMs += latencyJitterMs
+        maxLatencyJitterMs = Math.max(maxLatencyJitterMs, latencyJitterMs)
+        latencyJitterSamples += 1
+      }
+      lastLatencyMs = normalizedLatencyMs
       latencySamples.push(normalizedLatencyMs)
       if (latencySamples.length > MAX_RECORDED_LATENCY_SAMPLES) {
         latencySamples.shift()
@@ -143,10 +156,13 @@ export const createSimulatedPeerTransportMetricsRecorder = (
         deliveryRate: ratio(sentMessages - droppedMessages, sentMessages),
         byteLossRate: ratio(lostBytes, sentBytes),
         averageMessageBytes: ratio(sentBytes, sentMessages),
+        maxMessageBytes,
         averageLatencyMs: ratio(totalLatencyMs, deliveredMessages),
+        averageLatencyJitterMs: ratio(totalLatencyJitterMs, latencyJitterSamples),
         p50LatencyMs: percentile(latencySamples, 0.5),
         p95LatencyMs: percentile(latencySamples, 0.95),
         maxLatencyMs,
+        maxLatencyJitterMs,
         queuedMessages,
         peakQueuedMessages: Math.max(peakQueuedMessages, queuedMessages),
         recentFrames: recentFrames.slice()

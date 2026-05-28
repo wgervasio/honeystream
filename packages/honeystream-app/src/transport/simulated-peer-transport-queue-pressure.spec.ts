@@ -1,5 +1,8 @@
 import { TransportMessageValidator } from './contracts'
-import { evaluateSimulatedPeerTransportBudget } from './simulated-peer-transport-performance'
+import {
+  evaluateSimulatedPeerTransportBudget,
+  STREAMING_SITE_TRANSPORT_BUDGET
+} from './simulated-peer-transport-performance'
 import { createSimulatedPeerTransportPair } from './simulated-peer-transport-pair'
 
 type ClientToHostMessage = {
@@ -67,10 +70,10 @@ describe('simulated peer transport queue pressure', () => {
     expect(metrics.maxDirectionalPeakQueuedMessages).toBe(2)
 
     const budgetResult = evaluateSimulatedPeerTransportBudget(metrics, {
+      ...STREAMING_SITE_TRANSPORT_BUDGET,
       minDeliveryRate: 1,
       maxDroppedMessages: 1,
       maxByteLossRate: 1,
-      maxAverageMessageBytes: 1200,
       maxAverageLatencyMs: 50,
       maxP95LatencyMs: 50,
       maxMaxLatencyMs: 50,
