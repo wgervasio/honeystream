@@ -9,7 +9,8 @@ import {
   transitionRemoveQueuedMedia,
   transitionSeekPlayback,
   transitionSetPlaybackRate,
-  transitionTogglePlayback
+  transitionTogglePlayback,
+  TransitionResult
 } from '../../domain/transitions'
 import { invalidCommandError, invalidDirectionError } from 'protocol/errors'
 import { parseWireEnvelope } from 'protocol/parsers'
@@ -23,6 +24,7 @@ import {
   WireEnvelope
 } from 'protocol/types'
 import { validateInboundSequence } from 'protocol/sequence'
+import { toProtocolHostEventsFromTransition } from 'runtime/protocol'
 import {
   PeerTransportEvent,
   PeerTransportMessageDelivery,
@@ -208,11 +210,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
 
   async dispatchHostCommand(command: HostSessionCommand): Promise<void> {
     this.assertHostRunning('dispatchHostCommand')
-    await this.applyHostClientCommand(
-      hostCommandToClientCommand(command),
-      this.transport.localPeerId,
-      false
-    )
+    await this.applyHostClientCommand(hostCommandToClientCommand(command), this.transport.localPeerId)
   }
 
   async dispatchGuestCommand(command: ClientCommand): Promise<void> {
@@ -283,7 +281,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
         this.trySendHostEvent({ type: 'protocolRejected', error: sequenceError })
         return
       }
-      await this.applyHostClientCommand(parsed.value.command, delivery.fromPeerId, true)
+      await this.applyHostClientCommand(parsed.value.command, delivery.fromPeerId)
       return
     }
 
@@ -306,13 +304,13 @@ export class DefaultSessionRuntime implements SessionRuntime {
 
   private async applyHostClientCommand(
     command: ClientCommand,
-    fromPeerId: string,
-    fromRemote: boolean
+    fromPeerId: string
   ): Promise<void> {
     const state = this.requireHostState()
     const nowHostMs = this.now()
     let nextState = state
     let domainErrors: readonly DomainError[] = []
+    let transition: TransitionResult | undefined
     let requestSnapshot = command.type === 'requestSnapshot'
 
     switch (command.type) {
@@ -326,58 +324,47 @@ export class DefaultSessionRuntime implements SessionRuntime {
           this.trySendHostEvent({ type: 'protocolRejected', error: protocolError })
           return
         }
-        ;({ state: nextState, errors: domainErrors } = transitionGuestJoined(
+        transition = transitionGuestJoined(
           state,
           fromPeerId,
           command.username,
           nowHostMs
-        ))
+        )
         break
       case 'leave':
-        ;({ state: nextState, errors: domainErrors } = transitionGuestLeft(
-          state,
-          fromPeerId,
-          nowHostMs
-        ))
+        transition = transitionGuestLeft(state, fromPeerId, nowHostMs)
         break
       case 'addMedia':
-        ;({ state: nextState, errors: domainErrors } = transitionQueueMedia(
+        transition = transitionQueueMedia(
           state,
           toSessionMediaItem(command.media, fromPeerId),
           nowHostMs,
           this.queueCap
-        ))
+        )
         break
       case 'removeMedia':
-        ;({ state: nextState, errors: domainErrors } = transitionRemoveQueuedMedia(
-          state,
-          command.mediaId,
-          nowHostMs
-        ))
+        transition = transitionRemoveQueuedMedia(state, command.mediaId, nowHostMs)
         break
       case 'playPause':
         if ((state.playback.state === 'playing') === command.playing) break
-        ;({ state: nextState, errors: domainErrors } = transitionTogglePlayback(state, nowHostMs))
+        transition = transitionTogglePlayback(state, nowHostMs)
         break
       case 'seek':
-        ;({ state: nextState, errors: domainErrors } = transitionSeekPlayback(
-          state,
-          command.positionMs,
-          nowHostMs
-        ))
+        transition = transitionSeekPlayback(state, command.positionMs, nowHostMs)
         break
       case 'setRate':
-        ;({ state: nextState, errors: domainErrors } = transitionSetPlaybackRate(
-          state,
-          command.rate,
-          nowHostMs
-        ))
+        transition = transitionSetPlaybackRate(state, command.rate, nowHostMs)
         break
       case 'next':
-        ;({ state: nextState, errors: domainErrors } = transitionAdvanceQueue(state, nowHostMs))
+        transition = transitionAdvanceQueue(state, nowHostMs)
         break
       case 'requestSnapshot':
         requestSnapshot = true
+    }
+
+    if (transition) {
+      nextState = transition.state
+      domainErrors = transition.errors
     }
 
     const stateChanged = nextState !== state
@@ -394,17 +381,19 @@ export class DefaultSessionRuntime implements SessionRuntime {
     for (const domainError of domainErrors) {
       const protocolError = toProtocolErrorFromDomainError(domainError)
       this.recordProtocolDiagnostic(protocolError)
-      this.trySendHostEvent({
-        type: 'systemError',
-        errorCode: domainError.code,
-        message: domainError.message
-      })
     }
 
     const snapshot = toSessionSnapshot(this.requireHostState(), this.eventCursor)
     this.updateProjection({ session: snapshot })
 
-    if (stateChanged || requestSnapshot || fromRemote) {
+    if (transition && stateChanged) {
+      const events = toProtocolHostEventsFromTransition(state, transition)
+      for (const event of events) {
+        this.trySendHostEvent(event)
+      }
+    }
+
+    if (requestSnapshot || (command.type === 'join' && transition && transition.errors.length === 0)) {
       this.trySendHostEvent({ type: 'snapshot', snapshot })
     }
   }
@@ -444,10 +433,14 @@ export class DefaultSessionRuntime implements SessionRuntime {
       this.knownGuestMedia = upsertKnownMedia(this.knownGuestMedia, media, this.mediaCacheCap)
     }
 
-    await this.playback.applyDesiredState(
-      toPlaybackDesiredStateFromSnapshot(nextSession, this.knownGuestMedia)
-    )
     this.updateProjection({ session: nextSession })
+    try {
+      await this.playback.applyDesiredState(
+        toPlaybackDesiredStateFromSnapshot(nextSession, this.knownGuestMedia)
+      )
+    } catch (error) {
+      this.recordRuntimeError(`[playback] ${toErrorMessage(error)}`)
+    }
   }
 
   private trySendHostEvent(event: HostEvent): void {

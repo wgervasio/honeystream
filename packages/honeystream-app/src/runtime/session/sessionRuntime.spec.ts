@@ -61,9 +61,9 @@ const createMedia = (mediaId: string): MediaSnapshot => ({
 })
 
 const flushRuntime = async (): Promise<void> => {
-  await Promise.resolve()
-  await Promise.resolve()
-  await Promise.resolve()
+  for (let pass = 0; pass < 8; pass += 1) {
+    await Promise.resolve()
+  }
 }
 
 describe('runtime/session/SessionRuntime', () => {

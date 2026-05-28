@@ -135,7 +135,9 @@ const toSessionSnapshot = (state: SessionState): SessionSnapshot => ({
       : undefined
   },
   queue: state.queue.map(toMediaSnapshot),
+  current: state.current ? toMediaSnapshot(state.current) : undefined,
   currentMediaId: state.current ? state.current.id : undefined,
+  currentMedia: state.current ? toMediaSnapshot(state.current) : undefined,
   playback: toPlaybackSnapshot(state),
   eventCursor: state.events.length
 })
@@ -296,17 +298,26 @@ export const applyHostEventToSnapshot = (
       }
     }
     case 'currentMediaChanged':
-      if (snapshot.currentMediaId === event.mediaId) {
+      {
+        const currentMedia =
+          event.media ||
+          (snapshot.current && snapshot.current.mediaId === event.mediaId
+            ? snapshot.current
+            : undefined) ||
+          (snapshot.currentMedia && snapshot.currentMedia.mediaId === event.mediaId
+            ? snapshot.currentMedia
+            : undefined) ||
+          snapshot.queue.find(media => media.mediaId === event.mediaId)
         return {
           ...snapshot,
+          queue: event.mediaId
+            ? snapshot.queue.filter(media => media.mediaId !== event.mediaId)
+            : snapshot.queue,
+          current: currentMedia,
+          currentMediaId: event.mediaId,
+          currentMedia,
           eventCursor: nextEventCursor(snapshot)
         }
-      }
-
-      return {
-        ...snapshot,
-        currentMediaId: event.mediaId,
-        eventCursor: nextEventCursor(snapshot)
       }
     case 'playbackChanged':
       if (playbackSnapshotEquals(snapshot.playback, event.playback)) {
@@ -330,6 +341,12 @@ export const applyHostEventToSnapshot = (
   }
 }
 
+const toCurrentMediaChangedEvent = (media: SessionMediaItem | undefined): HostEvent => ({
+  type: 'currentMediaChanged',
+  mediaId: media ? media.id : undefined,
+  media: media ? toMediaSnapshot(media) : undefined
+})
+
 const deriveCommandEvents = (
   previousState: SessionState,
   nextState: SessionState,
@@ -341,10 +358,7 @@ const deriveCommandEvents = (
 
   if (command.type === 'addMedia') {
     if (previousCurrentMediaId !== nextCurrentMediaId) {
-      events.push({
-        type: 'currentMediaChanged',
-        mediaId: nextState.current ? nextState.current.id : undefined
-      })
+      events.push(toCurrentMediaChangedEvent(nextState.current))
     } else if (previousState.queue.length < nextState.queue.length && nextState.queue.length > 0) {
       const queued = nextState.queue[nextState.queue.length - 1]
       events.push({
@@ -362,10 +376,7 @@ const deriveCommandEvents = (
     }
   } else if (command.type === 'next') {
     if (previousCurrentMediaId !== nextCurrentMediaId) {
-      events.push({
-        type: 'currentMediaChanged',
-        mediaId: nextState.current ? nextState.current.id : undefined
-      })
+      events.push(toCurrentMediaChangedEvent(nextState.current))
     }
   }
 

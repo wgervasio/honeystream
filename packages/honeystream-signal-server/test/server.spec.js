@@ -1,6 +1,43 @@
-const EventEmitter = require('events')
+jest.mock('simple-peer', () => {
+  const EventEmitter = require('events')
+
+  return class MockSimplePeer extends EventEmitter {
+    constructor(opts = {}) {
+      super()
+      this.initiator = Boolean(opts.initiator)
+      this.destroyed = false
+
+      if (this.initiator) {
+        setTimeout(() => {
+          if (!this.destroyed) this.emit('signal', { type: 'offer', sdp: 'mock-offer' })
+        }, 0)
+      }
+    }
+
+    signal() {
+      if (this.destroyed) return
+
+      setTimeout(() => {
+        if (this.destroyed) return
+        if (!this.initiator) this.emit('signal', { type: 'answer', sdp: 'mock-answer' })
+        this.emit('connect')
+      }, 0)
+    }
+
+    _destroy(err, callback) {
+      this.destroyed = true
+      if (err) this.emit('error', err)
+      this.emit('close')
+      callback()
+    }
+
+    destroy(err) {
+      this._destroy(err, () => {})
+    }
+  }
+})
+
 const sodium = require('libsodium-wrappers')
-const wrtc = require('wrtc')
 const { WebSocket, Server } = require('mock-socket')
 
 const { MessageType } = require('../lib/types')
@@ -19,7 +56,7 @@ WebSocket.prototype.once = function(type, callback) {
 }
 
 const fakeUrl = 'ws://mockhost'
-const peerOpts = { wrtc }
+const peerOpts = {}
 const getKeypair = seed => sodium.crypto_box_seed_keypair(sodium.from_string(seed.padEnd(32)))
 const inactiveTimeout = 200
 
