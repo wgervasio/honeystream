@@ -74,6 +74,8 @@ describe('session', () => {
       await waitForRuntimeText(page, 'Controls obvious')
       await waitForRuntimeText(page, 'Website lane')
       await waitForRuntimeText(page, 'URL Safety Results')
+      await waitForRuntimeText(page, 'streaming connection lab')
+      await waitForRuntimeText(page, 'zero-loss, under-32ms mock round trip')
       await waitForRuntimeText(page, 'syncs only the tiny control stream')
       await waitForRuntimeText(page, 'typed control stream')
       await waitForRuntimeText(page, 'Low-latency control lane')
