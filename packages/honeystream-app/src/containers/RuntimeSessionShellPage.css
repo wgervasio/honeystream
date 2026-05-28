@@ -456,6 +456,9 @@
 
 .sessionShell [data-session-state] {
   justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
   padding: 0.5rem 0.8rem;
   border-radius: 999px;
   background: var(--app-button-gradient);
@@ -463,6 +466,15 @@
   font-weight: bold;
   letter-spacing: 0.04em;
   box-shadow: 0 14px 32px rgba(255, 127, 150, 0.24);
+}
+
+.sessionShell [data-session-state]::before {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 0 16px rgba(255, 255, 255, 0.72);
+  content: '';
 }
 
 .sessionShell > div {
@@ -477,12 +489,28 @@
   min-height: 3.5rem;
   display: flex;
   align-items: center;
+  gap: 0.55rem;
   padding: 0.8rem;
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 18px;
   background: rgba(36, 28, 53, 0.18);
   color: rgba(255, 255, 255, 0.82);
   line-height: 1.25rem;
+}
+
+.sessionShell [data-participant-status]::before {
+  flex: 0 0 auto;
+  width: 0.62rem;
+  height: 0.62rem;
+  border-radius: 999px;
+  background: var(--color-honey);
+  box-shadow: 0 0 16px rgba(255, 216, 138, 0.42);
+  content: '';
+}
+
+.sessionShell [data-participant-status='waiting']::before {
+  background: var(--color-bunny);
+  box-shadow: 0 0 16px rgba(247, 215, 232, 0.36);
 }
 
 .sessionShell > div span[aria-hidden='true'] {
@@ -1037,12 +1065,33 @@
   background: rgba(255, 255, 255, 0.1);
 }
 
+.queuedItems li {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: border-color 160ms ease-out, transform 160ms ease-out, background-color 160ms ease-out;
+}
+
+.queuedItems li:hover,
+.queuedItems li:focus-within {
+  border-color: rgba(255, 216, 138, 0.45);
+  background: rgba(255, 255, 255, 0.14);
+  transform: translateY(-1px);
+}
+
 .queuedItems li span:first-child {
   color: #fff;
   font-weight: bold;
 }
 
 .queueNextButton {
+  justify-self: start;
+}
+
+.queuePanel [data-queue-action='next']::after {
+  margin-left: 0.35rem;
+  content: '\2192';
+}
+
+.queuePanel [data-queue-action='remove'] {
   justify-self: start;
 }
 

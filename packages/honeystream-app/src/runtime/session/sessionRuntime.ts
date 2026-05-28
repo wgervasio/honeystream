@@ -55,6 +55,8 @@ import {
 const DEFAULT_DIAGNOSTICS_CAP = 64
 const DEFAULT_RUNTIME_ERROR_CAP = 32
 const DEFAULT_MEDIA_CACHE_CAP = 64
+const DEFAULT_SNAPSHOT_REQUEST_COOLDOWN_MS = 500
+const PLAYBACK_APPLY_FAILED_ERROR_CODE = 'playback-apply-failed'
 
 const normalizeCap = (value: number | undefined, fallback: number): number => {
   if (
@@ -121,6 +123,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
   private eventCursor = 0
   private sequence = 0
   private expectedInboundSeq: number | undefined
+  private lastGuestSnapshotRequestAtMs: number | undefined
   private disposed = false
   private inboundQueue: Promise<void> = Promise.resolve()
 
@@ -170,6 +173,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
     this.hostInviteSecret = input.inviteSecret.trim()
     this.eventCursor = 0
     this.expectedInboundSeq = undefined
+    this.lastGuestSnapshotRequestAtMs = undefined
     this.hostState = createSessionState({
       roomId: input.roomId,
       hostId: this.transport.localPeerId,
@@ -195,6 +199,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
     this.lifecycle = 'starting'
     this.expectedGuestRoomId = input.roomId
     this.expectedInboundSeq = undefined
+    this.lastGuestSnapshotRequestAtMs = undefined
     this.updateProjection()
 
     await this.transport.connect()
@@ -210,7 +215,10 @@ export class DefaultSessionRuntime implements SessionRuntime {
 
   async dispatchHostCommand(command: HostSessionCommand): Promise<void> {
     this.assertHostRunning('dispatchHostCommand')
-    await this.applyHostClientCommand(hostCommandToClientCommand(command), this.transport.localPeerId)
+    await this.applyHostClientCommand(
+      hostCommandToClientCommand(command),
+      this.transport.localPeerId
+    )
   }
 
   async dispatchGuestCommand(command: ClientCommand): Promise<void> {
@@ -251,9 +259,15 @@ export class DefaultSessionRuntime implements SessionRuntime {
   }
 
   private enqueueInboundDelivery(delivery: PeerTransportMessageDelivery<unknown>): void {
+    if (this.disposed) return
+
     this.inboundQueue = this.inboundQueue
-      .then(() => this.handleInboundDelivery(delivery))
+      .then(() => {
+        if (this.disposed) return undefined
+        return this.handleInboundDelivery(delivery)
+      })
       .catch(error => {
+        if (this.disposed) return
         this.recordRuntimeError(`[inbound] ${toErrorMessage(error)}`)
       })
   }
@@ -261,6 +275,8 @@ export class DefaultSessionRuntime implements SessionRuntime {
   private async handleInboundDelivery(
     delivery: PeerTransportMessageDelivery<unknown>
   ): Promise<void> {
+    if (this.disposed) return
+
     const parsed = parseWireEnvelope(delivery.envelope.message)
     if (!parsed.ok) {
       this.recordProtocolDiagnostic(parsed.error)
@@ -302,10 +318,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
     this.recordRuntimeError('Received protocol envelope before runtime startup.')
   }
 
-  private async applyHostClientCommand(
-    command: ClientCommand,
-    fromPeerId: string
-  ): Promise<void> {
+  private async applyHostClientCommand(command: ClientCommand, fromPeerId: string): Promise<void> {
     const state = this.requireHostState()
     const nowHostMs = this.now()
     let nextState = state
@@ -324,12 +337,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
           this.trySendHostEvent({ type: 'protocolRejected', error: protocolError })
           return
         }
-        transition = transitionGuestJoined(
-          state,
-          fromPeerId,
-          command.username,
-          nowHostMs
-        )
+        transition = transitionGuestJoined(state, fromPeerId, command.username, nowHostMs)
         break
       case 'leave':
         transition = transitionGuestLeft(state, fromPeerId, nowHostMs)
@@ -374,7 +382,13 @@ export class DefaultSessionRuntime implements SessionRuntime {
       try {
         await this.playback.applyDesiredState(toPlaybackDesiredStateFromDomain(nextState))
       } catch (error) {
-        this.recordRuntimeError(`[playback] ${toErrorMessage(error)}`)
+        const message = toErrorMessage(error)
+        this.recordRuntimeError(`[playback] ${message}`)
+        this.trySendHostEvent({
+          type: 'systemError',
+          errorCode: PLAYBACK_APPLY_FAILED_ERROR_CODE,
+          message: `Playback adapter failed: ${message}`
+        })
       }
     }
 
@@ -393,7 +407,10 @@ export class DefaultSessionRuntime implements SessionRuntime {
       }
     }
 
-    if (requestSnapshot || (command.type === 'join' && transition && transition.errors.length === 0)) {
+    if (
+      requestSnapshot ||
+      (command.type === 'join' && transition && transition.errors.length === 0)
+    ) {
       this.trySendHostEvent({ type: 'snapshot', snapshot })
     }
   }
@@ -459,12 +476,21 @@ export class DefaultSessionRuntime implements SessionRuntime {
     if (this.disposed) return
     if (this.role !== 'guest') return
     if (this.transport.getState().status !== 'connected') return
+    const nowMs = this.now()
+    if (
+      reason === 'resync' &&
+      typeof this.lastGuestSnapshotRequestAtMs === 'number' &&
+      nowMs - this.lastGuestSnapshotRequestAtMs < DEFAULT_SNAPSHOT_REQUEST_COOLDOWN_MS
+    ) {
+      return
+    }
+    this.lastGuestSnapshotRequestAtMs = nowMs
 
     this.sendWireEnvelope({
       version: PROTOCOL_VERSION,
       direction: 'client-to-host',
       seq: this.nextSequence(),
-      sentAtMs: this.now(),
+      sentAtMs: nowMs,
       command: {
         type: 'requestSnapshot',
         reason

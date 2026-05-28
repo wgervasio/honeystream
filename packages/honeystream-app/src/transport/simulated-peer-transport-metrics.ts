@@ -1,5 +1,7 @@
 import { SimulatedPeerTransportMetrics } from './simulated-peer-transport-types'
 
+const MAX_RECORDED_LATENCY_SAMPLES = 64
+
 export interface SimulatedPeerTransportMetricsRecorder {
   recordSent(bytes: number): number
   recordDropped(bytes: number): void
@@ -8,6 +10,17 @@ export interface SimulatedPeerTransportMetricsRecorder {
 }
 
 const ratio = (part: number, whole: number): number => (whole === 0 ? 0 : part / whole)
+
+const percentile = (samples: readonly number[], percentileValue: number): number => {
+  if (samples.length === 0) return 0
+
+  const sortedSamples = [...samples].sort((left, right) => left - right)
+  const index = Math.min(
+    sortedSamples.length - 1,
+    Math.max(0, Math.ceil(sortedSamples.length * percentileValue) - 1)
+  )
+  return sortedSamples[index]
+}
 
 export const createSimulatedPeerTransportMetricsRecorder = (): SimulatedPeerTransportMetricsRecorder => {
   let sentMessages = 0
@@ -18,6 +31,7 @@ export const createSimulatedPeerTransportMetricsRecorder = (): SimulatedPeerTran
   let lostBytes = 0
   let totalLatencyMs = 0
   let maxLatencyMs = 0
+  const latencySamples: number[] = []
 
   return {
     recordSent(bytes: number): number {
@@ -35,6 +49,10 @@ export const createSimulatedPeerTransportMetricsRecorder = (): SimulatedPeerTran
       deliveredBytes += bytes
       totalLatencyMs += normalizedLatencyMs
       maxLatencyMs = Math.max(maxLatencyMs, normalizedLatencyMs)
+      latencySamples.push(normalizedLatencyMs)
+      if (latencySamples.length > MAX_RECORDED_LATENCY_SAMPLES) {
+        latencySamples.shift()
+      }
     },
     snapshot(queuedMessages: number): SimulatedPeerTransportMetrics {
       return {
@@ -48,6 +66,8 @@ export const createSimulatedPeerTransportMetricsRecorder = (): SimulatedPeerTran
         byteLossRate: ratio(lostBytes, sentBytes),
         averageMessageBytes: ratio(sentBytes, sentMessages),
         averageLatencyMs: ratio(totalLatencyMs, deliveredMessages),
+        p50LatencyMs: percentile(latencySamples, 0.5),
+        p95LatencyMs: percentile(latencySamples, 0.95),
         maxLatencyMs,
         queuedMessages
       }

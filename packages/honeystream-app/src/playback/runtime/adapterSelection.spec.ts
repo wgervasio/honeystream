@@ -121,6 +121,62 @@ describe('selectPlaybackAdapterKind', () => {
     }
   })
 
+  it('honors provider-specific popup preferences after safety checks', () => {
+    const providerAdapterPreferences = [
+      { provider: 'animepahe' as const, adapterKind: 'popup' as const },
+      { provider: 'cineby' as const, adapterKind: 'popup' as const }
+    ]
+
+    expect(
+      selectPlaybackAdapterKind(
+        createClassifiedMedia('animepahe', 'https://animepahe.ru/play/example'),
+        {
+          providerAdapterPreferences
+        }
+      )
+    ).toBe('popup')
+    expect(
+      selectPlaybackAdapterKind(
+        createClassifiedMedia('cineby', 'https://cineby.app/movie/example'),
+        {
+          providerAdapterPreferences
+        }
+      )
+    ).toBe('popup')
+    expect(
+      selectPlaybackAdapterKind(
+        createClassifiedMedia('youtube', 'https://www.youtube.com/watch?v=abc'),
+        {
+          providerAdapterPreferences
+        }
+      )
+    ).toBe('embed-extension')
+  })
+
+  it('does not let provider preferences bypass blocked hosts or mixed-content protection', () => {
+    const providerAdapterPreferences = [
+      { provider: 'youtube' as const, adapterKind: 'embed-extension' as const }
+    ]
+
+    expect(
+      selectPlaybackAdapterKind(
+        createClassifiedMedia('youtube-http', 'http://youtube.com/watch?v=abc'),
+        {
+          providerAdapterPreferences
+        }
+      )
+    ).toBe('popup')
+    expect(
+      selectPlaybackAdapterKind(
+        createClassifiedMedia('youtube-blocked', 'https://youtube.com/watch?v=abc'),
+        {
+          blockedEmbedHosts: new Set<string>(['youtube.com']),
+          providerAdapterPreferences
+        }
+      )
+    ).toBe('popup')
+  })
+
   it('keeps direct media URLs classified separately while selecting the embed adapter', () => {
     const media = createClassifiedMedia('direct-mp4', 'https://cdn.example.com/video.mp4')
 

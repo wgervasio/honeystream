@@ -29,6 +29,7 @@ describe('QueueCurrentItem', () => {
     expect(html).toContain('Current title')
     expect(html).toContain('Requested by: HostUser')
     expect(html).toContain('data-queue-current-id="current-1"')
+    expect(html).toContain('data-queue-state="current"')
   })
 })
 
@@ -56,6 +57,7 @@ describe('QueueQueuedItems', () => {
     expect(html).toContain('Queued title 2')
     expect(html).toContain('data-queue-item-id="queued-1"')
     expect(html).toContain('data-queue-item-id="queued-2"')
+    expect(html).toContain('data-queue-action="remove"')
     expect(html).toContain('Remove')
   })
 })
@@ -66,6 +68,8 @@ describe('QueueNextButton', () => {
 
     expect(html).toContain('Next')
     expect(html).toContain('disabled=""')
+    expect(html).toContain('aria-disabled="true"')
+    expect(html).toContain('data-queue-action="next"')
   })
 })
 
@@ -87,7 +91,9 @@ describe('QueueShell', () => {
   })
 
   it('disables next intent when there is no current or queued media', () => {
-    const html = renderToStaticMarkup(<QueueShell onNext={() => undefined} onRemove={() => undefined} />)
+    const html = renderToStaticMarkup(
+      <QueueShell onNext={() => undefined} onRemove={() => undefined} />
+    )
 
     expect(html).toContain('No current item')
     expect(html).toContain('Queue is empty')

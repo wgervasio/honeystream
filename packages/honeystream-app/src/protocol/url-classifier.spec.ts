@@ -1,4 +1,4 @@
-import { classifyMediaUrl } from './url-classifier'
+import { classifyMediaProvider, classifyMediaUrl } from './url-classifier'
 
 describe('protocol URL classifier', () => {
   it('classifies local files, direct media URLs, and browser website pages', () => {
@@ -27,5 +27,16 @@ describe('protocol URL classifier', () => {
     for (const url of websitePages) {
       expect(classifyMediaUrl(url)).toBe('website')
     }
+  })
+
+  it('identifies supported streaming providers without trusting unrelated hosts', () => {
+    expect(classifyMediaProvider('https://www.youtube.com/watch?v=abc123')).toBe('youtube')
+    expect(classifyMediaProvider('https://youtu.be/abc123')).toBe('youtube')
+    expect(classifyMediaProvider('https://www.youtube-nocookie.com/embed/abc123')).toBe('youtube')
+    expect(classifyMediaProvider('https://animepahe.si/anime/example')).toBe('animepahe')
+    expect(classifyMediaProvider('https://www.cineby.ru/tv/example')).toBe('cineby')
+    expect(classifyMediaProvider('https://miruro.to/watch/example')).toBe('miruro')
+    expect(classifyMediaProvider('https://animepahe.example.com/play/example')).toBe('unknown')
+    expect(classifyMediaProvider('not-a-url')).toBe('unknown')
   })
 })

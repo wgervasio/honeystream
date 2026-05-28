@@ -2,7 +2,7 @@ import {
   PlaybackEngineApplyResult,
   PlaybackEngineDesiredState
 } from 'playback/engine/playbackEngineContract'
-import { parseWireEnvelope, WireEnvelope } from 'protocol'
+import { classifyMediaProvider, parseWireEnvelope, WireEnvelope } from 'protocol'
 import { MediaSnapshot } from 'protocol/types'
 import { TransportMessageValidator } from 'transport/contracts'
 import { evaluateSimulatedPeerTransportBudget } from 'transport/simulated-peer-transport-performance'
@@ -99,7 +99,10 @@ const settleRuntime = async (): Promise<void> => {
 describe('runtime/session streaming-site simulation', () => {
   it('keeps host and guest projections synced with zero byte loss under a low-latency profile', async () => {
     let nowMs = 10000
-    const pair = createSimulatedPeerTransportPair<ClientToHostWireEnvelope, HostToClientWireEnvelope>({
+    const pair = createSimulatedPeerTransportPair<
+      ClientToHostWireEnvelope,
+      HostToClientWireEnvelope
+    >({
       hostInboundValidator: createWireEnvelopeValidator('client-to-host'),
       guestInboundValidator: createWireEnvelopeValidator('host-to-client'),
       now: () => nowMs,
@@ -178,12 +181,22 @@ describe('runtime/session streaming-site simulation', () => {
         expect(guestMediaIds).toContain(media.mediaId)
       }
 
+      expect(streamingSiteMedia.map(media => classifyMediaProvider(media.source))).toEqual([
+        'youtube',
+        'animepahe',
+        'cineby',
+        'miruro',
+        'unknown',
+        'unknown'
+      ])
+
       const metrics = pair.getAggregateMetrics()
       expect(metrics.combinedSentMessages).toBeGreaterThan(streamingSiteMedia.length)
       expect(metrics.combinedDeliveredMessages).toBe(metrics.combinedSentMessages)
       expect(metrics.combinedLostBytes).toBe(0)
       expect(metrics.combinedQueuedMessages).toBe(0)
       expect(metrics.combinedAverageMessageBytes).toBeLessThan(1200)
+      expect(metrics.combinedP95LatencyMs).toBeLessThanOrEqual(16)
       expect(evaluateSimulatedPeerTransportBudget(metrics)).toEqual({
         ok: true,
         failures: []

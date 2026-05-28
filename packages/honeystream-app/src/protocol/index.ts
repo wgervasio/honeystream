@@ -10,4 +10,4 @@ export {
 } from './types'
 export * from './parsers'
 export { validateInboundSequence, InboundSequenceValidation } from './sequence'
-export { classifyMediaUrl } from './url-classifier'
+export { classifyMediaProvider, classifyMediaUrl, MediaProvider } from './url-classifier'

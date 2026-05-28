@@ -14,6 +14,8 @@ export interface SimulatedPeerTransportPairOptions<TClientToHostMessage, THostTo
   readonly now?: Clock
   readonly random?: Clock
   readonly network?: SimulatedPeerNetworkProfile
+  readonly hostNetwork?: SimulatedPeerNetworkProfile
+  readonly guestNetwork?: SimulatedPeerNetworkProfile
 }
 
 export interface SimulatedPeerTransportPair<TClientToHostMessage, THostToClientMessage> {
@@ -37,6 +39,8 @@ export interface AggregateSimulatedPeerTransportMetrics {
   readonly combinedDeliveredMessages: number
   readonly combinedDroppedMessages: number
   readonly combinedAverageLatencyMs: number
+  readonly combinedP50LatencyMs: number
+  readonly combinedP95LatencyMs: number
   readonly combinedMaxLatencyMs: number
   readonly combinedQueuedMessages: number
 }
@@ -64,7 +68,7 @@ export const createSimulatedPeerTransportPair = <TClientToHostMessage, THostToCl
     inboundValidator: options.hostInboundValidator,
     now: options.now,
     random: options.random,
-    network: options.network
+    network: options.hostNetwork || options.network
   })
   const guest = new SimulatedPeerTransport<THostToClientMessage, TClientToHostMessage>({
     localPeerId: options.guestPeerId || 'guest',
@@ -72,7 +76,7 @@ export const createSimulatedPeerTransportPair = <TClientToHostMessage, THostToCl
     inboundValidator: options.guestInboundValidator,
     now: options.now,
     random: options.random,
-    network: options.network
+    network: options.guestNetwork || options.network
   })
   host.linkPeer(guest)
   guest.linkPeer(host)
@@ -104,6 +108,8 @@ export const createSimulatedPeerTransportPair = <TClientToHostMessage, THostToCl
         combinedDeliveredMessages,
         combinedDroppedMessages,
         combinedAverageLatencyMs: combineAverageLatency(hostMetrics, guestMetrics),
+        combinedP50LatencyMs: Math.max(hostMetrics.p50LatencyMs, guestMetrics.p50LatencyMs),
+        combinedP95LatencyMs: Math.max(hostMetrics.p95LatencyMs, guestMetrics.p95LatencyMs),
         combinedMaxLatencyMs: Math.max(hostMetrics.maxLatencyMs, guestMetrics.maxLatencyMs),
         combinedQueuedMessages: hostMetrics.queuedMessages + guestMetrics.queuedMessages
       }

@@ -78,6 +78,8 @@ describe('simulated peer transport', () => {
     expect(pair.guest.getMetrics().averageMessageBytes).toBeGreaterThan(0)
     expect(pair.host.getMetrics().deliveredBytes).toBeGreaterThan(0)
     expect(pair.host.getMetrics().averageLatencyMs).toBe(25)
+    expect(pair.host.getMetrics().p50LatencyMs).toBe(25)
+    expect(pair.host.getMetrics().p95LatencyMs).toBe(25)
   })
 
   it('aggregates host and guest latency, delivery, and byte-loss metrics', async () => {
@@ -108,6 +110,8 @@ describe('simulated peer transport', () => {
     expect(metrics.combinedByteLossRate).toBeGreaterThan(0)
     expect(metrics.combinedAverageMessageBytes).toBeGreaterThan(0)
     expect(metrics.combinedAverageLatencyMs).toBe(20)
+    expect(metrics.combinedP50LatencyMs).toBe(20)
+    expect(metrics.combinedP95LatencyMs).toBe(20)
     expect(metrics.combinedMaxLatencyMs).toBe(20)
     expect(metrics.combinedQueuedMessages).toBe(0)
   })
@@ -184,6 +188,9 @@ describe('simulated peer transport', () => {
     expect(metrics.combinedDroppedMessages).toBe(0)
     expect(metrics.combinedDeliveryRate).toBe(1)
     expect(metrics.combinedAverageLatencyMs).toBeCloseTo(70 / 3)
+    expect(metrics.host.p50LatencyMs).toBe(20)
+    expect(metrics.host.p95LatencyMs).toBe(30)
+    expect(metrics.combinedP95LatencyMs).toBe(30)
     expect(metrics.combinedMaxLatencyMs).toBe(30)
   })
 
