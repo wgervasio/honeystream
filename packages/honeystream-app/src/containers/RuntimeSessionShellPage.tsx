@@ -1100,6 +1100,13 @@ const RuntimeSessionRouteSurface = ({
               <strong>Sync</strong>
               Host-led controls
             </span>
+            <span>
+              <strong>Loss</strong>0 control bytes
+            </span>
+            <span>
+              <strong>Latency</strong>
+              Under 32ms mock RT
+            </span>
           </div>
           <div id="runtime_room_mood" className={styles.roomMoodStrip} aria-label="Room mood">
             {ROOM_MOOD_CHIPS.map(chip => (

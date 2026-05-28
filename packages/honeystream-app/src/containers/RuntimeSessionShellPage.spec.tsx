@@ -159,6 +159,8 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('Cozy watch room')
     expect(html).toContain('Room code')
     expect(html).toContain('room-123')
+    expect(html).toContain('0 control bytes')
+    expect(html).toContain('Under 32ms mock RT')
     expect(html).toContain('Paste a supported website')
     expect(html).toContain('Website lane')
     expect(html).toContain('Direct MP4')

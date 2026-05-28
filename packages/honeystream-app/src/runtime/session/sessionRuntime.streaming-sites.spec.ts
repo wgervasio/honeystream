@@ -54,10 +54,24 @@ const streamingSiteMedia: readonly MediaSnapshot[] = Object.freeze([
     durationMs: 180000
   },
   {
+    mediaId: 'youtube-short',
+    kind: 'website',
+    source: 'https://youtu.be/honeystream-sync',
+    title: 'YouTube short link',
+    durationMs: 180000
+  },
+  {
     mediaId: 'animepahe-play',
     kind: 'website',
     source: 'https://animepahe.ru/play/honeystream-test',
     title: 'AnimePahe episode',
+    durationMs: 1440000
+  },
+  {
+    mediaId: 'animepahe-alt',
+    kind: 'website',
+    source: 'https://animepahe.si/anime/honeystream-test',
+    title: 'AnimePahe alternate domain',
     durationMs: 1440000
   },
   {
@@ -68,10 +82,24 @@ const streamingSiteMedia: readonly MediaSnapshot[] = Object.freeze([
     durationMs: 5400000
   },
   {
+    mediaId: 'cineby-alt',
+    kind: 'website',
+    source: 'https://watch.cineby.to/tv/honeystream-test',
+    title: 'Cineby alternate domain',
+    durationMs: 5400000
+  },
+  {
     mediaId: 'miruro-watch',
     kind: 'website',
     source: 'https://miruro.to/watch/honeystream-test',
     title: 'Miruro watch page',
+    durationMs: 1440000
+  },
+  {
+    mediaId: 'miruro-alt',
+    kind: 'website',
+    source: 'https://www.miruro.tv/watch/honeystream-test',
+    title: 'Miruro alternate domain',
     durationMs: 1440000
   },
   {
@@ -183,8 +211,12 @@ describe('runtime/session streaming-site simulation', () => {
 
       expect(streamingSiteMedia.map(media => classifyMediaProvider(media.source))).toEqual([
         'youtube',
+        'youtube',
+        'animepahe',
         'animepahe',
         'cineby',
+        'cineby',
+        'miruro',
         'miruro',
         'unknown',
         'unknown'
