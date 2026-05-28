@@ -104,7 +104,8 @@ describe('RuntimeAddMediaPanel', () => {
       input.value = 'https://www.youtube.com/watch?v=honeystream-demo'
       Simulate.change(input)
       expect(container.querySelector('[data-add-media-source-preview="website"]')).not.toBeNull()
-      expect(container.textContent).toContain('Website lane')
+      expect(container.querySelector('[data-add-media-provider="youtube"]')).not.toBeNull()
+      expect(container.textContent).toContain('YouTube lane')
 
       input.value = 'https://cdn.example.com/watch-night.mp4'
       Simulate.change(input)

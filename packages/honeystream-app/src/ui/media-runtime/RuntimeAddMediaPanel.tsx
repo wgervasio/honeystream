@@ -1,5 +1,5 @@
 import React, { FormEvent, memo, useState } from 'react'
-import { classifyMediaUrl } from '../../protocol'
+import { classifyMediaProvider, classifyMediaUrl, MediaProvider } from '../../protocol'
 
 export interface RuntimeAddMediaSuggestion {
   readonly detail: string
@@ -14,6 +14,7 @@ interface RuntimeAddMediaSourcePreview {
   readonly detail: string
   readonly kind: RuntimeAddMediaSourcePreviewKind
   readonly label: string
+  readonly provider?: MediaProvider
 }
 
 export interface RuntimeAddMediaPanelProps {
@@ -32,6 +33,13 @@ export interface RuntimeAddMediaPanelProps {
 
 const DEFAULT_MISSING_URL_LABEL = 'Paste a website or direct media URL first.'
 const DEFAULT_INVALID_URL_LABEL = 'Use a full http:// or https:// link.'
+const PROVIDER_LABELS: Record<MediaProvider, string> = {
+  youtube: 'YouTube',
+  animepahe: 'AnimePahe',
+  cineby: 'Cineby',
+  miruro: 'Miruro',
+  unknown: 'Website'
+}
 
 const isHttpUrl = (value: string): boolean => {
   try {
@@ -57,10 +65,17 @@ const createSourcePreview = (value: string): RuntimeAddMediaSourcePreview | unde
   }
 
   if (classifyMediaUrl(trimmedValue) === 'website') {
+    const provider = classifyMediaProvider(trimmedValue)
+    const providerLabel = PROVIDER_LABELS[provider]
+
     return {
       kind: 'website',
-      label: 'Website lane',
-      detail: 'Each browser opens this page locally while controls stay synced.'
+      label: provider === 'unknown' ? 'Website lane' : `${providerLabel} lane`,
+      detail:
+        provider === 'unknown'
+          ? 'Each browser opens this page locally while controls stay synced.'
+          : `${providerLabel} page detected. Each browser opens it locally while controls stay synced.`,
+      provider
     }
   }
 
@@ -138,6 +153,7 @@ export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
         {sourcePreview ? (
           <div
             data-add-media-source-preview={sourcePreview.kind}
+            data-add-media-provider={sourcePreview.provider}
             aria-live="polite"
             aria-label="Media source preview"
           >

@@ -29,12 +29,17 @@ export const SessionParticipantUsernames = memo(function SessionParticipantUsern
     props.participants.guestUsername,
     props.waitingForGuestLabel
   )
+  const guestStatus = props.participants.guestUsername ? 'connected' : 'waiting'
 
   return (
-    <div className={props.className}>
-      <span>{`${hostLabel}: ${props.participants.hostUsername}`}</span>
+    <div className={props.className} aria-live="polite">
+      <span data-participant-role="host" data-participant-status="connected">
+        {`${hostLabel}: ${props.participants.hostUsername}`}
+      </span>
       <span aria-hidden="true">{' \u00b7 '}</span>
-      <span>{`${guestLabel}: ${guestUsername}`}</span>
+      <span data-participant-role="guest" data-participant-status={guestStatus}>
+        {`${guestLabel}: ${guestUsername}`}
+      </span>
     </div>
   )
 })

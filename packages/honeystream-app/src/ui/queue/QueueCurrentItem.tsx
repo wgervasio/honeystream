@@ -12,7 +12,7 @@ interface QueueCurrentItemProps {
 export const QueueCurrentItem = memo(function QueueCurrentItem(props: QueueCurrentItemProps) {
   if (!props.item) {
     return (
-      <p className={props.className} data-queue-current-empty="true">
+      <p className={props.className} data-queue-current-empty="true" data-queue-state="empty">
         {props.emptyLabel || 'No current item'}
       </p>
     )
@@ -21,7 +21,12 @@ export const QueueCurrentItem = memo(function QueueCurrentItem(props: QueueCurre
   const requestedByLabel = props.requestedByLabel || 'Requested by'
 
   return (
-    <section className={props.className} data-queue-current-id={props.item.id}>
+    <section
+      className={props.className}
+      data-queue-current-id={props.item.id}
+      data-queue-state="current"
+      aria-live="polite"
+    >
       <p>{props.label || 'Current item'}</p>
       <strong>{props.item.title}</strong>
       <p>{`${requestedByLabel}: ${props.item.requestedBy}`}</p>

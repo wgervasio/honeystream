@@ -14,6 +14,7 @@ describe('SessionStateLabel', () => {
       const html = renderToStaticMarkup(<SessionStateLabel state={state} />)
       expect(html).toContain(SESSION_VIEW_STATE_LABELS[state])
       expect(html).toContain(`data-session-state="${state}"`)
+      expect(html).toContain('role="status"')
     })
   })
 })
@@ -28,6 +29,8 @@ describe('SessionParticipantUsernames', () => {
 
     expect(html).toContain('Host: HostUser')
     expect(html).toContain('Guest: GuestUser')
+    expect(html).toContain('data-participant-role="host"')
+    expect(html).toContain('data-participant-status="connected"')
   })
 
   it('renders waiting text when guest username is not provided', () => {
@@ -39,6 +42,7 @@ describe('SessionParticipantUsernames', () => {
     )
 
     expect(html).toContain('Guest: Awaiting guest')
+    expect(html).toContain('data-participant-status="waiting"')
   })
 
   it('keeps cozy Cat-side and Rabbit-side labels visible for runtime rooms', () => {

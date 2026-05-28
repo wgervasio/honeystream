@@ -308,6 +308,9 @@ describe('runtime/session/SessionRuntime', () => {
     expect(hostRuntime.getSnapshot().runtimeErrors).toEqual(
       expect.arrayContaining([expect.stringContaining('Playback target unavailable.')])
     )
+    expect(guestRuntime.getSnapshot().runtimeErrors).toEqual(
+      expect.arrayContaining([expect.stringContaining('playback-apply-failed')])
+    )
   })
 
   it('disposes runtime resources and rejects commands after disposal', async () => {

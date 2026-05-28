@@ -14,6 +14,8 @@ export const QueueNextButton = memo(function QueueNextButton(props: QueueNextBut
       type="button"
       onClick={props.onNext}
       disabled={Boolean(props.disabled)}
+      aria-disabled={Boolean(props.disabled)}
+      data-queue-action="next"
     >
       {props.label || 'Next'}
     </button>

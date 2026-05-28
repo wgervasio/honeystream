@@ -1,11 +1,19 @@
+import { classifyMediaProvider, MediaProvider } from 'protocol/url-classifier'
 import { DesiredPlaybackMedia } from '../adapters/shared/playbackAdapter'
 
 export type PlaybackRuntimeAdapterKind = 'local-file' | 'embed-extension' | 'popup'
+export type ProviderPlaybackAdapterKind = Exclude<PlaybackRuntimeAdapterKind, 'local-file'>
+
+export interface PlaybackProviderAdapterPreference {
+  readonly provider: MediaProvider
+  readonly adapterKind: ProviderPlaybackAdapterKind
+}
 
 export interface PlaybackAdapterSelectionOptions {
   readonly forcePopup?: boolean
   readonly blockedEmbedHosts?: ReadonlySet<string>
   readonly blockHttpEmbeds?: boolean
+  readonly providerAdapterPreferences?: readonly PlaybackProviderAdapterPreference[]
 }
 
 const parseMediaUrl = (url: string): URL | undefined => {
@@ -64,6 +72,20 @@ const canUseEmbedAdapter = (
   return true
 }
 
+const getProviderAdapterPreference = (
+  media: DesiredPlaybackMedia,
+  preferences: readonly PlaybackProviderAdapterPreference[] | undefined
+): ProviderPlaybackAdapterKind | undefined => {
+  if (!preferences || media.source !== 'website') return undefined
+
+  const provider = classifyMediaProvider(media.url)
+  for (const preference of preferences) {
+    if (preference.provider === provider) return preference.adapterKind
+  }
+
+  return undefined
+}
+
 export const selectPlaybackAdapterKind = (
   media: DesiredPlaybackMedia,
   options: PlaybackAdapterSelectionOptions = {}
@@ -76,5 +98,11 @@ export const selectPlaybackAdapterKind = (
     return 'popup'
   }
 
-  return canUseEmbedAdapter(media, options) ? 'embed-extension' : 'popup'
+  if (!canUseEmbedAdapter(media, options)) {
+    return 'popup'
+  }
+
+  return (
+    getProviderAdapterPreference(media, options.providerAdapterPreferences) || 'embed-extension'
+  )
 }
