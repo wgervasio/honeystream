@@ -272,6 +272,17 @@
   line-height: 1.3rem !important;
 }
 
+.starterStatus {
+  margin: -0.15rem 0 0;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid rgba(158, 215, 255, 0.28);
+  border-radius: 16px;
+  background: linear-gradient(90deg, rgba(158, 215, 255, 0.16), rgba(247, 215, 232, 0.13));
+  color: rgba(255, 255, 255, 0.84) !important;
+  font-size: 0.88rem !important;
+  line-height: 1.3rem !important;
+}
+
 .starterHint {
   margin: -0.1rem 0 0;
   color: rgba(255, 255, 255, 0.68) !important;
@@ -300,6 +311,13 @@
 
 .starterChips button:hover {
   background: rgba(255, 255, 255, 0.16);
+}
+
+.starterChips button[data-starter-chip-state='selected'] {
+  border-color: rgba(255, 216, 138, 0.48);
+  background: linear-gradient(135deg, rgba(158, 215, 255, 0.28), rgba(247, 215, 232, 0.24)),
+    rgba(255, 255, 255, 0.12);
+  box-shadow: var(--app-focus-ring);
 }
 
 .starterChips strong {

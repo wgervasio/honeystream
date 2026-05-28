@@ -181,7 +181,8 @@ const SITE_HANDOFF_PROMISES = [
   {
     id: 'local-page',
     title: 'Website opens locally',
-    detail: 'Each browser loads the page it can access, so private logins and video bytes stay local.'
+    detail:
+      'Each browser loads the page it can access, so private logins and video bytes stay local.'
   },
   {
     id: 'fallback',
@@ -267,6 +268,23 @@ const COMMAND_BAR_LINKS = [
   { label: 'Paste source', href: '#runtime-add-media-url' },
   { label: 'Copy invite', href: '#runtime_invite_panel' },
   { label: 'Play together', href: '#runtime_playback_controls' }
+] as const
+const BUDDY_PASSPORT_PROMISES = [
+  {
+    id: 'private-seat',
+    title: 'Two seats only',
+    detail: 'Cat-side hosts, rabbit-side joins from the invite secret.'
+  },
+  {
+    id: 'same-source',
+    title: 'Same source, local load',
+    detail: 'Websites, direct URLs, and files stay obvious without sending media bytes.'
+  },
+  {
+    id: 'next-action',
+    title: 'Next tap stays visible',
+    detail: 'The command bar keeps source, invite, and play controls one jump away.'
+  }
 ] as const
 const ROOM_MOOD_CHIPS = [
   'Cat-side cue',
@@ -929,6 +947,39 @@ const RuntimeSessionRouteSurface = ({
           <strong>Next best move</strong>
           <span data-next-launch-state={nextLaunchStep.state}>{nextLaunchStep.title}</span>
           <p>{nextLaunchStep.detail}</p>
+        </section>
+
+        <section
+          id="runtime_buddy_passport"
+          className={`${styles.card} ${styles.buddyPassport}`}
+          aria-label="Cat and rabbit buddy passport"
+        >
+          <div className={styles.cardHeader}>
+            <p className={styles.kicker}>Buddy passport</p>
+            <span>{guest ? 'Both seats mapped' : 'Rabbit seat saved'}</span>
+          </div>
+          <div className={styles.passportSeats}>
+            <span data-passport-seat="cat">
+              <strong>Cat-side host</strong>
+              {currentMedia ? 'Source keeper and playback lead.' : 'Pick the first source.'}
+            </span>
+            <span data-passport-sync={viewModel.snapshot.session.playback.state}>
+              <strong>{playbackStateLabel}</strong>
+              {queuedCountLabel}
+            </span>
+            <span data-passport-seat="rabbit">
+              <strong>Rabbit-side guest</strong>
+              {guest ? `${guest.username} is here.` : 'Invite link keeps this seat private.'}
+            </span>
+          </div>
+          <div className={styles.passportPromise} aria-label="Buddy passport promises">
+            {BUDDY_PASSPORT_PROMISES.map(item => (
+              <article key={item.id}>
+                <strong>{item.title}</strong>
+                <p>{item.detail}</p>
+              </article>
+            ))}
+          </div>
         </section>
 
         <section

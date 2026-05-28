@@ -66,6 +66,20 @@ const sourceConfidenceItems = [
   'Direct media links skip extra clutter'
 ]
 const trustBadges = ['Known-site chips', 'Zero media bytes shared', 'Tiny host-led commands']
+const prepDeckCards = [
+  {
+    label: 'Exact page',
+    detail: 'Paste the page you would open yourself, not a search result.'
+  },
+  {
+    label: 'Invite next',
+    detail: 'Once the source is queued, send the room link before pressing play.'
+  },
+  {
+    label: 'Controls only',
+    detail: 'Honeystream syncs play, pause, seek, speed, and next.'
+  }
+]
 const decisionFlowCards = [
   {
     label: 'Website opens for both',
@@ -253,6 +267,14 @@ export const HomeScreen = (props: Props) => {
               Best UX: paste the exact watch page, test it once in both browsers, then press play
               from host-side. You can skip https:// on common sites.
             </span>
+          </div>
+          <div id="media_prep_deck" className={styles.prepDeck} aria-label="Media prep deck">
+            {prepDeckCards.map(card => (
+              <article key={card.label}>
+                <strong>{card.label}</strong>
+                <span>{card.detail}</span>
+              </article>
+            ))}
           </div>
           <form className={styles.inputContainer} onSubmit={submitUrl} noValidate>
             <input
