@@ -9,7 +9,9 @@ const baseConfig = require('./webpack.config.base')
 
 const port = process.env.PORT || 8080
 const protocol = process.env.USE_HTTPS ? 'https' : 'http'
-const publicPath = `${protocol}://localhost:${port}/`
+const host = process.env.HOST || 'localhost'
+const publicHost = process.env.PUBLIC_HOST || host
+const publicPath = `${protocol}://${publicHost}:${port}/`
 
 module.exports = merge.smart(baseConfig, {
   devtool: 'inline-source-map',
@@ -92,6 +94,7 @@ module.exports = merge.smart(baseConfig, {
   ],
 
   devServer: {
+    host,
     port,
     publicPath,
     // compress: true,

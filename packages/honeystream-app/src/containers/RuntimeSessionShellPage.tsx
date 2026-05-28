@@ -1241,7 +1241,8 @@ const RuntimeSessionRouteSurface = ({
               Host-led controls
             </span>
             <span>
-              <strong>Loss</strong>0 control bytes
+              <strong>Loss</strong>
+              0 control bytes lost
             </span>
             <span>
               <strong>Latency</strong>

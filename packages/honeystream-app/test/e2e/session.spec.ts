@@ -2,8 +2,9 @@ import { Page, BrowserContext } from 'playwright-core'
 
 const RUNTIME_SHELL_SELECTOR = '[data-runtime-session-shell="true"]'
 const SESSION_E2E_TIMEOUT_MS = 45e3
+const APP_HOST = process.env.HONEYSTREAM_E2E_APP_HOST || '127.0.0.1'
 const APP_PORT = process.env.HONEYSTREAM_E2E_APP_PORT || process.env.PORT || '8080'
-const APP_BASE_URL = process.env.HONEYSTREAM_E2E_APP_URL || `http://localhost:${APP_PORT}`
+const APP_BASE_URL = process.env.HONEYSTREAM_E2E_APP_URL || `http://${APP_HOST}:${APP_PORT}`
 const APP_READY_OPTIONS = { waitUntil: 'domcontentloaded' as const }
 let runtimeVisitCounter = 0
 
@@ -61,8 +62,10 @@ describe('session', () => {
       await page.waitForSelector('#runtime_buddy_passport')
       await page.waitForSelector('#runtime_watch_deck')
       await page.waitForSelector('#runtime_site_handoff')
+      await page.waitForSelector('[data-session-state-tone="waiting"]')
       await waitForRuntimeText(page, 'Cozy watch room')
       await waitForRuntimeText(page, 'Hosting room')
+      await waitForRuntimeText(page, '0 control bytes lost')
       await waitForRuntimeText(page, 'Cat-side cue')
       await waitForRuntimeText(page, 'Best next tap')
       await waitForRuntimeText(page, '0/4 ready')
@@ -208,6 +211,8 @@ describe('session', () => {
       await clientPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
       await waitForRuntimeText(hostPage, 'Synced')
       await waitForRuntimeText(clientPage, 'Synced')
+      await hostPage.waitForSelector('[data-session-state-tone="synced"]')
+      await clientPage.waitForSelector('[data-session-state-tone="synced"]')
     })
   })
 })

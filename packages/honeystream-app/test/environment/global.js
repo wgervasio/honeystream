@@ -7,9 +7,11 @@ const {
 } = require('jest-dev-server')
 
 const APP_PORT = process.env.HONEYSTREAM_E2E_APP_PORT || process.env.PORT || '8080'
+const APP_HOST = process.env.HONEYSTREAM_E2E_APP_HOST || '127.0.0.1'
 const SIGNAL_SERVER_PORT = process.env.SIGNAL_SERVER_PORT || '27064'
+const SIGNAL_SERVER_HOST = process.env.HONEYSTREAM_SIGNAL_SERVER_HOST || '127.0.0.1'
 const SIGNAL_SERVER_URL =
-  process.env.HONEYSTREAM_SIGNAL_SERVER || `ws://localhost:${SIGNAL_SERVER_PORT}`
+  process.env.HONEYSTREAM_SIGNAL_SERVER || `ws://${SIGNAL_SERVER_HOST}:${SIGNAL_SERVER_PORT}`
 const SERVER_LAUNCH_TIMEOUT_MS = 300e3
 const useExternalServers = process.env.HONEYSTREAM_E2E_EXTERNAL_SERVER === 'true'
 
@@ -31,12 +33,12 @@ async function setup(jestConfig = {}) {
   if (!useExternalServers) {
     await setupServer([
       {
-        command: `cross-env PORT=${APP_PORT} HONEYSTREAM_SIGNAL_SERVER=${SIGNAL_SERVER_URL} yarn start`,
+        command: `cross-env HOST=${APP_HOST} PUBLIC_HOST=${APP_HOST} PORT=${APP_PORT} HONEYSTREAM_SIGNAL_SERVER=${SIGNAL_SERVER_URL} yarn start`,
         launchTimeout: SERVER_LAUNCH_TIMEOUT_MS,
         port: Number(APP_PORT),
         usedPortAction: 'error',
         waitOnScheme: {
-          resources: [`http-get://localhost:${APP_PORT}/`]
+          resources: [`http-get://${APP_HOST}:${APP_PORT}/`]
         }
       },
       {
@@ -45,7 +47,7 @@ async function setup(jestConfig = {}) {
         port: Number(SIGNAL_SERVER_PORT),
         usedPortAction: 'error',
         waitOnScheme: {
-          resources: [`tcp:localhost:${SIGNAL_SERVER_PORT}`]
+          resources: [`tcp:${SIGNAL_SERVER_HOST}:${SIGNAL_SERVER_PORT}`]
         }
       }
     ])

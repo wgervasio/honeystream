@@ -3,8 +3,9 @@ const path = require('path')
 const PlaywrightEnvironment = require('jest-playwright-preset')
 
 const ARTIFACTS_PATH = path.join(__dirname, '../artifacts')
+const APP_HOST = process.env.HONEYSTREAM_E2E_APP_HOST || '127.0.0.1'
 const APP_PORT = process.env.HONEYSTREAM_E2E_APP_PORT || process.env.PORT || '8080'
-const APP_BASE_URL = process.env.HONEYSTREAM_E2E_APP_URL || `http://localhost:${APP_PORT}`
+const APP_BASE_URL = process.env.HONEYSTREAM_E2E_APP_URL || `http://${APP_HOST}:${APP_PORT}`
 const APP_READY_OPTIONS = Object.freeze({ waitUntil: 'domcontentloaded' })
 
 const PROFILES = {

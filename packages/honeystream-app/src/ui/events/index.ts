@@ -1,2 +1,2 @@
-export { SystemEventFeed } from './SystemEventFeed'
-export type { SystemEventFeedProps } from './SystemEventFeed'
+export { SystemEventFeed, getSystemEventTone } from './SystemEventFeed'
+export type { SystemEventFeedProps, SystemEventTone } from './SystemEventFeed'

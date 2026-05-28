@@ -5,6 +5,8 @@ const DEFAULT_EMPTY_LABEL = 'No system events yet.'
 const DEFAULT_ERROR_LABEL = 'Error'
 const DEFAULT_TITLE = 'System events'
 
+export type SystemEventTone = 'positive' | 'neutral' | 'alert'
+
 export interface SystemEventFeedProps {
   readonly className?: string
   readonly emptyLabel?: string
@@ -33,6 +35,17 @@ const toEventMessage = (event: SystemEvent, errorLabel: string): string => {
   }
 }
 
+export const getSystemEventTone = (event: SystemEvent): SystemEventTone => {
+  switch (event.type) {
+    case 'participantJoined':
+      return 'positive'
+    case 'participantLeft':
+      return 'neutral'
+    case 'error':
+      return 'alert'
+  }
+}
+
 export const SystemEventFeed = memo(function SystemEventFeed(props: SystemEventFeedProps) {
   const maxVisibleEvents = normalizeMaxVisibleEvents(
     typeof props.maxVisibleEvents === 'number' ? props.maxVisibleEvents : DEFAULT_EVENT_LOG_CAP
@@ -58,7 +71,11 @@ export const SystemEventFeed = memo(function SystemEventFeed(props: SystemEventF
       ) : (
         <ol>
           {visibleEvents.map((event, index) => (
-            <li key={`${event.type}-${event.timestampMs}-${index}`} data-system-event-type={event.type}>
+            <li
+              key={`${event.type}-${event.timestampMs}-${index}`}
+              data-system-event-type={event.type}
+              data-system-event-tone={getSystemEventTone(event)}
+            >
               {toEventMessage(event, errorLabel)}
             </li>
           ))}
