@@ -29,6 +29,8 @@ describe('RuntimeAddMediaPanel URL handling', () => {
       expect(container.textContent).toContain('URL Safety Results')
       expect(container.textContent).toContain('YouTube, AnimePahe, Cineby, Miruro')
       expect(container.textContent).toContain('any site you can test together')
+      expect(container.textContent).toContain('streaming connection lab')
+      expect(container.textContent).toContain('zero-loss, under-32ms mock round trip')
       expect(container.textContent).toContain('typed control stream')
     } finally {
       ReactDOM.unmountComponentAtNode(container)
