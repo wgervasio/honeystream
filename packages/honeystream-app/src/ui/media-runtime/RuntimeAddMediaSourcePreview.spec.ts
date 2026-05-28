@@ -48,6 +48,7 @@ describe('RuntimeAddMediaSourcePreview', () => {
           ),
           expect.stringContaining('not the video bytes'),
           expect.stringContaining('mock round trip budgeted under 32ms'),
+          expect.stringContaining('no skipped controls'),
           expect.stringContaining('peak queues'),
           expect.stringContaining('max control-frame size')
         ])

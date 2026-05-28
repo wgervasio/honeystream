@@ -65,6 +65,8 @@ export const createSimulatedPeerTransportMetricsRecorder = (
   let sentMessages = 0
   let deliveredMessages = 0
   let droppedMessages = 0
+  let outOfOrderMessages = 0
+  let sequenceGapMessages = 0
   let sentBytes = 0
   let deliveredBytes = 0
   let lostBytes = 0
@@ -75,6 +77,7 @@ export const createSimulatedPeerTransportMetricsRecorder = (
   let maxLatencyJitterMs = 0
   let latencyJitterSamples = 0
   let lastLatencyMs: number | undefined
+  let lastDeliveredSeq: number | undefined
   let peakQueuedMessages = 0
   const latencySamples: number[] = []
   const recentFrames: SimulatedPeerTransportFrameSample[] = []
@@ -119,6 +122,16 @@ export const createSimulatedPeerTransportMetricsRecorder = (
       fromPeerId: string
     ): void {
       const normalizedLatencyMs = Math.max(0, latencyMs)
+      if (typeof lastDeliveredSeq === 'number') {
+        if (seq <= lastDeliveredSeq) {
+          outOfOrderMessages += 1
+        } else if (seq > lastDeliveredSeq + 1) {
+          sequenceGapMessages += seq - lastDeliveredSeq - 1
+        }
+      }
+      if (typeof lastDeliveredSeq !== 'number' || seq > lastDeliveredSeq) {
+        lastDeliveredSeq = seq
+      }
       deliveredMessages += 1
       deliveredBytes += bytes
       totalLatencyMs += normalizedLatencyMs
@@ -150,6 +163,8 @@ export const createSimulatedPeerTransportMetricsRecorder = (
         sentMessages,
         deliveredMessages,
         droppedMessages,
+        outOfOrderMessages,
+        sequenceGapMessages,
         sentBytes,
         deliveredBytes,
         lostBytes,

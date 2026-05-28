@@ -40,6 +40,8 @@ export interface AggregateSimulatedPeerTransportMetrics {
   readonly combinedSentMessages: number
   readonly combinedDeliveredMessages: number
   readonly combinedDroppedMessages: number
+  readonly combinedOutOfOrderMessages: number
+  readonly combinedSequenceGapMessages: number
   readonly combinedAverageLatencyMs: number
   readonly maxDirectionalAverageLatencyJitterMs: number
   readonly combinedP50LatencyMs: number
@@ -127,6 +129,10 @@ export const createSimulatedPeerTransportPair = <TClientToHostMessage, THostToCl
       const combinedDeliveredMessages =
         hostMetrics.deliveredMessages + guestMetrics.deliveredMessages
       const combinedDroppedMessages = hostMetrics.droppedMessages + guestMetrics.droppedMessages
+      const combinedOutOfOrderMessages =
+        hostMetrics.outOfOrderMessages + guestMetrics.outOfOrderMessages
+      const combinedSequenceGapMessages =
+        hostMetrics.sequenceGapMessages + guestMetrics.sequenceGapMessages
       const combinedPeakQueuedMessages =
         hostMetrics.peakQueuedMessages + guestMetrics.peakQueuedMessages
       const maxDirectionalAverageLatencyMs = Math.max(
@@ -149,6 +155,8 @@ export const createSimulatedPeerTransportPair = <TClientToHostMessage, THostToCl
         combinedSentMessages,
         combinedDeliveredMessages,
         combinedDroppedMessages,
+        combinedOutOfOrderMessages,
+        combinedSequenceGapMessages,
         combinedAverageLatencyMs: combineAverageLatency(hostMetrics, guestMetrics),
         maxDirectionalAverageLatencyJitterMs: Math.max(
           hostMetrics.averageLatencyJitterMs,

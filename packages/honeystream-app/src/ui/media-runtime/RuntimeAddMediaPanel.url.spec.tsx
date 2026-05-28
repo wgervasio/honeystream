@@ -31,6 +31,7 @@ describe('RuntimeAddMediaPanel URL handling', () => {
       expect(container.textContent).toContain('any site you can test together')
       expect(container.textContent).toContain('streaming connection lab')
       expect(container.textContent).toContain('zero-loss, under-32ms mock round trip')
+      expect(container.textContent).toContain('no skipped controls')
       expect(container.textContent).toContain('typed control stream')
     } finally {
       ReactDOM.unmountComponentAtNode(container)
@@ -109,6 +110,7 @@ describe('RuntimeAddMediaPanel URL handling', () => {
         'YouTube is covered by the low-latency streaming-site mock tests'
       )
       expect(container.textContent).toContain('peak queues')
+      expect(container.textContent).toContain('no skipped controls')
       expect(container.textContent).toContain('max control-frame size')
 
       input.value = 'https://youtube.com.evil/watch?v=honeystream-demo'

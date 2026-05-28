@@ -33,6 +33,8 @@ export interface SimulatedPeerTransportMetrics {
   readonly sentMessages: number
   readonly deliveredMessages: number
   readonly droppedMessages: number
+  readonly outOfOrderMessages: number
+  readonly sequenceGapMessages: number
   readonly sentBytes: number
   readonly deliveredBytes: number
   readonly lostBytes: number

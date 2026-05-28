@@ -139,6 +139,8 @@ describe('streaming site connection lab', () => {
     expect(metrics.combinedSentMessages).toBeGreaterThan(STREAMING_SITE_FIXTURES.length)
     expect(metrics.combinedDeliveredMessages).toBe(metrics.combinedSentMessages)
     expect(metrics.combinedDroppedMessages).toBe(0)
+    expect(metrics.combinedOutOfOrderMessages).toBe(0)
+    expect(metrics.combinedSequenceGapMessages).toBe(0)
     expect(metrics.combinedLostBytes).toBe(0)
     expect(metrics.combinedByteLossRate).toBe(0)
     expect(metrics.maxDirectionalByteLossRate).toBe(0)

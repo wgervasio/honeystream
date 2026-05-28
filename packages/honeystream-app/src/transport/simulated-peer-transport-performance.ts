@@ -3,6 +3,8 @@ import { AggregateSimulatedPeerTransportMetrics } from './simulated-peer-transpo
 export interface SimulatedPeerTransportBudget {
   readonly minDeliveryRate: number
   readonly maxDroppedMessages: number
+  readonly maxOutOfOrderMessages: number
+  readonly maxSequenceGapMessages: number
   readonly maxByteLossRate: number
   readonly maxAverageMessageBytes: number
   readonly maxMessageBytes: number
@@ -25,6 +27,8 @@ export interface SimulatedPeerTransportBudget {
 export type SimulatedPeerTransportBudgetMetric =
   | 'combinedDeliveryRate'
   | 'combinedDroppedMessages'
+  | 'combinedOutOfOrderMessages'
+  | 'combinedSequenceGapMessages'
   | 'combinedByteLossRate'
   | 'combinedAverageMessageBytes'
   | 'combinedMaxMessageBytes'
@@ -58,7 +62,8 @@ export interface SimulatedPeerTransportBudgetResult {
 Context: Streaming-site sync tests need a stable host/guest mock-network merge gate.
 Invariant: Website playback shares compact commands only; video bytes stay local to each browser.
 Options considered: Per-test assertions, ad hoc logs, or one reusable budget evaluator.
-Decision: Keep delivery, drop, byte-loss, wire-size, jitter, latency, round-trip tail, and peak-queue caps in this helper.
+Decision: Keep delivery, drop, sequence-integrity, byte-loss, wire-size, jitter, latency,
+round-trip tail, and peak-queue caps in this helper.
 Performance impact: Budget checks are O(1) over aggregate metrics already captured by simulations.
 Memory/lifecycle ownership: Metrics are bounded by the simulated transport recorder.
 Failure mode: Over-budget simulations return typed failures for the exact metric that regressed.
@@ -67,6 +72,8 @@ Validation: Covered by simulated-peer-transport-performance and streaming-site r
 export const STREAMING_SITE_TRANSPORT_BUDGET: SimulatedPeerTransportBudget = Object.freeze({
   minDeliveryRate: 1,
   maxDroppedMessages: 0,
+  maxOutOfOrderMessages: 0,
+  maxSequenceGapMessages: 0,
   maxByteLossRate: 0,
   maxAverageMessageBytes: 1200,
   maxMessageBytes: 2048,
@@ -128,6 +135,16 @@ export const evaluateSimulatedPeerTransportBudget = (
   const checks: readonly BudgetCheck[] = [
     minCheck('combinedDeliveryRate', metrics.combinedDeliveryRate, budget.minDeliveryRate),
     maxCheck('combinedDroppedMessages', metrics.combinedDroppedMessages, budget.maxDroppedMessages),
+    maxCheck(
+      'combinedOutOfOrderMessages',
+      metrics.combinedOutOfOrderMessages,
+      budget.maxOutOfOrderMessages
+    ),
+    maxCheck(
+      'combinedSequenceGapMessages',
+      metrics.combinedSequenceGapMessages,
+      budget.maxSequenceGapMessages
+    ),
     maxCheck('combinedByteLossRate', metrics.combinedByteLossRate, budget.maxByteLossRate),
     maxCheck(
       'maxDirectionalByteLossRate',

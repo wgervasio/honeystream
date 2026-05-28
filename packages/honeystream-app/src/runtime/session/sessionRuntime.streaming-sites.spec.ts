@@ -225,6 +225,8 @@ describe('runtime/session streaming-site simulation', () => {
       const metrics = pair.getAggregateMetrics()
       expect(metrics.combinedSentMessages).toBeGreaterThan(streamingSiteMedia.length)
       expect(metrics.combinedDeliveredMessages).toBe(metrics.combinedSentMessages)
+      expect(metrics.combinedOutOfOrderMessages).toBe(0)
+      expect(metrics.combinedSequenceGapMessages).toBe(0)
       expect(metrics.combinedLostBytes).toBe(0)
       expect(metrics.combinedQueuedMessages).toBe(0)
       expect(metrics.maxDirectionalByteLossRate).toBe(0)
@@ -336,6 +338,8 @@ describe('runtime/session streaming-site simulation', () => {
 
       const metrics = pair.getAggregateMetrics()
       expect(metrics.combinedDroppedMessages).toBe(0)
+      expect(metrics.combinedOutOfOrderMessages).toBe(0)
+      expect(metrics.combinedSequenceGapMessages).toBe(0)
       expect(metrics.combinedLostBytes).toBe(0)
       expect(metrics.combinedQueuedMessages).toBe(0)
       expect(metrics.combinedDeliveryRate).toBe(1)

@@ -255,7 +255,7 @@ const ROOM_READY_SIGNALS = [
     id: 'sync-budget',
     label: 'Sync budget green',
     detail:
-      'Mock host/guest control round trips stay under 32ms with zero byte loss, capped jitter, and compact frames.'
+      'Mock host/guest control round trips stay under 32ms with zero byte loss, no skipped controls, capped jitter, and compact frames.'
   },
   {
     id: 'notes',
@@ -273,6 +273,7 @@ const ROOM_MOOD_CHIPS = [
   'Rabbit-side hop',
   'Website-ready queue',
   'Zero-byte-loss controls',
+  'No skipped controls',
   '32ms mock round trip',
   'Jitter-guarded frames'
 ] as const
