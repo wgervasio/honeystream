@@ -37,13 +37,24 @@ const hostToClientValidator: TransportMessageValidator<HostToClientMessage> = {
 
 describe('simulated peer transport', () => {
   it('measures bytes with the same JSON envelope used by the simulated wire', () => {
-    const envelope = {
+    const asciiEnvelope = {
       seq: 1,
       sentAtMs: 1000,
       message: { type: 'ping' as const, nonce: 1 }
     }
+    const unicodeEnvelope = {
+      seq: 2,
+      sentAtMs: 1001,
+      message: {
+        type: 'ping' as const,
+        nonce: 2,
+        title: 'Cozy \uD83D\uDC30 night'
+      }
+    }
 
-    expect(byteLength(envelope)).toBe(Buffer.byteLength(JSON.stringify(envelope), 'utf-8'))
+    expect(byteLength(asciiEnvelope)).toBe(Buffer.byteLength(JSON.stringify(asciiEnvelope), 'utf-8'))
+    expect(byteLength(unicodeEnvelope)).toBe(Buffer.byteLength(JSON.stringify(unicodeEnvelope), 'utf-8'))
+    expect(byteLength(undefined)).toBe(0)
   })
 
   it('delays delivery until the latency budget is met and records byte metrics', async () => {

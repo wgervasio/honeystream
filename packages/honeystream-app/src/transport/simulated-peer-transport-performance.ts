@@ -3,6 +3,7 @@ import { AggregateSimulatedPeerTransportMetrics } from './simulated-peer-transpo
 export interface SimulatedPeerTransportBudget {
   readonly minDeliveryRate: number
   readonly maxByteLossRate: number
+  readonly maxAverageMessageBytes: number
   readonly maxAverageLatencyMs: number
   readonly maxP95LatencyMs: number
   readonly maxMaxLatencyMs: number
@@ -12,6 +13,7 @@ export interface SimulatedPeerTransportBudget {
 export type SimulatedPeerTransportBudgetMetric =
   | 'combinedDeliveryRate'
   | 'combinedByteLossRate'
+  | 'combinedAverageMessageBytes'
   | 'combinedAverageLatencyMs'
   | 'combinedP95LatencyMs'
   | 'combinedMaxLatencyMs'
@@ -28,9 +30,20 @@ export interface SimulatedPeerTransportBudgetResult {
   readonly failures: readonly SimulatedPeerTransportBudgetFailure[]
 }
 
+/*
+Context: Streaming-site sync tests need a stable host/guest mock-network merge gate.
+Invariant: Website playback shares compact commands only; video bytes stay local to each browser.
+Options considered: Per-test assertions, ad hoc logs, or one reusable budget evaluator.
+Decision: Keep delivery, byte-loss, wire-size, latency, and queue caps in this transport helper.
+Performance impact: Budget checks are O(1) over aggregate metrics already captured by simulations.
+Memory/lifecycle ownership: Metrics are bounded by the simulated transport recorder.
+Failure mode: Over-budget simulations return typed failures for the exact metric that regressed.
+Validation: Covered by simulated-peer-transport-performance and streaming-site runtime tests.
+*/
 export const STREAMING_SITE_TRANSPORT_BUDGET: SimulatedPeerTransportBudget = Object.freeze({
   minDeliveryRate: 1,
   maxByteLossRate: 0,
+  maxAverageMessageBytes: 1200,
   maxAverageLatencyMs: 24,
   maxP95LatencyMs: 24,
   maxMaxLatencyMs: 32,
@@ -69,6 +82,16 @@ export const evaluateSimulatedPeerTransportBudget = (
         'combinedByteLossRate',
         `<= ${budget.maxByteLossRate}`,
         metrics.combinedByteLossRate
+      )
+    )
+  }
+
+  if (metrics.combinedAverageMessageBytes > budget.maxAverageMessageBytes) {
+    failures.push(
+      overBudgetFailure(
+        'combinedAverageMessageBytes',
+        `<= ${budget.maxAverageMessageBytes}`,
+        metrics.combinedAverageMessageBytes
       )
     )
   }

@@ -193,6 +193,8 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('Pick the next cozy stream')
     expect(html).toContain('Pick a cozy first stream')
     expect(html).toContain('Host-led playback')
+    expect(html).toContain('Sync check')
+    expect(html).toContain('syncs only the tiny control stream')
     expect(html).toContain('All quiet. The room is cozy.')
     expect((html.match(/>Copy</g) || []).length).toBe(3)
   })

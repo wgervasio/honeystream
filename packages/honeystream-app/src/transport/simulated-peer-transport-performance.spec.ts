@@ -85,6 +85,19 @@ describe('simulated peer transport performance budget', () => {
         })
       ])
     )
+
+    const oversizedMessageBudget = evaluateSimulatedPeerTransportBudget(pair.getAggregateMetrics(), {
+      ...STREAMING_SITE_TRANSPORT_BUDGET,
+      maxAverageMessageBytes: 1
+    })
+    expect(oversizedMessageBudget.ok).toBe(false)
+    expect(oversizedMessageBudget.failures).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          metric: 'combinedAverageMessageBytes'
+        })
+      ])
+    )
   })
 
   it('keeps a bursty host and guest mock connection inside the streaming budget', async () => {

@@ -21,6 +21,8 @@ describe('RuntimeAddMediaPanel', () => {
     expect(html).toContain('Source confidence')
     expect(html).toContain('Paste full link')
     expect(html).toContain('Buddy check')
+    expect(html).toContain('Sync check')
+    expect(html).toContain('syncs only the tiny control stream')
     expect(html).not.toContain('Add local file')
   })
 
@@ -111,6 +113,8 @@ describe('RuntimeAddMediaPanel', () => {
       expect(container.textContent).toContain('YouTube lane')
       expect(container.querySelector('[data-source-confidence-state="ready"]')).not.toBeNull()
       expect(container.textContent).toContain('Buddy can test it')
+      expect(container.textContent).toContain('Low-latency sync path')
+      expect(container.textContent).toContain('not the video bytes')
 
       input.value = 'https://youtube.com.evil/watch?v=honeystream-demo'
       Simulate.change(input)

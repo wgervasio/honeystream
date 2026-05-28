@@ -104,6 +104,14 @@ export const createRuntimeAddMediaConfidenceItems = (
       label: isReady ? 'Buddy can test it' : 'Buddy check',
       detail: 'Queue things both browsers can open, or use local files on both sides.',
       state: isReady ? 'ready' : 'idle'
+    },
+    {
+      id: 'sync-budget',
+      label: isReady ? 'Low-latency sync path' : 'Sync check',
+      detail: isReady
+        ? 'Honeystream shares compact playback commands, not the video bytes.'
+        : 'Honeystream keeps video local and syncs only the tiny control stream.',
+      state: isReady ? 'ready' : 'idle'
     }
   ]
 }
