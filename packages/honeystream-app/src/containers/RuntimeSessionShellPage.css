@@ -294,6 +294,16 @@
     linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(36, 28, 53, 0.14));
 }
 
+.conciergeStrip {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: auto minmax(12rem, 0.42fr) minmax(0, 1fr);
+  gap: 0.7rem;
+  align-items: center;
+  background: linear-gradient(90deg, rgba(158, 215, 255, 0.17), rgba(247, 215, 232, 0.17)),
+    rgba(255, 255, 255, 0.1);
+}
+
 .runwayGrid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -418,6 +428,42 @@
   line-height: 1.25rem;
 }
 
+.conciergeStrip strong,
+.conciergeStrip span {
+  min-height: 2.45rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.8rem;
+  border-radius: 999px;
+}
+
+.conciergeStrip strong {
+  background: var(--app-button-gradient);
+  color: #fff;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  box-shadow: 0 12px 28px rgba(255, 127, 150, 0.2);
+}
+
+.conciergeStrip span {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-weight: bold;
+  text-align: center;
+}
+
+.conciergeStrip span[data-next-launch-state='waiting'] {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.conciergeStrip p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.74);
+  line-height: 1.35rem;
+}
+
 .watchDeck article {
   min-height: 7rem;
   padding: 1rem;
@@ -457,6 +503,7 @@
 .signalDock article,
 .roomRunway article,
 .launchSteps article,
+.conciergeStrip,
 .sourceLane,
 .flowCard {
   transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease;
@@ -467,6 +514,7 @@
 .signalDock article:hover,
 .roomRunway article:hover,
 .launchSteps article:hover,
+.conciergeStrip:hover,
 .sourceLane:hover,
 .flowCard:hover {
   border-color: rgba(255, 255, 255, 0.28);
@@ -972,6 +1020,57 @@
   gap: 0.55rem;
 }
 
+.addMediaPanel [data-source-confidence='true'] {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+  padding: 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 20px;
+  background: rgba(36, 28, 53, 0.18);
+}
+
+.addMediaPanel [data-source-confidence='true'] > strong {
+  grid-column: 1 / -1;
+  color: var(--color-honey);
+  font-size: 0.76rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.addMediaPanel [data-source-confidence='true'] span {
+  min-height: 4.9rem;
+  display: grid;
+  align-content: center;
+  gap: 0.28rem;
+  padding: 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.addMediaPanel [data-source-confidence='true'] span[data-source-confidence-state='ready'] {
+  background: radial-gradient(circle at 20% 18%, rgba(158, 215, 255, 0.26), transparent 48%),
+    rgba(255, 255, 255, 0.1);
+}
+
+.addMediaPanel [data-source-confidence='true'] span[data-source-confidence-state='warning'] {
+  border-color: rgba(255, 216, 138, 0.34);
+  background: rgba(255, 216, 138, 0.14);
+}
+
+.addMediaPanel [data-source-confidence='true'] b {
+  color: #fff;
+  font-size: 0.86rem;
+  line-height: 1.05;
+}
+
+.addMediaPanel [data-source-confidence='true'] small {
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.76rem;
+  line-height: 1.12rem;
+}
+
 .addMediaPanel [data-source-suggestion] {
   min-height: 4.7rem;
   display: flex;
@@ -1308,6 +1407,7 @@
   .signalDock,
   .runwayGrid,
   .launchSteps,
+  .conciergeStrip,
   .watchDeck {
     grid-template-columns: 1fr;
   }
@@ -1334,6 +1434,7 @@
 
   .sessionShell > div,
   .invitePanel [data-invite-field],
+  .addMediaPanel [data-source-confidence='true'],
   .addMediaPanel [data-source-suggestions='true'],
   .playbackPanel,
   .settingsPanel fieldset {

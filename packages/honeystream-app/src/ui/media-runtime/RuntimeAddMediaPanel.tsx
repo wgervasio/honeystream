@@ -1,20 +1,15 @@
 import React, { FormEvent, memo, useState } from 'react'
-import { classifyMediaProvider, classifyMediaUrl, MediaProvider } from '../../protocol'
+import {
+  createRuntimeAddMediaConfidenceItems,
+  createRuntimeAddMediaSourcePreview,
+  isRuntimeAddMediaHttpUrl
+} from './RuntimeAddMediaSourcePreview'
 
 export interface RuntimeAddMediaSuggestion {
   readonly detail: string
   readonly id: string
   readonly label: string
   readonly url: string
-}
-
-type RuntimeAddMediaSourcePreviewKind = 'direct-media' | 'invalid' | 'website'
-
-interface RuntimeAddMediaSourcePreview {
-  readonly detail: string
-  readonly kind: RuntimeAddMediaSourcePreviewKind
-  readonly label: string
-  readonly provider?: MediaProvider
 }
 
 export interface RuntimeAddMediaPanelProps {
@@ -33,58 +28,7 @@ export interface RuntimeAddMediaPanelProps {
 
 const DEFAULT_MISSING_URL_LABEL = 'Paste a website or direct media URL first.'
 const DEFAULT_INVALID_URL_LABEL = 'Use a full http:// or https:// link.'
-const PROVIDER_LABELS: Record<MediaProvider, string> = {
-  youtube: 'YouTube',
-  animepahe: 'AnimePahe',
-  cineby: 'Cineby',
-  miruro: 'Miruro',
-  unknown: 'Website'
-}
-
-const isHttpUrl = (value: string): boolean => {
-  try {
-    const url = new URL(value)
-    return url.protocol === 'http:' || url.protocol === 'https:'
-  } catch {
-    return false
-  }
-}
-
-const createSourcePreview = (value: string): RuntimeAddMediaSourcePreview | undefined => {
-  const trimmedValue = value.trim()
-  if (trimmedValue.length === 0) {
-    return undefined
-  }
-
-  if (!isHttpUrl(trimmedValue)) {
-    return {
-      kind: 'invalid',
-      label: 'Needs full link',
-      detail: 'Paste the complete http:// or https:// watch page.'
-    }
-  }
-
-  if (classifyMediaUrl(trimmedValue) === 'website') {
-    const provider = classifyMediaProvider(trimmedValue)
-    const providerLabel = PROVIDER_LABELS[provider]
-
-    return {
-      kind: 'website',
-      label: provider === 'unknown' ? 'Website lane' : `${providerLabel} lane`,
-      detail:
-        provider === 'unknown'
-          ? 'Each browser opens this page locally while controls stay synced.'
-          : `${providerLabel} page detected. Each browser opens it locally while controls stay synced.`,
-      provider
-    }
-  }
-
-  return {
-    kind: 'direct-media',
-    label: 'Direct media lane',
-    detail: 'This looks like a playable media URL for the shared queue.'
-  }
-}
+const SOURCE_CONFIDENCE_TITLE = 'Source confidence'
 
 export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
   props: RuntimeAddMediaPanelProps
@@ -93,7 +37,8 @@ export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
   const [errorMessage, setErrorMessage] = useState<string | undefined>()
 
   const sourceSuggestions = props.sourceSuggestions || []
-  const sourcePreview = createSourcePreview(url)
+  const sourcePreview = createRuntimeAddMediaSourcePreview(url)
+  const sourceConfidenceItems = createRuntimeAddMediaConfidenceItems(sourcePreview)
 
   const submitUrl = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -104,7 +49,7 @@ export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
       return
     }
 
-    if (!isHttpUrl(trimmedUrl)) {
+    if (!isRuntimeAddMediaHttpUrl(trimmedUrl)) {
       setErrorMessage(props.invalidUrlLabel || DEFAULT_INVALID_URL_LABEL)
       return
     }
@@ -118,6 +63,15 @@ export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
     <section className={props.className}>
       <p>{props.title || 'Add media'}</p>
       {props.description ? <p data-add-media-description="true">{props.description}</p> : null}
+      <div data-source-confidence="true" aria-label={SOURCE_CONFIDENCE_TITLE}>
+        <strong>{SOURCE_CONFIDENCE_TITLE}</strong>
+        {sourceConfidenceItems.map(item => (
+          <span key={item.id} data-source-confidence-state={item.state}>
+            <b>{item.label}</b>
+            <small>{item.detail}</small>
+          </span>
+        ))}
+      </div>
       {sourceSuggestions.length > 0 ? (
         <div data-source-suggestions="true" aria-label="Quick source suggestions">
           {sourceSuggestions.map(suggestion => (
