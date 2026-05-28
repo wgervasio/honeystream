@@ -183,6 +183,7 @@ describe('runtime/session streaming-site simulation', () => {
       expect(metrics.combinedDeliveredMessages).toBe(metrics.combinedSentMessages)
       expect(metrics.combinedLostBytes).toBe(0)
       expect(metrics.combinedQueuedMessages).toBe(0)
+      expect(metrics.combinedAverageMessageBytes).toBeLessThan(1200)
       expect(evaluateSimulatedPeerTransportBudget(metrics)).toEqual({
         ok: true,
         failures: []

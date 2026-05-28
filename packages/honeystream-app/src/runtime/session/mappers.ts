@@ -218,16 +218,27 @@ export const applyHostEventToSessionSnapshot = (
             : current.currentMediaId,
         eventCursor: nextCursor(current)
       }
-    case 'currentMediaChanged':
+    case 'currentMediaChanged': {
+      const nextCurrent =
+        event.media ||
+        (current.current && current.current.mediaId === event.mediaId
+          ? current.current
+          : undefined) ||
+        (current.currentMedia && current.currentMedia.mediaId === event.mediaId
+          ? current.currentMedia
+          : undefined) ||
+        current.queue.find(media => media.mediaId === event.mediaId)
       return {
         ...current,
-        current:
-          current.current && current.current.mediaId === event.mediaId
-            ? current.current
-            : undefined,
+        queue: event.mediaId
+          ? current.queue.filter(media => media.mediaId !== event.mediaId)
+          : current.queue,
+        current: nextCurrent,
         currentMediaId: event.mediaId,
+        currentMedia: nextCurrent,
         eventCursor: nextCursor(current)
       }
+    }
     case 'playbackChanged':
       return {
         ...current,

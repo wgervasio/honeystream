@@ -158,7 +158,7 @@ export type HostEvent =
   | { readonly type: 'participantLeft'; readonly peerId: string }
   | { readonly type: 'mediaQueued'; readonly media: MediaSnapshot; readonly position: number }
   | { readonly type: 'mediaRemoved'; readonly mediaId: string }
-  | { readonly type: 'currentMediaChanged'; readonly mediaId?: string }
+  | { readonly type: 'currentMediaChanged'; readonly mediaId?: string; readonly media?: MediaSnapshot }
   | { readonly type: 'playbackChanged'; readonly playback: PlaybackSnapshot }
   | { readonly type: 'systemError'; readonly errorCode: string; readonly message: string }
   | { readonly type: 'protocolRejected'; readonly error: ProtocolError }

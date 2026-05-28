@@ -110,9 +110,15 @@ export const toProtocolHostEventsFromTransition = (
   const previousCurrentMediaId = previousState.current ? previousState.current.id : undefined
   const nextCurrentMediaId = nextState.current ? nextState.current.id : undefined
   if (previousCurrentMediaId !== nextCurrentMediaId) {
+    const media = nextState.current
+      ? options.resolveMediaKind
+        ? toProtocolMediaSnapshot(nextState.current, options.resolveMediaKind)
+        : toProtocolMediaSnapshot(nextState.current)
+      : undefined
     hostEvents.push({
       type: 'currentMediaChanged',
-      mediaId: nextCurrentMediaId
+      mediaId: nextCurrentMediaId,
+      media
     })
   }
 

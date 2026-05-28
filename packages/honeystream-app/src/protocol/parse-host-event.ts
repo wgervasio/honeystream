@@ -35,7 +35,19 @@ export const parseHostEvent = (value: unknown, path: string = 'event'): Protocol
       if (value.mediaId !== undefined && !isNonEmptyString(value.mediaId)) {
         return err(malformedValueError(`${path}.mediaId`, 'Expected non-empty mediaId when provided.'))
       }
-      return ok({ type: value.type, mediaId: value.mediaId })
+      if (value.media === undefined) return ok({ type: value.type, mediaId: value.mediaId })
+      {
+        const mediaResult = parseMediaSnapshot(value.media, `${path}.media`)
+        if (!mediaResult.ok) return mediaResult
+        if (value.mediaId !== undefined && mediaResult.value.mediaId !== value.mediaId) {
+          return err(malformedValueError(`${path}.media.mediaId`, 'Expected media id to match mediaId.'))
+        }
+        return ok({
+          type: value.type,
+          mediaId: value.mediaId || mediaResult.value.mediaId,
+          media: mediaResult.value
+        })
+      }
     case 'playbackChanged': {
       const playbackResult = parsePlaybackSnapshot(value.playback, `${path}.playback`)
       if (!playbackResult.ok) return playbackResult
