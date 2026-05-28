@@ -9,6 +9,11 @@ export interface SimulatedPeerTransportBudget {
   readonly maxP95LatencyMs: number
   readonly maxMaxLatencyMs: number
   readonly maxQueuedMessages: number
+  readonly maxDirectionalAverageLatencyMs: number
+  readonly maxDirectionalLatencySkewMs: number
+  readonly maxDirectionalByteLossRate: number
+  readonly maxDirectionalQueuedMessages: number
+  readonly maxEstimatedRoundTripP95LatencyMs: number
 }
 
 export type SimulatedPeerTransportBudgetMetric =
@@ -20,6 +25,11 @@ export type SimulatedPeerTransportBudgetMetric =
   | 'combinedP95LatencyMs'
   | 'combinedMaxLatencyMs'
   | 'combinedQueuedMessages'
+  | 'maxDirectionalAverageLatencyMs'
+  | 'directionalAverageLatencySkewMs'
+  | 'maxDirectionalByteLossRate'
+  | 'maxDirectionalQueuedMessages'
+  | 'estimatedRoundTripP95LatencyMs'
 
 export interface SimulatedPeerTransportBudgetFailure {
   readonly metric: SimulatedPeerTransportBudgetMetric
@@ -36,7 +46,7 @@ export interface SimulatedPeerTransportBudgetResult {
 Context: Streaming-site sync tests need a stable host/guest mock-network merge gate.
 Invariant: Website playback shares compact commands only; video bytes stay local to each browser.
 Options considered: Per-test assertions, ad hoc logs, or one reusable budget evaluator.
-Decision: Keep delivery, drop, byte-loss, wire-size, latency, and queue caps in this helper.
+Decision: Keep delivery, drop, byte-loss, wire-size, directional latency, round-trip, and queue caps in this helper.
 Performance impact: Budget checks are O(1) over aggregate metrics already captured by simulations.
 Memory/lifecycle ownership: Metrics are bounded by the simulated transport recorder.
 Failure mode: Over-budget simulations return typed failures for the exact metric that regressed.
@@ -50,7 +60,12 @@ export const STREAMING_SITE_TRANSPORT_BUDGET: SimulatedPeerTransportBudget = Obj
   maxAverageLatencyMs: 16,
   maxP95LatencyMs: 16,
   maxMaxLatencyMs: 20,
-  maxQueuedMessages: 0
+  maxQueuedMessages: 0,
+  maxDirectionalAverageLatencyMs: 16,
+  maxDirectionalLatencySkewMs: 8,
+  maxDirectionalByteLossRate: 0,
+  maxDirectionalQueuedMessages: 0,
+  maxEstimatedRoundTripP95LatencyMs: 32
 })
 
 const overBudgetFailure = (
@@ -99,6 +114,16 @@ export const evaluateSimulatedPeerTransportBudget = (
     )
   }
 
+  if (metrics.maxDirectionalByteLossRate > budget.maxDirectionalByteLossRate) {
+    failures.push(
+      overBudgetFailure(
+        'maxDirectionalByteLossRate',
+        `<= ${budget.maxDirectionalByteLossRate}`,
+        metrics.maxDirectionalByteLossRate
+      )
+    )
+  }
+
   if (metrics.combinedAverageMessageBytes > budget.maxAverageMessageBytes) {
     failures.push(
       overBudgetFailure(
@@ -119,6 +144,26 @@ export const evaluateSimulatedPeerTransportBudget = (
     )
   }
 
+  if (metrics.maxDirectionalAverageLatencyMs > budget.maxDirectionalAverageLatencyMs) {
+    failures.push(
+      overBudgetFailure(
+        'maxDirectionalAverageLatencyMs',
+        `<= ${budget.maxDirectionalAverageLatencyMs}`,
+        metrics.maxDirectionalAverageLatencyMs
+      )
+    )
+  }
+
+  if (metrics.directionalAverageLatencySkewMs > budget.maxDirectionalLatencySkewMs) {
+    failures.push(
+      overBudgetFailure(
+        'directionalAverageLatencySkewMs',
+        `<= ${budget.maxDirectionalLatencySkewMs}`,
+        metrics.directionalAverageLatencySkewMs
+      )
+    )
+  }
+
   if (metrics.combinedP95LatencyMs > budget.maxP95LatencyMs) {
     failures.push(
       overBudgetFailure(
@@ -129,12 +174,32 @@ export const evaluateSimulatedPeerTransportBudget = (
     )
   }
 
+  if (metrics.estimatedRoundTripP95LatencyMs > budget.maxEstimatedRoundTripP95LatencyMs) {
+    failures.push(
+      overBudgetFailure(
+        'estimatedRoundTripP95LatencyMs',
+        `<= ${budget.maxEstimatedRoundTripP95LatencyMs}`,
+        metrics.estimatedRoundTripP95LatencyMs
+      )
+    )
+  }
+
   if (metrics.combinedMaxLatencyMs > budget.maxMaxLatencyMs) {
     failures.push(
       overBudgetFailure(
         'combinedMaxLatencyMs',
         `<= ${budget.maxMaxLatencyMs}`,
         metrics.combinedMaxLatencyMs
+      )
+    )
+  }
+
+  if (metrics.maxDirectionalQueuedMessages > budget.maxDirectionalQueuedMessages) {
+    failures.push(
+      overBudgetFailure(
+        'maxDirectionalQueuedMessages',
+        `<= ${budget.maxDirectionalQueuedMessages}`,
+        metrics.maxDirectionalQueuedMessages
       )
     )
   }

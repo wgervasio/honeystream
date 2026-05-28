@@ -5,6 +5,7 @@ const PlaywrightEnvironment = require('jest-playwright-preset')
 const ARTIFACTS_PATH = path.join(__dirname, '../artifacts')
 const APP_PORT = process.env.HONEYSTREAM_E2E_APP_PORT || process.env.PORT || '8080'
 const APP_BASE_URL = process.env.HONEYSTREAM_E2E_APP_URL || `http://localhost:${APP_PORT}`
+const APP_READY_OPTIONS = Object.freeze({ waitUntil: 'domcontentloaded' })
 
 const PROFILES = {
   default: {
@@ -41,9 +42,9 @@ async function setProfile(profileName = 'default', page = this.global.page) {
   const global = this.global
 
   const profile = PROFILES[profileName]
-  const initialStateParam = JSON.stringify(profile.initialState)
+  const initialStateParam = encodeURIComponent(JSON.stringify(profile.initialState))
 
-  await page.goto(`${APP_BASE_URL}/?initialState=${initialStateParam}`)
+  await page.goto(`${APP_BASE_URL}/?initialState=${initialStateParam}`, APP_READY_OPTIONS)
   await page.evaluate(
     data => {
       Object.keys(data).forEach(key => {
@@ -86,7 +87,8 @@ class HoneystreamEnvironment extends PlaywrightEnvironment {
 
     const honeystream = {
       screenshot: (filename, page = this.global.page) => screenshot(filename, page),
-      visit: async (pathname, opts) => this.global.page.goto(`${APP_BASE_URL}/#${pathname}`, opts),
+      visit: async (pathname, opts) =>
+        this.global.page.goto(`${APP_BASE_URL}/#${pathname}`, opts || APP_READY_OPTIONS),
       useProfile: useProfile.bind(this),
       setProfile: setProfile.bind(this)
     }

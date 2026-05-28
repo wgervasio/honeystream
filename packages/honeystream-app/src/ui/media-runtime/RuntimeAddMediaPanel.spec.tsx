@@ -116,6 +116,32 @@ describe('RuntimeAddMediaPanel', () => {
         'YouTube is covered by the low-latency streaming-site mock tests'
       )
       expect(container.textContent).toContain('paste the real video page')
+
+      input.value = 'https://www.youtube.com/watch?v=honeystream-demo'
+      Simulate.change(input)
+      expect(container.textContent).toContain('Low-latency sync path')
+      expect(container.textContent).toContain('not the video bytes')
+      expect(container.textContent).toContain('mock round trip budgeted under 32ms')
+
+      input.value = 'https://youtube.com.evil/watch?v=honeystream-demo'
+      Simulate.change(input)
+      expect(container.querySelector('[data-add-media-source-preview="website"]')).not.toBeNull()
+      expect(container.querySelector('[data-add-media-provider="unknown"]')).not.toBeNull()
+      expect(container.textContent).toContain('Website lane')
+      expect(container.textContent).not.toContain('YouTube page detected')
+
+      input.value = 'https://cdn.example.com/watch-night.mp4'
+      Simulate.change(input)
+      expect(
+        container.querySelector('[data-add-media-source-preview="direct-media"]')
+      ).not.toBeNull()
+      expect(container.textContent).toContain('Direct media lane')
+
+      input.value = 'not a valid watch link'
+      Simulate.change(input)
+      expect(container.querySelector('[data-add-media-source-preview="invalid"]')).not.toBeNull()
+      expect(container.querySelector('[data-source-confidence-state="warning"]')).not.toBeNull()
+      expect(container.textContent).toContain('Needs a watch link')
     } finally {
       ReactDOM.unmountComponentAtNode(container)
       container.remove()

@@ -326,7 +326,7 @@
 
 .signalDock {
   display: grid;
-  grid-template-columns: auto repeat(4, minmax(0, 1fr));
+  grid-template-columns: auto repeat(5, minmax(0, 1fr));
   gap: 0.7rem;
   align-items: stretch;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(36, 28, 53, 0.14));
