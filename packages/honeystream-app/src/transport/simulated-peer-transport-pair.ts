@@ -44,10 +44,12 @@ export interface AggregateSimulatedPeerTransportMetrics {
   readonly combinedP95LatencyMs: number
   readonly combinedMaxLatencyMs: number
   readonly combinedQueuedMessages: number
+  readonly combinedPeakQueuedMessages: number
   readonly maxDirectionalAverageLatencyMs: number
   readonly directionalAverageLatencySkewMs: number
   readonly maxDirectionalByteLossRate: number
   readonly maxDirectionalQueuedMessages: number
+  readonly maxDirectionalPeakQueuedMessages: number
   readonly estimatedRoundTripP95LatencyMs: number
   readonly estimatedRoundTripMaxLatencyMs: number
   readonly recentFrames: readonly SimulatedPeerTransportFrameSample[]
@@ -113,6 +115,8 @@ export const createSimulatedPeerTransportPair = <TClientToHostMessage, THostToCl
       const combinedDeliveredMessages =
         hostMetrics.deliveredMessages + guestMetrics.deliveredMessages
       const combinedDroppedMessages = hostMetrics.droppedMessages + guestMetrics.droppedMessages
+      const combinedPeakQueuedMessages =
+        hostMetrics.peakQueuedMessages + guestMetrics.peakQueuedMessages
       const maxDirectionalAverageLatencyMs = Math.max(
         hostMetrics.averageLatencyMs,
         guestMetrics.averageLatencyMs
@@ -134,6 +138,7 @@ export const createSimulatedPeerTransportPair = <TClientToHostMessage, THostToCl
         combinedP95LatencyMs: Math.max(hostMetrics.p95LatencyMs, guestMetrics.p95LatencyMs),
         combinedMaxLatencyMs: Math.max(hostMetrics.maxLatencyMs, guestMetrics.maxLatencyMs),
         combinedQueuedMessages: hostMetrics.queuedMessages + guestMetrics.queuedMessages,
+        combinedPeakQueuedMessages,
         maxDirectionalAverageLatencyMs,
         directionalAverageLatencySkewMs: Math.abs(
           hostMetrics.averageLatencyMs - guestMetrics.averageLatencyMs
@@ -142,6 +147,10 @@ export const createSimulatedPeerTransportPair = <TClientToHostMessage, THostToCl
         maxDirectionalQueuedMessages: Math.max(
           hostMetrics.queuedMessages,
           guestMetrics.queuedMessages
+        ),
+        maxDirectionalPeakQueuedMessages: Math.max(
+          hostMetrics.peakQueuedMessages,
+          guestMetrics.peakQueuedMessages
         ),
         estimatedRoundTripP95LatencyMs: hostMetrics.p95LatencyMs + guestMetrics.p95LatencyMs,
         estimatedRoundTripMaxLatencyMs: hostMetrics.maxLatencyMs + guestMetrics.maxLatencyMs,

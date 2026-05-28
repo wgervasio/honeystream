@@ -14,7 +14,10 @@ export interface SimulatedPeerNetworkProfile {
 }
 
 export type SimulatedPeerTransportFrameOutcome = 'delivered' | 'dropped' | 'sent'
-export type SimulatedPeerTransportDropReason = 'network-or-queue-drop'
+export type SimulatedPeerTransportDropReason =
+  | 'network-drop'
+  | 'peer-disconnected'
+  | 'queue-overflow'
 
 export interface SimulatedPeerTransportFrameSample {
   readonly bytes: number
@@ -40,6 +43,7 @@ export interface SimulatedPeerTransportMetrics {
   readonly p95LatencyMs: number
   readonly maxLatencyMs: number
   readonly queuedMessages: number
+  readonly peakQueuedMessages: number
   readonly recentFrames: readonly SimulatedPeerTransportFrameSample[]
 }
 
@@ -59,5 +63,9 @@ export interface PendingFrame<TMessage> {
   readonly fromPeerId: string
   readonly envelope: PeerTransportEnvelope<TMessage>
 }
+
+export type SimulatedPeerTransportEnqueueResult =
+  | { readonly ok: true }
+  | { readonly ok: false; readonly reason: SimulatedPeerTransportDropReason }
 
 export const byteLength = serializedByteLength

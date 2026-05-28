@@ -1,12 +1,4 @@
-import {
-  PeerTransport,
-  PeerTransportEnvelope,
-  PeerTransportEvent,
-  PeerTransportListener,
-  TransportMessageValidator,
-  TransportUnsubscribe,
-  validatePeerTransportEnvelope
-} from './contracts'
+import { PeerTransport, PeerTransportEnvelope, PeerTransportEvent, PeerTransportListener, TransportMessageValidator, TransportUnsubscribe, validatePeerTransportEnvelope } from './contracts'
 import {
   PeerTransportConnectionState,
   PeerTransportDisconnectReason,
@@ -27,6 +19,7 @@ import {
   Clock,
   PendingFrame,
   SimulatedPeerNetworkProfile,
+  SimulatedPeerTransportEnqueueResult,
   SimulatedPeerTransportMetrics,
   SimulatedPeerTransportOptions
 } from './simulated-peer-transport-types'
@@ -82,6 +75,7 @@ export class SimulatedPeerTransport<TInboundMessage, TOutboundMessage>
   disconnect(reason: PeerTransportDisconnectReason = 'manual'): void {
     if (this.state.status === 'disposed') return
     const wasActive = this.state.status === 'connecting' || this.state.status === 'connected'
+    this.pendingFrames.splice(0, this.pendingFrames.length)
     this.updateState({
       status: 'disconnected',
       changedAtMs: this.now(),
@@ -106,11 +100,13 @@ export class SimulatedPeerTransport<TInboundMessage, TOutboundMessage>
     const peer = this.requirePeer()
     const bytes = byteLength(envelope)
     const sentMessageCount = this.metrics.recordSent(bytes, envelope.seq, envelope.sentAtMs)
-    if (
-      shouldDropFrame(sentMessageCount, this.network, this.random) ||
-      !peer.enqueueFrame(envelope, this.localPeerId, bytes)
-    ) {
-      this.metrics.recordDropped(bytes, envelope.seq, 'network-or-queue-drop', this.now())
+    if (shouldDropFrame(sentMessageCount, this.network, this.random)) {
+      this.metrics.recordDropped(bytes, envelope.seq, 'network-drop', this.now())
+      return
+    }
+    const enqueueResult = peer.enqueueFrame(envelope, this.localPeerId, bytes)
+    if (!enqueueResult.ok) {
+      this.metrics.recordDropped(bytes, envelope.seq, enqueueResult.reason, this.now())
     }
   }
 
@@ -162,13 +158,15 @@ export class SimulatedPeerTransport<TInboundMessage, TOutboundMessage>
     envelope: PeerTransportEnvelope<TInboundMessage>,
     fromPeerId: string,
     bytes: number
-  ): boolean {
-    if (this.state.status !== 'connected') return false
-    if (this.pendingFrames.length >= resolveMaxQueuedFrames(this.network)) return false
+  ): SimulatedPeerTransportEnqueueResult {
+    if (this.state.status !== 'connected') return { ok: false, reason: 'peer-disconnected' }
+    if (this.pendingFrames.length >= resolveMaxQueuedFrames(this.network))
+      return { ok: false, reason: 'queue-overflow' }
     const sentAtMs = this.now()
     const dueAtMs = sentAtMs + resolveFrameLatencyMs(this.network, this.random)
     this.pendingFrames.push({ dueAtMs, sentAtMs, bytes, fromPeerId, envelope })
-    return true
+    this.metrics.recordQueuedDepth(this.pendingFrames.length)
+    return { ok: true }
   }
 
   private deliverFrame(frame: PendingFrame<TInboundMessage>, receivedAtMs: number): void {
@@ -216,6 +214,7 @@ export class SimulatedPeerTransport<TInboundMessage, TOutboundMessage>
 
   private onRemoteDisconnect(reason: PeerTransportDisconnectReason): void {
     if (this.state.status !== 'disposed') {
+      this.pendingFrames.splice(0, this.pendingFrames.length)
       this.updateState({
         status: 'disconnected',
         changedAtMs: this.now(),
