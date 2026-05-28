@@ -1,15 +1,42 @@
-import { SimulatedPeerTransportMetrics } from './simulated-peer-transport-types'
+import {
+  SimulatedPeerTransportDropReason,
+  SimulatedPeerTransportFrameOutcome,
+  SimulatedPeerTransportFrameSample,
+  SimulatedPeerTransportMetrics
+} from './simulated-peer-transport-types'
 
 const MAX_RECORDED_LATENCY_SAMPLES = 64
+const MAX_RECORDED_FRAME_SAMPLES = 64
 
 export interface SimulatedPeerTransportMetricsRecorder {
-  recordSent(bytes: number): number
-  recordDropped(bytes: number): void
-  recordDelivered(bytes: number, latencyMs: number): void
+  recordSent(bytes: number, seq: number, recordedAtMs: number): number
+  recordDropped(
+    bytes: number,
+    seq: number,
+    reason: SimulatedPeerTransportDropReason,
+    recordedAtMs: number
+  ): void
+  recordDelivered(bytes: number, latencyMs: number, seq: number, recordedAtMs: number): void
   snapshot(queuedMessages: number): SimulatedPeerTransportMetrics
 }
 
 const ratio = (part: number, whole: number): number => (whole === 0 ? 0 : part / whole)
+
+const createFrameSample = (
+  outcome: SimulatedPeerTransportFrameOutcome,
+  bytes: number,
+  seq: number,
+  recordedAtMs: number,
+  latencyMs?: number,
+  reason?: SimulatedPeerTransportDropReason
+): SimulatedPeerTransportFrameSample => ({
+  bytes,
+  latencyMs,
+  outcome,
+  reason,
+  recordedAtMs,
+  seq
+})
 
 const percentile = (samples: readonly number[], percentileValue: number): number => {
   if (samples.length === 0) return 0
@@ -32,18 +59,33 @@ export const createSimulatedPeerTransportMetricsRecorder = (): SimulatedPeerTran
   let totalLatencyMs = 0
   let maxLatencyMs = 0
   const latencySamples: number[] = []
+  const recentFrames: SimulatedPeerTransportFrameSample[] = []
+
+  const recordFrameSample = (sample: SimulatedPeerTransportFrameSample): void => {
+    recentFrames.push(sample)
+    if (recentFrames.length > MAX_RECORDED_FRAME_SAMPLES) {
+      recentFrames.shift()
+    }
+  }
 
   return {
-    recordSent(bytes: number): number {
+    recordSent(bytes: number, seq: number, recordedAtMs: number): number {
       sentMessages += 1
       sentBytes += bytes
+      recordFrameSample(createFrameSample('sent', bytes, seq, recordedAtMs))
       return sentMessages
     },
-    recordDropped(bytes: number): void {
+    recordDropped(
+      bytes: number,
+      seq: number,
+      reason: SimulatedPeerTransportDropReason,
+      recordedAtMs: number
+    ): void {
       droppedMessages += 1
       lostBytes += bytes
+      recordFrameSample(createFrameSample('dropped', bytes, seq, recordedAtMs, undefined, reason))
     },
-    recordDelivered(bytes: number, latencyMs: number): void {
+    recordDelivered(bytes: number, latencyMs: number, seq: number, recordedAtMs: number): void {
       const normalizedLatencyMs = Math.max(0, latencyMs)
       deliveredMessages += 1
       deliveredBytes += bytes
@@ -53,6 +95,9 @@ export const createSimulatedPeerTransportMetricsRecorder = (): SimulatedPeerTran
       if (latencySamples.length > MAX_RECORDED_LATENCY_SAMPLES) {
         latencySamples.shift()
       }
+      recordFrameSample(
+        createFrameSample('delivered', bytes, seq, recordedAtMs, normalizedLatencyMs)
+      )
     },
     snapshot(queuedMessages: number): SimulatedPeerTransportMetrics {
       return {
@@ -69,7 +114,8 @@ export const createSimulatedPeerTransportMetricsRecorder = (): SimulatedPeerTran
         p50LatencyMs: percentile(latencySamples, 0.5),
         p95LatencyMs: percentile(latencySamples, 0.95),
         maxLatencyMs,
-        queuedMessages
+        queuedMessages,
+        recentFrames: recentFrames.slice()
       }
     }
   }

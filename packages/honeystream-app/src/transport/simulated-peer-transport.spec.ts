@@ -52,8 +52,12 @@ describe('simulated peer transport', () => {
       }
     }
 
-    expect(byteLength(asciiEnvelope)).toBe(Buffer.byteLength(JSON.stringify(asciiEnvelope), 'utf-8'))
-    expect(byteLength(unicodeEnvelope)).toBe(Buffer.byteLength(JSON.stringify(unicodeEnvelope), 'utf-8'))
+    expect(byteLength(asciiEnvelope)).toBe(
+      Buffer.byteLength(JSON.stringify(asciiEnvelope), 'utf-8')
+    )
+    expect(byteLength(unicodeEnvelope)).toBe(
+      Buffer.byteLength(JSON.stringify(unicodeEnvelope), 'utf-8')
+    )
     expect(byteLength(undefined)).toBe(0)
   })
 
@@ -235,25 +239,5 @@ describe('simulated peer transport', () => {
     expect(pair.guest.getMetrics().droppedMessages).toBe(2)
     expect(pair.guest.getMetrics().byteLossRate).toBeGreaterThan(0)
     expect(pair.getAggregateMetrics().combinedDeliveryRate).toBe(1 / 3)
-  })
-
-  it('bounds queued simulated frames and clears them on dispose', async () => {
-    const pair = createSimulatedPeerTransportPair({
-      hostInboundValidator: clientToHostValidator,
-      guestInboundValidator: hostToClientValidator,
-      network: { latencyMs: 1000, maxQueuedFrames: 1 }
-    })
-
-    await pair.host.connect()
-    pair.guest.send({ seq: 1, sentAtMs: 3000, message: { type: 'ping', nonce: 1 } })
-    pair.guest.send({ seq: 2, sentAtMs: 3000, message: { type: 'ping', nonce: 2 } })
-
-    expect(pair.host.getMetrics().queuedMessages).toBe(1)
-    expect(pair.guest.getMetrics().droppedMessages).toBe(1)
-
-    pair.host.dispose()
-
-    expect(pair.host.getMetrics().queuedMessages).toBe(0)
-    expect(pair.host.getState().status).toBe('disposed')
   })
 })

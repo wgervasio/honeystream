@@ -26,6 +26,8 @@ describe('RuntimeAddMediaPanel URL handling', () => {
       expect(container.querySelector('[data-add-media-error="true"]')).toBeNull()
       expect(container.querySelector('[data-add-media-status="true"]')).not.toBeNull()
       expect(container.textContent).toContain('Source queued')
+      expect(container.textContent).toContain('URL Safety Results')
+      expect(container.textContent).toContain('typed control stream')
     } finally {
       ReactDOM.unmountComponentAtNode(container)
       container.remove()
@@ -125,6 +127,39 @@ describe('RuntimeAddMediaPanel URL handling', () => {
       expect(container.querySelector('[data-add-media-source-preview="invalid"]')).not.toBeNull()
       expect(container.querySelector('[data-source-confidence-state="warning"]')).not.toBeNull()
       expect(container.textContent).toContain('Needs a watch link')
+    } finally {
+      ReactDOM.unmountComponentAtNode(container)
+      container.remove()
+    }
+  })
+
+  it('previews the named streaming-site lanes used by runtime mock tests', () => {
+    const container = document.createElement('div')
+    document.body.appendChild(container)
+
+    try {
+      ReactDOM.render(<RuntimeAddMediaPanel onAddUrl={jest.fn()} />, container)
+
+      const input = container.querySelector('#runtime-add-media-url') as HTMLInputElement
+      const sites = [
+        { provider: 'youtube', source: 'youtube.com/watch?v=honeystream-demo', label: 'YouTube' },
+        { provider: 'animepahe', source: 'animepahe.ru/play/honeystream-demo', label: 'AnimePahe' },
+        { provider: 'cineby', source: 'cineby.app/movie/honeystream-demo', label: 'Cineby' },
+        { provider: 'miruro', source: 'miruro.to/watch/honeystream-demo', label: 'Miruro' }
+      ]
+
+      for (const site of sites) {
+        input.value = site.source
+        Simulate.change(input)
+        expect(container.querySelector('[data-add-media-source-preview="website"]')).not.toBeNull()
+        expect(
+          container.querySelector(`[data-add-media-provider="${site.provider}"]`)
+        ).not.toBeNull()
+        expect(container.textContent).toContain(`${site.label} lane`)
+        expect(container.textContent).toContain(
+          `${site.label} is covered by the low-latency streaming-site mock tests`
+        )
+      }
     } finally {
       ReactDOM.unmountComponentAtNode(container)
       container.remove()
