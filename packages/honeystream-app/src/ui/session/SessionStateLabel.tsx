@@ -1,5 +1,5 @@
 import React, { memo } from 'react'
-import { SessionViewState, SESSION_VIEW_STATE_LABELS } from './types'
+import { SessionViewState, SESSION_VIEW_STATE_LABELS, SESSION_VIEW_STATE_TONES } from './types'
 
 interface SessionStateLabelProps {
   readonly className?: string
@@ -15,6 +15,7 @@ export const SessionStateLabel = memo(function SessionStateLabel(props: SessionS
     <span
       className={props.className}
       data-session-state={props.state}
+      data-session-state-tone={SESSION_VIEW_STATE_TONES[props.state]}
       role="status"
       aria-live="polite"
     >

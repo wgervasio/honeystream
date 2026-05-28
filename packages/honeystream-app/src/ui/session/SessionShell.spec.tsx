@@ -4,7 +4,7 @@ import { SessionParticipantUsernames } from './SessionParticipantUsernames'
 import { SessionShell } from './SessionShell'
 import { SessionStateLabel } from './SessionStateLabel'
 import { SessionSystemErrors } from './SessionSystemErrors'
-import { SESSION_VIEW_STATE_LABELS, SessionViewState } from './types'
+import { SESSION_VIEW_STATE_LABELS, SESSION_VIEW_STATE_TONES, SessionViewState } from './types'
 
 describe('SessionStateLabel', () => {
   const states = Object.keys(SESSION_VIEW_STATE_LABELS) as SessionViewState[]
@@ -14,6 +14,7 @@ describe('SessionStateLabel', () => {
       const html = renderToStaticMarkup(<SessionStateLabel state={state} />)
       expect(html).toContain(SESSION_VIEW_STATE_LABELS[state])
       expect(html).toContain(`data-session-state="${state}"`)
+      expect(html).toContain(`data-session-state-tone="${SESSION_VIEW_STATE_TONES[state]}"`)
       expect(html).toContain('role="status"')
     })
   })

@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import {
   createErrorSystemEvent,
   createParticipantJoinedSystemEvent,
+  createParticipantLeftSystemEvent,
   DEFAULT_EVENT_LOG_CAP
 } from '../../domain/event-log'
 import { SystemEventFeed } from './SystemEventFeed'
@@ -36,5 +37,22 @@ describe('SystemEventFeed', () => {
 
     expect(html).toContain('Error: Connection timed out')
     expect(html).toContain('data-system-event-type="error"')
+    expect(html).toContain('data-system-event-tone="alert"')
+  })
+
+  it('marks join and leave events with readable tones', () => {
+    const html = renderToStaticMarkup(
+      <SystemEventFeed
+        events={[
+          createParticipantJoinedSystemEvent('peer-1', 'Honey Cat', 10),
+          createParticipantLeftSystemEvent('peer-1', 20, 'Honey Cat')
+        ]}
+      />
+    )
+
+    expect(html).toContain('data-system-event-type="participantJoined"')
+    expect(html).toContain('data-system-event-tone="positive"')
+    expect(html).toContain('data-system-event-type="participantLeft"')
+    expect(html).toContain('data-system-event-tone="neutral"')
   })
 })
