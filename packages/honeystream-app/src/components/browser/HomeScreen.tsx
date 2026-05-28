@@ -1,4 +1,4 @@
-import React, { FormEvent, useRef, useState } from 'react'
+import React, { DragEvent, FormEvent, useRef, useState } from 'react'
 import cx from 'classnames'
 
 import { normalizeRuntimeAddMediaHttpUrl } from '../../ui/media-runtime/RuntimeAddMediaSourcePreview'
@@ -98,15 +98,37 @@ const decisionFlowCards = [
 export const HomeScreen = (props: Props) => {
   const urlInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [localDropActive, setLocalDropActive] = useState(false)
   const [urlInputInvalid, setUrlInputInvalid] = useState(false)
   const [selectedSiteLabel, setSelectedSiteLabel] = useState<string | undefined>()
   const selectedSite = siteExamples.find(example => example.label === selectedSiteLabel)
 
-  const requestLocalFile = () => {
-    const file = fileInputRef.current && fileInputRef.current.files && fileInputRef.current.files[0]
+  const queueLocalFile = (file: File | undefined) => {
     if (file) {
       props.onRequestLocalFile(file)
     }
+  }
+
+  const requestLocalFile = () => {
+    const file =
+      fileInputRef.current && fileInputRef.current.files ? fileInputRef.current.files[0] : undefined
+    queueLocalFile(file)
+  }
+
+  const activateLocalDrop = (event: DragEvent<HTMLDivElement>): void => {
+    event.preventDefault()
+    setLocalDropActive(true)
+  }
+
+  const deactivateLocalDrop = (event: DragEvent<HTMLDivElement>): void => {
+    event.preventDefault()
+    setLocalDropActive(false)
+  }
+
+  const dropLocalFile = (event: DragEvent<HTMLDivElement>): void => {
+    event.preventDefault()
+    setLocalDropActive(false)
+    queueLocalFile(event.dataTransfer.files && event.dataTransfer.files[0])
   }
 
   const requestUrl = () => {
@@ -210,10 +232,18 @@ export const HomeScreen = (props: Props) => {
               Websites first, local files when you both have copies, direct URLs when it is clean.
             </p>
           </div>
-          <div className={styles.localFile}>
+          <div
+            className={styles.localFile}
+            data-local-file-drop={localDropActive ? 'active' : 'idle'}
+            onDragEnter={activateLocalDrop}
+            onDragOver={activateLocalDrop}
+            onDragLeave={deactivateLocalDrop}
+            onDrop={dropLocalFile}
+          >
             <span className={styles.cardTag}>Cat-side stash</span>
             <h2>Downloaded video</h2>
             <p>Best for private watch sessions: both people keep the same file locally.</p>
+            <span className={styles.dropCue}>Drop a matching local copy here</span>
             <button
               className={cx(styles.button, styles.primaryButton)}
               type="button"

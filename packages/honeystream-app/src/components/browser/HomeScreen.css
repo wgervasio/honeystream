@@ -327,9 +327,18 @@
   justify-content: center;
   min-height: 13rem;
   padding: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 22px;
   background: rgba(36, 28, 53, 0.16);
   text-align: center;
+  transition: border-color 160ms ease-out, background-color 160ms ease-out, transform 160ms ease-out;
+}
+
+.localFile[data-local-file-drop='active'] {
+  border-color: rgba(255, 216, 138, 0.72);
+  background: linear-gradient(135deg, rgba(158, 215, 255, 0.18), rgba(247, 215, 232, 0.16)),
+    rgba(36, 28, 53, 0.2);
+  transform: translateY(-1px);
 }
 
 .siteChips {
@@ -381,6 +390,16 @@
   padding: 0.75rem 1rem;
   text-transform: uppercase;
   background: var(--app-button-gradient);
+}
+
+.dropCue {
+  margin-top: 0.7rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px dashed rgba(255, 255, 255, 0.24);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 0.86rem;
 }
 
 .fileInput {
