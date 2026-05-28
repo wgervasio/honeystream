@@ -285,7 +285,22 @@
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.16), rgba(36, 28, 53, 0.14));
 }
 
+.launchpad {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 0.8rem;
+  background: radial-gradient(circle at 10% 20%, rgba(158, 215, 255, 0.22), transparent 30%),
+    radial-gradient(circle at 90% 78%, rgba(247, 215, 232, 0.24), transparent 34%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(36, 28, 53, 0.14));
+}
+
 .runwayGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.launchSteps {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.7rem;
@@ -311,6 +326,35 @@
     rgba(255, 255, 255, 0.08);
 }
 
+.launchSteps article {
+  min-width: 0;
+  min-height: 8.4rem;
+  display: grid;
+  align-content: start;
+  gap: 0.45rem;
+  padding: 0.95rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.launchSteps article[data-launch-state='complete'] {
+  border-color: rgba(158, 215, 255, 0.32);
+  background: radial-gradient(circle at 16% 18%, rgba(158, 215, 255, 0.28), transparent 46%),
+    rgba(255, 255, 255, 0.1);
+}
+
+.launchSteps article[data-launch-state='next'] {
+  border-color: rgba(255, 216, 138, 0.38);
+  background: radial-gradient(circle at 84% 18%, rgba(255, 216, 138, 0.28), transparent 46%),
+    rgba(255, 255, 255, 0.1);
+}
+
+.launchSteps article[data-launch-state='waiting'] {
+  opacity: 0.78;
+}
+
 .roomRunway span {
   color: var(--color-honey);
   font-size: 0.76rem;
@@ -330,6 +374,44 @@
 }
 
 .roomRunway p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.88rem;
+  line-height: 1.25rem;
+}
+
+.launchSteps span {
+  width: 2rem;
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--app-button-gradient);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: bold;
+  box-shadow: 0 10px 24px rgba(255, 127, 150, 0.2);
+}
+
+.launchSteps article[data-launch-state='complete'] span {
+  background: linear-gradient(135deg, rgba(158, 215, 255, 0.95), rgba(247, 215, 232, 0.95));
+  color: var(--color-ink);
+}
+
+.launchSteps article[data-launch-state='waiting'] span {
+  background: rgba(255, 255, 255, 0.13);
+  color: rgba(255, 255, 255, 0.72);
+  box-shadow: none;
+}
+
+.launchSteps strong {
+  color: #fff;
+  font-size: 1.04rem;
+  line-height: 1.1;
+}
+
+.launchSteps p {
   margin: 0;
   color: rgba(255, 255, 255, 0.72);
   font-size: 0.88rem;
@@ -374,6 +456,7 @@
 .happyPath span,
 .signalDock article,
 .roomRunway article,
+.launchSteps article,
 .sourceLane,
 .flowCard {
   transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease;
@@ -383,6 +466,7 @@
 .happyPath span:hover,
 .signalDock article:hover,
 .roomRunway article:hover,
+.launchSteps article:hover,
 .sourceLane:hover,
 .flowCard:hover {
   border-color: rgba(255, 255, 255, 0.28);
@@ -1174,6 +1258,7 @@
   .happyPath,
   .signalDock,
   .runwayGrid,
+  .launchSteps,
   .watchDeck {
     grid-template-columns: 1fr;
   }
