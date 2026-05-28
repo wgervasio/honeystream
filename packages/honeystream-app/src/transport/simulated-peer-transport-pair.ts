@@ -56,6 +56,7 @@ export interface AggregateSimulatedPeerTransportMetrics {
 }
 
 const MAX_AGGREGATE_RECENT_FRAMES = 128
+const MAX_PAIR_FLUSH_PASSES = 64
 
 const combineAverageLatency = (
   host: SimulatedPeerTransportMetrics,
@@ -104,7 +105,15 @@ export const createSimulatedPeerTransportPair = <TClientToHostMessage, THostToCl
     host,
     guest,
     flushReady: nowMs => host.flushReady(nowMs) + guest.flushReady(nowMs),
-    flushAll: () => host.flushAll() + guest.flushAll(),
+    flushAll: () => {
+      let delivered = 0
+      for (let pass = 0; pass < MAX_PAIR_FLUSH_PASSES; pass += 1) {
+        const passDelivered = host.flushAll() + guest.flushAll()
+        delivered += passDelivered
+        if (passDelivered === 0) return delivered
+      }
+      throw new Error('SimulatedPeerTransportPair.flushAll exceeded the bounded flush pass cap.')
+    },
     getAggregateMetrics: () => {
       const hostMetrics = host.getMetrics()
       const guestMetrics = guest.getMetrics()

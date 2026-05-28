@@ -37,6 +37,12 @@ const PROFILES = {
     }
   }
 }
+let visitCounter = 0
+
+function withE2EVisitParam(pathname) {
+  visitCounter += 1
+  return `${pathname}${pathname.includes('?') ? '&' : '?'}__e2eVisit=${visitCounter}`
+}
 
 async function setProfile(profileName = 'default', page = this.global.page) {
   const global = this.global
@@ -88,7 +94,10 @@ class HoneystreamEnvironment extends PlaywrightEnvironment {
     const honeystream = {
       screenshot: (filename, page = this.global.page) => screenshot(filename, page),
       visit: async (pathname, opts) =>
-        this.global.page.goto(`${APP_BASE_URL}/#${pathname}`, opts || APP_READY_OPTIONS),
+        this.global.page.goto(
+          `${APP_BASE_URL}/#${withE2EVisitParam(pathname)}`,
+          opts || APP_READY_OPTIONS
+        ),
       useProfile: useProfile.bind(this),
       setProfile: setProfile.bind(this)
     }

@@ -5,6 +5,7 @@ const SESSION_E2E_TIMEOUT_MS = 45e3
 const APP_PORT = process.env.HONEYSTREAM_E2E_APP_PORT || process.env.PORT || '8080'
 const APP_BASE_URL = process.env.HONEYSTREAM_E2E_APP_URL || `http://localhost:${APP_PORT}`
 const APP_READY_OPTIONS = { waitUntil: 'domcontentloaded' as const }
+let runtimeVisitCounter = 0
 
 jest.setTimeout(SESSION_E2E_TIMEOUT_MS)
 
@@ -35,7 +36,12 @@ async function waitForRuntimeText(page: Page, text: string): Promise<void> {
 }
 
 async function visitRuntimePath(page: Page, path: string): Promise<void> {
-  await page.goto(`${APP_BASE_URL}/#${path}`, APP_READY_OPTIONS)
+  runtimeVisitCounter += 1
+  const separator = path.indexOf('?') === -1 ? '?' : '&'
+  await page.goto(
+    `${APP_BASE_URL}/#${path}${separator}__e2eVisit=${runtimeVisitCounter}`,
+    APP_READY_OPTIONS
+  )
 }
 
 describe('session', () => {
