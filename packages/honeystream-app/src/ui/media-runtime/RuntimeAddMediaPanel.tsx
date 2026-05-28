@@ -5,6 +5,7 @@ import {
   isRuntimeAddMediaShorthandHttpUrl,
   normalizeRuntimeAddMediaHttpUrl
 } from './RuntimeAddMediaSourcePreview'
+import { RuntimeAddLocalFileDrop } from './RuntimeAddLocalFileDrop'
 
 export interface RuntimeAddMediaSuggestion {
   readonly detail: string
@@ -90,6 +91,17 @@ export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
         ? 'Source queued with https:// added. Copy the invite or press play when your buddy lands.'
         : 'Source queued. Copy the invite or press play when your buddy lands.'
     )
+  }
+
+  const queueLocalFile = (file: File): void => {
+    if (!props.onAddLocalFile) {
+      return
+    }
+
+    props.onAddLocalFile(file)
+    setErrorMessage(undefined)
+    setSelectedSuggestionId(undefined)
+    setStatusMessage(`${file.name} queued locally. Rabbit-side should pick their copy too.`)
   }
 
   return (
@@ -183,26 +195,10 @@ export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
         </p>
       ) : null}
       {props.onAddLocalFile ? (
-        <label htmlFor="runtime-add-media-file">
-          {props.addFileLabel || 'Add local file'}
-          <input
-            id="runtime-add-media-file"
-            type="file"
-            accept="video/*,audio/*"
-            onChange={event => {
-              const file = event.currentTarget.files && event.currentTarget.files[0]
-              if (file && props.onAddLocalFile) {
-                props.onAddLocalFile(file)
-                setErrorMessage(undefined)
-                setSelectedSuggestionId(undefined)
-                setStatusMessage(
-                  `${file.name} queued locally. Rabbit-side should pick their copy too.`
-                )
-              }
-              event.currentTarget.value = ''
-            }}
-          />
-        </label>
+        <RuntimeAddLocalFileDrop
+          addFileLabel={props.addFileLabel}
+          onAddLocalFile={queueLocalFile}
+        />
       ) : null}
     </section>
   )

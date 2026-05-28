@@ -32,6 +32,33 @@ describe('RuntimeAddMediaPanel', () => {
     )
 
     expect(html).toContain('Add local file')
+    expect(html).toContain('Drop the matching local copy here')
+  })
+
+  it('queues local files from the cozy drop lane input', () => {
+    const onAddLocalFile = jest.fn()
+    const container = document.createElement('div')
+    document.body.appendChild(container)
+
+    try {
+      ReactDOM.render(
+        <RuntimeAddMediaPanel onAddUrl={jest.fn()} onAddLocalFile={onAddLocalFile} />,
+        container
+      )
+
+      const file = new File(['honeystream'], 'watch-night.mp4', { type: 'video/mp4' })
+      const input = container.querySelector('#runtime-add-media-file') as HTMLInputElement
+      Object.defineProperty(input, 'files', { value: [file], configurable: true })
+
+      Simulate.change(input)
+
+      expect(onAddLocalFile).toHaveBeenCalledWith(file)
+      expect(container.textContent).toContain('watch-night.mp4 queued locally')
+      expect(container.textContent).toContain('Rabbit-side should pick their copy')
+    } finally {
+      ReactDOM.unmountComponentAtNode(container)
+      container.remove()
+    }
   })
 
   it('renders custom happy-path title and placeholder copy', () => {

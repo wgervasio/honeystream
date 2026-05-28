@@ -12,6 +12,7 @@ jest.mock('./HomeScreen.css', () => ({
   decisionFlow: 'decisionFlow',
   directLink: 'directLink',
   divider: 'divider',
+  dropCue: 'dropCue',
   fileInput: 'fileInput',
   hero: 'hero',
   helpLine: 'helpLine',
@@ -66,6 +67,7 @@ describe('browser/HomeScreen', () => {
     expect(html).toContain('You both downloaded it')
     expect(html).toContain('URL is already media')
     expect(html).toContain('Choose the easiest source for tonight')
+    expect(html).toContain('Drop a matching local copy here')
     expect(html).toContain('URL Safety Results')
     expect(html).toContain('paste the exact watch page')
     expect(html).toContain('test it once in both browsers')
@@ -133,6 +135,30 @@ describe('browser/HomeScreen', () => {
       expect(onRequestUrl).toHaveBeenCalledWith('https://youtube.com/watch?v=honeystream-demo')
       expect(input.getAttribute('aria-invalid')).toBeNull()
       expect(container.textContent).not.toContain('Paste a site like youtube.com/watch')
+    } finally {
+      ReactDOM.unmountComponentAtNode(container)
+      container.remove()
+    }
+  })
+
+  it('requests local files from the cozy file lane input', () => {
+    const onRequestLocalFile = jest.fn()
+    const container = document.createElement('div')
+    document.body.appendChild(container)
+
+    try {
+      ReactDOM.render(
+        <HomeScreen onRequestUrl={() => undefined} onRequestLocalFile={onRequestLocalFile} />,
+        container
+      )
+
+      const file = new File(['honeystream'], 'cat-rabbit-night.mp4', { type: 'video/mp4' })
+      const input = container.querySelector('input[type="file"]') as HTMLInputElement
+      Object.defineProperty(input, 'files', { value: [file], configurable: true })
+
+      Simulate.change(input)
+
+      expect(onRequestLocalFile).toHaveBeenCalledWith(file)
     } finally {
       ReactDOM.unmountComponentAtNode(container)
       container.remove()

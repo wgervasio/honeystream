@@ -1607,6 +1607,21 @@
   border: 1px dashed rgba(255, 255, 255, 0.26);
   border-radius: 20px;
   background: rgba(36, 28, 53, 0.18);
+  transition: border-color 160ms ease-out, background-color 160ms ease-out, transform 160ms ease-out;
+}
+
+.addMediaPanel > label[data-local-file-drop='active'] {
+  border-color: rgba(255, 216, 138, 0.72);
+  background: linear-gradient(135deg, rgba(158, 215, 255, 0.18), rgba(247, 215, 232, 0.16)),
+    rgba(36, 28, 53, 0.2);
+  transform: translateY(-1px);
+}
+
+.addMediaPanel [data-local-file-drop-copy='true'] {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.86rem;
+  font-weight: normal;
+  line-height: 1.25rem;
 }
 
 .queuePanel {
