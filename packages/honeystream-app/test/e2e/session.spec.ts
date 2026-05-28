@@ -2,6 +2,8 @@ import { Page, BrowserContext } from 'playwright-core'
 
 const RUNTIME_SHELL_SELECTOR = '[data-runtime-session-shell="true"]'
 const SESSION_E2E_TIMEOUT_MS = 45e3
+const APP_PORT = process.env.HONEYSTREAM_E2E_APP_PORT || process.env.PORT || '8080'
+const APP_BASE_URL = process.env.HONEYSTREAM_E2E_APP_URL || `http://localhost:${APP_PORT}`
 
 jest.setTimeout(SESSION_E2E_TIMEOUT_MS)
 
@@ -29,6 +31,10 @@ async function waitForRuntimeText(page: Page, text: string): Promise<void> {
       ),
     text
   )
+}
+
+async function visitRuntimePath(page: Page, path: string): Promise<void> {
+  await page.goto(`${APP_BASE_URL}/#${path}`)
 }
 
 describe('session', () => {
@@ -70,7 +76,7 @@ describe('session', () => {
 
       try {
         await ms.setProfile('default', guestPage)
-        await guestPage.goto(`http://localhost:8080/#/join/deadbeafdeadbeafdeadbeafdeadbeaf`)
+        await visitRuntimePath(guestPage, '/join/deadbeafdeadbeafdeadbeafdeadbeaf')
         await guestPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
         await waitForRuntimeText(guestPage, 'Network error')
       } finally {
@@ -103,7 +109,7 @@ describe('session', () => {
         const hostPage = page
         await hostPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
 
-        await clientPage.goto(`http://localhost:8080/#/join/${hostId}`)
+        await visitRuntimePath(clientPage, `/join/${hostId}`)
         await clientPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
         await waitForRuntimeText(clientPage, 'Invite secret is required')
 
@@ -118,8 +124,9 @@ describe('session', () => {
       await hostPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
       const inviteSecret = await getRuntimeInviteSecret(hostPage)
 
-      await clientPage.goto(
-        `http://localhost:8080/#/join/${hostId}?secret=${encodeURIComponent(inviteSecret)}`
+      await visitRuntimePath(
+        clientPage,
+        `/join/${hostId}?secret=${encodeURIComponent(inviteSecret)}`
       )
       await clientPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
       await waitForRuntimeText(hostPage, 'Synced')

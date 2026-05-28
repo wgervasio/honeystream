@@ -56,13 +56,15 @@ describe('RuntimeAddMediaPanel', () => {
             id: 'youtube',
             label: 'YouTube',
             detail: 'Video page',
-            url: 'https://www.youtube.com/watch?v=honeystream-demo'
+            placeholder: 'Paste the exact YouTube watch page...',
+            guidance: 'Paste the real video page you both can open.'
           },
           {
             id: 'direct',
             label: 'Direct MP4',
             detail: 'Clean media URL',
-            url: 'https://example.com/watch-night.mp4'
+            placeholder: 'Paste a direct MP4, WebM, audio, or stream URL...',
+            guidance: 'Use a clean media URL when the source already points at playable media.'
           }
         ]}
       />
@@ -75,7 +77,7 @@ describe('RuntimeAddMediaPanel', () => {
     expect(html).toContain('Direct MP4')
   })
 
-  it('loads suggestion URLs into the focused input with guidance', () => {
+  it('selects source lanes without queueing fake URLs', () => {
     const container = document.createElement('div')
     document.body.appendChild(container)
 
@@ -88,7 +90,8 @@ describe('RuntimeAddMediaPanel', () => {
               id: 'youtube',
               label: 'YouTube',
               detail: 'Video page',
-              url: 'https://www.youtube.com/watch?v=honeystream-demo'
+              placeholder: 'Paste the exact YouTube watch page...',
+              guidance: 'Paste the real video page you both can open.'
             }
           ]}
         />,
@@ -101,10 +104,14 @@ describe('RuntimeAddMediaPanel', () => {
       Simulate.click(suggestion)
 
       const input = container.querySelector('#runtime-add-media-url') as HTMLInputElement
-      expect(input.value).toBe('https://www.youtube.com/watch?v=honeystream-demo')
+      expect(input.value).toBe('')
+      expect(input.placeholder).toBe('Paste the exact YouTube watch page...')
       expect(document.activeElement).toBe(input)
       expect(container.querySelector('[data-add-media-status="true"]')).not.toBeNull()
-      expect(container.textContent).toContain('YouTube source loaded')
+      expect(suggestion.getAttribute('aria-pressed')).toBe('true')
+      expect(suggestion.getAttribute('data-source-suggestion-state')).toBe('selected')
+      expect(container.textContent).toContain('YouTube lane selected')
+      expect(container.textContent).toContain('Paste the real video page')
     } finally {
       ReactDOM.unmountComponentAtNode(container)
       container.remove()
