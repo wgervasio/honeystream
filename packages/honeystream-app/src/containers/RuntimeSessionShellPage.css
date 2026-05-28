@@ -207,10 +207,110 @@
   white-space: nowrap;
 }
 
+.roomMoodStrip {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.55rem;
+  padding: 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(36, 28, 53, 0.18);
+}
+
+.roomMoodStrip span {
+  min-height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 0.75rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.11);
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.86rem;
+}
+
 .roomGrid {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 1rem;
+}
+
+.commandBar {
+  position: sticky;
+  top: 0.75rem;
+  z-index: 3;
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) auto;
+  gap: 0.75rem;
+  align-items: stretch;
+  background: linear-gradient(90deg, rgba(158, 215, 255, 0.17), rgba(247, 215, 232, 0.17)),
+    rgba(255, 255, 255, 0.12);
+}
+
+.commandBarRole,
+.commandBarNext {
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: 0.25rem;
+  padding: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 20px;
+  background: rgba(36, 28, 53, 0.18);
+}
+
+.commandBarRole span,
+.commandBarNext span {
+  color: var(--color-honey);
+  font-size: 0.76rem;
+  font-weight: bold;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.commandBarRole strong,
+.commandBarNext strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #fff;
+  font-size: 1.05rem;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.commandBarRole p,
+.commandBarNext p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.86rem;
+  line-height: 1.25rem;
+}
+
+.commandBarChips {
+  min-width: 13rem;
+  display: grid;
+  gap: 0.45rem;
+  align-content: center;
+}
+
+.commandBarChips span {
+  min-height: 2.15rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.75rem;
+  border-radius: 999px;
+  background: var(--app-button-gradient);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+  box-shadow: 0 12px 28px rgba(255, 127, 150, 0.2);
 }
 
 .signalDock {
@@ -501,6 +601,10 @@
 .watchDeck article,
 .happyPath span,
 .signalDock article,
+.roomMoodStrip span,
+.commandBar,
+.commandBarRole,
+.commandBarNext,
 .roomRunway article,
 .launchSteps article,
 .conciergeStrip,
@@ -512,6 +616,10 @@
 .watchDeck article:hover,
 .happyPath span:hover,
 .signalDock article:hover,
+.roomMoodStrip span:hover,
+.commandBar:hover,
+.commandBarRole:hover,
+.commandBarNext:hover,
 .roomRunway article:hover,
 .launchSteps article:hover,
 .conciergeStrip:hover,
@@ -1405,6 +1513,7 @@
 
   .happyPath,
   .signalDock,
+  .commandBar,
   .runwayGrid,
   .launchSteps,
   .conciergeStrip,
@@ -1424,6 +1533,15 @@
 
   .settingsPanel {
     grid-template-columns: 1fr;
+  }
+
+  .commandBar {
+    position: relative;
+    top: auto;
+  }
+
+  .commandBarChips {
+    min-width: 0;
   }
 }
 
@@ -1456,6 +1574,15 @@
   }
 
   .stageNowBar strong {
+    white-space: normal;
+  }
+
+  .roomMoodStrip {
+    border-radius: 24px;
+  }
+
+  .commandBarRole strong,
+  .commandBarNext strong {
     white-space: normal;
   }
 }

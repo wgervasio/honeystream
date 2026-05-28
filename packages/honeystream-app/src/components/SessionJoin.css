@@ -251,6 +251,63 @@
   text-transform: uppercase;
 }
 
+.readyStack {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.readyStack article {
+  min-height: 6.4rem;
+  display: grid;
+  align-content: start;
+  gap: 0.35rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 18px;
+  background: radial-gradient(circle at 16% 18%, rgba(158, 215, 255, 0.24), transparent 46%),
+    rgba(255, 255, 255, 0.09);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.readyStack article:nth-child(2) {
+  background: radial-gradient(circle at 82% 18%, rgba(247, 215, 232, 0.28), transparent 46%),
+    rgba(255, 255, 255, 0.09);
+}
+
+.readyStack article:nth-child(3) {
+  background: radial-gradient(circle at 50% 100%, rgba(255, 216, 138, 0.24), transparent 46%),
+    rgba(255, 255, 255, 0.09);
+}
+
+.readyStack span {
+  width: 2rem;
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--app-button-gradient);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: bold;
+  box-shadow: 0 10px 24px rgba(255, 127, 150, 0.2);
+}
+
+.readyStack strong {
+  color: #fff;
+  font-size: 0.96rem;
+  line-height: 1.1;
+}
+
+.readyStack p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.84rem;
+  line-height: 1.22rem;
+}
+
 .label {
   margin-bottom: 0.75rem;
 }
@@ -312,6 +369,10 @@
   }
 
   .linkBreakdown {
+    grid-template-columns: 1fr;
+  }
+
+  .readyStack {
     grid-template-columns: 1fr;
   }
 }

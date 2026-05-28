@@ -28,6 +28,23 @@ export class SessionJoin extends Component<IProps> {
         detail: 'Keeps the rabbit-side seat private'
       }
     ]
+    const readyStack = [
+      {
+        step: '01',
+        title: 'Paste the whole invite',
+        detail: 'Full links carry the room code and secret together.'
+      },
+      {
+        step: '02',
+        title: 'Land in one seat',
+        detail: 'Rabbit-side gets the guest spot without public room clutter.'
+      },
+      {
+        step: '03',
+        title: 'Watch the same source',
+        detail: 'The room opens to the host-led website, direct link, or local-file flow.'
+      }
+    ]
 
     return (
       <LayoutMain className={styles.container}>
@@ -75,6 +92,15 @@ export class SessionJoin extends Component<IProps> {
                 <strong>{item.label}</strong>
                 {item.detail}
               </span>
+            ))}
+          </div>
+          <div id="join_ready_stack" className={styles.readyStack} aria-label="Join ready stack">
+            {readyStack.map(card => (
+              <article key={card.step}>
+                <span>{card.step}</span>
+                <strong>{card.title}</strong>
+                <p>{card.detail}</p>
+              </article>
             ))}
           </div>
           <form

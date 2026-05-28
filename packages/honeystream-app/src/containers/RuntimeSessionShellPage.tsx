@@ -233,6 +233,8 @@ const ROOM_READY_SIGNALS = [
     detail: 'Errors and room events stay bounded, readable, and calm.'
   }
 ] as const
+const COMMAND_BAR_CHIPS = ['Paste source', 'Copy invite', 'Play together'] as const
+const ROOM_MOOD_CHIPS = ['Cat-side cue', 'Rabbit-side hop', 'Website-ready queue'] as const
 
 type LaunchStepState = 'complete' | 'next' | 'waiting'
 
@@ -755,6 +757,32 @@ const RuntimeSessionRouteSurface = ({
     return (
       <div className={styles.roomGrid}>
         <section
+          id="runtime_cozy_command_bar"
+          className={`${styles.card} ${styles.commandBar}`}
+          aria-label="Cozy command bar"
+        >
+          <div className={styles.commandBarRole}>
+            <span>{roleLabel}</span>
+            <strong>{currentMedia ? currentMedia.title : 'Pick a first stream'}</strong>
+            <p>
+              {guest
+                ? `${guest.username} is in the rabbit-side seat.`
+                : 'Copy the invite when the source is ready.'}
+            </p>
+          </div>
+          <div className={styles.commandBarNext}>
+            <span>Best next tap</span>
+            <strong>{nextLaunchStep.title}</strong>
+            <p>{nextLaunchStep.detail}</p>
+          </div>
+          <div className={styles.commandBarChips} aria-label="Fast room cues">
+            {COMMAND_BAR_CHIPS.map(chip => (
+              <span key={chip}>{chip}</span>
+            ))}
+          </div>
+        </section>
+
+        <section
           id="runtime_room_runway"
           className={`${styles.card} ${styles.roomRunway}`}
           aria-label="Tonight dashboard"
@@ -1014,6 +1042,11 @@ const RuntimeSessionRouteSurface = ({
               <strong>Sync</strong>
               Host-led controls
             </span>
+          </div>
+          <div id="runtime_room_mood" className={styles.roomMoodStrip} aria-label="Room mood">
+            {ROOM_MOOD_CHIPS.map(chip => (
+              <span key={chip}>{chip}</span>
+            ))}
           </div>
         </header>
 
