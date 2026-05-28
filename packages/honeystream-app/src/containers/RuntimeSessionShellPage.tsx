@@ -15,10 +15,7 @@ import {
   PlaybackEngineApplyResult,
   PlaybackEngineDesiredState
 } from '../playback/engine/playbackEngineContract'
-import {
-  createPlaybackRuntime,
-  PlaybackRuntimeAdapterContext
-} from '../playback/runtime'
+import { createPlaybackRuntime, PlaybackRuntimeAdapterContext } from '../playback/runtime'
 import { MediaElementPlaybackAdapter } from '../playback/adapters/media-element'
 import { createPopupAdapterFactory } from '../playback/adapters/popup'
 import { LocalFileMetadata, localFileToMediaUrl } from '../playback/adapters/local-file'
@@ -184,28 +181,32 @@ const ADD_MEDIA_SUGGESTIONS = [
     label: 'YouTube',
     detail: 'Video page',
     placeholder: 'Paste the exact YouTube watch page...',
-    guidance: 'Paste the real video page you both can open.'
+    guidance:
+      'YouTube is covered by the low-latency streaming-site mock tests; paste the real video page you both can open.'
   },
   {
     id: 'animepahe',
     label: 'AnimePahe',
     detail: 'Anime watch page',
     placeholder: 'Paste the exact AnimePahe play page...',
-    guidance: 'Use the real episode page after both sides can access it.'
+    guidance:
+      'AnimePahe is covered by the low-latency streaming-site mock tests; use the real episode page after both sides can access it.'
   },
   {
     id: 'cineby',
     label: 'Cineby',
     detail: 'Movie page',
     placeholder: 'Paste the exact Cineby watch page...',
-    guidance: 'Paste the real movie or show page so both browsers land together.'
+    guidance:
+      'Cineby is covered by the low-latency streaming-site mock tests; paste the real movie or show page so both browsers land together.'
   },
   {
     id: 'miruro',
     label: 'Miruro',
     detail: 'Anime watch page',
     placeholder: 'Paste the exact Miruro watch page...',
-    guidance: 'Use the real watch page you want rabbit-side to load.'
+    guidance:
+      'Miruro is covered by the low-latency streaming-site mock tests; use the real watch page you want rabbit-side to load.'
   },
   {
     id: 'direct',
@@ -976,12 +977,12 @@ const RuntimeSessionRouteSurface = ({
           className={`${styles.card} ${styles.addMediaPanel}`}
           addFileLabel="Queue local file"
           addUrlLabel="Queue cozy link"
-          description="Paste a supported website like YouTube, AnimePahe, Cineby, or Miruro; use a direct media URL; or choose a local file when both sides have it."
-          invalidUrlLabel="Use a full http:// or https:// watch link."
+          description="Paste a supported website like YouTube, AnimePahe, Cineby, or Miruro; use a direct media URL; or choose a local file when both sides have it. Shorthand links like youtube.com/watch get https:// added automatically."
+          invalidUrlLabel="Paste a website link like youtube.com/watch or a full http:// or https:// URL."
           missingUrlLabel="Paste a website, direct media link, or pick one of the quick source chips."
           onAddUrl={boundary.addMediaUrl}
           onAddLocalFile={viewModel.snapshot.role === 'host' ? boundary.addLocalFile : undefined}
-          placeholder="Paste YouTube, AnimePahe, Cineby, Miruro, or direct media..."
+          placeholder="youtube.com/watch, AnimePahe, Cineby, Miruro, or direct media..."
           sourceSuggestions={ADD_MEDIA_SUGGESTIONS}
           title="Pick the next cozy stream"
         />

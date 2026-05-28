@@ -66,6 +66,7 @@ describe('browser/HomeScreen', () => {
     expect(html).toContain('URL is already media')
     expect(html).toContain('Choose the easiest source for tonight')
     expect(html).toContain('paste the exact watch page')
+    expect(html).toContain('You can skip https:// on common sites')
     expect(html).toContain('Known-site chips')
     expect(html).toContain('Zero media bytes shared')
     expect(html).toContain('Tiny host-led commands')
@@ -99,6 +100,33 @@ describe('browser/HomeScreen', () => {
       expect(youtubeChip!.getAttribute('aria-pressed')).toBe('true')
       expect(container.textContent).toContain('YouTube lane selected')
       expect(container.textContent).toContain('Paste the real video page')
+    } finally {
+      ReactDOM.unmountComponentAtNode(container)
+      container.remove()
+    }
+  })
+
+  it('normalizes shorthand watch links before requesting them', () => {
+    const onRequestUrl = jest.fn()
+    const container = document.createElement('div')
+    document.body.appendChild(container)
+
+    try {
+      ReactDOM.render(
+        <HomeScreen onRequestUrl={onRequestUrl} onRequestLocalFile={() => undefined} />,
+        container
+      )
+
+      const input = container.querySelector('#urlinput') as HTMLInputElement
+      input.value = 'youtube.com/watch?v=honeystream-demo'
+      Simulate.change(input)
+
+      const form = container.querySelector('form') as HTMLFormElement
+      Simulate.submit(form)
+
+      expect(onRequestUrl).toHaveBeenCalledWith('https://youtube.com/watch?v=honeystream-demo')
+      expect(input.getAttribute('aria-invalid')).toBeNull()
+      expect(container.textContent).not.toContain('Paste a site like youtube.com/watch')
     } finally {
       ReactDOM.unmountComponentAtNode(container)
       container.remove()

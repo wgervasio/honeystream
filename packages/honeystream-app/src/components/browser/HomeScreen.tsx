@@ -1,6 +1,7 @@
 import React, { FormEvent, useRef, useState } from 'react'
 import cx from 'classnames'
 
+import { normalizeRuntimeAddMediaHttpUrl } from '../../ui/media-runtime/RuntimeAddMediaSourcePreview'
 import styles from './HomeScreen.css'
 
 interface Props {
@@ -80,15 +81,6 @@ const decisionFlowCards = [
   }
 ]
 
-const isHttpUrl = (value: string): boolean => {
-  try {
-    const parsedUrl = new URL(value)
-    return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:'
-  } catch {
-    return false
-  }
-}
-
 export const HomeScreen = (props: Props) => {
   const urlInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -116,13 +108,14 @@ export const HomeScreen = (props: Props) => {
       return
     }
 
-    if (!isHttpUrl(url)) {
+    const normalizedUrl = normalizeRuntimeAddMediaHttpUrl(url)
+    if (!normalizedUrl) {
       setUrlInputInvalid(true)
       urlInput.focus()
       return
     }
 
-    props.onRequestUrl(url)
+    props.onRequestUrl(normalizedUrl)
   }
 
   const submitUrl = (event: FormEvent<HTMLFormElement>) => {
@@ -256,7 +249,8 @@ export const HomeScreen = (props: Props) => {
           </div>
           <div id="media_source_helper" className={styles.sourceHelper}>
             <span>
-              Best UX: paste the exact watch page, test it once, then press play from host-side.
+              Best UX: paste the exact watch page, test it once, then press play from host-side. You
+              can skip https:// on common sites.
             </span>
           </div>
           <form className={styles.inputContainer} onSubmit={submitUrl} noValidate>
@@ -268,7 +262,9 @@ export const HomeScreen = (props: Props) => {
                 [styles.invalidInput]: urlInputInvalid
               })}
               placeholder={
-                selectedSite ? selectedSite.placeholder : 'https://example.com/watch-or-video.mp4'
+                selectedSite
+                  ? selectedSite.placeholder
+                  : 'youtube.com/watch or https://example.com/video.mp4'
               }
               autoComplete="url"
               aria-invalid={urlInputInvalid || undefined}
@@ -280,7 +276,9 @@ export const HomeScreen = (props: Props) => {
             </button>
           </form>
           {urlInputInvalid && (
-            <p className={styles.helpLine}>Paste a full http:// or https:// watch link first.</p>
+            <p className={styles.helpLine}>
+              Paste a site like youtube.com/watch or a full http:// or https:// watch link first.
+            </p>
           )}
           {!urlInputInvalid && selectedSite && (
             <p className={styles.helpLine}>{selectedSite.helper}</p>
