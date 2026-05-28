@@ -27,6 +27,8 @@ describe('RuntimeAddMediaPanel URL handling', () => {
       expect(container.querySelector('[data-add-media-status="true"]')).not.toBeNull()
       expect(container.textContent).toContain('Source queued')
       expect(container.textContent).toContain('URL Safety Results')
+      expect(container.textContent).toContain('YouTube, AnimePahe, Cineby, Miruro')
+      expect(container.textContent).toContain('any site you can test together')
       expect(container.textContent).toContain('typed control stream')
     } finally {
       ReactDOM.unmountComponentAtNode(container)
