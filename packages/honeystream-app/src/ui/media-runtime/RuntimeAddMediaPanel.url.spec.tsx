@@ -104,6 +104,7 @@ describe('RuntimeAddMediaPanel URL handling', () => {
       expect(container.textContent).toContain(
         'YouTube is covered by the low-latency streaming-site mock tests'
       )
+      expect(container.textContent).toContain('peak queues capped')
 
       input.value = 'https://youtube.com.evil/watch?v=honeystream-demo'
       Simulate.change(input)

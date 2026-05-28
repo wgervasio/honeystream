@@ -53,7 +53,7 @@ describe('simulated peer transport observability', () => {
     expect(pair.guest.getMetrics().recentFrames).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ outcome: 'sent', seq: 1, recordedAtMs: 1000 }),
-        expect.objectContaining({ outcome: 'dropped', seq: 2, reason: 'network-or-queue-drop' })
+        expect.objectContaining({ outcome: 'dropped', seq: 2, reason: 'network-drop' })
       ])
     )
     expect(pair.host.getMetrics().recentFrames).toEqual([
@@ -109,6 +109,7 @@ describe('simulated peer transport observability', () => {
     pair.guest.send({ seq: 2, sentAtMs: 3000, message: { type: 'ping', nonce: 2 } })
 
     expect(pair.host.getMetrics().queuedMessages).toBe(1)
+    expect(pair.host.getMetrics().peakQueuedMessages).toBe(1)
     expect(pair.guest.getMetrics().droppedMessages).toBe(1)
 
     pair.host.dispose()

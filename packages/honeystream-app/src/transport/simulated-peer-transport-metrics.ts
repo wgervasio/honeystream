@@ -10,6 +10,7 @@ const MAX_RECORDED_FRAME_SAMPLES = 64
 
 export interface SimulatedPeerTransportMetricsRecorder {
   recordSent(bytes: number, seq: number, recordedAtMs: number): number
+  recordQueuedDepth(queuedMessages: number): void
   recordDropped(
     bytes: number,
     seq: number,
@@ -58,6 +59,7 @@ export const createSimulatedPeerTransportMetricsRecorder = (): SimulatedPeerTran
   let lostBytes = 0
   let totalLatencyMs = 0
   let maxLatencyMs = 0
+  let peakQueuedMessages = 0
   const latencySamples: number[] = []
   const recentFrames: SimulatedPeerTransportFrameSample[] = []
 
@@ -74,6 +76,9 @@ export const createSimulatedPeerTransportMetricsRecorder = (): SimulatedPeerTran
       sentBytes += bytes
       recordFrameSample(createFrameSample('sent', bytes, seq, recordedAtMs))
       return sentMessages
+    },
+    recordQueuedDepth(queuedMessages: number): void {
+      peakQueuedMessages = Math.max(peakQueuedMessages, queuedMessages)
     },
     recordDropped(
       bytes: number,
@@ -115,6 +120,7 @@ export const createSimulatedPeerTransportMetricsRecorder = (): SimulatedPeerTran
         p95LatencyMs: percentile(latencySamples, 0.95),
         maxLatencyMs,
         queuedMessages,
+        peakQueuedMessages: Math.max(peakQueuedMessages, queuedMessages),
         recentFrames: recentFrames.slice()
       }
     }
