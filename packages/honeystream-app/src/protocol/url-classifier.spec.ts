@@ -18,6 +18,7 @@ describe('protocol URL classifier', () => {
       'https://animepahe.si/anime/example',
       'https://animepahe.com/watch/example',
       'https://cineby.app/movie/example',
+      'https://watch.cineby.app/movie/example',
       'https://www.cineby.ru/tv/example',
       'https://www.miruro.tv/watch/example',
       'https://miruro.to/watch/example',
@@ -34,9 +35,16 @@ describe('protocol URL classifier', () => {
     expect(classifyMediaProvider('https://youtu.be/abc123')).toBe('youtube')
     expect(classifyMediaProvider('https://www.youtube-nocookie.com/embed/abc123')).toBe('youtube')
     expect(classifyMediaProvider('https://animepahe.si/anime/example')).toBe('animepahe')
+    expect(classifyMediaProvider('https://animepahe.com/watch/example')).toBe('animepahe')
+    expect(classifyMediaProvider('https://video.cineby.app/movie/example')).toBe('cineby')
     expect(classifyMediaProvider('https://www.cineby.ru/tv/example')).toBe('cineby')
+    expect(classifyMediaProvider('https://miruro.tv/watch/example')).toBe('miruro')
     expect(classifyMediaProvider('https://miruro.to/watch/example')).toBe('miruro')
+    expect(classifyMediaProvider('https://youtube.com.evil/watch?v=abc123')).toBe('unknown')
+    expect(classifyMediaProvider('https://animepahe.evil/play/example')).toBe('unknown')
     expect(classifyMediaProvider('https://animepahe.example.com/play/example')).toBe('unknown')
+    expect(classifyMediaProvider('https://cineby.example/movie/example')).toBe('unknown')
+    expect(classifyMediaProvider('https://miruro.example/watch/example')).toBe('unknown')
     expect(classifyMediaProvider('not-a-url')).toBe('unknown')
   })
 })

@@ -197,6 +197,7 @@ describe('runtime/session streaming-site simulation', () => {
       expect(metrics.combinedQueuedMessages).toBe(0)
       expect(metrics.combinedAverageMessageBytes).toBeLessThan(1200)
       expect(metrics.combinedP95LatencyMs).toBeLessThanOrEqual(16)
+      expect(metrics.combinedMaxLatencyMs).toBeLessThanOrEqual(16)
       expect(evaluateSimulatedPeerTransportBudget(metrics)).toEqual({
         ok: true,
         failures: []

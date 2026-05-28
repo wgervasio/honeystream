@@ -72,5 +72,56 @@ describe('simulated peer transport performance budget', () => {
         })
       ])
     )
+
+    const degradedTailBudget = evaluateSimulatedPeerTransportBudget(pair.getAggregateMetrics(), {
+      ...STREAMING_SITE_TRANSPORT_BUDGET,
+      maxP95LatencyMs: 4
+    })
+    expect(degradedTailBudget.ok).toBe(false)
+    expect(degradedTailBudget.failures).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          metric: 'combinedP95LatencyMs'
+        })
+      ])
+    )
+  })
+
+  it('keeps a bursty host and guest mock connection inside the streaming budget', async () => {
+    let nowMs = 9000
+    const pair = createSimulatedPeerTransportPair({
+      hostInboundValidator: clientToHostValidator,
+      guestInboundValidator: hostToClientValidator,
+      now: () => nowMs,
+      random: () => 0.5,
+      network: { latencyMs: 10, jitterMs: 2, maxQueuedFrames: 128 }
+    })
+
+    await pair.host.connect()
+
+    for (let nonce = 1; nonce <= 24; nonce += 1) {
+      pair.guest.send({ seq: nonce, sentAtMs: nowMs, message: { type: 'ping', nonce } })
+      pair.host.send({
+        seq: nonce + 100,
+        sentAtMs: nowMs,
+        message: { type: 'pong', nonce }
+      })
+      nowMs += 1
+    }
+
+    pair.flushAll()
+
+    const metrics = pair.getAggregateMetrics()
+    expect(metrics.combinedSentMessages).toBe(48)
+    expect(metrics.combinedDeliveredMessages).toBe(48)
+    expect(metrics.combinedLostBytes).toBe(0)
+    expect(metrics.combinedQueuedMessages).toBe(0)
+    expect(metrics.combinedAverageMessageBytes).toBeLessThan(96)
+    expect(metrics.combinedAverageLatencyMs).toBeLessThanOrEqual(12)
+    expect(metrics.combinedP95LatencyMs).toBeLessThanOrEqual(12)
+    expect(evaluateSimulatedPeerTransportBudget(metrics)).toEqual({
+      ok: true,
+      failures: []
+    })
   })
 })

@@ -112,6 +112,13 @@ describe('RuntimeAddMediaPanel', () => {
       expect(container.querySelector('[data-source-confidence-state="ready"]')).not.toBeNull()
       expect(container.textContent).toContain('Buddy can test it')
 
+      input.value = 'https://youtube.com.evil/watch?v=honeystream-demo'
+      Simulate.change(input)
+      expect(container.querySelector('[data-add-media-source-preview="website"]')).not.toBeNull()
+      expect(container.querySelector('[data-add-media-provider="unknown"]')).not.toBeNull()
+      expect(container.textContent).toContain('Website lane')
+      expect(container.textContent).not.toContain('YouTube page detected')
+
       input.value = 'https://cdn.example.com/watch-night.mp4'
       Simulate.change(input)
       expect(
