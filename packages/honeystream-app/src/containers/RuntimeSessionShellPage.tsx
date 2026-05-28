@@ -814,6 +814,33 @@ const getNextLaunchStep = (steps: readonly LaunchStep[]): LaunchStep =>
   steps[steps.length - 1] ||
   COMPLETE_LAUNCH_STEP
 
+const getLaunchStepShortLabel = (step: LaunchStep): string => {
+  switch (step.id) {
+    case 'source':
+      return 'Source'
+    case 'invite':
+      return 'Invite'
+    case 'buddy':
+      return 'Buddy'
+    case 'play':
+      return 'Play'
+    default:
+      return step.title
+  }
+}
+
+const getLaunchStepStateLabel = (state: LaunchStepState): string => {
+  switch (state) {
+    case 'complete':
+      return 'done'
+    case 'next':
+      return 'next'
+    case 'waiting':
+    default:
+      return 'soon'
+  }
+}
+
 const hasLocalFileRegistry = (
   playback: SessionRuntimePlaybackEngine
 ): playback is SessionRuntimePlaybackEngine & LocalFilePlaybackRegistry =>
@@ -880,6 +907,21 @@ const RuntimeSessionRouteSurface = ({
                 {link.label}
               </a>
             ))}
+          </div>
+          <div
+            id="runtime_readiness_meter"
+            className={styles.readinessMeter}
+            aria-label="Room readiness meter"
+          >
+            <span>{`${readyStepCount}/${launchSteps.length} ready`}</span>
+            <div>
+              {launchSteps.map(step => (
+                <span key={step.id} data-readiness-state={step.state}>
+                  <b>{getLaunchStepShortLabel(step)}</b>
+                  <small>{getLaunchStepStateLabel(step.state)}</small>
+                </span>
+              ))}
+            </div>
           </div>
         </section>
 

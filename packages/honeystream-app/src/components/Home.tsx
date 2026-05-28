@@ -367,10 +367,23 @@ class Home extends Component<IProps, IState> {
                     </button>
                   ))}
                 </div>
-                <div className={styles.launcherActions}>
-                  <span>Queue source</span>
-                  <span>Copy invite</span>
-                  <span>Start together</span>
+                <div
+                  id="home_first_action_path"
+                  className={styles.launcherActions}
+                  aria-label="First action path"
+                >
+                  <span>
+                    <strong>01</strong>
+                    Queue source
+                  </span>
+                  <span>
+                    <strong>02</strong>
+                    Copy invite
+                  </span>
+                  <span>
+                    <strong>03</strong>
+                    Start together
+                  </span>
                 </div>
                 <div id="home_watch_nudge" className={styles.watchNudge}>
                   <strong>Best path</strong>
