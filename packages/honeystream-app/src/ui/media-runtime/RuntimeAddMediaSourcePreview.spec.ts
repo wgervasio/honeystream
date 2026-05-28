@@ -46,7 +46,8 @@ describe('RuntimeAddMediaSourcePreview', () => {
           expect.stringContaining(
             `${providerCase.label} is covered by the low-latency streaming-site mock tests`
           ),
-          expect.stringContaining('not the video bytes')
+          expect.stringContaining('not the video bytes'),
+          expect.stringContaining('mock round trip budgeted under 32ms')
         ])
       )
     }

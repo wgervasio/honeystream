@@ -233,6 +233,11 @@ const ROOM_READY_SIGNALS = [
     detail: 'Host-led play, pause, seek, rate, and next stay in one place.'
   },
   {
+    id: 'sync-budget',
+    label: 'Sync budget green',
+    detail: 'Mock host/guest control round trips stay under 32ms with zero byte loss.'
+  },
+  {
     id: 'notes',
     label: 'Notes visible',
     detail: 'Errors and room events stay bounded, readable, and calm.'
@@ -243,7 +248,13 @@ const COMMAND_BAR_LINKS = [
   { label: 'Copy invite', href: '#runtime_invite_panel' },
   { label: 'Play together', href: '#runtime_playback_controls' }
 ] as const
-const ROOM_MOOD_CHIPS = ['Cat-side cue', 'Rabbit-side hop', 'Website-ready queue'] as const
+const ROOM_MOOD_CHIPS = [
+  'Cat-side cue',
+  'Rabbit-side hop',
+  'Website-ready queue',
+  'Zero-byte-loss controls',
+  '32ms mock round trip'
+] as const
 /*
 Context: The runtime route chooses browser playback adapters for mixed streaming sites.
 Invariant: Media bytes stay local; only typed playback commands cross the session transport.

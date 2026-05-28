@@ -71,5 +71,8 @@ describe('simulated peer transport asymmetric profiles', () => {
     expect(metrics.host.averageLatencyMs).toBe(30)
     expect(metrics.guest.averageLatencyMs).toBe(5)
     expect(metrics.combinedP95LatencyMs).toBe(30)
+    expect(metrics.maxDirectionalAverageLatencyMs).toBe(30)
+    expect(metrics.directionalAverageLatencySkewMs).toBe(25)
+    expect(metrics.estimatedRoundTripP95LatencyMs).toBe(35)
   })
 })

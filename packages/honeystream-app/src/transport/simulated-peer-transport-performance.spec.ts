@@ -55,7 +55,12 @@ describe('simulated peer transport performance budget', () => {
     nowMs += 16
     pair.flushReady()
 
-    expect(evaluateSimulatedPeerTransportBudget(pair.getAggregateMetrics())).toEqual({
+    const metrics = pair.getAggregateMetrics()
+    expect(metrics.maxDirectionalByteLossRate).toBe(0)
+    expect(metrics.maxDirectionalAverageLatencyMs).toBe(16)
+    expect(metrics.directionalAverageLatencySkewMs).toBe(0)
+    expect(metrics.estimatedRoundTripP95LatencyMs).toBe(32)
+    expect(evaluateSimulatedPeerTransportBudget(metrics)).toEqual({
       ok: true,
       failures: []
     })
@@ -158,6 +163,11 @@ describe('simulated peer transport performance budget', () => {
     expect(metrics.combinedDeliveredMessages).toBe(48)
     expect(metrics.combinedLostBytes).toBe(0)
     expect(metrics.combinedQueuedMessages).toBe(0)
+    expect(metrics.maxDirectionalByteLossRate).toBe(0)
+    expect(metrics.maxDirectionalAverageLatencyMs).toBeLessThanOrEqual(12)
+    expect(metrics.directionalAverageLatencySkewMs).toBe(0)
+    expect(metrics.maxDirectionalQueuedMessages).toBe(0)
+    expect(metrics.estimatedRoundTripP95LatencyMs).toBeLessThanOrEqual(24)
     expect(metrics.combinedAverageMessageBytes).toBeLessThan(96)
     expect(metrics.combinedAverageLatencyMs).toBeLessThanOrEqual(12)
     expect(metrics.combinedP95LatencyMs).toBeLessThanOrEqual(12)
@@ -165,5 +175,42 @@ describe('simulated peer transport performance budget', () => {
       ok: true,
       failures: []
     })
+  })
+
+  it('fails the streaming budget when one mock direction makes control round trips too slow', async () => {
+    let nowMs = 10000
+    const pair = createSimulatedPeerTransportPair({
+      hostInboundValidator: clientToHostValidator,
+      guestInboundValidator: hostToClientValidator,
+      now: () => nowMs,
+      hostNetwork: { latencyMs: 30 },
+      guestNetwork: { latencyMs: 5 }
+    })
+
+    await pair.host.connect()
+    pair.guest.send({ seq: 1, sentAtMs: nowMs, message: { type: 'ping', nonce: 1 } })
+    pair.host.send({ seq: 2, sentAtMs: nowMs, message: { type: 'pong', nonce: 1 } })
+    pair.flushAll()
+
+    const metrics = pair.getAggregateMetrics()
+    expect(metrics.maxDirectionalAverageLatencyMs).toBe(30)
+    expect(metrics.directionalAverageLatencySkewMs).toBe(25)
+    expect(metrics.estimatedRoundTripP95LatencyMs).toBe(35)
+
+    const budgetResult = evaluateSimulatedPeerTransportBudget(metrics)
+    expect(budgetResult.ok).toBe(false)
+    expect(budgetResult.failures).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          metric: 'maxDirectionalAverageLatencyMs'
+        }),
+        expect.objectContaining({
+          metric: 'directionalAverageLatencySkewMs'
+        }),
+        expect.objectContaining({
+          metric: 'estimatedRoundTripP95LatencyMs'
+        })
+      ])
+    )
   })
 })
