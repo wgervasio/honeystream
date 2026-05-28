@@ -80,6 +80,20 @@ const decisionFlowCards = [
     detail: 'Drop the direct MP4, WebM, audio, or stream link.'
   }
 ]
+const cozyChecklistItems = [
+  {
+    label: 'Exact page',
+    detail: 'Paste the real watch URL, not search results or a homepage.'
+  },
+  {
+    label: 'Both can open',
+    detail: 'Check sign-in, region, and blockers before pressing play.'
+  },
+  {
+    label: 'Host controls',
+    detail: 'Cat-side starts once rabbit-side lands and the source is ready.'
+  }
+]
 
 export const HomeScreen = (props: Props) => {
   const urlInputRef = useRef<HTMLInputElement>(null)
@@ -195,6 +209,18 @@ export const HomeScreen = (props: Props) => {
             <p>
               Websites first, local files when you both have copies, direct URLs when it is clean.
             </p>
+          </div>
+          <div
+            id="media_ready_checklist"
+            className={styles.readyChecklist}
+            aria-label="Cozy source checklist"
+          >
+            {cozyChecklistItems.map(item => (
+              <article key={item.label}>
+                <strong>{item.label}</strong>
+                <span>{item.detail}</span>
+              </article>
+            ))}
           </div>
           <div className={styles.localFile}>
             <span className={styles.cardTag}>Cat-side stash</span>

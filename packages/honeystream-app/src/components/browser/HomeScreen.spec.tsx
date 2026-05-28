@@ -27,6 +27,7 @@ jest.mock('./HomeScreen.css', () => ({
   pairPreview: 'pairPreview',
   primaryButton: 'primaryButton',
   rabbitCard: 'rabbitCard',
+  readyChecklist: 'readyChecklist',
   roomDock: 'roomDock',
   siteChip: 'siteChip',
   siteChips: 'siteChips',
@@ -65,6 +66,10 @@ describe('browser/HomeScreen', () => {
     expect(html).toContain('You both downloaded it')
     expect(html).toContain('URL is already media')
     expect(html).toContain('Choose the easiest source for tonight')
+    expect(html).toContain('Exact page')
+    expect(html).toContain('Both can open')
+    expect(html).toContain('Host controls')
+    expect(html).toContain('Cat-side starts once rabbit-side lands')
     expect(html).toContain('URL Safety Results')
     expect(html).toContain('paste the exact watch page')
     expect(html).toContain('test it once in both browsers')

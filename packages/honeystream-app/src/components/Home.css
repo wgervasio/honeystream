@@ -630,6 +630,57 @@
   line-height: 1.5rem;
 }
 
+.pairHandoff {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-top: 1.05rem;
+}
+
+.pairHandoff article {
+  min-height: 7.8rem;
+  display: grid;
+  align-content: start;
+  gap: 0.35rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 18px;
+  background: radial-gradient(circle at 18% 18%, rgba(158, 215, 255, 0.24), transparent 46%),
+    rgba(255, 255, 255, 0.09);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.pairHandoff article[data-handoff-card='rabbit'] {
+  background: radial-gradient(circle at 82% 18%, rgba(247, 215, 232, 0.28), transparent 46%),
+    rgba(255, 255, 255, 0.09);
+}
+
+.pairHandoff article[data-handoff-card='together'] {
+  background: radial-gradient(circle at 50% 100%, rgba(255, 216, 138, 0.22), transparent 46%),
+    rgba(255, 255, 255, 0.09);
+}
+
+.pairHandoff span {
+  color: var(--color-honey);
+  font-size: 0.72rem;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.pairHandoff strong {
+  color: #fff;
+  font-size: 0.94rem;
+  line-height: 1.08;
+}
+
+.pairHandoff p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.8rem;
+  line-height: 1.16rem;
+}
+
 .roomPreview {
   margin-top: 1.25rem;
   padding: 0.85rem;
@@ -1333,6 +1384,7 @@
   .launcherCards article,
   .moodChips span,
   .flowCard,
+  .pairHandoff article,
   .cozyPact article,
   .step {
     transition: transform 160ms ease-out, background-color 160ms ease-out;
@@ -1343,6 +1395,7 @@
   .launcherCards article:hover,
   .moodChips span:hover,
   .flowCard:hover,
+  .pairHandoff article:hover,
   .cozyPact article:hover,
   .step:hover {
     transform: translateY(-3px);
@@ -1475,6 +1528,10 @@
   }
 
   .comfortGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .pairHandoff {
     grid-template-columns: 1fr;
   }
 

@@ -217,6 +217,26 @@ class Home extends Component<IProps, IState> {
         detail: 'Cat-side controls keep play, pause, seek, and speed changes obvious.'
       }
     ]
+    const pairHandoffCards = [
+      {
+        id: 'cat',
+        label: 'Cat-side',
+        title: 'Chooses the source',
+        detail: 'Paste the exact page, direct link, or local-file plan.'
+      },
+      {
+        id: 'rabbit',
+        label: 'Rabbit-side',
+        title: 'Lands from invite',
+        detail: 'One private hop opens the right seat with the secret included.'
+      },
+      {
+        id: 'together',
+        label: 'Together',
+        title: 'Watches in sync',
+        detail: 'Host-led controls keep the night moving without guesswork.'
+      }
+    ]
     const launcherCards = [
       {
         id: 'source',
@@ -428,6 +448,19 @@ class Home extends Component<IProps, IState> {
                 A soft command center for deciding what to watch, adding it fast, and staying in
                 sync without digging through menus.
               </p>
+              <div
+                id="home_pair_handoff"
+                className={styles.pairHandoff}
+                aria-label="Cat and rabbit handoff"
+              >
+                {pairHandoffCards.map(card => (
+                  <article key={card.id} data-handoff-card={card.id}>
+                    <span>{card.label}</span>
+                    <strong>{card.title}</strong>
+                    <p>{card.detail}</p>
+                  </article>
+                ))}
+              </div>
               <div id="home_room_preview" className={styles.roomPreview} aria-label="Room preview">
                 <div className={styles.previewBar}>
                   <span>Now setting up</span>

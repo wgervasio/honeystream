@@ -137,6 +137,15 @@ button:disabled {
   cursor: auto;
 }
 
+button:focus,
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  box-shadow: var(--app-focus-ring);
+}
+
 ::-moz-focus-inner {
   border: 0;
 }

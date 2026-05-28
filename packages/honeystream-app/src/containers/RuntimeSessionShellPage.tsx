@@ -272,9 +272,31 @@ const ROOM_MOOD_CHIPS = [
   'Cat-side cue',
   'Rabbit-side hop',
   'Website-ready queue',
-  'Zero-byte-loss controls',
+  'Zero media bytes shared',
   '32ms mock round trip',
   'Jitter-guarded frames'
+] as const
+const ROOM_PULSE_CARDS = [
+  {
+    id: 'next',
+    label: 'Next tap'
+  },
+  {
+    id: 'privacy',
+    label: 'Private pair',
+    value: 'Cat + rabbit only',
+    detail: 'Room code plus secret protects the single guest seat.'
+  },
+  {
+    id: 'media',
+    label: 'Media stays local',
+    value: '0 video bytes shared',
+    detail: 'Honeystream syncs controls while each browser loads its own website or file.'
+  },
+  {
+    id: 'stage',
+    label: 'Stage lane'
+  }
 ] as const
 /*
 Context: The runtime route chooses browser playback adapters for mixed streaming sites.
@@ -293,6 +315,7 @@ const STREAMING_SITE_PROVIDER_ADAPTER_PREFERENCES = [
 ] as const
 
 type LaunchStepState = 'complete' | 'next' | 'waiting'
+type RoomPulseCard = typeof ROOM_PULSE_CARDS[number]
 
 interface LaunchStep {
   readonly detail: string
@@ -795,6 +818,40 @@ const getNextLaunchStep = (steps: readonly LaunchStep[]): LaunchStep =>
   steps[steps.length - 1] ||
   COMPLETE_LAUNCH_STEP
 
+const getRoomPulseValue = (
+  card: RoomPulseCard,
+  nextLaunchStep: LaunchStep,
+  stageKindLabel: string
+): string => {
+  switch (card.id) {
+    case 'next':
+      return nextLaunchStep.title
+    case 'stage':
+      return stageKindLabel
+    case 'privacy':
+    case 'media':
+      return card.value
+  }
+}
+
+const getRoomPulseDetail = (
+  card: RoomPulseCard,
+  nextLaunchStep: LaunchStep,
+  currentMedia: MediaSnapshot | undefined
+): string => {
+  switch (card.id) {
+    case 'next':
+      return nextLaunchStep.detail
+    case 'stage':
+      return currentMedia
+        ? `${currentMedia.title} is ready without sharing video bytes.`
+        : 'Paste a website, direct link, or local file to wake the stage.'
+    case 'privacy':
+    case 'media':
+      return card.detail
+  }
+}
+
 const hasLocalFileRegistry = (
   playback: SessionRuntimePlaybackEngine
 ): playback is SessionRuntimePlaybackEngine & LocalFilePlaybackRegistry =>
@@ -862,6 +919,29 @@ const RuntimeSessionRouteSurface = ({
               </a>
             ))}
           </div>
+        </section>
+
+        <section
+          id="runtime_room_pulse"
+          className={`${styles.card} ${styles.roomPulse}`}
+          aria-label="Room pulse"
+        >
+          <div className={styles.roomPulseHeader}>
+            <p className={styles.kicker}>Room pulse</p>
+            <span>Next action + privacy + media</span>
+          </div>
+          {ROOM_PULSE_CARDS.map(card => {
+            const value = getRoomPulseValue(card, nextLaunchStep, stageKindLabel)
+            const detail = getRoomPulseDetail(card, nextLaunchStep, currentMedia)
+
+            return (
+              <article key={card.id} data-room-pulse={card.id}>
+                <span>{card.label}</span>
+                <strong>{value}</strong>
+                <p>{detail}</p>
+              </article>
+            )
+          })}
         </section>
 
         <section
@@ -1147,7 +1227,7 @@ const RuntimeSessionRouteSurface = ({
               Host-led controls
             </span>
             <span>
-              <strong>Loss</strong>0 control bytes
+              <strong>Media</strong>0 video bytes
             </span>
             <span>
               <strong>Latency</strong>

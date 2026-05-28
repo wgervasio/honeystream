@@ -249,6 +249,88 @@
     rgba(255, 255, 255, 0.12);
 }
 
+.roomPulse {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.16), rgba(36, 28, 53, 0.14));
+}
+
+.roomPulseHeader {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.roomPulse .roomPulseHeader .kicker {
+  margin: 0;
+}
+
+.roomPulse .roomPulseHeader span {
+  flex: 0 0 auto;
+  padding: 0.45rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.78rem;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.roomPulse article {
+  min-width: 0;
+  min-height: 7rem;
+  display: grid;
+  align-content: center;
+  gap: 0.35rem;
+  padding: 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 20px;
+  background: radial-gradient(circle at 18% 18%, rgba(158, 215, 255, 0.24), transparent 44%),
+    rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.roomPulse article[data-room-pulse='privacy'],
+.roomPulse article[data-room-pulse='stage'] {
+  background: radial-gradient(circle at 82% 18%, rgba(247, 215, 232, 0.27), transparent 44%),
+    rgba(255, 255, 255, 0.08);
+}
+
+.roomPulse article[data-room-pulse='media'] {
+  background: radial-gradient(circle at 50% 100%, rgba(255, 216, 138, 0.23), transparent 46%),
+    rgba(255, 255, 255, 0.08);
+}
+
+.roomPulse span {
+  color: var(--color-honey);
+  font-size: 0.76rem;
+  font-weight: bold;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.roomPulse strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #fff;
+  font-size: 1.05rem;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.roomPulse p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.88rem;
+  line-height: 1.25rem;
+}
+
 .commandBarRole,
 .commandBarNext {
   min-width: 0;
@@ -627,6 +709,7 @@
 .commandBar,
 .commandBarRole,
 .commandBarNext,
+.roomPulse article,
 .roomRunway article,
 .launchSteps article,
 .conciergeStrip,
@@ -642,6 +725,7 @@
 .commandBar:hover,
 .commandBarRole:hover,
 .commandBarNext:hover,
+.roomPulse article:hover,
 .roomRunway article:hover,
 .launchSteps article:hover,
 .conciergeStrip:hover,
@@ -1640,6 +1724,7 @@
   .happyPath,
   .signalDock,
   .commandBar,
+  .roomPulse,
   .runwayGrid,
   .launchSteps,
   .conciergeStrip,
@@ -1700,6 +1785,11 @@
     flex-direction: column;
   }
 
+  .roomPulseHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
   .stageNowBar strong {
     white-space: normal;
   }
@@ -1709,7 +1799,8 @@
   }
 
   .commandBarRole strong,
-  .commandBarNext strong {
+  .commandBarNext strong,
+  .roomPulse strong {
     white-space: normal;
   }
 }
