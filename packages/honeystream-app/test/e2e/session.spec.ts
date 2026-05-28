@@ -60,8 +60,31 @@ describe('session', () => {
       await waitForRuntimeText(page, 'Controls obvious')
       await waitForRuntimeText(page, 'Website lane')
       await waitForRuntimeText(page, 'syncs only the tiny control stream')
+      await waitForRuntimeText(page, 'Low-latency control lane')
+      await waitForRuntimeText(page, 'Zero video-byte sharing')
       await waitForRuntimeText(page, 'Pick the next cozy stream')
       await ms.screenshot('session_host')
+    })
+
+    it('should preview supported streaming-site source suggestions', async () => {
+      await ms.visit(`/join/${hostId}`)
+      await page.waitForSelector(RUNTIME_SHELL_SELECTOR)
+
+      const suggestions = [
+        { id: 'youtube', label: 'YouTube' },
+        { id: 'animepahe', label: 'AnimePahe' },
+        { id: 'cineby', label: 'Cineby' },
+        { id: 'miruro', label: 'Miruro' }
+      ]
+
+      for (const suggestion of suggestions) {
+        await page.click(`[data-source-suggestion="${suggestion.id}"]`)
+        await waitForRuntimeText(page, `${suggestion.label} lane`)
+        await waitForRuntimeText(
+          page,
+          `${suggestion.label} is covered by the low-latency streaming-site mock tests`
+        )
+      }
     })
 
     it('should not join invalid session', async () => {

@@ -2,6 +2,7 @@ import { classifyMediaProvider, classifyMediaUrl, MediaProvider } from '../../pr
 
 export type RuntimeAddMediaSourcePreviewKind = 'direct-media' | 'invalid' | 'website'
 export type RuntimeAddMediaConfidenceState = 'idle' | 'ready' | 'warning'
+type KnownRuntimeMediaProvider = Exclude<MediaProvider, 'unknown'>
 
 export interface RuntimeAddMediaSourcePreview {
   readonly detail: string
@@ -32,6 +33,39 @@ export const isRuntimeAddMediaHttpUrl = (value: string): boolean => {
   } catch {
     return false
   }
+}
+
+const isKnownProvider = (
+  provider: MediaProvider | undefined
+): provider is KnownRuntimeMediaProvider => typeof provider === 'string' && provider !== 'unknown'
+
+const getBuddyCheckDetail = (
+  sourcePreview: RuntimeAddMediaSourcePreview | undefined
+): string => {
+  if (!sourcePreview || sourcePreview.kind === 'invalid') {
+    return 'Queue things both browsers can open, or use local files on both sides.'
+  }
+
+  if (sourcePreview.kind === 'website' && isKnownProvider(sourcePreview.provider)) {
+    const providerLabel = PROVIDER_LABELS[sourcePreview.provider]
+    return `${providerLabel} is covered by the low-latency streaming-site mock tests; still use pages both browsers can open.`
+  }
+
+  if (sourcePreview.kind === 'website') {
+    return 'This website can work when both browsers can open it; test the exact page before movie time.'
+  }
+
+  return 'Direct media works best when both browsers can fetch the same clean URL.'
+}
+
+const getSyncBudgetDetail = (
+  sourcePreview: RuntimeAddMediaSourcePreview | undefined
+): string => {
+  if (!sourcePreview || sourcePreview.kind === 'invalid') {
+    return 'Honeystream keeps video local and syncs only the tiny control stream.'
+  }
+
+  return 'Low-latency sync sends compact playback commands, not the video bytes.'
 }
 
 export const createRuntimeAddMediaSourcePreview = (
@@ -102,15 +136,13 @@ export const createRuntimeAddMediaConfidenceItems = (
     {
       id: 'buddy-check',
       label: isReady ? 'Buddy can test it' : 'Buddy check',
-      detail: 'Queue things both browsers can open, or use local files on both sides.',
+      detail: getBuddyCheckDetail(sourcePreview),
       state: isReady ? 'ready' : 'idle'
     },
     {
       id: 'sync-budget',
       label: isReady ? 'Low-latency sync path' : 'Sync check',
-      detail: isReady
-        ? 'Honeystream shares compact playback commands, not the video bytes.'
-        : 'Honeystream keeps video local and syncs only the tiny control stream.',
+      detail: getSyncBudgetDetail(sourcePreview),
       state: isReady ? 'ready' : 'idle'
     }
   ]

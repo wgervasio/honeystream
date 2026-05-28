@@ -207,4 +207,105 @@ describe('runtime/session streaming-site simulation', () => {
       guestRuntime.dispose()
     }
   })
+
+  it('keeps supported streaming-site control bursts under an asymmetric latency budget', async () => {
+    let nowMs = 30000
+    const pair = createSimulatedPeerTransportPair<
+      ClientToHostWireEnvelope,
+      HostToClientWireEnvelope
+    >({
+      hostInboundValidator: createWireEnvelopeValidator('client-to-host'),
+      guestInboundValidator: createWireEnvelopeValidator('host-to-client'),
+      now: () => nowMs,
+      random: () => 0.5,
+      hostNetwork: {
+        latencyMs: 8,
+        jitterMs: 2,
+        maxQueuedFrames: 128
+      },
+      guestNetwork: {
+        latencyMs: 12,
+        jitterMs: 4,
+        maxQueuedFrames: 128
+      }
+    })
+    const hostPlayback = new CapturingPlaybackEngine()
+    const guestPlayback = new CapturingPlaybackEngine()
+    const hostRuntime = createSessionRuntime({
+      transport: pair.host,
+      playback: hostPlayback,
+      now: () => nowMs
+    })
+    const guestRuntime = createSessionRuntime({
+      transport: pair.guest,
+      playback: guestPlayback,
+      now: () => nowMs
+    })
+
+    const flushTransportAndRuntime = async (): Promise<void> => {
+      for (let pass = 0; pass < 4; pass += 1) {
+        pair.flushAll()
+        await settleRuntime()
+      }
+      nowMs += 16
+    }
+
+    try {
+      await hostRuntime.startHostSession({
+        roomId: 'asymmetric-sites-room',
+        hostUsername: 'Cat Host',
+        inviteSecret: 'invite-secret'
+      })
+      await guestRuntime.startGuestSession({
+        roomId: 'asymmetric-sites-room',
+        username: 'Rabbit Guest',
+        inviteSecret: 'invite-secret'
+      })
+      await flushTransportAndRuntime()
+
+      const websiteMedia = streamingSiteMedia.filter(media => media.kind === 'website')
+      for (let index = 0; index < websiteMedia.length; index += 1) {
+        const media = websiteMedia[index]
+        await guestRuntime.dispatchGuestCommand({ type: 'addMedia', media })
+        await flushTransportAndRuntime()
+
+        if (index > 0) {
+          await hostRuntime.dispatchHostCommand({ type: 'next' })
+          await flushTransportAndRuntime()
+        }
+
+        await hostRuntime.dispatchHostCommand({
+          type: 'playPause',
+          playing: index % 2 === 0
+        })
+        await hostRuntime.dispatchHostCommand({
+          type: 'seek',
+          positionMs: Math.min(24000 + index * 1000, media.durationMs || 24000)
+        })
+        await flushTransportAndRuntime()
+      }
+
+      const finalMedia = websiteMedia[websiteMedia.length - 1]
+      const hostSession = hostRuntime.getSnapshot().session
+      const guestSession = guestRuntime.getSnapshot().session
+      expect(hostSession && hostSession.currentMediaId).toBe(finalMedia.mediaId)
+      expect(guestSession && guestSession.currentMediaId).toBe(finalMedia.mediaId)
+
+      const metrics = pair.getAggregateMetrics()
+      expect(metrics.combinedDroppedMessages).toBe(0)
+      expect(metrics.combinedLostBytes).toBe(0)
+      expect(metrics.combinedQueuedMessages).toBe(0)
+      expect(metrics.combinedDeliveryRate).toBe(1)
+      expect(metrics.combinedByteLossRate).toBe(0)
+      expect(metrics.combinedAverageLatencyMs).toBeLessThanOrEqual(12)
+      expect(metrics.combinedP95LatencyMs).toBeLessThanOrEqual(12)
+      expect(evaluateSimulatedPeerTransportBudget(metrics)).toEqual({
+        ok: true,
+        failures: []
+      })
+    } finally {
+      hostRuntime.dispose()
+      guestRuntime.dispose()
+    }
+  })
 })

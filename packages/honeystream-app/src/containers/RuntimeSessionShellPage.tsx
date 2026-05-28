@@ -17,8 +17,7 @@ import {
 } from '../playback/engine/playbackEngineContract'
 import {
   createPlaybackRuntime,
-  PlaybackRuntimeAdapterContext,
-  PlaybackRuntimeAdapterKind
+  PlaybackRuntimeAdapterContext
 } from '../playback/runtime'
 import { MediaElementPlaybackAdapter } from '../playback/adapters/media-element'
 import { createPopupAdapterFactory } from '../playback/adapters/popup'
@@ -239,6 +238,21 @@ const COMMAND_BAR_LINKS = [
   { label: 'Play together', href: '#runtime_playback_controls' }
 ] as const
 const ROOM_MOOD_CHIPS = ['Cat-side cue', 'Rabbit-side hop', 'Website-ready queue'] as const
+/*
+Context: The runtime route chooses browser playback adapters for mixed streaming sites.
+Invariant: Media bytes stay local; only typed playback commands cross the session transport.
+Options considered: Popup all websites, embed all websites, or reuse provider-aware selection.
+Decision: Reuse PlaybackRuntime selection and only prefer popups for providers likely to block embeds.
+Performance impact: YouTube/direct media keep the lower-friction embed path while popup-heavy sites avoid failed embeds.
+Memory/lifecycle ownership: PlaybackRuntime owns adapter creation and disposal for each media change.
+Failure mode: Unsupported pages surface through existing adapter/runtime errors without hidden fallbacks.
+Validation: Covered by adapterSelection, RuntimeSessionShellPage, streaming-site runtime, and e2e tests.
+*/
+const STREAMING_SITE_PROVIDER_ADAPTER_PREFERENCES = [
+  { provider: 'animepahe' as const, adapterKind: 'popup' as const },
+  { provider: 'cineby' as const, adapterKind: 'popup' as const },
+  { provider: 'miruro' as const, adapterKind: 'popup' as const }
+] as const
 
 type LaunchStepState = 'complete' | 'next' | 'waiting'
 
@@ -360,11 +374,6 @@ const createBrowserPlaybackRuntime = (
   getMediaElement: () => HTMLMediaElement | null
 ): SessionRuntimePlaybackEngine => {
   const popupFactory = createPopupAdapterFactory()
-  const selectAdapterKind = (media: { readonly source: string }): PlaybackRuntimeAdapterKind => {
-    if (media.source === 'local-file') return 'local-file'
-    if (media.source === 'website') return 'popup'
-    return 'embed-extension'
-  }
 
   return createPlaybackRuntime({
     adapters: {
@@ -372,7 +381,9 @@ const createBrowserPlaybackRuntime = (
       createEmbedExtensionAdapter: context => createMediaElementAdapter(context, getMediaElement),
       createPopupAdapter: context => popupFactory.createAdapter(context.media)
     },
-    selectAdapterKind
+    selection: {
+      providerAdapterPreferences: STREAMING_SITE_PROVIDER_ADAPTER_PREFERENCES
+    }
   })
 }
 
@@ -946,7 +957,8 @@ const RuntimeSessionRouteSurface = ({
           <div className={styles.stageComfortRail} aria-label="Stage promises">
             <span>Host-led playback</span>
             <span>Guest follows clearly</span>
-            <span>Queue stays tiny</span>
+            <span>Zero video-byte sharing</span>
+            <span>Low-latency control lane</span>
           </div>
           <p>
             Queue YouTube, AnimePahe, Cineby, Miruro, direct media, or a local file from the panel
@@ -1021,8 +1033,8 @@ const RuntimeSessionRouteSurface = ({
             <h1>Cozy watch room</h1>
             <p>
               A soft two-person booth for YouTube, AnimePahe, Cineby, Miruro, direct media, and
-              local files. Paste the source, send the invite, then let host-led controls keep both
-              sides together.
+              local files. Paste the source, send the invite, then let the low-latency control lane
+              keep both sides together without sharing video bytes.
             </p>
             <div
               id="runtime_happy_path"
