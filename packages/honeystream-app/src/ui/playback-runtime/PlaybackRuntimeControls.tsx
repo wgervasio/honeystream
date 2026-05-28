@@ -149,6 +149,10 @@ export const PlaybackRuntimeControls = memo(function PlaybackRuntimeControls(
       data-playback-state={props.playback.state}
       data-session-state={props.session.status}
     >
+      {props.title ? <p data-playback-control-title="true">{props.title}</p> : null}
+      {props.description ? (
+        <p data-playback-control-description="true">{props.description}</p>
+      ) : null}
       <button
         type="button"
         data-intent="playPause"

@@ -70,6 +70,9 @@ describe('session', () => {
       await waitForRuntimeText(page, 'Low-latency control lane')
       await waitForRuntimeText(page, 'Zero video-byte sharing')
       await waitForRuntimeText(page, 'Pick the next cozy stream')
+      await waitForRuntimeText(page, 'Copy the full invite link first')
+      await waitForRuntimeText(page, 'Sync controls')
+      await waitForRuntimeText(page, 'Queue a source first')
       await ms.screenshot('session_host')
     })
 

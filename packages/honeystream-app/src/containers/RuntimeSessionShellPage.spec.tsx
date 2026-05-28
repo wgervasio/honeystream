@@ -199,6 +199,8 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('Cat-side: Host')
     expect(html).toContain('Rabbit-side: Waiting for rabbit-side guest')
     expect(html).toContain('Invite your watch buddy')
+    expect(html).toContain('Copy the full invite link first')
+    expect(html).toContain('data-invite-description="true"')
     expect(html).toContain('Pick the next cozy stream')
     expect(html).toContain('Pick a cozy first stream')
     expect(html).toContain(
@@ -208,6 +210,8 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('Guest follows clearly')
     expect(html).toContain('Zero video-byte sharing')
     expect(html).toContain('Low-latency control lane')
+    expect(html).toContain('Sync controls')
+    expect(html).toContain('Queue a source first')
     expect(html).toContain('without sharing video bytes')
     expect(html).toContain('Sync check')
     expect(html).toContain('syncs only the tiny control stream')
