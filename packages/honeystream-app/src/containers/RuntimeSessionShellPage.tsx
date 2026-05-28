@@ -234,6 +234,15 @@ const ROOM_READY_SIGNALS = [
   }
 ] as const
 
+type LaunchStepState = 'complete' | 'next' | 'waiting'
+
+interface LaunchStep {
+  readonly detail: string
+  readonly id: string
+  readonly state: LaunchStepState
+  readonly title: string
+}
+
 class HostLocalPlaybackEngine implements SessionRuntimePlaybackEngine {
   private disposed = false
 
@@ -646,6 +655,51 @@ const getPlaybackStateLabel = (state: SessionSnapshot['playback']['state']): str
 const formatQueuedCountLabel = (count: number): string =>
   count === 1 ? '1 pick queued' : `${count} picks queued`
 
+const createLaunchSteps = (
+  currentMedia: MediaSnapshot | undefined,
+  guestUsername: string | undefined,
+  playbackState: SessionSnapshot['playback']['state']
+): readonly LaunchStep[] => {
+  const hasSource = Boolean(currentMedia)
+  const hasGuest = Boolean(guestUsername)
+  const isPlaying = playbackState === 'playing'
+
+  return [
+    {
+      id: 'source',
+      title: hasSource ? 'Source is ready' : 'Pick the first source',
+      detail: currentMedia
+        ? `${currentMedia.title} is on the shared stage.`
+        : 'Paste the exact watch page, a direct media link, or choose a local file.',
+      state: hasSource ? 'complete' : 'next'
+    },
+    {
+      id: 'invite',
+      title: hasGuest ? 'Invite worked' : 'Send one private invite',
+      detail: hasGuest
+        ? `${guestUsername} landed in the rabbit-side seat.`
+        : 'Copy the invite link so the room stays tiny and private.',
+      state: hasGuest ? 'complete' : hasSource ? 'next' : 'waiting'
+    },
+    {
+      id: 'buddy',
+      title: hasGuest ? 'Buddy is synced' : 'Wait for rabbit-side',
+      detail: hasGuest
+        ? 'Both seats are present, so playback commands can stay obvious.'
+        : 'The guest sees the same queue once they hop in with the secret.',
+      state: hasGuest ? 'complete' : 'waiting'
+    },
+    {
+      id: 'play',
+      title: isPlaying ? 'Watching together' : 'Press play when ready',
+      detail: isPlaying
+        ? 'Cat-side controls are keeping the room in lockstep.'
+        : 'Start once the source and guest are ready; seek and speed stay host-led.',
+      state: isPlaying ? 'complete' : hasSource && hasGuest ? 'next' : 'waiting'
+    }
+  ]
+}
+
 const hasLocalFileRegistry = (
   playback: SessionRuntimePlaybackEngine
 ): playback is SessionRuntimePlaybackEngine & LocalFilePlaybackRegistry =>
@@ -671,6 +725,12 @@ const RuntimeSessionRouteSurface = ({
     const queuedCountLabel = formatQueuedCountLabel(viewModel.snapshot.session.queue.length)
     const stageKindLabel = getStageKindLabel(currentMedia)
     const playbackStateLabel = getPlaybackStateLabel(viewModel.snapshot.session.playback.state)
+    const launchSteps = createLaunchSteps(
+      currentMedia,
+      guest ? guest.username : undefined,
+      viewModel.snapshot.session.playback.state
+    )
+    const readyStepCount = launchSteps.filter(step => step.state === 'complete').length
     const roleLabel =
       viewModel.snapshot.role === 'host'
         ? 'Cat-side host'
@@ -714,6 +774,26 @@ const RuntimeSessionRouteSurface = ({
               <strong>{playbackStateLabel}</strong>
               <p>Play, pause, seek, speed, and next all stay host-led.</p>
             </article>
+          </div>
+        </section>
+
+        <section
+          id="runtime_launchpad"
+          className={`${styles.card} ${styles.launchpad}`}
+          aria-label="Tonight launchpad"
+        >
+          <div className={styles.cardHeader}>
+            <p className={styles.kicker}>Tonight launchpad</p>
+            <span>{`${readyStepCount}/${launchSteps.length} ready`}</span>
+          </div>
+          <div className={styles.launchSteps}>
+            {launchSteps.map((step, index) => (
+              <article key={step.id} data-launch-step={step.id} data-launch-state={step.state}>
+                <span>{`0${index + 1}`}</span>
+                <strong>{step.title}</strong>
+                <p>{step.detail}</p>
+              </article>
+            ))}
           </div>
         </section>
 
