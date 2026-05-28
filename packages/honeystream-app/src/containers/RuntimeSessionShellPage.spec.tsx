@@ -197,6 +197,9 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('Invite your watch buddy')
     expect(html).toContain('Pick the next cozy stream')
     expect(html).toContain('Pick a cozy first stream')
+    expect(html).toContain(
+      'Shorthand links like youtube.com/watch get https:// added automatically'
+    )
     expect(html).toContain('Host-led playback')
     expect(html).toContain('Guest follows clearly')
     expect(html).toContain('Zero video-byte sharing')

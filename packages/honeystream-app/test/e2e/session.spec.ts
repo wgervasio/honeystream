@@ -93,6 +93,20 @@ describe('session', () => {
       }
     })
 
+    it('should queue shorthand streaming URLs with automatic https', async () => {
+      await ms.visit(`/join/${hostId}`)
+      await page.waitForSelector(RUNTIME_SHELL_SELECTOR)
+
+      await page.click('#runtime-add-media-url')
+      await page.type('#runtime-add-media-url', 'youtube.com/watch?v=honeystream-demo')
+      await waitForRuntimeText(page, 'Honeystream will add https:// automatically')
+      await page.press('#runtime-add-media-url', 'Enter')
+
+      await waitForRuntimeText(page, 'Source queued with https:// added')
+      await waitForRuntimeText(page, 'Website loaded')
+      await waitForRuntimeText(page, 'watch')
+    })
+
     it('should not join invalid session', async () => {
       const guestContext = await browser.newContext()
       const guestPage = await guestContext.newPage()

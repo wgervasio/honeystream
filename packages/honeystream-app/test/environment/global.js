@@ -26,6 +26,7 @@ async function setup(jestConfig = {}) {
       },
       {
         command: `cross-env SIGNAL_SERVER_PORT=${SIGNAL_SERVER_PORT} yarn start:signal-server`,
+        launchTimeout: SERVER_LAUNCH_TIMEOUT_MS,
         port: Number(SIGNAL_SERVER_PORT),
         waitOnScheme: {
           resources: [`tcp:localhost:${SIGNAL_SERVER_PORT}`]

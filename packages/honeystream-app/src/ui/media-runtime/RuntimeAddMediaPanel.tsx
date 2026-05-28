@@ -2,7 +2,8 @@ import React, { FormEvent, memo, useRef, useState } from 'react'
 import {
   createRuntimeAddMediaConfidenceItems,
   createRuntimeAddMediaSourcePreview,
-  isRuntimeAddMediaHttpUrl
+  isRuntimeAddMediaShorthandHttpUrl,
+  normalizeRuntimeAddMediaHttpUrl
 } from './RuntimeAddMediaSourcePreview'
 
 export interface RuntimeAddMediaSuggestion {
@@ -28,7 +29,8 @@ export interface RuntimeAddMediaPanelProps {
 }
 
 const DEFAULT_MISSING_URL_LABEL = 'Paste a website or direct media URL first.'
-const DEFAULT_INVALID_URL_LABEL = 'Use a full http:// or https:// link.'
+const DEFAULT_INVALID_URL_LABEL =
+  'Paste a website link like youtube.com/watch or a full http:// or https:// URL.'
 const SOURCE_CONFIDENCE_TITLE = 'Source confidence'
 
 export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
@@ -69,18 +71,24 @@ export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
       return
     }
 
-    if (!isRuntimeAddMediaHttpUrl(trimmedUrl)) {
+    const normalizedUrl = normalizeRuntimeAddMediaHttpUrl(trimmedUrl)
+    const queuedWithHttpsAdded = isRuntimeAddMediaShorthandHttpUrl(trimmedUrl)
+    if (!normalizedUrl) {
       setErrorMessage(props.invalidUrlLabel || DEFAULT_INVALID_URL_LABEL)
       setStatusMessage(undefined)
       focusUrlInput()
       return
     }
 
-    props.onAddUrl(trimmedUrl)
+    props.onAddUrl(normalizedUrl)
     setUrl('')
     setErrorMessage(undefined)
     setSelectedSuggestionId(undefined)
-    setStatusMessage('Source queued. Copy the invite or press play when your buddy lands.')
+    setStatusMessage(
+      queuedWithHttpsAdded
+        ? 'Source queued with https:// added. Copy the invite or press play when your buddy lands.'
+        : 'Source queued. Copy the invite or press play when your buddy lands.'
+    )
   }
 
   return (

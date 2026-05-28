@@ -8,6 +8,8 @@ export interface RuntimeAddMediaSourcePreview {
   readonly detail: string
   readonly kind: RuntimeAddMediaSourcePreviewKind
   readonly label: string
+  readonly normalizedFromShorthand: boolean
+  readonly normalizedUrl: string
   readonly provider?: MediaProvider
 }
 
@@ -26,22 +28,68 @@ const PROVIDER_LABELS: Record<MediaProvider, string> = {
   unknown: 'Website'
 }
 
-export const isRuntimeAddMediaHttpUrl = (value: string): boolean => {
+const URL_SCHEME_PATTERN = /^[a-z][a-z0-9+.-]*:/i
+const IPV4_HOST_PATTERN = /^\d{1,3}(?:\.\d{1,3}){3}$/
+const WHITESPACE_PATTERN = /\s/
+
+const parseHttpUrl = (value: string): URL | undefined => {
   try {
     const url = new URL(value)
-    return url.protocol === 'http:' || url.protocol === 'https:'
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url : undefined
   } catch {
+    return undefined
+  }
+}
+
+const hasLikelyHttpHost = (url: URL): boolean =>
+  url.hostname === 'localhost' ||
+  url.hostname.indexOf('.') !== -1 ||
+  IPV4_HOST_PATTERN.test(url.hostname)
+
+export const normalizeRuntimeAddMediaHttpUrl = (value: string): string | undefined => {
+  const trimmedValue = value.trim()
+  if (trimmedValue.length === 0) {
+    return undefined
+  }
+
+  const parsedUrl = parseHttpUrl(trimmedValue)
+  if (parsedUrl) {
+    return parsedUrl.toString()
+  }
+
+  if (
+    URL_SCHEME_PATTERN.test(trimmedValue) ||
+    trimmedValue.startsWith('//') ||
+    WHITESPACE_PATTERN.test(trimmedValue)
+  ) {
+    return undefined
+  }
+
+  const shorthandUrl = parseHttpUrl(`https://${trimmedValue}`)
+  if (!shorthandUrl || !hasLikelyHttpHost(shorthandUrl)) {
+    return undefined
+  }
+
+  return shorthandUrl.toString()
+}
+
+export const isRuntimeAddMediaHttpUrl = (value: string): boolean =>
+  typeof normalizeRuntimeAddMediaHttpUrl(value) === 'string'
+
+export const isRuntimeAddMediaShorthandHttpUrl = (value: string): boolean => {
+  const trimmedValue = value.trim()
+  if (trimmedValue.length === 0 || parseHttpUrl(trimmedValue)) {
     return false
   }
+
+  return typeof normalizeRuntimeAddMediaHttpUrl(trimmedValue) === 'string'
 }
 
 const isKnownProvider = (
   provider: MediaProvider | undefined
 ): provider is KnownRuntimeMediaProvider => typeof provider === 'string' && provider !== 'unknown'
 
-const getBuddyCheckDetail = (
-  sourcePreview: RuntimeAddMediaSourcePreview | undefined
-): string => {
+const getBuddyCheckDetail = (sourcePreview: RuntimeAddMediaSourcePreview | undefined): string => {
   if (!sourcePreview || sourcePreview.kind === 'invalid') {
     return 'Queue things both browsers can open, or use local files on both sides.'
   }
@@ -58,9 +106,7 @@ const getBuddyCheckDetail = (
   return 'Direct media works best when both browsers can fetch the same clean URL.'
 }
 
-const getSyncBudgetDetail = (
-  sourcePreview: RuntimeAddMediaSourcePreview | undefined
-): string => {
+const getSyncBudgetDetail = (sourcePreview: RuntimeAddMediaSourcePreview | undefined): string => {
   if (!sourcePreview || sourcePreview.kind === 'invalid') {
     return 'Honeystream keeps video local and syncs only the tiny control stream.'
   }
@@ -76,25 +122,35 @@ export const createRuntimeAddMediaSourcePreview = (
     return undefined
   }
 
-  if (!isRuntimeAddMediaHttpUrl(trimmedValue)) {
+  const normalizedUrl = normalizeRuntimeAddMediaHttpUrl(trimmedValue)
+  if (!normalizedUrl) {
     return {
       kind: 'invalid',
-      label: 'Needs full link',
-      detail: 'Paste the complete http:// or https:// watch page.'
+      label: 'Needs a watch link',
+      detail: 'Paste a site like youtube.com/watch or a complete http:// or https:// URL.',
+      normalizedFromShorthand: false,
+      normalizedUrl: ''
     }
   }
 
-  if (classifyMediaUrl(trimmedValue) === 'website') {
-    const provider = classifyMediaProvider(trimmedValue)
+  const normalizedFromShorthand = isRuntimeAddMediaShorthandHttpUrl(trimmedValue)
+
+  if (classifyMediaUrl(normalizedUrl) === 'website') {
+    const provider = classifyMediaProvider(normalizedUrl)
     const providerLabel = PROVIDER_LABELS[provider]
+    const normalizedDetail = normalizedFromShorthand
+      ? ' Honeystream will add https:// automatically.'
+      : ''
 
     return {
       kind: 'website',
       label: provider === 'unknown' ? 'Website lane' : `${providerLabel} lane`,
       detail:
         provider === 'unknown'
-          ? 'Each browser opens this page locally while controls stay synced.'
-          : `${providerLabel} page detected. Each browser opens it locally while controls stay synced.`,
+          ? `Each browser opens this page locally while controls stay synced.${normalizedDetail}`
+          : `${providerLabel} page detected. Each browser opens it locally while controls stay synced.${normalizedDetail}`,
+      normalizedFromShorthand,
+      normalizedUrl,
       provider
     }
   }
@@ -102,7 +158,11 @@ export const createRuntimeAddMediaSourcePreview = (
   return {
     kind: 'direct-media',
     label: 'Direct media lane',
-    detail: 'This looks like a playable media URL for the shared queue.'
+    detail: normalizedFromShorthand
+      ? 'This looks like playable media. Honeystream will add https:// automatically.'
+      : 'This looks like a playable media URL for the shared queue.',
+    normalizedFromShorthand,
+    normalizedUrl
   }
 }
 
@@ -121,10 +181,19 @@ export const createRuntimeAddMediaConfidenceItems = (
   return [
     {
       id: 'full-link',
-      label: isReady ? 'Full link ready' : isInvalid ? 'Full link needed' : 'Paste full link',
+      label:
+        sourcePreview && sourcePreview.normalizedFromShorthand
+          ? 'HTTPS added'
+          : isReady
+          ? 'Full link ready'
+          : isInvalid
+          ? 'Link needs cleanup'
+          : 'Paste watch link',
       detail: isReady
-        ? 'http:// or https:// source is ready to queue.'
-        : 'Use the complete watch URL.',
+        ? sourcePreview && sourcePreview.normalizedFromShorthand
+          ? 'Honeystream will add https:// automatically.'
+          : 'http:// or https:// source is ready to queue.'
+        : 'Use a site like youtube.com/watch or a complete watch URL.',
       state: isReady ? 'ready' : isInvalid ? 'warning' : 'idle'
     },
     {
