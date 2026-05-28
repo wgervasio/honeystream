@@ -233,7 +233,11 @@ const ROOM_READY_SIGNALS = [
     detail: 'Errors and room events stay bounded, readable, and calm.'
   }
 ] as const
-const COMMAND_BAR_CHIPS = ['Paste source', 'Copy invite', 'Play together'] as const
+const COMMAND_BAR_LINKS = [
+  { label: 'Paste source', href: '#runtime-add-media-url' },
+  { label: 'Copy invite', href: '#runtime_invite_panel' },
+  { label: 'Play together', href: '#runtime_playback_controls' }
+] as const
 const ROOM_MOOD_CHIPS = ['Cat-side cue', 'Rabbit-side hop', 'Website-ready queue'] as const
 
 type LaunchStepState = 'complete' | 'next' | 'waiting'
@@ -775,9 +779,11 @@ const RuntimeSessionRouteSurface = ({
             <strong>{nextLaunchStep.title}</strong>
             <p>{nextLaunchStep.detail}</p>
           </div>
-          <div className={styles.commandBarChips} aria-label="Fast room cues">
-            {COMMAND_BAR_CHIPS.map(chip => (
-              <span key={chip}>{chip}</span>
+          <div className={styles.commandBarChips} aria-label="Fast room shortcuts">
+            {COMMAND_BAR_LINKS.map(link => (
+              <a key={link.href} href={link.href}>
+                {link.label}
+              </a>
             ))}
           </div>
         </section>
@@ -912,6 +918,7 @@ const RuntimeSessionRouteSurface = ({
           onCopySecret={boundary.copyText}
           roomIdLabel="Room code"
           secretLabel="Room secret"
+          id="runtime_invite_panel"
           title="Invite your watch buddy"
         />
 
@@ -979,6 +986,7 @@ const RuntimeSessionRouteSurface = ({
         />
 
         <PlaybackRuntimeControls
+          id="runtime_playback_controls"
           className={`${styles.card} ${styles.playbackPanel}`}
           playback={viewModel.snapshot.session.playback}
           session={mapSessionSnapshotToPlaybackModel(viewModel.snapshot.session)}

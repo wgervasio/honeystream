@@ -73,6 +73,68 @@ describe('RuntimeAddMediaPanel', () => {
     expect(html).toContain('Direct MP4')
   })
 
+  it('loads suggestion URLs into the focused input with guidance', () => {
+    const container = document.createElement('div')
+    document.body.appendChild(container)
+
+    try {
+      ReactDOM.render(
+        <RuntimeAddMediaPanel
+          onAddUrl={jest.fn()}
+          sourceSuggestions={[
+            {
+              id: 'youtube',
+              label: 'YouTube',
+              detail: 'Video page',
+              url: 'https://www.youtube.com/watch?v=honeystream-demo'
+            }
+          ]}
+        />,
+        container
+      )
+
+      const suggestion = container.querySelector(
+        '[data-source-suggestion="youtube"]'
+      ) as HTMLButtonElement
+      Simulate.click(suggestion)
+
+      const input = container.querySelector('#runtime-add-media-url') as HTMLInputElement
+      expect(input.value).toBe('https://www.youtube.com/watch?v=honeystream-demo')
+      expect(document.activeElement).toBe(input)
+      expect(container.querySelector('[data-add-media-status="true"]')).not.toBeNull()
+      expect(container.textContent).toContain('YouTube source loaded')
+    } finally {
+      ReactDOM.unmountComponentAtNode(container)
+      container.remove()
+    }
+  })
+
+  it('shows the next cozy action after queueing a valid URL', () => {
+    const onAddUrl = jest.fn()
+    const container = document.createElement('div')
+    document.body.appendChild(container)
+
+    try {
+      ReactDOM.render(<RuntimeAddMediaPanel onAddUrl={onAddUrl} />, container)
+
+      const input = container.querySelector('#runtime-add-media-url') as HTMLInputElement
+      input.value = 'https://example.com/watch-night.mp4'
+      Simulate.change(input)
+
+      const form = container.querySelector('form') as HTMLFormElement
+      Simulate.submit(form)
+
+      expect(onAddUrl).toHaveBeenCalledWith('https://example.com/watch-night.mp4')
+      expect(input.value).toBe('')
+      expect(container.querySelector('[data-add-media-error="true"]')).toBeNull()
+      expect(container.querySelector('[data-add-media-status="true"]')).not.toBeNull()
+      expect(container.textContent).toContain('Source queued')
+    } finally {
+      ReactDOM.unmountComponentAtNode(container)
+      container.remove()
+    }
+  })
+
   it('clears URL validation feedback when the user edits the input', () => {
     const container = document.createElement('div')
     document.body.appendChild(container)

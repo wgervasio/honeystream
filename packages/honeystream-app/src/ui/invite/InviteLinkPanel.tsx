@@ -38,6 +38,7 @@ export interface InviteLinkPanelProps {
   readonly className?: string
   readonly copiedLabel?: string
   readonly copyLabel?: string
+  readonly id?: string
   readonly invite: PrivateInviteCredentials
   readonly inviteLinkLabel?: string
   readonly joinPath?: string
@@ -90,7 +91,7 @@ export const InviteLinkPanel = memo(function InviteLinkPanel(props: InviteLinkPa
   }
 
   return (
-    <section className={props.className}>
+    <section id={props.id} className={props.className}>
       {props.title ? <p>{props.title}</p> : null}
       <InviteField
         copiedLabel={copiedLabel}

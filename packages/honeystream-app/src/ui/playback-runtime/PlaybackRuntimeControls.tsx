@@ -144,6 +144,7 @@ export const PlaybackRuntimeControls = memo(function PlaybackRuntimeControls(
 
   return (
     <section
+      id={props.id}
       className={props.className}
       data-playback-state={props.playback.state}
       data-session-state={props.session.status}

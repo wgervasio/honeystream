@@ -82,7 +82,10 @@ describe('PlaybackRuntimeControls', () => {
       }
     })
 
-    const html = renderToStaticMarkup(<PlaybackRuntimeControls {...props} />)
+    const html = renderToStaticMarkup(
+      <PlaybackRuntimeControls {...props} id="runtime_playback_controls" />
+    )
+    expect(html).toContain('id="runtime_playback_controls"')
     expectIntentDisabled(html, 'playPause')
     expectIntentDisabled(html, 'seekBackward')
     expectIntentDisabled(html, 'seekForward')
