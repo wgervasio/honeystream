@@ -174,6 +174,27 @@ class Home extends Component<IProps> {
         detail: 'Cat-side controls keep play, pause, seek, and speed changes obvious.'
       }
     ]
+    const launcherCards = [
+      {
+        id: 'source',
+        step: '01',
+        title: 'Paste the real page',
+        detail: 'Start with the exact website, direct media URL, or local file name.'
+      },
+      {
+        id: 'seat',
+        step: '02',
+        title: 'Save the rabbit seat',
+        detail: 'Copy one private invite so the room never feels like a public lobby.'
+      },
+      {
+        id: 'play',
+        step: '03',
+        title: 'Press play once',
+        detail: 'Host-side playback keeps both browsers in the same cozy moment.'
+      }
+    ]
+    const moodChips = ['soft lights', 'snacks close', 'site ready', 'no chaos']
 
     return (
       <LayoutMain className={styles.container} showBackButton={false}>
@@ -216,6 +237,26 @@ class Home extends Component<IProps> {
                 websites moving in lockstep. The host keeps things tidy while both sides get an
                 easy, low-drama watch flow.
               </p>
+
+              <div
+                id="home_watch_launcher"
+                className={styles.watchLauncher}
+                aria-label="Watch-night launcher preview"
+              >
+                <div className={styles.launcherHeader}>
+                  <span>Tonight starter</span>
+                  <strong>ready in 3 cozy taps</strong>
+                </div>
+                <div className={styles.launcherInput}>
+                  <span>https://your-watch-page.example/show</span>
+                  <strong>Website detected</strong>
+                </div>
+                <div className={styles.launcherActions}>
+                  <span>Queue source</span>
+                  <span>Copy invite</span>
+                  <span>Start together</span>
+                </div>
+              </div>
 
               <nav className={styles.actionGrid} aria-label="Primary actions">
                 <MenuButton
@@ -425,6 +466,37 @@ class Home extends Component<IProps> {
                   <h4>{card.title}</h4>
                   <p>{card.body}</p>
                 </article>
+              ))}
+            </div>
+          </section>
+
+          <section
+            id="home_pocket_planner"
+            className={styles.pocketPlanner}
+            aria-labelledby="home_pocket_planner_title"
+          >
+            <div className={styles.plannerIntro}>
+              <p className={styles.kicker}>Pocket watch planner</p>
+              <h3 id="home_pocket_planner_title">
+                The whole date-night UX should read at a glance.
+              </h3>
+              <p>
+                Honeystream stays cute, but the first action is never hidden: choose the source,
+                protect the two seats, then watch with host-led controls.
+              </p>
+            </div>
+            <div className={styles.launcherCards} aria-label="Three-step room launcher">
+              {launcherCards.map(card => (
+                <article key={card.id} data-launcher-card={card.id}>
+                  <span>{card.step}</span>
+                  <strong>{card.title}</strong>
+                  <p>{card.detail}</p>
+                </article>
+              ))}
+            </div>
+            <div className={styles.moodChips} aria-label="Happy room mood">
+              {moodChips.map(chip => (
+                <span key={chip}>{chip}</span>
               ))}
             </div>
           </section>
