@@ -60,6 +60,7 @@ describe('simulated peer transport performance budget', () => {
     expect(metrics.maxDirectionalAverageLatencyMs).toBe(16)
     expect(metrics.directionalAverageLatencySkewMs).toBe(0)
     expect(metrics.estimatedRoundTripP95LatencyMs).toBe(32)
+    expect(metrics.estimatedRoundTripMaxLatencyMs).toBe(32)
     expect(evaluateSimulatedPeerTransportBudget(metrics)).toEqual({
       ok: true,
       failures: []
@@ -100,6 +101,22 @@ describe('simulated peer transport performance budget', () => {
       expect.arrayContaining([
         expect.objectContaining({
           metric: 'combinedAverageMessageBytes'
+        })
+      ])
+    )
+
+    const degradedMaxRoundTripBudget = evaluateSimulatedPeerTransportBudget(
+      pair.getAggregateMetrics(),
+      {
+        ...STREAMING_SITE_TRANSPORT_BUDGET,
+        maxEstimatedRoundTripMaxLatencyMs: 4
+      }
+    )
+    expect(degradedMaxRoundTripBudget.ok).toBe(false)
+    expect(degradedMaxRoundTripBudget.failures).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          metric: 'estimatedRoundTripMaxLatencyMs'
         })
       ])
     )
@@ -168,6 +185,7 @@ describe('simulated peer transport performance budget', () => {
     expect(metrics.directionalAverageLatencySkewMs).toBe(0)
     expect(metrics.maxDirectionalQueuedMessages).toBe(0)
     expect(metrics.estimatedRoundTripP95LatencyMs).toBeLessThanOrEqual(24)
+    expect(metrics.estimatedRoundTripMaxLatencyMs).toBeLessThanOrEqual(24)
     expect(metrics.combinedAverageMessageBytes).toBeLessThan(96)
     expect(metrics.combinedAverageLatencyMs).toBeLessThanOrEqual(12)
     expect(metrics.combinedP95LatencyMs).toBeLessThanOrEqual(12)
@@ -196,6 +214,7 @@ describe('simulated peer transport performance budget', () => {
     expect(metrics.maxDirectionalAverageLatencyMs).toBe(30)
     expect(metrics.directionalAverageLatencySkewMs).toBe(25)
     expect(metrics.estimatedRoundTripP95LatencyMs).toBe(35)
+    expect(metrics.estimatedRoundTripMaxLatencyMs).toBe(35)
 
     const budgetResult = evaluateSimulatedPeerTransportBudget(metrics)
     expect(budgetResult.ok).toBe(false)
@@ -209,6 +228,9 @@ describe('simulated peer transport performance budget', () => {
         }),
         expect.objectContaining({
           metric: 'estimatedRoundTripP95LatencyMs'
+        }),
+        expect.objectContaining({
+          metric: 'estimatedRoundTripMaxLatencyMs'
         })
       ])
     )

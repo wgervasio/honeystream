@@ -110,7 +110,7 @@ describe('session', () => {
 
       await waitForRuntimeText(page, 'Source queued with https:// added')
       await waitForRuntimeText(page, 'Website loaded')
-      await waitForRuntimeText(page, 'watch')
+      await waitForRuntimeText(page, 'YouTube watch page')
     })
 
     it('should not join invalid session', async () => {

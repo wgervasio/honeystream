@@ -52,12 +52,28 @@ describe('simulated peer transport observability', () => {
 
     expect(pair.guest.getMetrics().recentFrames).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ outcome: 'sent', seq: 1, recordedAtMs: 1000 }),
-        expect.objectContaining({ outcome: 'dropped', seq: 2, reason: 'network-drop' })
+        expect.objectContaining({
+          direction: 'guest->host',
+          outcome: 'sent',
+          seq: 1,
+          recordedAtMs: 1000
+        }),
+        expect.objectContaining({
+          direction: 'guest->host',
+          outcome: 'dropped',
+          seq: 2,
+          reason: 'network-drop'
+        })
       ])
     )
     expect(pair.host.getMetrics().recentFrames).toEqual([
-      expect.objectContaining({ outcome: 'delivered', seq: 1, latencyMs: 25, recordedAtMs: 1025 })
+      expect.objectContaining({
+        direction: 'guest->host',
+        outcome: 'delivered',
+        seq: 1,
+        latencyMs: 25,
+        recordedAtMs: 1025
+      })
     ])
     expect(pair.getAggregateMetrics().recentFrames).toEqual(
       expect.arrayContaining([
@@ -92,7 +108,12 @@ describe('simulated peer transport observability', () => {
     expect(aggregateFrames.length).toBeLessThanOrEqual(128)
     expect(aggregateFrames).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ outcome: 'delivered', seq: 70, latencyMs: 0 })
+        expect.objectContaining({
+          direction: 'guest->host',
+          outcome: 'delivered',
+          seq: 70,
+          latencyMs: 0
+        })
       ])
     )
   })

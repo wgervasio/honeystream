@@ -86,6 +86,10 @@ export const classifyMediaUrl = (source: string): MediaKind => {
     return 'url'
   }
 
+  if (classifyMediaProvider(parsedUrl.toString()) !== 'unknown') {
+    return 'website'
+  }
+
   return hasDirectMediaExtension(parsedUrl) ? 'url' : 'website'
 }
 

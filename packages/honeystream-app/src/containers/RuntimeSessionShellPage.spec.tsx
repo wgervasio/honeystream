@@ -361,6 +361,84 @@ describe('createRuntimeSessionShellRouteBoundary', () => {
     }
   })
 
+  it('dispatches supported streaming-site URLs with friendly website titles', async () => {
+    const transportPair = createRouteTransportPair(() => 3100)
+    const dispatchHostCommandSpy = jest.fn(async (_command: HostSessionCommand) => undefined)
+    const runtimeProjection: SessionRuntimeProjection = {
+      role: 'host',
+      lifecycle: 'running',
+      transportState: transportPair.host.getState(),
+      diagnostics: [],
+      runtimeErrors: []
+    }
+    const runtime: RuntimeSession = {
+      getSnapshot(): SessionRuntimeProjection {
+        return runtimeProjection
+      },
+      getProjectionStore() {
+        return createProjectionStore(runtimeProjection)
+      },
+      subscribeToSnapshots(): () => void {
+        return () => undefined
+      },
+      startHostSession: async () => undefined,
+      startGuestSession: async () => undefined,
+      dispatchHostCommand: dispatchHostCommandSpy,
+      dispatchGuestCommand: async (_command: ClientCommand) => undefined,
+      dispose: jest.fn()
+    }
+
+    const boundary = createRuntimeSessionShellRouteBoundary('room-sites', {
+      createRuntime: (_deps: SessionRuntimeDependencies) => runtime,
+      createPlaybackEngine: () => new FakePlaybackEngine(),
+      createTransportPair: () => transportPair,
+      now: () => 3100
+    })
+
+    try {
+      await boundary.start()
+      boundary.addMediaUrl('https://www.youtube.com/watch?v=honeystream-demo')
+      boundary.addMediaUrl('https://animepahe.ru/play/honeystream-demo')
+      boundary.addMediaUrl('https://cineby.app/movie/honeystream-demo')
+      boundary.addMediaUrl('https://miruro.to/watch/honeystream-demo')
+
+      expect(dispatchHostCommandSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          media: expect.objectContaining({
+            kind: 'website',
+            title: 'YouTube watch page'
+          })
+        })
+      )
+      expect(dispatchHostCommandSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          media: expect.objectContaining({
+            kind: 'website',
+            title: 'AnimePahe watch page'
+          })
+        })
+      )
+      expect(dispatchHostCommandSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          media: expect.objectContaining({
+            kind: 'website',
+            title: 'Cineby watch page'
+          })
+        })
+      )
+      expect(dispatchHostCommandSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          media: expect.objectContaining({
+            kind: 'website',
+            title: 'Miruro watch page'
+          })
+        })
+      )
+    } finally {
+      boundary.dispose()
+    }
+  })
+
   it('dispatches host local-file media additions through the runtime command path', async () => {
     const transportPair = createRouteTransportPair(() => 4000)
     const dispatchHostCommandSpy = jest.fn(async (_command: HostSessionCommand) => undefined)

@@ -7,6 +7,7 @@ import {
   ProtocolError,
   SessionSnapshot,
   WireEnvelope,
+  classifyMediaProvider,
   classifyMediaUrl,
   parseWireEnvelope
 } from '../protocol'
@@ -657,6 +658,19 @@ const readInviteSecret = (search: string | undefined): string | undefined => {
 }
 
 const getMediaTitleFromUrl = (mediaUrl: URL): string => {
+  switch (classifyMediaProvider(mediaUrl.toString())) {
+    case 'youtube':
+      return 'YouTube watch page'
+    case 'animepahe':
+      return 'AnimePahe watch page'
+    case 'cineby':
+      return 'Cineby watch page'
+    case 'miruro':
+      return 'Miruro watch page'
+    case 'unknown':
+      break
+  }
+
   const pathName = mediaUrl.pathname.replace(/\/+$/, '')
   const lastSegment = pathName
     .split('/')

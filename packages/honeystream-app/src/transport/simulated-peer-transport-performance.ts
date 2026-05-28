@@ -16,6 +16,7 @@ export interface SimulatedPeerTransportBudget {
   readonly maxCombinedPeakQueuedMessages: number
   readonly maxDirectionalPeakQueuedMessages: number
   readonly maxEstimatedRoundTripP95LatencyMs: number
+  readonly maxEstimatedRoundTripMaxLatencyMs: number
 }
 
 export type SimulatedPeerTransportBudgetMetric =
@@ -34,7 +35,7 @@ export type SimulatedPeerTransportBudgetMetric =
   | 'combinedPeakQueuedMessages'
   | 'maxDirectionalPeakQueuedMessages'
   | 'estimatedRoundTripP95LatencyMs'
-
+  | 'estimatedRoundTripMaxLatencyMs'
 export interface SimulatedPeerTransportBudgetFailure {
   readonly metric: SimulatedPeerTransportBudgetMetric
   readonly expected: string
@@ -50,7 +51,7 @@ export interface SimulatedPeerTransportBudgetResult {
 Context: Streaming-site sync tests need a stable host/guest mock-network merge gate.
 Invariant: Website playback shares compact commands only; video bytes stay local to each browser.
 Options considered: Per-test assertions, ad hoc logs, or one reusable budget evaluator.
-Decision: Keep delivery, drop, byte-loss, wire-size, directional latency, round-trip, and peak-queue caps in this helper.
+Decision: Keep delivery, drop, byte-loss, wire-size, directional latency, round-trip tail, and peak-queue caps in this helper.
 Performance impact: Budget checks are O(1) over aggregate metrics already captured by simulations.
 Memory/lifecycle ownership: Metrics are bounded by the simulated transport recorder.
 Failure mode: Over-budget simulations return typed failures for the exact metric that regressed.
@@ -71,7 +72,8 @@ export const STREAMING_SITE_TRANSPORT_BUDGET: SimulatedPeerTransportBudget = Obj
   maxDirectionalQueuedMessages: 0,
   maxCombinedPeakQueuedMessages: 64,
   maxDirectionalPeakQueuedMessages: 32,
-  maxEstimatedRoundTripP95LatencyMs: 32
+  maxEstimatedRoundTripP95LatencyMs: 32,
+  maxEstimatedRoundTripMaxLatencyMs: 32
 })
 
 const overBudgetFailure = (
@@ -186,6 +188,16 @@ export const evaluateSimulatedPeerTransportBudget = (
         'estimatedRoundTripP95LatencyMs',
         `<= ${budget.maxEstimatedRoundTripP95LatencyMs}`,
         metrics.estimatedRoundTripP95LatencyMs
+      )
+    )
+  }
+
+  if (metrics.estimatedRoundTripMaxLatencyMs > budget.maxEstimatedRoundTripMaxLatencyMs) {
+    failures.push(
+      overBudgetFailure(
+        'estimatedRoundTripMaxLatencyMs',
+        `<= ${budget.maxEstimatedRoundTripMaxLatencyMs}`,
+        metrics.estimatedRoundTripMaxLatencyMs
       )
     )
   }
