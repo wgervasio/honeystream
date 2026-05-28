@@ -108,8 +108,9 @@ export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
       <div data-url-safety-results="true" aria-label={URL_SAFETY_TITLE}>
         <strong>{URL_SAFETY_TITLE}</strong>
         <span>
-          Use exact pages both browsers can open. Honeystream keeps media bytes local and syncs only
-          the typed control stream.
+          Use exact watch pages both browsers can open: YouTube, AnimePahe, Cineby, Miruro, or any
+          site you can test together. Honeystream keeps media bytes local and syncs only the typed
+          control stream.
         </span>
       </div>
       {sourceSuggestions.length > 0 ? (
