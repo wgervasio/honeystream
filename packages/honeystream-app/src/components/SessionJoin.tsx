@@ -109,14 +109,18 @@ export class SessionJoin extends Component<IProps> {
               this.submit()
             }}
           >
-            <p className={styles.label}>{t('enterJoinDest')}</p>
+            <label className={styles.label} htmlFor="join_invite_input">
+              {t('enterJoinDest')}
+            </label>
             <InputGroup>
               <TextInput
+                id="join_invite_input"
                 theRef={el => (this.sessionInput = el)}
                 className={styles.peerId}
                 placeholder="e.g. https://app.gethoneystream.com/join/abcd123…"
                 defaultValue={localStorage.getItem('prevFriendCode') || undefined}
                 spellCheck={false}
+                aria-describedby="join_invite_hint"
                 onChange={() => {
                   if (this.sessionInput) {
                     this.sessionInput.classList.remove('invalid')
@@ -134,6 +138,10 @@ export class SessionJoin extends Component<IProps> {
                 {t('join')}
               </MenuButton>
             </InputGroup>
+            <p id="join_invite_hint" className={styles.inputHint}>
+              Full invite links are best: they carry the room ID and secret together so the
+              rabbit-side seat stays private.
+            </p>
           </form>
           <div className={styles.hintGrid} aria-hidden="true">
             <span>Private invite</span>

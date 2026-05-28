@@ -272,6 +272,13 @@
   line-height: 1.3rem !important;
 }
 
+.starterHint {
+  margin: -0.1rem 0 0;
+  color: rgba(255, 255, 255, 0.68) !important;
+  font-size: 0.84rem !important;
+  line-height: 1.28rem !important;
+}
+
 .starterChips {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -323,6 +330,37 @@
   background: rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.78);
   font-size: 0.84rem;
+}
+
+.watchNudge {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.55rem;
+  align-items: center;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid rgba(255, 216, 138, 0.28);
+  border-radius: 18px;
+  background: linear-gradient(90deg, rgba(255, 216, 138, 0.16), rgba(247, 215, 232, 0.12));
+}
+
+.watchNudge strong {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0 0.65rem;
+  border-radius: 999px;
+  background: var(--app-button-gradient);
+  color: #fff;
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: 0 10px 24px rgba(255, 127, 150, 0.2);
+}
+
+.watchNudge span {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.88rem;
+  line-height: 1.28rem;
 }
 
 .actionGrid {
@@ -1411,12 +1449,17 @@
   }
 
   .launcherHeader,
-  .launcherInput {
+  .launcherInput,
+  .watchNudge {
     align-items: flex-start;
     flex-direction: column;
   }
 
   .launcherInput {
+    grid-template-columns: 1fr;
+  }
+
+  .watchNudge {
     grid-template-columns: 1fr;
   }
 

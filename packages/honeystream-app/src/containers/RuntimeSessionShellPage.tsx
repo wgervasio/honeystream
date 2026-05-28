@@ -177,6 +177,23 @@ const SOURCE_LANES = [
     detail: 'Drop a clean MP4, WebM, audio, or stream URL straight into the queue.'
   }
 ] as const
+const SITE_HANDOFF_PROMISES = [
+  {
+    id: 'local-page',
+    title: 'Website opens locally',
+    detail: 'Each browser loads the page it can access, so private logins and video bytes stay local.'
+  },
+  {
+    id: 'fallback',
+    title: 'Popup fallback ready',
+    detail: 'Sites that fight embeds can still open in their own window while controls stay synced.'
+  },
+  {
+    id: 'control-stream',
+    title: 'Only controls sync',
+    detail: 'Honeystream sends typed play, pause, seek, rate, and next commands over the tiny lane.'
+  }
+] as const
 const ADD_MEDIA_SUGGESTIONS = [
   {
     id: 'youtube',
@@ -1008,6 +1025,18 @@ const RuntimeSessionRouteSurface = ({
             <span>Guest follows clearly</span>
             <span>Zero video-byte sharing</span>
             <span>Low-latency control lane</span>
+          </div>
+          <div
+            id="runtime_site_handoff"
+            className={styles.siteHandoff}
+            aria-label="Website handoff promises"
+          >
+            {SITE_HANDOFF_PROMISES.map(item => (
+              <span key={item.id}>
+                <strong>{item.title}</strong>
+                {item.detail}
+              </span>
+            ))}
           </div>
           <p>
             Queue YouTube, AnimePahe, Cineby, Miruro, direct media, or a local file from the panel

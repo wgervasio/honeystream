@@ -303,7 +303,11 @@ class Home extends Component<IProps, IState> {
                     autoComplete="url"
                     spellCheck={false}
                     aria-invalid={this.state.starterInvalid || undefined}
-                    aria-describedby={this.state.starterInvalid ? 'home_starter_error' : undefined}
+                    aria-describedby={
+                      this.state.starterInvalid
+                        ? 'home_starter_error home_starter_hint'
+                        : 'home_starter_hint'
+                    }
                     onChange={this.onStarterUrlChange}
                   />
                   <button id="home_start_with_url" type="submit">
@@ -315,6 +319,10 @@ class Home extends Component<IProps, IState> {
                     Paste a site like youtube.com/watch or a full http:// or https:// watch link.
                   </p>
                 )}
+                <p id="home_starter_hint" className={styles.starterHint}>
+                  Quick chips fill the box; Start with link opens a room with the source already
+                  queued.
+                </p>
                 <div
                   id="home_starter_chips"
                   className={styles.starterChips}
@@ -335,6 +343,10 @@ class Home extends Component<IProps, IState> {
                   <span>Queue source</span>
                   <span>Copy invite</span>
                   <span>Start together</span>
+                </div>
+                <div id="home_watch_nudge" className={styles.watchNudge}>
+                  <strong>Best path</strong>
+                  <span>Paste the exact page first, then send the invite when the room opens.</span>
                 </div>
               </form>
 
