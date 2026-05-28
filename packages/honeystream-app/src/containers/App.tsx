@@ -18,7 +18,7 @@ const App: SFC = props => {
     return function componentWillUnmount() {
       updater.removeListener('update', onAppUpdate)
     }
-  })
+  }, [dispatch])
 
   return <div className="app">{props.children}</div>
 }
