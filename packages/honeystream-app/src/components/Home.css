@@ -343,11 +343,24 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.4rem;
   padding: 0 0.6rem;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.78);
   font-size: 0.84rem;
+}
+
+.launcherActions strong {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.45rem;
+  padding: 0 0.42rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(158, 215, 255, 0.46), rgba(247, 215, 232, 0.38));
+  color: #fff;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
 }
 
 .watchNudge {
