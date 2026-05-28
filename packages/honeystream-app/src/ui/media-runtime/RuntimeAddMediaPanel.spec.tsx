@@ -175,6 +175,9 @@ describe('RuntimeAddMediaPanel', () => {
       expect(container.textContent).toContain('YouTube lane')
       expect(container.querySelector('[data-source-confidence-state="ready"]')).not.toBeNull()
       expect(container.textContent).toContain('Buddy can test it')
+      expect(container.textContent).toContain(
+        'YouTube is covered by the low-latency streaming-site mock tests'
+      )
       expect(container.textContent).toContain('Low-latency sync path')
       expect(container.textContent).toContain('not the video bytes')
 

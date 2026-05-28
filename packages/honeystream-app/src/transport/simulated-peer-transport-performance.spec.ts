@@ -100,6 +100,35 @@ describe('simulated peer transport performance budget', () => {
     )
   })
 
+  it('fails the streaming budget when a mock connection drops control frames', async () => {
+    let nowMs = 8000
+    const pair = createSimulatedPeerTransportPair({
+      hostInboundValidator: clientToHostValidator,
+      guestInboundValidator: hostToClientValidator,
+      now: () => nowMs,
+      network: { latencyMs: 4, dropEveryNthMessage: 2 }
+    })
+
+    await pair.host.connect()
+    pair.guest.send({ seq: 1, sentAtMs: nowMs, message: { type: 'ping', nonce: 1 } })
+    pair.guest.send({ seq: 2, sentAtMs: nowMs, message: { type: 'ping', nonce: 2 } })
+    nowMs += 4
+    pair.flushAll()
+
+    const budgetResult = evaluateSimulatedPeerTransportBudget(pair.getAggregateMetrics())
+    expect(budgetResult.ok).toBe(false)
+    expect(budgetResult.failures).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          metric: 'combinedDroppedMessages'
+        }),
+        expect.objectContaining({
+          metric: 'combinedByteLossRate'
+        })
+      ])
+    )
+  })
+
   it('keeps a bursty host and guest mock connection inside the streaming budget', async () => {
     let nowMs = 9000
     const pair = createSimulatedPeerTransportPair({

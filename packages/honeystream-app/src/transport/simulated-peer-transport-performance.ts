@@ -2,6 +2,7 @@ import { AggregateSimulatedPeerTransportMetrics } from './simulated-peer-transpo
 
 export interface SimulatedPeerTransportBudget {
   readonly minDeliveryRate: number
+  readonly maxDroppedMessages: number
   readonly maxByteLossRate: number
   readonly maxAverageMessageBytes: number
   readonly maxAverageLatencyMs: number
@@ -12,6 +13,7 @@ export interface SimulatedPeerTransportBudget {
 
 export type SimulatedPeerTransportBudgetMetric =
   | 'combinedDeliveryRate'
+  | 'combinedDroppedMessages'
   | 'combinedByteLossRate'
   | 'combinedAverageMessageBytes'
   | 'combinedAverageLatencyMs'
@@ -34,7 +36,7 @@ export interface SimulatedPeerTransportBudgetResult {
 Context: Streaming-site sync tests need a stable host/guest mock-network merge gate.
 Invariant: Website playback shares compact commands only; video bytes stay local to each browser.
 Options considered: Per-test assertions, ad hoc logs, or one reusable budget evaluator.
-Decision: Keep delivery, byte-loss, wire-size, latency, and queue caps in this transport helper.
+Decision: Keep delivery, drop, byte-loss, wire-size, latency, and queue caps in this helper.
 Performance impact: Budget checks are O(1) over aggregate metrics already captured by simulations.
 Memory/lifecycle ownership: Metrics are bounded by the simulated transport recorder.
 Failure mode: Over-budget simulations return typed failures for the exact metric that regressed.
@@ -42,11 +44,12 @@ Validation: Covered by simulated-peer-transport-performance and streaming-site r
 */
 export const STREAMING_SITE_TRANSPORT_BUDGET: SimulatedPeerTransportBudget = Object.freeze({
   minDeliveryRate: 1,
+  maxDroppedMessages: 0,
   maxByteLossRate: 0,
   maxAverageMessageBytes: 1200,
-  maxAverageLatencyMs: 24,
-  maxP95LatencyMs: 24,
-  maxMaxLatencyMs: 32,
+  maxAverageLatencyMs: 16,
+  maxP95LatencyMs: 16,
+  maxMaxLatencyMs: 20,
   maxQueuedMessages: 0
 })
 
@@ -72,6 +75,16 @@ export const evaluateSimulatedPeerTransportBudget = (
         'combinedDeliveryRate',
         `>= ${budget.minDeliveryRate}`,
         metrics.combinedDeliveryRate
+      )
+    )
+  }
+
+  if (metrics.combinedDroppedMessages > budget.maxDroppedMessages) {
+    failures.push(
+      overBudgetFailure(
+        'combinedDroppedMessages',
+        `<= ${budget.maxDroppedMessages}`,
+        metrics.combinedDroppedMessages
       )
     )
   }
