@@ -443,6 +443,58 @@ describe('createRuntimeSessionShellRouteBoundary', () => {
     }
   })
 
+  it('normalizes shorthand URL media additions before dispatching them', async () => {
+    const transportPair = createRouteTransportPair(() => 3500)
+    const dispatchHostCommandSpy = jest.fn(async (_command: HostSessionCommand) => undefined)
+    const runtimeProjection: SessionRuntimeProjection = {
+      role: 'host',
+      lifecycle: 'running',
+      transportState: transportPair.host.getState(),
+      diagnostics: [],
+      runtimeErrors: []
+    }
+    const runtime: RuntimeSession = {
+      getSnapshot(): SessionRuntimeProjection {
+        return runtimeProjection
+      },
+      getProjectionStore() {
+        return createProjectionStore(runtimeProjection)
+      },
+      subscribeToSnapshots(): () => void {
+        return () => undefined
+      },
+      startHostSession: async () => undefined,
+      startGuestSession: async () => undefined,
+      dispatchHostCommand: dispatchHostCommandSpy,
+      dispatchGuestCommand: async (_command: ClientCommand) => undefined,
+      dispose: jest.fn()
+    }
+
+    const boundary = createRuntimeSessionShellRouteBoundary('room-shorthand', {
+      createRuntime: (_deps: SessionRuntimeDependencies) => runtime,
+      createPlaybackEngine: () => new FakePlaybackEngine(),
+      createTransportPair: () => transportPair,
+      now: () => 3500
+    })
+
+    try {
+      await boundary.start()
+      boundary.addMediaUrl('youtube.com/watch?v=honeystream-demo')
+
+      expect(dispatchHostCommandSpy).toHaveBeenCalledWith({
+        type: 'addMedia',
+        media: {
+          mediaId: 'runtime-media-3500-1',
+          kind: 'website',
+          source: 'https://youtube.com/watch?v=honeystream-demo',
+          title: 'YouTube watch page'
+        }
+      })
+    } finally {
+      boundary.dispose()
+    }
+  })
+
   it('dispatches host local-file media additions through the runtime command path', async () => {
     const transportPair = createRouteTransportPair(() => 4000)
     const dispatchHostCommandSpy = jest.fn(async (_command: HostSessionCommand) => undefined)

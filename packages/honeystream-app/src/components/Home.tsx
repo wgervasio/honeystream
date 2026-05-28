@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import React, { ChangeEvent, Component, FormEvent } from 'react'
 
 import { PRODUCT_NAME, VERSION } from 'constants/app'
 
@@ -9,13 +9,56 @@ import { MenuHeader } from './menu/MenuHeader'
 import { assetUrl } from 'utils/appUrl'
 import { withNamespaces, WithNamespaces } from 'react-i18next'
 import { localUserId } from '../network/index'
+import { normalizeRuntimeAddMediaHttpUrl } from '../ui/media-runtime/RuntimeAddMediaSourcePreview'
 
 interface IProps extends WithNamespaces {
   installable: boolean
   install?: () => void
+  startWithUrl: (url: string) => void
 }
 
-class Home extends Component<IProps> {
+interface IState {
+  starterInvalid: boolean
+  starterUrl: string
+}
+
+const starterSiteExamples = [
+  {
+    id: 'youtube',
+    label: 'YouTube',
+    url: 'youtube.com/watch?v=cat-rabbit-night',
+    detail: 'Video page'
+  },
+  {
+    id: 'animepahe',
+    label: 'AnimePahe',
+    url: 'animepahe.ru/play/demo',
+    detail: 'Episode page'
+  },
+  {
+    id: 'cineby',
+    label: 'Cineby',
+    url: 'cineby.app/movie/demo',
+    detail: 'Movie page'
+  },
+  {
+    id: 'direct',
+    label: 'Direct MP4',
+    url: 'example.com/date-night.mp4',
+    detail: 'Clean media'
+  }
+] as const
+
+class Home extends Component<IProps, IState> {
+  constructor(props: IProps) {
+    super(props)
+
+    this.state = {
+      starterInvalid: false,
+      starterUrl: ''
+    }
+  }
+
   render() {
     const { t } = this.props
 
@@ -238,25 +281,62 @@ class Home extends Component<IProps> {
                 easy, low-drama watch flow.
               </p>
 
-              <div
+              <form
                 id="home_watch_launcher"
                 className={styles.watchLauncher}
                 aria-label="Watch-night launcher preview"
+                onSubmit={this.submitStarterUrl}
+                noValidate
               >
                 <div className={styles.launcherHeader}>
                   <span>Tonight starter</span>
-                  <strong>ready in 3 cozy taps</strong>
+                  <strong>paste once, start cozy</strong>
                 </div>
+                <label className={styles.starterLabel} htmlFor="home_starter_url">
+                  Website, direct media link, or watch page
+                </label>
                 <div className={styles.launcherInput}>
-                  <span>https://your-watch-page.example/show</span>
-                  <strong>Website detected</strong>
+                  <input
+                    id="home_starter_url"
+                    value={this.state.starterUrl}
+                    placeholder="youtube.com/watch or https://example.com/video.mp4"
+                    autoComplete="url"
+                    spellCheck={false}
+                    aria-invalid={this.state.starterInvalid || undefined}
+                    aria-describedby={this.state.starterInvalid ? 'home_starter_error' : undefined}
+                    onChange={this.onStarterUrlChange}
+                  />
+                  <button id="home_start_with_url" type="submit">
+                    Start with link
+                  </button>
+                </div>
+                {this.state.starterInvalid && (
+                  <p id="home_starter_error" className={styles.starterError} role="alert">
+                    Paste a site like youtube.com/watch or a full http:// or https:// watch link.
+                  </p>
+                )}
+                <div
+                  id="home_starter_chips"
+                  className={styles.starterChips}
+                  aria-label="Starter examples"
+                >
+                  {starterSiteExamples.map(example => (
+                    <button
+                      key={example.id}
+                      type="button"
+                      onClick={() => this.selectStarterExample(example.url)}
+                    >
+                      <strong>{example.label}</strong>
+                      <span>{example.detail}</span>
+                    </button>
+                  ))}
                 </div>
                 <div className={styles.launcherActions}>
                   <span>Queue source</span>
                   <span>Copy invite</span>
                   <span>Start together</span>
                 </div>
-              </div>
+              </form>
 
               <nav className={styles.actionGrid} aria-label="Primary actions">
                 <MenuButton
@@ -539,6 +619,32 @@ class Home extends Component<IProps> {
         </div>
       </LayoutMain>
     )
+  }
+
+  private onStarterUrlChange = (event: ChangeEvent<HTMLInputElement>) => {
+    this.setState({
+      starterInvalid: false,
+      starterUrl: event.currentTarget.value
+    })
+  }
+
+  private selectStarterExample = (url: string) => {
+    this.setState({
+      starterInvalid: false,
+      starterUrl: url
+    })
+  }
+
+  private submitStarterUrl = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+
+    const normalizedUrl = normalizeRuntimeAddMediaHttpUrl(this.state.starterUrl)
+    if (!normalizedUrl) {
+      this.setState({ starterInvalid: true })
+      return
+    }
+
+    this.props.startWithUrl(normalizedUrl)
   }
 }
 

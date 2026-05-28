@@ -29,8 +29,7 @@ describe('settings', () => {
     it('should edit runtime username settings', async () => {
       await ms.visit(`/join/${userId}`)
       await page.waitForSelector('[data-runtime-session-shell="true"]')
-      await page.click(RUNTIME_USERNAME_SELECTOR, { clickCount: 3 })
-      await page.type(RUNTIME_USERNAME_SELECTOR, RUNTIME_USERNAME_VALUE)
+      await page.fill(RUNTIME_USERNAME_SELECTOR, RUNTIME_USERNAME_VALUE)
       await page.waitForFunction(
         (input: { readonly selector: string; readonly value: string }) => {
           const { selector, value } = input

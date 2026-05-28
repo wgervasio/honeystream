@@ -59,6 +59,7 @@ import {
 } from '../ui'
 import { SessionShell } from '../ui/session'
 import { useProjectionSelector } from '../ui/useProjectionSelector'
+import { normalizeRuntimeAddMediaHttpUrl } from '../ui/media-runtime/RuntimeAddMediaSourcePreview'
 import styles from './RuntimeSessionShellPage.css'
 
 interface IRouteParams {
@@ -575,9 +576,13 @@ const runBoundaryCommand = (
   command: () => Promise<void>,
   recordError: (message: string) => void
 ): void => {
-  void command().catch(error => {
+  try {
+    void command().catch(error => {
+      recordError(toErrorMessage(error))
+    })
+  } catch (error) {
     recordError(toErrorMessage(error))
-  })
+  }
 }
 
 const mapProjectionToShellSnapshot = (
@@ -657,6 +662,16 @@ const readInviteSecret = (search: string | undefined): string | undefined => {
   const secret = new URLSearchParams(search).get('secret')
   const trimmedSecret = secret ? secret.trim() : ''
   return trimmedSecret.length > 0 ? trimmedSecret : undefined
+}
+
+const readInitialMediaUrl = (search: string | undefined): string | undefined => {
+  if (typeof search !== 'string' || search.length === 0) {
+    return undefined
+  }
+
+  const url = new URLSearchParams(search).get('url')
+  const trimmedUrl = url ? url.trim() : ''
+  return trimmedUrl.length > 0 ? trimmedUrl : undefined
 }
 
 const getMediaTitleFromUrl = (mediaUrl: URL): string => {
@@ -1186,6 +1201,7 @@ export const createRuntimeSessionShellRouteBoundary = (
 
   let started = false
   let disposed = false
+  let startPromise: Promise<void> | undefined
 
   const recordBoundaryError = (message: string): void => {
     boundaryErrors = [
@@ -1284,14 +1300,13 @@ export const createRuntimeSessionShellRouteBoundary = (
 
   const addMediaUrl = (url: string): void => {
     const trimmedUrl = url.trim()
-    let mediaUrl: URL
-    try {
-      mediaUrl = new URL(trimmedUrl)
-    } catch {
-      recordBoundaryError(`Media URL "${trimmedUrl}" is not a valid absolute URL.`)
+    const normalizedUrl = normalizeRuntimeAddMediaHttpUrl(trimmedUrl)
+    if (!normalizedUrl) {
+      recordBoundaryError(`Media URL "${trimmedUrl}" is not a valid http or https watch link.`)
       return
     }
 
+    const mediaUrl = new URL(normalizedUrl)
     dispatchMedia({
       mediaId: createMediaId(),
       kind: getMediaKindFromUrl(mediaUrl),
@@ -1381,66 +1396,82 @@ export const createRuntimeSessionShellRouteBoundary = (
     updateSettings(nextSettings: MinimalSettings): void {
       settingsStore.setSnapshot(nextSettings)
     },
-    async start(): Promise<void> {
+    start(): Promise<void> {
       if (disposed) {
-        throw new Error('Runtime session shell boundary cannot be started after disposal.')
+        return Promise.reject(
+          new Error('Runtime session shell boundary cannot be started after disposal.')
+        )
       }
 
-      if (started) {
-        return
+      if (startPromise) {
+        return startPromise
       }
 
-      started = true
-      const currentStartEpoch = startEpoch + 1
-      startEpoch = currentStartEpoch
-      let pendingRuntimeHandle: RuntimeRouteRuntimeHandle | undefined
-      try {
-        pendingRuntimeHandle = await createRuntimeHandle({
-          createPlaybackEngine: playbackEngineFactory,
-          createRuntime: runtimeFactory,
-          createTransportPair: dependencies.createTransportPair,
-          now,
-          roomId
-        })
-        if (disposed || startEpoch !== currentStartEpoch) {
-          pendingRuntimeHandle.dispose()
+      const pendingStart = (async () => {
+        if (started) {
           return
         }
 
-        runtimeHandle = pendingRuntimeHandle
-        pendingRuntimeHandle = undefined
-        attachRuntimeProjection(runtimeHandle.runtime)
-
-        if (runtimeHandle.role === 'host') {
-          await runtimeHandle.runtime.startHostSession({
-            roomId,
-            hostUsername,
-            inviteSecret: invite.secret
+        started = true
+        const currentStartEpoch = startEpoch + 1
+        startEpoch = currentStartEpoch
+        let pendingRuntimeHandle: RuntimeRouteRuntimeHandle | undefined
+        try {
+          pendingRuntimeHandle = await createRuntimeHandle({
+            createPlaybackEngine: playbackEngineFactory,
+            createRuntime: runtimeFactory,
+            createTransportPair: dependencies.createTransportPair,
+            now,
+            roomId
           })
-        } else {
-          if (!inviteSecretProvided) {
-            throw new Error('Invite secret is required to join a runtime session.')
+          if (disposed || startEpoch !== currentStartEpoch) {
+            pendingRuntimeHandle.dispose()
+            return
           }
 
-          await runtimeHandle.runtime.startGuestSession({
-            roomId,
-            username: settingsStore.getSnapshot().username,
-            inviteSecret: invite.secret
-          })
-        }
-        if (disposed || startEpoch !== currentStartEpoch) {
+          runtimeHandle = pendingRuntimeHandle
+          pendingRuntimeHandle = undefined
+          attachRuntimeProjection(runtimeHandle.runtime)
+
+          if (runtimeHandle.role === 'host') {
+            await runtimeHandle.runtime.startHostSession({
+              roomId,
+              hostUsername,
+              inviteSecret: invite.secret
+            })
+          } else {
+            if (!inviteSecretProvided) {
+              throw new Error('Invite secret is required to join a runtime session.')
+            }
+
+            await runtimeHandle.runtime.startGuestSession({
+              roomId,
+              username: settingsStore.getSnapshot().username,
+              inviteSecret: invite.secret
+            })
+          }
+          if (disposed || startEpoch !== currentStartEpoch) {
+            disposeStartedRuntime()
+          }
+        } catch (error) {
+          if (pendingRuntimeHandle) {
+            pendingRuntimeHandle.dispose()
+          }
           disposeStartedRuntime()
+          started = false
+          if (!disposed) {
+            recordBoundaryError(toErrorMessage(error))
+          }
         }
-      } catch (error) {
-        if (pendingRuntimeHandle) {
-          pendingRuntimeHandle.dispose()
+      })()
+      startPromise = pendingStart
+      void pendingStart.then(() => {
+        if (startPromise === pendingStart && !started) {
+          startPromise = undefined
         }
-        disposeStartedRuntime()
-        started = false
-        if (!disposed) {
-          recordBoundaryError(toErrorMessage(error))
-        }
-      }
+      })
+
+      return pendingStart
     },
     dispose(): void {
       if (disposed) {
@@ -1448,6 +1479,7 @@ export const createRuntimeSessionShellRouteBoundary = (
       }
       disposed = true
       startEpoch += 1
+      startPromise = undefined
       disposeStartedRuntime()
     }
   }
@@ -1456,6 +1488,7 @@ export const createRuntimeSessionShellRouteBoundary = (
 export const RuntimeSessionShellPage = ({ location, match }: RouteComponentProps<IRouteParams>) => {
   const lobbyId = match.params.lobbyId
   const inviteSecret = useMemo(() => readInviteSecret(location.search), [location.search])
+  const initialMediaUrl = useMemo(() => readInitialMediaUrl(location.search), [location.search])
   const boundary = useMemo(
     () => createRuntimeSessionShellRouteBoundary(lobbyId, { inviteSecret }),
     [inviteSecret, lobbyId]
@@ -1468,6 +1501,23 @@ export const RuntimeSessionShellPage = ({ location, match }: RouteComponentProps
       boundary.dispose()
     }
   }, [boundary])
+
+  useEffect(() => {
+    if (!initialMediaUrl) {
+      return
+    }
+
+    let cancelled = false
+    void boundary.start().then(() => {
+      if (!cancelled) {
+        boundary.addMediaUrl(initialMediaUrl)
+      }
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [boundary, initialMediaUrl])
 
   return <RuntimeSessionRouteSurface boundary={boundary} lobbyId={lobbyId} />
 }
