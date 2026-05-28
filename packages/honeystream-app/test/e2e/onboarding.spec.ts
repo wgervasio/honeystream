@@ -1,5 +1,17 @@
 jest.setTimeout(30e3)
 
+async function waitForText(text: string): Promise<void> {
+  await page.waitForFunction(
+    expectedText =>
+      Boolean(
+        document.body &&
+          document.body.textContent &&
+          document.body.textContent.includes(expectedText)
+      ),
+    text
+  )
+}
+
 describe('onboarding', () => {
   beforeEach(async () => {
     await ms.visit('/')
@@ -24,6 +36,9 @@ describe('onboarding', () => {
     await page.waitForSelector('[data-home-hero="cozy"]')
     await page.waitForSelector('#home_headline')
     await page.waitForSelector('#home_watch_launcher')
+    await page.waitForSelector('#home_starter_url')
+    await page.waitForSelector('#home_start_with_url')
+    await page.waitForSelector('#home_starter_chips')
     await page.waitForSelector('#home_easy_path')
     await page.waitForSelector('#home_source_board')
     await page.waitForSelector('#home_vibe_dock')
@@ -48,7 +63,9 @@ describe('onboarding', () => {
     expect(heroText).toContain('One cat person. One bunny person.')
     expect(headline).toContain('Happy streams')
     expect(watchLauncher).toContain('Tonight starter')
-    expect(watchLauncher).toContain('Website detected')
+    expect(watchLauncher).toContain('paste once, start cozy')
+    expect(watchLauncher).toContain('Start with link')
+    expect(watchLauncher).toContain('Direct MP4')
     expect(easyPath).toContain('Paste a site')
     expect(easyPath).toContain('Watch together')
     expect(sourceBoard).toContain('Websites first')
@@ -73,6 +90,20 @@ describe('onboarding', () => {
     await page.waitForSelector('#home_feature_private')
     await page.waitForSelector('#home_feature_sync')
     await page.waitForSelector('#home_feature_sites')
+  })
+
+  it('should start a room from a pasted home watch link', async () => {
+    await page.evaluate(() => localStorage.setItem('welcomed', 'true'))
+    await page.reload()
+    await page.waitForSelector('#home_starter_url')
+
+    await page.type('#home_starter_url', 'youtube.com/watch?v=home-launch')
+    await page.click('#home_start_with_url')
+
+    await page.waitForSelector('[data-runtime-session-shell="true"]')
+    await waitForText('Website loaded')
+    await waitForText('watch')
+    await waitForText('Source is ready')
   })
 
   it('should show friendly join guidance', async () => {

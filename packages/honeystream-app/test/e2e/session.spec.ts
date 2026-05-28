@@ -120,6 +120,15 @@ describe('session', () => {
       await waitForRuntimeText(page, 'YouTube watch page')
     })
 
+    it('should queue the initial room URL from the landing launcher', async () => {
+      await ms.visit(`/join/${hostId}?url=${encodeURIComponent('youtube.com/watch?v=home-launch')}`)
+      await page.waitForSelector(RUNTIME_SHELL_SELECTOR)
+
+      await waitForRuntimeText(page, 'Website loaded')
+      await waitForRuntimeText(page, 'watch')
+      await waitForRuntimeText(page, 'Source is ready')
+    })
+
     it('should not join invalid session', async () => {
       const guestContext = await browser.newContext()
       const guestPage = await guestContext.newPage()

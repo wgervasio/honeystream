@@ -211,33 +211,101 @@
 }
 
 .launcherInput {
-  justify-content: space-between;
-  min-height: 3.25rem;
-  padding: 0 0.85rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  min-height: 3.4rem;
+  padding: 0.4rem;
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.12);
 }
 
-.launcherInput span {
+.starterLabel {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.82rem;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.launcherInput input {
   min-width: 0;
-  overflow: hidden;
+  padding: 0 0.85rem;
+  border: 0;
+  border-radius: 14px 0 0 14px;
+  outline: 0;
+  background: rgba(36, 28, 53, 0.24);
   color: rgba(255, 255, 255, 0.86);
   font-family: 'Noto Mono', monospace;
   font-size: 0.84rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.launcherInput strong {
-  flex: 0 0 auto;
-  padding: 0.35rem 0.55rem;
-  border-radius: 999px;
-  background: linear-gradient(135deg, rgba(158, 215, 255, 0.92), rgba(247, 215, 232, 0.92));
-  color: var(--color-ink);
-  font-size: 0.72rem;
+.launcherInput input:focus {
+  box-shadow: var(--app-focus-ring);
+}
+
+.launcherInput input[aria-invalid='true'] {
+  box-shadow: var(--app-focus-ring);
+}
+
+.launcherInput button {
+  padding: 0 0.85rem;
+  border-radius: 0 14px 14px 0;
+  background: var(--app-button-gradient);
+  color: #fff;
+  font-size: 0.76rem;
+  font-weight: bold;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  box-shadow: 0 12px 28px rgba(255, 127, 150, 0.22);
+}
+
+.launcherInput button:hover {
+  filter: brightness(1.05);
+}
+
+.starterError {
+  margin: -0.15rem 0 0;
+  color: var(--color-honey) !important;
+  font-size: 0.88rem !important;
+  line-height: 1.3rem !important;
+}
+
+.starterChips {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.starterChips button {
+  min-height: 3.6rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  text-align: left;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.11);
+}
+
+.starterChips button:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.starterChips strong {
+  color: #fff;
+  font-size: 0.84rem;
+  line-height: 1.1;
+}
+
+.starterChips span {
+  margin-top: 0.2rem;
+  color: rgba(255, 255, 255, 0.66);
+  font-size: 0.78rem;
+  line-height: 1.1rem;
 }
 
 .launcherActions {
@@ -1346,6 +1414,21 @@
   .launcherInput {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .launcherInput {
+    grid-template-columns: 1fr;
+  }
+
+  .launcherInput input,
+  .launcherInput button {
+    min-height: 2.8rem;
+    width: 100%;
+    border-radius: 14px;
+  }
+
+  .starterChips {
+    grid-template-columns: 1fr;
   }
 
   .comfortGrid {

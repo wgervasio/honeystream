@@ -8,9 +8,6 @@ import { SHOW_INSTALL_PROMPT } from '../middleware/pwa'
 import { Dispatch } from 'redux'
 import { replace } from 'connected-react-router'
 import { localUserId } from 'network'
-import { setPendingMedia } from 'lobby/actions/mediaPlayer'
-import { SEC2MS } from 'utils/math'
-import { PendingMedia } from 'lobby/reducers/mediaPlayer'
 
 interface IProps extends RouteComponentProps<any> {}
 
@@ -21,7 +18,7 @@ interface IConnectedProps {
 
 interface DispatchProps {
   showInstallPrompt(): void
-  setPendingMedia(media: PendingMedia): void
+  startWithUrl(url: string): void
 }
 
 function mapStateToProps(state: IAppState): IConnectedProps {
@@ -36,9 +33,13 @@ const mapDispatchToProps = (dispatch: Dispatch): DispatchProps => ({
   showInstallPrompt() {
     dispatch({ type: SHOW_INSTALL_PROMPT })
   },
-  setPendingMedia(media: PendingMedia) {
-    dispatch(setPendingMedia(media))
-    dispatch(replace({ pathname: `/join/${localUserId()}`, search: '' }))
+  startWithUrl(url: string) {
+    dispatch(
+      replace({
+        pathname: `/join/${localUserId()}`,
+        search: `?url=${encodeURIComponent(url)}`
+      })
+    )
   }
 })
 
@@ -50,15 +51,17 @@ class _HomePage extends Component<PrivateProps> {
     const url = params.get('url')
 
     if (url) {
-      const time = parseInt(params.get('t') || '', 10) || undefined
-      const source = params.get('source') || undefined
-      this.props.setPendingMedia({ url, time: time ? time * SEC2MS : undefined, source })
+      this.props.startWithUrl(url)
     }
   }
 
   render() {
     return (
-      <Home installable={!!this.props.pwaInstallReady} install={this.props.showInstallPrompt} />
+      <Home
+        installable={!!this.props.pwaInstallReady}
+        install={this.props.showInstallPrompt}
+        startWithUrl={this.props.startWithUrl}
+      />
     )
   }
 }
