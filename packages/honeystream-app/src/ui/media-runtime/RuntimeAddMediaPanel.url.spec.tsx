@@ -30,6 +30,7 @@ describe('RuntimeAddMediaPanel URL handling', () => {
       expect(container.textContent).toContain('YouTube, AnimePahe, Cineby, Miruro')
       expect(container.textContent).toContain('any site you can test together')
       expect(container.textContent).toContain('streaming connection lab')
+      expect(container.textContent).toContain('picks the lowest-loss lane first')
       expect(container.textContent).toContain('zero-loss, under-32ms mock round trip')
       expect(container.textContent).toContain('no skipped controls')
       expect(container.textContent).toContain('typed control stream')
