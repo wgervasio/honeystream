@@ -27,6 +27,7 @@ export interface PlaybackRuntimeControlLabels {
 
 export interface PlaybackRuntimeControlsProps {
   readonly className?: string
+  readonly description?: string
   readonly id?: string
   readonly intents: PlaybackRuntimeControlIntents
   readonly labels?: Partial<PlaybackRuntimeControlLabels>
@@ -34,4 +35,5 @@ export interface PlaybackRuntimeControlsProps {
   readonly rateStep?: number
   readonly seekStepMs?: number
   readonly session: PlaybackRuntimeSessionModel
+  readonly title?: string
 }

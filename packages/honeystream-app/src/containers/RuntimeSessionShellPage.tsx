@@ -928,6 +928,7 @@ const RuntimeSessionRouteSurface = ({
           baseUrl={getInviteBaseUrl()}
           className={`${styles.card} ${styles.invitePanel}`}
           copyLabel="Copy"
+          description="Copy the full invite link first. Room code and secret are backup pieces if a browser strips the URL."
           invite={boundary.invite}
           inviteLinkLabel="Invite link"
           onCopyInviteLink={boundary.copyText}
@@ -1006,6 +1007,12 @@ const RuntimeSessionRouteSurface = ({
         <PlaybackRuntimeControls
           id="runtime_playback_controls"
           className={`${styles.card} ${styles.playbackPanel}`}
+          title="Sync controls"
+          description={
+            currentMedia
+              ? 'Play, pause, seek, speed, and next stay host-led so both seats know what changed.'
+              : 'Queue a source first; then play, pause, seek, speed, and next stay host-led.'
+          }
           playback={viewModel.snapshot.session.playback}
           session={mapSessionSnapshotToPlaybackModel(viewModel.snapshot.session)}
           intents={boundary.playbackIntents}

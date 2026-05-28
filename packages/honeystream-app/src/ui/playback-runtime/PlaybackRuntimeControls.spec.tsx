@@ -95,6 +95,23 @@ describe('PlaybackRuntimeControls', () => {
     expect(html).toContain('0:15')
   })
 
+  it('renders optional cozy control title and guidance', () => {
+    const { props } = createHarness()
+
+    const html = renderToStaticMarkup(
+      <PlaybackRuntimeControls
+        {...props}
+        title="Sync controls"
+        description="Queue a source first; then play, pause, seek, speed, and next stay host-led."
+      />
+    )
+
+    expect(html).toContain('data-playback-control-title="true"')
+    expect(html).toContain('Sync controls')
+    expect(html).toContain('Queue a source first')
+    expect(html).toContain('host-led')
+  })
+
   it('keeps next enabled when a following media item exists without a current media item', () => {
     const { props } = createHarness({
       session: {
