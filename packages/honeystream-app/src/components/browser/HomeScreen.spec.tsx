@@ -1,5 +1,9 @@
+/** @jest-environment jsdom */
+
 import React from 'react'
+import * as ReactDOM from 'react-dom'
 import { renderToStaticMarkup } from 'react-dom/server'
+import { Simulate } from 'react-dom/test-utils'
 
 jest.mock('./HomeScreen.css', () => ({
   button: 'button',
@@ -69,5 +73,35 @@ describe('browser/HomeScreen', () => {
     expect(html).toContain('AnimePahe')
     expect(html).toContain('Cineby')
     expect(html).toContain('Miruro')
+  })
+
+  it('selects a site lane without inserting a fake URL', () => {
+    const container = document.createElement('div')
+    document.body.appendChild(container)
+
+    try {
+      ReactDOM.render(
+        <HomeScreen onRequestUrl={() => undefined} onRequestLocalFile={() => undefined} />,
+        container
+      )
+
+      const youtubeChip = Array.from(container.querySelectorAll('button')).find(
+        button => button.textContent === 'YouTube'
+      ) as HTMLButtonElement | undefined
+      expect(youtubeChip).toBeDefined()
+
+      Simulate.click(youtubeChip!)
+
+      const input = container.querySelector('#urlinput') as HTMLInputElement
+      expect(input.value).toBe('')
+      expect(input.placeholder).toBe('Paste the exact YouTube watch page...')
+      expect(document.activeElement).toBe(input)
+      expect(youtubeChip!.getAttribute('aria-pressed')).toBe('true')
+      expect(container.textContent).toContain('YouTube lane selected')
+      expect(container.textContent).toContain('Paste the real video page')
+    } finally {
+      ReactDOM.unmountComponentAtNode(container)
+      container.remove()
+    }
   })
 })

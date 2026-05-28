@@ -7,9 +7,10 @@ import {
 
 export interface RuntimeAddMediaSuggestion {
   readonly detail: string
+  readonly guidance: string
   readonly id: string
   readonly label: string
-  readonly url: string
+  readonly placeholder: string
 }
 
 export interface RuntimeAddMediaPanelProps {
@@ -37,8 +38,12 @@ export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
   const [url, setUrl] = useState('')
   const [errorMessage, setErrorMessage] = useState<string | undefined>()
   const [statusMessage, setStatusMessage] = useState<string | undefined>()
+  const [selectedSuggestionId, setSelectedSuggestionId] = useState<string | undefined>()
 
   const sourceSuggestions = props.sourceSuggestions || []
+  const selectedSuggestion = sourceSuggestions.find(
+    suggestion => suggestion.id === selectedSuggestionId
+  )
   const sourcePreview = createRuntimeAddMediaSourcePreview(url)
   const sourceConfidenceItems = createRuntimeAddMediaConfidenceItems(sourcePreview)
   const inputDescriptionId = errorMessage
@@ -74,6 +79,7 @@ export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
     props.onAddUrl(trimmedUrl)
     setUrl('')
     setErrorMessage(undefined)
+    setSelectedSuggestionId(undefined)
     setStatusMessage('Source queued. Copy the invite or press play when your buddy lands.')
   }
 
@@ -97,13 +103,15 @@ export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
               key={suggestion.id}
               type="button"
               data-source-suggestion={suggestion.id}
+              data-source-suggestion-state={
+                selectedSuggestionId === suggestion.id ? 'selected' : 'idle'
+              }
+              aria-pressed={selectedSuggestionId === suggestion.id}
               onClick={() => {
-                setUrl(suggestion.url)
+                setUrl('')
+                setSelectedSuggestionId(suggestion.id)
                 setErrorMessage(undefined)
-                setStatusMessage(
-                  suggestion.label +
-                    ' source loaded. Replace the example with your exact watch page.'
-                )
+                setStatusMessage(`${suggestion.label} lane selected. ${suggestion.guidance}`)
                 focusUrlInput()
               }}
             >
@@ -120,7 +128,11 @@ export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
           id="runtime-add-media-url"
           type="url"
           value={url}
-          placeholder={props.placeholder || 'https://example.com/video.mp4'}
+          placeholder={
+            selectedSuggestion
+              ? selectedSuggestion.placeholder
+              : props.placeholder || 'https://example.com/video.mp4'
+          }
           onChange={event => {
             setUrl(event.currentTarget.value)
             setErrorMessage(undefined)
@@ -164,6 +176,7 @@ export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
               if (file && props.onAddLocalFile) {
                 props.onAddLocalFile(file)
                 setErrorMessage(undefined)
+                setSelectedSuggestionId(undefined)
                 setStatusMessage(
                   `${file.name} queued locally. Rabbit-side should pick their copy too.`
                 )

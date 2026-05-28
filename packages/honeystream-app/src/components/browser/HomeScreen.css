@@ -354,6 +354,11 @@
   color: #fff;
 }
 
+.siteChip[aria-pressed='true'] {
+  background: linear-gradient(135deg, rgba(158, 215, 255, 0.9), rgba(247, 215, 232, 0.9));
+  color: var(--color-ink);
+}
+
 .trustBadges {
   display: flex;
   justify-content: center;

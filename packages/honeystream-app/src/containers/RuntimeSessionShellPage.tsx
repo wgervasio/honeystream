@@ -183,31 +183,36 @@ const ADD_MEDIA_SUGGESTIONS = [
     id: 'youtube',
     label: 'YouTube',
     detail: 'Video page',
-    url: 'https://www.youtube.com/watch?v=honeystream-demo'
+    placeholder: 'Paste the exact YouTube watch page...',
+    guidance: 'Paste the real video page you both can open.'
   },
   {
     id: 'animepahe',
     label: 'AnimePahe',
     detail: 'Anime watch page',
-    url: 'https://animepahe.ru/play/example'
+    placeholder: 'Paste the exact AnimePahe play page...',
+    guidance: 'Use the real episode page after both sides can access it.'
   },
   {
     id: 'cineby',
     label: 'Cineby',
     detail: 'Movie page',
-    url: 'https://cineby.app/movie/example'
+    placeholder: 'Paste the exact Cineby watch page...',
+    guidance: 'Paste the real movie or show page so both browsers land together.'
   },
   {
     id: 'miruro',
     label: 'Miruro',
     detail: 'Anime watch page',
-    url: 'https://www.miruro.tv/watch/example'
+    placeholder: 'Paste the exact Miruro watch page...',
+    guidance: 'Use the real watch page you want rabbit-side to load.'
   },
   {
     id: 'direct',
     label: 'Direct MP4',
     detail: 'Clean media URL',
-    url: 'https://example.com/watch-night.mp4'
+    placeholder: 'Paste a direct MP4, WebM, audio, or stream URL...',
+    guidance: 'Use a clean media URL when the source already points at playable media.'
   }
 ] as const
 const ROOM_READY_SIGNALS = [

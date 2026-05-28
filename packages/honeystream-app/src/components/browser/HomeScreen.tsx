@@ -9,10 +9,27 @@ interface Props {
 }
 
 const siteExamples = [
-  { label: 'YouTube', url: 'https://www.youtube.com/watch?v=honeystream-demo' },
-  { label: 'AnimePahe', url: 'https://animepahe.ru/play/example' },
-  { label: 'Cineby', url: 'https://cineby.app/movie/example' },
-  { label: 'Miruro', url: 'https://www.miruro.tv/watch/example' }
+  {
+    label: 'YouTube',
+    placeholder: 'Paste the exact YouTube watch page...',
+    helper: 'YouTube lane selected. Paste the real video page you both can open.'
+  },
+  {
+    label: 'AnimePahe',
+    placeholder: 'Paste the exact AnimePahe play page...',
+    helper: 'AnimePahe lane selected. Use the real episode page after both sides can access it.'
+  },
+  {
+    label: 'Cineby',
+    placeholder: 'Paste the exact Cineby watch page...',
+    helper:
+      'Cineby lane selected. Paste the real movie or show page so both browsers land together.'
+  },
+  {
+    label: 'Miruro',
+    placeholder: 'Paste the exact Miruro watch page...',
+    helper: 'Miruro lane selected. Use the real watch page you want rabbit-side to load.'
+  }
 ]
 
 const addSteps = [
@@ -47,11 +64,7 @@ const sourceConfidenceItems = [
   'Local files stay on each device',
   'Direct media links skip extra clutter'
 ]
-const trustBadges = [
-  'Known-site chips',
-  'Zero media bytes shared',
-  'Tiny host-led commands'
-]
+const trustBadges = ['Known-site chips', 'Zero media bytes shared', 'Tiny host-led commands']
 const decisionFlowCards = [
   {
     label: 'Website opens for both',
@@ -80,6 +93,8 @@ export const HomeScreen = (props: Props) => {
   const urlInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [urlInputInvalid, setUrlInputInvalid] = useState(false)
+  const [selectedSiteLabel, setSelectedSiteLabel] = useState<string | undefined>()
+  const selectedSite = siteExamples.find(example => example.label === selectedSiteLabel)
 
   const requestLocalFile = () => {
     const file = fileInputRef.current && fileInputRef.current.files && fileInputRef.current.files[0]
@@ -220,11 +235,12 @@ export const HomeScreen = (props: Props) => {
                   key={example.label}
                   type="button"
                   className={styles.siteChip}
+                  aria-pressed={selectedSiteLabel === example.label}
                   onClick={() => {
+                    setSelectedSiteLabel(example.label)
+                    setUrlInputInvalid(false)
                     if (urlInputRef.current) {
-                      urlInputRef.current.value = example.url
                       urlInputRef.current.focus()
-                      setUrlInputInvalid(false)
                     }
                   }}
                 >
@@ -251,7 +267,9 @@ export const HomeScreen = (props: Props) => {
               className={cx(styles.urlInput, {
                 [styles.invalidInput]: urlInputInvalid
               })}
-              placeholder="https://example.com/watch-or-video.mp4"
+              placeholder={
+                selectedSite ? selectedSite.placeholder : 'https://example.com/watch-or-video.mp4'
+              }
               autoComplete="url"
               aria-invalid={urlInputInvalid || undefined}
               spellCheck={false}
@@ -263,6 +281,9 @@ export const HomeScreen = (props: Props) => {
           </form>
           {urlInputInvalid && (
             <p className={styles.helpLine}>Paste a full http:// or https:// watch link first.</p>
+          )}
+          {!urlInputInvalid && selectedSite && (
+            <p className={styles.helpLine}>{selectedSite.helper}</p>
           )}
         </section>
       </main>
