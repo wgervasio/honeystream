@@ -18,6 +18,9 @@ describe('RuntimeAddMediaPanel', () => {
     expect(html).toContain('Media URL')
     expect(html).toContain('Add URL')
     expect(html).toContain('Paste a supported website')
+    expect(html).toContain('Source confidence')
+    expect(html).toContain('Paste full link')
+    expect(html).toContain('Buddy check')
     expect(html).not.toContain('Add local file')
   })
 
@@ -106,6 +109,8 @@ describe('RuntimeAddMediaPanel', () => {
       expect(container.querySelector('[data-add-media-source-preview="website"]')).not.toBeNull()
       expect(container.querySelector('[data-add-media-provider="youtube"]')).not.toBeNull()
       expect(container.textContent).toContain('YouTube lane')
+      expect(container.querySelector('[data-source-confidence-state="ready"]')).not.toBeNull()
+      expect(container.textContent).toContain('Buddy can test it')
 
       input.value = 'https://cdn.example.com/watch-night.mp4'
       Simulate.change(input)
@@ -117,6 +122,7 @@ describe('RuntimeAddMediaPanel', () => {
       input.value = 'example.com/watch-night'
       Simulate.change(input)
       expect(container.querySelector('[data-add-media-source-preview="invalid"]')).not.toBeNull()
+      expect(container.querySelector('[data-source-confidence-state="warning"]')).not.toBeNull()
       expect(container.textContent).toContain('Needs full link')
     } finally {
       ReactDOM.unmountComponentAtNode(container)

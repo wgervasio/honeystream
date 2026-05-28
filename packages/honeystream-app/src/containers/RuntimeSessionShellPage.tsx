@@ -243,6 +243,13 @@ interface LaunchStep {
   readonly title: string
 }
 
+const COMPLETE_LAUNCH_STEP: LaunchStep = Object.freeze({
+  id: 'complete',
+  title: 'Room is ready',
+  detail: 'The source, invite, guest, and playback controls are all set.',
+  state: 'complete'
+})
+
 class HostLocalPlaybackEngine implements SessionRuntimePlaybackEngine {
   private disposed = false
 
@@ -700,6 +707,12 @@ const createLaunchSteps = (
   ]
 }
 
+const getNextLaunchStep = (steps: readonly LaunchStep[]): LaunchStep =>
+  steps.find(step => step.state === 'next') ||
+  steps.find(step => step.state === 'waiting') ||
+  steps[steps.length - 1] ||
+  COMPLETE_LAUNCH_STEP
+
 const hasLocalFileRegistry = (
   playback: SessionRuntimePlaybackEngine
 ): playback is SessionRuntimePlaybackEngine & LocalFilePlaybackRegistry =>
@@ -731,6 +744,7 @@ const RuntimeSessionRouteSurface = ({
       viewModel.snapshot.session.playback.state
     )
     const readyStepCount = launchSteps.filter(step => step.state === 'complete').length
+    const nextLaunchStep = getNextLaunchStep(launchSteps)
     const roleLabel =
       viewModel.snapshot.role === 'host'
         ? 'Cat-side host'
@@ -795,6 +809,16 @@ const RuntimeSessionRouteSurface = ({
               </article>
             ))}
           </div>
+        </section>
+
+        <section
+          id="runtime_concierge_strip"
+          className={`${styles.card} ${styles.conciergeStrip}`}
+          aria-label="Next best move"
+        >
+          <strong>Next best move</strong>
+          <span data-next-launch-state={nextLaunchStep.state}>{nextLaunchStep.title}</span>
+          <p>{nextLaunchStep.detail}</p>
         </section>
 
         <section
