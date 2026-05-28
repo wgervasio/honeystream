@@ -29,6 +29,29 @@ interface IConnectedProps {
 
 type Props = IProps & IConnectedProps & IReactReduxProps
 
+const welcomeWatchMap = [
+  {
+    id: 'name',
+    label: 'Name tag',
+    detail: 'Choose the name your watch buddy sees.'
+  },
+  {
+    id: 'room',
+    label: 'Cat-side room',
+    detail: 'Open one private room with a clear host seat.'
+  },
+  {
+    id: 'invite',
+    label: 'Rabbit hop',
+    detail: 'Send one link so the guest lands in the right place.'
+  },
+  {
+    id: 'watch',
+    label: 'Cozy sync',
+    detail: 'Paste a source and let the host-led controls do the work.'
+  }
+] as const
+
 class WelcomePage extends Component<Props> {
   // Design: https://venturebeat.com/wp-content/uploads/2015/03/Slack-test-start.png
   render(): JSX.Element | null {
@@ -89,6 +112,15 @@ class WelcomePage extends Component<Props> {
                 <li>Website and direct-link playback stays easy to test.</li>
               </ul>
             </section>
+
+            <div id="welcome_watch_map" className={styles.watchMap} aria-label="Welcome watch map">
+              {welcomeWatchMap.map(item => (
+                <span key={item.id}>
+                  <strong>{item.label}</strong>
+                  {item.detail}
+                </span>
+              ))}
+            </div>
 
             <MenuHeader text="Make it yours" />
 

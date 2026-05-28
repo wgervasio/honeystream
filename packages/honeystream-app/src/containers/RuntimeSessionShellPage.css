@@ -575,6 +575,77 @@
   line-height: 1.35rem;
 }
 
+.buddyPassport {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 0.8rem;
+  background: radial-gradient(circle at 10% 20%, rgba(158, 215, 255, 0.2), transparent 30%),
+    radial-gradient(circle at 90% 78%, rgba(247, 215, 232, 0.22), transparent 34%),
+    rgba(255, 255, 255, 0.12);
+}
+
+.passportSeats {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(10rem, 0.72fr) minmax(0, 1fr);
+  gap: 0.7rem;
+}
+
+.passportSeats span,
+.passportPromise article {
+  min-width: 0;
+  min-height: 6rem;
+  display: grid;
+  align-content: center;
+  gap: 0.35rem;
+  padding: 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.74);
+  line-height: 1.28rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.passportSeats span[data-passport-seat='cat'] {
+  background: radial-gradient(circle at 18% 18%, rgba(158, 215, 255, 0.26), transparent 46%),
+    rgba(255, 255, 255, 0.08);
+}
+
+.passportSeats span[data-passport-seat='rabbit'] {
+  background: radial-gradient(circle at 82% 18%, rgba(247, 215, 232, 0.28), transparent 46%),
+    rgba(255, 255, 255, 0.08);
+}
+
+.passportSeats span[data-passport-sync] {
+  text-align: center;
+  background: linear-gradient(135deg, rgba(255, 216, 138, 0.24), rgba(255, 127, 150, 0.16));
+}
+
+.passportSeats strong,
+.passportPromise strong {
+  color: #fff;
+  font-size: 1rem;
+  line-height: 1.1;
+}
+
+.passportPromise {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.passportPromise article {
+  min-height: 7rem;
+  background: rgba(36, 28, 53, 0.16);
+}
+
+.passportPromise p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.88rem;
+  line-height: 1.25rem;
+}
+
 .addMediaPanel [data-add-media-status='true'] {
   margin: 0;
   padding: 0.7rem 0.8rem;
@@ -630,6 +701,8 @@
 .roomRunway article,
 .launchSteps article,
 .conciergeStrip,
+.passportSeats span,
+.passportPromise article,
 .sourceLane,
 .flowCard {
   transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease;
@@ -645,6 +718,8 @@
 .roomRunway article:hover,
 .launchSteps article:hover,
 .conciergeStrip:hover,
+.passportSeats span:hover,
+.passportPromise article:hover,
 .sourceLane:hover,
 .flowCard:hover {
   border-color: rgba(255, 255, 255, 0.28);
@@ -1643,6 +1718,8 @@
   .runwayGrid,
   .launchSteps,
   .conciergeStrip,
+  .passportSeats,
+  .passportPromise,
   .watchDeck {
     grid-template-columns: 1fr;
   }

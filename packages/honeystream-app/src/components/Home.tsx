@@ -18,7 +18,9 @@ interface IProps extends WithNamespaces {
 }
 
 interface IState {
+  selectedStarterId?: string
   starterInvalid: boolean
+  starterStatus?: string
   starterUrl: string
 }
 
@@ -26,30 +28,36 @@ const starterSiteExamples = [
   {
     id: 'youtube',
     label: 'YouTube',
-    url: 'youtube.com/watch?v=cat-rabbit-night',
-    detail: 'Video page'
+    detail: 'Video page',
+    placeholder: 'Paste the exact YouTube watch page...',
+    guidance: 'Use the real watch page once both browsers can open it.'
   },
   {
     id: 'animepahe',
     label: 'AnimePahe',
-    url: 'animepahe.ru/play/demo',
-    detail: 'Episode page'
+    detail: 'Episode page',
+    placeholder: 'Paste the exact AnimePahe play page...',
+    guidance: 'Pick the episode page after both sides can access it.'
   },
   {
     id: 'cineby',
     label: 'Cineby',
-    url: 'cineby.app/movie/demo',
-    detail: 'Movie page'
+    detail: 'Movie page',
+    placeholder: 'Paste the exact Cineby watch page...',
+    guidance: 'Use the real movie or show page so rabbit-side lands with you.'
   },
   {
     id: 'direct',
     label: 'Direct MP4',
-    url: 'example.com/date-night.mp4',
-    detail: 'Clean media'
+    detail: 'Clean media',
+    placeholder: 'Paste a direct MP4, WebM, audio, or stream URL...',
+    guidance: 'Use this when the URL already points at playable media.'
   }
 ] as const
 
 class Home extends Component<IProps, IState> {
+  private starterInputRef = React.createRef<HTMLInputElement>()
+
   constructor(props: IProps) {
     super(props)
 
@@ -238,6 +246,16 @@ class Home extends Component<IProps, IState> {
       }
     ]
     const moodChips = ['soft lights', 'snacks close', 'site ready', 'no chaos']
+    const selectedStarter = starterSiteExamples.find(
+      example => example.id === this.state.selectedStarterId
+    )
+    const starterDescriptionIds = this.state.starterInvalid
+      ? this.state.starterStatus
+        ? 'home_starter_error home_starter_status home_starter_hint'
+        : 'home_starter_error home_starter_hint'
+      : this.state.starterStatus
+      ? 'home_starter_status home_starter_hint'
+      : 'home_starter_hint'
 
     return (
       <LayoutMain className={styles.container} showBackButton={false}>
@@ -297,17 +315,18 @@ class Home extends Component<IProps, IState> {
                 </label>
                 <div className={styles.launcherInput}>
                   <input
+                    ref={this.starterInputRef}
                     id="home_starter_url"
                     value={this.state.starterUrl}
-                    placeholder="youtube.com/watch or https://example.com/video.mp4"
+                    placeholder={
+                      selectedStarter
+                        ? selectedStarter.placeholder
+                        : 'youtube.com/watch or https://example.com/video.mp4'
+                    }
                     autoComplete="url"
                     spellCheck={false}
                     aria-invalid={this.state.starterInvalid || undefined}
-                    aria-describedby={
-                      this.state.starterInvalid
-                        ? 'home_starter_error home_starter_hint'
-                        : 'home_starter_hint'
-                    }
+                    aria-describedby={starterDescriptionIds}
                     onChange={this.onStarterUrlChange}
                   />
                   <button id="home_start_with_url" type="submit">
@@ -319,9 +338,14 @@ class Home extends Component<IProps, IState> {
                     Paste a site like youtube.com/watch or a full http:// or https:// watch link.
                   </p>
                 )}
+                {this.state.starterStatus && !this.state.starterInvalid && (
+                  <p id="home_starter_status" className={styles.starterStatus} role="status">
+                    {this.state.starterStatus}
+                  </p>
+                )}
                 <p id="home_starter_hint" className={styles.starterHint}>
-                  Quick chips fill the box; Start with link opens a room with the source already
-                  queued.
+                  Quick chips choose the lane; paste the real page when you are ready. Start with
+                  link opens a room with the source already queued.
                 </p>
                 <div
                   id="home_starter_chips"
@@ -332,7 +356,11 @@ class Home extends Component<IProps, IState> {
                     <button
                       key={example.id}
                       type="button"
-                      onClick={() => this.selectStarterExample(example.url)}
+                      data-starter-chip-state={
+                        this.state.selectedStarterId === example.id ? 'selected' : 'idle'
+                      }
+                      aria-pressed={this.state.selectedStarterId === example.id}
+                      onClick={() => this.selectStarterExample(example)}
                     >
                       <strong>{example.label}</strong>
                       <span>{example.detail}</span>
@@ -636,15 +664,25 @@ class Home extends Component<IProps, IState> {
   private onStarterUrlChange = (event: ChangeEvent<HTMLInputElement>) => {
     this.setState({
       starterInvalid: false,
+      starterStatus: undefined,
       starterUrl: event.currentTarget.value
     })
   }
 
-  private selectStarterExample = (url: string) => {
-    this.setState({
-      starterInvalid: false,
-      starterUrl: url
-    })
+  private selectStarterExample = (example: typeof starterSiteExamples[number]) => {
+    this.setState(
+      {
+        selectedStarterId: example.id,
+        starterInvalid: false,
+        starterStatus: `${example.label} lane selected. ${example.guidance}`,
+        starterUrl: ''
+      },
+      () => {
+        if (this.starterInputRef.current) {
+          this.starterInputRef.current.focus()
+        }
+      }
+    )
   }
 
   private submitStarterUrl = (event: FormEvent<HTMLFormElement>) => {
@@ -652,7 +690,7 @@ class Home extends Component<IProps, IState> {
 
     const normalizedUrl = normalizeRuntimeAddMediaHttpUrl(this.state.starterUrl)
     if (!normalizedUrl) {
-      this.setState({ starterInvalid: true })
+      this.setState({ starterInvalid: true, starterStatus: undefined })
       return
     }
 

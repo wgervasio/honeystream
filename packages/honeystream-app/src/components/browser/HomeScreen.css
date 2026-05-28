@@ -415,6 +415,43 @@
   text-transform: uppercase;
 }
 
+.prepDeck {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.prepDeck article {
+  min-height: 5.6rem;
+  display: grid;
+  align-content: center;
+  gap: 0.3rem;
+  padding: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 18px;
+  background: radial-gradient(circle at 18% 18%, rgba(158, 215, 255, 0.18), transparent 42%),
+    rgba(36, 28, 53, 0.16);
+  text-align: left;
+}
+
+.prepDeck article:nth-child(2) {
+  background: radial-gradient(circle at 82% 18%, rgba(247, 215, 232, 0.2), transparent 42%),
+    rgba(36, 28, 53, 0.16);
+}
+
+.prepDeck strong {
+  color: #fff;
+  font-size: 0.92rem;
+  line-height: 1.08;
+}
+
+.prepDeck span {
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.84rem;
+  line-height: 1.24rem;
+}
+
 .inputContainer {
   display: flex;
   grid-column: 1 / -1;
@@ -465,7 +502,8 @@
   .pairPreview,
   .sourceTips,
   .decisionFlow,
-  .confidenceRail {
+  .confidenceRail,
+  .prepDeck {
     grid-template-columns: 1fr;
   }
 

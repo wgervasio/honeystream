@@ -25,6 +25,7 @@ jest.mock('./HomeScreen.css', () => ({
   panel: 'panel',
   panelHeader: 'panelHeader',
   pairPreview: 'pairPreview',
+  prepDeck: 'prepDeck',
   primaryButton: 'primaryButton',
   rabbitCard: 'rabbitCard',
   roomDock: 'roomDock',
@@ -72,6 +73,9 @@ describe('browser/HomeScreen', () => {
     expect(html).toContain('Known-site chips')
     expect(html).toContain('Zero media bytes shared')
     expect(html).toContain('Tiny host-led commands')
+    expect(html).toContain('Exact page')
+    expect(html).toContain('Invite next')
+    expect(html).toContain('Controls only')
     expect(html).toContain('YouTube')
     expect(html).toContain('AnimePahe')
     expect(html).toContain('Cineby')
