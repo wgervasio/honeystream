@@ -1,4 +1,4 @@
-import React, { FormEvent, memo, useState } from 'react'
+import React, { FormEvent, memo, useRef, useState } from 'react'
 import {
   createRuntimeAddMediaConfidenceItems,
   createRuntimeAddMediaSourcePreview,
@@ -33,12 +33,25 @@ const SOURCE_CONFIDENCE_TITLE = 'Source confidence'
 export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
   props: RuntimeAddMediaPanelProps
 ) {
+  const urlInputRef = useRef<HTMLInputElement>(null)
   const [url, setUrl] = useState('')
   const [errorMessage, setErrorMessage] = useState<string | undefined>()
+  const [statusMessage, setStatusMessage] = useState<string | undefined>()
 
   const sourceSuggestions = props.sourceSuggestions || []
   const sourcePreview = createRuntimeAddMediaSourcePreview(url)
   const sourceConfidenceItems = createRuntimeAddMediaConfidenceItems(sourcePreview)
+  const inputDescriptionId = errorMessage
+    ? 'runtime-add-media-error'
+    : statusMessage
+    ? 'runtime-add-media-status'
+    : undefined
+
+  const focusUrlInput = (): void => {
+    if (urlInputRef.current) {
+      urlInputRef.current.focus()
+    }
+  }
 
   const submitUrl = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -46,17 +59,22 @@ export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
     const trimmedUrl = url.trim()
     if (trimmedUrl.length === 0) {
       setErrorMessage(props.missingUrlLabel || DEFAULT_MISSING_URL_LABEL)
+      setStatusMessage(undefined)
+      focusUrlInput()
       return
     }
 
     if (!isRuntimeAddMediaHttpUrl(trimmedUrl)) {
       setErrorMessage(props.invalidUrlLabel || DEFAULT_INVALID_URL_LABEL)
+      setStatusMessage(undefined)
+      focusUrlInput()
       return
     }
 
     props.onAddUrl(trimmedUrl)
     setUrl('')
     setErrorMessage(undefined)
+    setStatusMessage('Source queued. Copy the invite or press play when your buddy lands.')
   }
 
   return (
@@ -82,6 +100,11 @@ export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
               onClick={() => {
                 setUrl(suggestion.url)
                 setErrorMessage(undefined)
+                setStatusMessage(
+                  suggestion.label +
+                    ' source loaded. Replace the example with your exact watch page.'
+                )
+                focusUrlInput()
               }}
             >
               <strong>{suggestion.label}</strong>
@@ -93,6 +116,7 @@ export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
       <form onSubmit={submitUrl} noValidate>
         <label htmlFor="runtime-add-media-url">Media URL</label>
         <input
+          ref={urlInputRef}
           id="runtime-add-media-url"
           type="url"
           value={url}
@@ -100,9 +124,10 @@ export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
           onChange={event => {
             setUrl(event.currentTarget.value)
             setErrorMessage(undefined)
+            setStatusMessage(undefined)
           }}
           aria-invalid={errorMessage ? true : undefined}
-          aria-describedby={errorMessage ? 'runtime-add-media-error' : undefined}
+          aria-describedby={inputDescriptionId}
         />
         {sourcePreview ? (
           <div
@@ -122,6 +147,11 @@ export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
           {errorMessage}
         </p>
       ) : null}
+      {statusMessage ? (
+        <p id="runtime-add-media-status" data-add-media-status="true" role="status">
+          {statusMessage}
+        </p>
+      ) : null}
       {props.onAddLocalFile ? (
         <label htmlFor="runtime-add-media-file">
           {props.addFileLabel || 'Add local file'}
@@ -133,6 +163,10 @@ export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
               const file = event.currentTarget.files && event.currentTarget.files[0]
               if (file && props.onAddLocalFile) {
                 props.onAddLocalFile(file)
+                setErrorMessage(undefined)
+                setStatusMessage(
+                  `${file.name} queued locally. Rabbit-side should pick their copy too.`
+                )
               }
               event.currentTarget.value = ''
             }}

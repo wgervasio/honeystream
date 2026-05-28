@@ -77,6 +77,7 @@ describe('InviteLinkPanel', () => {
     const html = renderToStaticMarkup(
       <InviteLinkPanel
         baseUrl="https://app.gethoneystream.com"
+        id="runtime_invite_panel"
         invite={{ roomId: 'room-1', secret: 'secret-token' }}
         onCopyInviteLink={() => {}}
         onCopyRoomId={() => {}}
@@ -84,6 +85,7 @@ describe('InviteLinkPanel', () => {
       />
     )
 
+    expect(html).toContain('id="runtime_invite_panel"')
     expect(html).toContain('Invite link:')
     expect(html).toContain('https://app.gethoneystream.com/join/room-1?secret=secret-token')
     expect(html).toContain('Room ID:')

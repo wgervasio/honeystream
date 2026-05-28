@@ -296,7 +296,7 @@
   align-content: center;
 }
 
-.commandBarChips span {
+.commandBarChips a {
   min-height: 2.15rem;
   display: inline-flex;
   align-items: center;
@@ -309,8 +309,19 @@
   font-weight: bold;
   letter-spacing: 0.08em;
   text-align: center;
+  text-decoration: none;
   text-transform: uppercase;
   box-shadow: 0 12px 28px rgba(255, 127, 150, 0.2);
+  transition: filter 140ms ease, transform 140ms ease, box-shadow 140ms ease;
+}
+
+.commandBarChips a:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+
+.commandBarChips a:focus {
+  box-shadow: var(--app-focus-ring);
 }
 
 .signalDock {
@@ -564,6 +575,17 @@
   line-height: 1.35rem;
 }
 
+.addMediaPanel [data-add-media-status='true'] {
+  margin: 0;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid rgba(158, 215, 255, 0.3);
+  border-radius: 16px;
+  background: linear-gradient(90deg, rgba(158, 215, 255, 0.17), rgba(247, 215, 232, 0.14));
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 0.9rem;
+  line-height: 1.35rem;
+}
+
 .watchDeck article {
   min-height: 7rem;
   padding: 1rem;
@@ -645,6 +667,20 @@
   gap: 0.75rem;
   background: radial-gradient(circle at 92% 18%, rgba(247, 215, 232, 0.28), transparent 34%),
     rgba(255, 255, 255, 0.13);
+}
+
+.invitePanel,
+.addMediaPanel,
+.playbackPanel,
+.addMediaPanel input {
+  scroll-margin-top: 1rem;
+}
+
+.invitePanel:target,
+.playbackPanel:target,
+.addMediaPanel input:target {
+  border-color: rgba(255, 216, 138, 0.72);
+  box-shadow: var(--app-focus-ring), var(--app-panel-shadow);
 }
 
 .stageCard {

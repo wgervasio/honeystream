@@ -27,6 +27,7 @@ export interface PlaybackRuntimeControlLabels {
 
 export interface PlaybackRuntimeControlsProps {
   readonly className?: string
+  readonly id?: string
   readonly intents: PlaybackRuntimeControlIntents
   readonly labels?: Partial<PlaybackRuntimeControlLabels>
   readonly playback: PlaybackClockModel
