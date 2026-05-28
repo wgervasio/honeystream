@@ -239,7 +239,7 @@ export class SignalServer extends EventEmitter {
     this.clients.delete(id)
 
     const { readyState } = client.socket
-    if (readyState !== WebSocket.CLOSED || readyState !== WebSocket.CLOSING) {
+    if (readyState !== WebSocket.CLOSED && readyState !== WebSocket.CLOSING) {
       client.socket.close()
     }
 

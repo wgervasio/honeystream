@@ -174,4 +174,24 @@ describe('signal server', () => {
       expect(server.clients.size).toEqual(0)
     })
   })
+
+  describe('client cleanup', () => {
+    it('does not close sockets already closing or closed', () => {
+      const openSocket = { readyState: WebSocket.OPEN, close: jest.fn() }
+      const closingSocket = { readyState: WebSocket.CLOSING, close: jest.fn() }
+      const closedSocket = { readyState: WebSocket.CLOSED, close: jest.fn() }
+
+      const openClient = server.addClient(openSocket)
+      const closingClient = server.addClient(closingSocket)
+      const closedClient = server.addClient(closedSocket)
+
+      server.removeClient(openClient.id)
+      server.removeClient(closingClient.id)
+      server.removeClient(closedClient.id)
+
+      expect(openSocket.close).toHaveBeenCalledTimes(1)
+      expect(closingSocket.close).not.toHaveBeenCalled()
+      expect(closedSocket.close).not.toHaveBeenCalled()
+    })
+  })
 })

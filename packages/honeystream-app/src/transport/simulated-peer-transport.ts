@@ -99,11 +99,7 @@ export class SimulatedPeerTransport<TInboundMessage, TOutboundMessage>
     const peer = this.requirePeer()
     const bytes = byteLength(envelope)
     const sentMessageCount = this.metrics.recordSent(bytes, envelope.seq, envelope.sentAtMs)
-    if (shouldDropFrame(sentMessageCount, this.network, this.random)) {
-      this.metrics.recordDropped(bytes, envelope.seq, 'network-drop', this.now())
-      return
-    }
-    const enqueueResult = peer.enqueueFrame(envelope, this.localPeerId, bytes)
+    const enqueueResult = peer.enqueueFrame(envelope, this.localPeerId, bytes, sentMessageCount)
     if (!enqueueResult.ok) {
       this.metrics.recordDropped(bytes, envelope.seq, enqueueResult.reason, this.now())
     }
@@ -156,9 +152,12 @@ export class SimulatedPeerTransport<TInboundMessage, TOutboundMessage>
   private enqueueFrame(
     envelope: PeerTransportEnvelope<TInboundMessage>,
     fromPeerId: string,
-    bytes: number
+    bytes: number,
+    sentMessageCount: number
   ): SimulatedPeerTransportEnqueueResult {
     if (this.state.status !== 'connected') return { ok: false, reason: 'peer-disconnected' }
+    if (shouldDropFrame(sentMessageCount, this.network, this.random))
+      return { ok: false, reason: 'network-drop' }
     if (this.pendingFrames.length >= resolveMaxQueuedFrames(this.network))
       return { ok: false, reason: 'queue-overflow' }
     const sentAtMs = this.now()
