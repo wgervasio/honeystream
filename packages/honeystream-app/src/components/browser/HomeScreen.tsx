@@ -47,6 +47,11 @@ const sourceConfidenceItems = [
   'Local files stay on each device',
   'Direct media links skip extra clutter'
 ]
+const trustBadges = [
+  'Known-site chips',
+  'Zero media bytes shared',
+  'Tiny host-led commands'
+]
 const decisionFlowCards = [
   {
     label: 'Website opens for both',
@@ -225,6 +230,11 @@ export const HomeScreen = (props: Props) => {
                 >
                   {example.label}
                 </button>
+              ))}
+            </div>
+            <div className={styles.trustBadges} aria-label="Streaming safety notes">
+              {trustBadges.map(badge => (
+                <span key={badge}>{badge}</span>
               ))}
             </div>
           </div>

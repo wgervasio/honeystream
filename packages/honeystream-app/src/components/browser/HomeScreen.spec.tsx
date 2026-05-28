@@ -30,6 +30,7 @@ jest.mock('./HomeScreen.css', () => ({
   sourceTips: 'sourceTips',
   catCard: 'catCard',
   syncBadge: 'syncBadge',
+  trustBadges: 'trustBadges',
   urlInput: 'urlInput',
   uppercase: 'uppercase'
 }))
@@ -61,6 +62,9 @@ describe('browser/HomeScreen', () => {
     expect(html).toContain('URL is already media')
     expect(html).toContain('Choose the easiest source for tonight')
     expect(html).toContain('paste the exact watch page')
+    expect(html).toContain('Known-site chips')
+    expect(html).toContain('Zero media bytes shared')
+    expect(html).toContain('Tiny host-led commands')
     expect(html).toContain('YouTube')
     expect(html).toContain('AnimePahe')
     expect(html).toContain('Cineby')

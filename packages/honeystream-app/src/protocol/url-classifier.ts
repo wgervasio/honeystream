@@ -1,6 +1,12 @@
 import { MediaKind } from './types'
 
 export type MediaProvider = 'youtube' | 'animepahe' | 'cineby' | 'miruro' | 'unknown'
+type KnownMediaProvider = Exclude<MediaProvider, 'unknown'>
+
+interface ProviderDomainSet {
+  readonly provider: KnownMediaProvider
+  readonly domains: readonly string[]
+}
 
 const LOCAL_FILE_PROTOCOL = 'honeystream-local:'
 const DIRECT_MEDIA_EXTENSIONS = Object.freeze([
@@ -20,6 +26,24 @@ const DIRECT_MEDIA_EXTENSIONS = Object.freeze([
   '.wav',
   '.webm'
 ])
+const PROVIDER_DOMAIN_SETS: readonly ProviderDomainSet[] = [
+  {
+    provider: 'youtube',
+    domains: ['youtube.com', 'youtube-nocookie.com', 'youtu.be']
+  },
+  {
+    provider: 'animepahe',
+    domains: ['animepahe.com', 'animepahe.ru', 'animepahe.si']
+  },
+  {
+    provider: 'cineby',
+    domains: ['cineby.app', 'cineby.ru', 'cineby.to']
+  },
+  {
+    provider: 'miruro',
+    domains: ['miruro.to', 'miruro.tv']
+  }
+]
 
 const parseMediaUrl = (source: string): URL | undefined => {
   try {
@@ -42,13 +66,6 @@ const normalizeHostname = (hostname: string): string =>
 
 const isHostOrSubdomain = (hostname: string, domain: string): boolean =>
   hostname === domain || hostname.endsWith(`.${domain}`)
-
-const hasSecondLevelDomain = (hostname: string, secondLevelDomain: string): boolean => {
-  const labels = hostname.split('.').filter(label => label.length > 0)
-  if (labels.length < 2) return false
-
-  return labels[labels.length - 2] === secondLevelDomain
-}
 
 export const classifyMediaUrl = (source: string): MediaKind => {
   const trimmedSource = source.trim()
@@ -78,17 +95,11 @@ export const classifyMediaProvider = (source: string): MediaProvider => {
 
   const hostname = normalizeHostname(parsedUrl.hostname)
 
-  if (
-    isHostOrSubdomain(hostname, 'youtube.com') ||
-    isHostOrSubdomain(hostname, 'youtube-nocookie.com') ||
-    isHostOrSubdomain(hostname, 'youtu.be')
-  ) {
-    return 'youtube'
+  for (const domainSet of PROVIDER_DOMAIN_SETS) {
+    if (domainSet.domains.some(domain => isHostOrSubdomain(hostname, domain))) {
+      return domainSet.provider
+    }
   }
-
-  if (hasSecondLevelDomain(hostname, 'animepahe')) return 'animepahe'
-  if (hasSecondLevelDomain(hostname, 'cineby')) return 'cineby'
-  if (hasSecondLevelDomain(hostname, 'miruro')) return 'miruro'
 
   return 'unknown'
 }
