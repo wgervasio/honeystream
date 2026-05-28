@@ -32,6 +32,7 @@ const DEFAULT_MISSING_URL_LABEL = 'Paste a website or direct media URL first.'
 const DEFAULT_INVALID_URL_LABEL =
   'Paste a website link like youtube.com/watch or a full http:// or https:// URL.'
 const SOURCE_CONFIDENCE_TITLE = 'Source confidence'
+const URL_SAFETY_TITLE = 'URL Safety Results'
 
 export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
   props: RuntimeAddMediaPanelProps
@@ -103,6 +104,13 @@ export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
             <small>{item.detail}</small>
           </span>
         ))}
+      </div>
+      <div data-url-safety-results="true" aria-label={URL_SAFETY_TITLE}>
+        <strong>{URL_SAFETY_TITLE}</strong>
+        <span>
+          Use exact pages both browsers can open. Honeystream keeps media bytes local and syncs only
+          the typed control stream.
+        </span>
       </div>
       {sourceSuggestions.length > 0 ? (
         <div data-source-suggestions="true" aria-label="Quick source suggestions">

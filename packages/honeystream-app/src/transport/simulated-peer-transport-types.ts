@@ -13,6 +13,18 @@ export interface SimulatedPeerNetworkProfile {
   readonly maxQueuedFrames?: number
 }
 
+export type SimulatedPeerTransportFrameOutcome = 'delivered' | 'dropped' | 'sent'
+export type SimulatedPeerTransportDropReason = 'network-or-queue-drop'
+
+export interface SimulatedPeerTransportFrameSample {
+  readonly bytes: number
+  readonly latencyMs?: number
+  readonly outcome: SimulatedPeerTransportFrameOutcome
+  readonly reason?: SimulatedPeerTransportDropReason
+  readonly recordedAtMs: number
+  readonly seq: number
+}
+
 export interface SimulatedPeerTransportMetrics {
   readonly sentMessages: number
   readonly deliveredMessages: number
@@ -28,6 +40,7 @@ export interface SimulatedPeerTransportMetrics {
   readonly p95LatencyMs: number
   readonly maxLatencyMs: number
   readonly queuedMessages: number
+  readonly recentFrames: readonly SimulatedPeerTransportFrameSample[]
 }
 
 export interface SimulatedPeerTransportOptions<TInboundMessage> {

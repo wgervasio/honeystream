@@ -105,12 +105,12 @@ export class SimulatedPeerTransport<TInboundMessage, TOutboundMessage>
     this.ensureCanSend()
     const peer = this.requirePeer()
     const bytes = byteLength(envelope)
-    const sentMessageCount = this.metrics.recordSent(bytes)
+    const sentMessageCount = this.metrics.recordSent(bytes, envelope.seq, envelope.sentAtMs)
     if (
       shouldDropFrame(sentMessageCount, this.network, this.random) ||
       !peer.enqueueFrame(envelope, this.localPeerId, bytes)
     ) {
-      this.metrics.recordDropped(bytes)
+      this.metrics.recordDropped(bytes, envelope.seq, 'network-or-queue-drop', this.now())
     }
   }
 
@@ -179,7 +179,7 @@ export class SimulatedPeerTransport<TInboundMessage, TOutboundMessage>
       return
     }
     const latencyMs = Math.max(0, receivedAtMs - frame.sentAtMs)
-    this.metrics.recordDelivered(frame.bytes, latencyMs)
+    this.metrics.recordDelivered(frame.bytes, latencyMs, frame.envelope.seq, receivedAtMs)
     this.emit({
       type: 'message',
       delivery: {

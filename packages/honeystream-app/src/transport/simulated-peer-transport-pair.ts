@@ -3,6 +3,7 @@ import { SimulatedPeerTransport } from './simulated-peer-transport'
 import {
   Clock,
   SimulatedPeerNetworkProfile,
+  SimulatedPeerTransportFrameSample,
   SimulatedPeerTransportMetrics
 } from './simulated-peer-transport-types'
 
@@ -49,7 +50,10 @@ export interface AggregateSimulatedPeerTransportMetrics {
   readonly maxDirectionalQueuedMessages: number
   readonly estimatedRoundTripP95LatencyMs: number
   readonly estimatedRoundTripMaxLatencyMs: number
+  readonly recentFrames: readonly SimulatedPeerTransportFrameSample[]
 }
+
+const MAX_AGGREGATE_RECENT_FRAMES = 128
 
 const combineAverageLatency = (
   host: SimulatedPeerTransportMetrics,
@@ -64,6 +68,14 @@ const combineAverageLatency = (
 }
 
 const ratio = (part: number, whole: number): number => (whole === 0 ? 0 : part / whole)
+
+const combineRecentFrames = (
+  host: SimulatedPeerTransportMetrics,
+  guest: SimulatedPeerTransportMetrics
+): readonly SimulatedPeerTransportFrameSample[] =>
+  [...host.recentFrames, ...guest.recentFrames]
+    .sort((left, right) => left.recordedAtMs - right.recordedAtMs || left.seq - right.seq)
+    .slice(-MAX_AGGREGATE_RECENT_FRAMES)
 
 export const createSimulatedPeerTransportPair = <TClientToHostMessage, THostToClientMessage>(
   options: SimulatedPeerTransportPairOptions<TClientToHostMessage, THostToClientMessage>
@@ -132,7 +144,8 @@ export const createSimulatedPeerTransportPair = <TClientToHostMessage, THostToCl
           guestMetrics.queuedMessages
         ),
         estimatedRoundTripP95LatencyMs: hostMetrics.p95LatencyMs + guestMetrics.p95LatencyMs,
-        estimatedRoundTripMaxLatencyMs: hostMetrics.maxLatencyMs + guestMetrics.maxLatencyMs
+        estimatedRoundTripMaxLatencyMs: hostMetrics.maxLatencyMs + guestMetrics.maxLatencyMs,
+        recentFrames: combineRecentFrames(hostMetrics, guestMetrics)
       }
     }
   }

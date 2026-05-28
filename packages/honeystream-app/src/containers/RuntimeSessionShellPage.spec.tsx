@@ -200,6 +200,7 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('Rabbit-side: Waiting for rabbit-side guest')
     expect(html).toContain('Invite your watch buddy')
     expect(html).toContain('Pick the next cozy stream')
+    expect(html).toContain('URL Safety Results')
     expect(html).toContain('Pick a cozy first stream')
     expect(html).toContain(
       'Shorthand links like youtube.com/watch get https:// added automatically'
@@ -211,6 +212,7 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('without sharing video bytes')
     expect(html).toContain('Sync check')
     expect(html).toContain('syncs only the tiny control stream')
+    expect(html).toContain('typed control stream')
     expect(html).toContain('All quiet. The room is cozy.')
     expect((html.match(/>Copy</g) || []).length).toBe(3)
   })

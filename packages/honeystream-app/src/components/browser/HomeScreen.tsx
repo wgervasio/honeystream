@@ -248,9 +248,10 @@ export const HomeScreen = (props: Props) => {
             </div>
           </div>
           <div id="media_source_helper" className={styles.sourceHelper}>
+            <strong>URL Safety Results</strong>
             <span>
-              Best UX: paste the exact watch page, test it once, then press play from host-side. You
-              can skip https:// on common sites.
+              Best UX: paste the exact watch page, test it once in both browsers, then press play
+              from host-side. You can skip https:// on common sites.
             </span>
           </div>
           <form className={styles.inputContainer} onSubmit={submitUrl} noValidate>
