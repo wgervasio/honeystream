@@ -33,6 +33,7 @@ jest.mock('./HomeScreen.css', () => ({
   siteChip: 'siteChip',
   siteChips: 'siteChips',
   sourceHelper: 'sourceHelper',
+  sourcePreview: 'sourcePreview',
   sourceTips: 'sourceTips',
   catCard: 'catCard',
   syncBadge: 'syncBadge',
@@ -128,6 +129,9 @@ describe('browser/HomeScreen', () => {
       const input = container.querySelector('#urlinput') as HTMLInputElement
       input.value = 'youtube.com/watch?v=honeystream-demo'
       Simulate.change(input)
+
+      expect(container.textContent).toContain('YouTube lane')
+      expect(container.textContent).toContain('Honeystream will add https:// automatically')
 
       const form = container.querySelector('form') as HTMLFormElement
       Simulate.submit(form)

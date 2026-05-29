@@ -9,7 +9,10 @@ import { MenuHeader } from './menu/MenuHeader'
 import { assetUrl } from 'utils/appUrl'
 import { withNamespaces, WithNamespaces } from 'react-i18next'
 import { localUserId } from '../network/index'
-import { normalizeRuntimeAddMediaHttpUrl } from '../ui/media-runtime/RuntimeAddMediaSourcePreview'
+import {
+  createRuntimeAddMediaSourcePreview,
+  normalizeRuntimeAddMediaHttpUrl
+} from '../ui/media-runtime/RuntimeAddMediaSourcePreview'
 
 interface IProps extends WithNamespaces {
   installable: boolean
@@ -249,13 +252,15 @@ class Home extends Component<IProps, IState> {
     const selectedStarter = starterSiteExamples.find(
       example => example.id === this.state.selectedStarterId
     )
-    const starterDescriptionIds = this.state.starterInvalid
-      ? this.state.starterStatus
-        ? 'home_starter_error home_starter_status home_starter_hint'
-        : 'home_starter_error home_starter_hint'
-      : this.state.starterStatus
-      ? 'home_starter_status home_starter_hint'
-      : 'home_starter_hint'
+    const starterPreview = createRuntimeAddMediaSourcePreview(this.state.starterUrl)
+    const starterDescriptionIds = [
+      this.state.starterInvalid ? 'home_starter_error' : undefined,
+      !this.state.starterInvalid && this.state.starterStatus ? 'home_starter_status' : undefined,
+      starterPreview ? 'home_starter_preview' : undefined,
+      'home_starter_hint'
+    ]
+      .filter((id): id is string => typeof id === 'string')
+      .join(' ')
 
     return (
       <LayoutMain className={styles.container} showBackButton={false}>
@@ -343,6 +348,26 @@ class Home extends Component<IProps, IState> {
                     {this.state.starterStatus}
                   </p>
                 )}
+                {starterPreview ? (
+                  <div
+                    id="home_starter_preview"
+                    className={styles.starterPreview}
+                    data-starter-preview-kind={starterPreview.kind}
+                    data-starter-preview-provider={starterPreview.provider || 'unknown'}
+                    aria-live="polite"
+                    aria-label="Starter source preview"
+                  >
+                    <span>{starterPreview.label}</span>
+                    <strong>
+                      {starterPreview.kind === 'invalid'
+                        ? 'Needs cleanup'
+                        : starterPreview.normalizedFromShorthand
+                        ? 'HTTPS added'
+                        : 'Ready to queue'}
+                    </strong>
+                    <p>{starterPreview.detail}</p>
+                  </div>
+                ) : null}
                 <p id="home_starter_hint" className={styles.starterHint}>
                   Quick chips choose the lane; paste the real page when you are ready. Start with
                   link opens a room with the source already queued.

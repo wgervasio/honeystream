@@ -1,7 +1,10 @@
 import React, { DragEvent, FormEvent, useRef, useState } from 'react'
 import cx from 'classnames'
 
-import { normalizeRuntimeAddMediaHttpUrl } from '../../ui/media-runtime/RuntimeAddMediaSourcePreview'
+import {
+  createRuntimeAddMediaSourcePreview,
+  normalizeRuntimeAddMediaHttpUrl
+} from '../../ui/media-runtime/RuntimeAddMediaSourcePreview'
 import styles from './HomeScreen.css'
 
 interface Props {
@@ -99,9 +102,11 @@ export const HomeScreen = (props: Props) => {
   const urlInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [localDropActive, setLocalDropActive] = useState(false)
+  const [urlInputValue, setUrlInputValue] = useState('')
   const [urlInputInvalid, setUrlInputInvalid] = useState(false)
   const [selectedSiteLabel, setSelectedSiteLabel] = useState<string | undefined>()
   const selectedSite = siteExamples.find(example => example.label === selectedSiteLabel)
+  const sourcePreview = createRuntimeAddMediaSourcePreview(urlInputValue)
 
   const queueLocalFile = (file: File | undefined) => {
     if (file) {
@@ -137,7 +142,7 @@ export const HomeScreen = (props: Props) => {
       return
     }
 
-    const url = urlInput.value.trim()
+    const url = urlInputValue.trim()
     if (!url) {
       setUrlInputInvalid(true)
       urlInput.focus()
@@ -275,6 +280,7 @@ export const HomeScreen = (props: Props) => {
                   aria-pressed={selectedSiteLabel === example.label}
                   onClick={() => {
                     setSelectedSiteLabel(example.label)
+                    setUrlInputValue('')
                     setUrlInputInvalid(false)
                     if (urlInputRef.current) {
                       urlInputRef.current.focus()
@@ -319,15 +325,32 @@ export const HomeScreen = (props: Props) => {
                   ? selectedSite.placeholder
                   : 'youtube.com/watch or https://example.com/video.mp4'
               }
+              value={urlInputValue}
               autoComplete="url"
               aria-invalid={urlInputInvalid || undefined}
               spellCheck={false}
-              onChange={() => setUrlInputInvalid(false)}
+              onChange={event => {
+                setUrlInputValue(event.currentTarget.value)
+                setUrlInputInvalid(false)
+              }}
             />
             <button id="addbtn" className={cx(styles.button, styles.uppercase)} type="submit">
               Add to room
             </button>
           </form>
+          {sourcePreview && (
+            <div
+              id="media_source_preview"
+              className={styles.sourcePreview}
+              data-source-preview-kind={sourcePreview.kind}
+              data-source-preview-provider={sourcePreview.provider || 'unknown'}
+              aria-live="polite"
+              aria-label="Media source preview"
+            >
+              <strong>{sourcePreview.label}</strong>
+              <span>{sourcePreview.detail}</span>
+            </div>
+          )}
           {urlInputInvalid && (
             <p className={styles.helpLine}>
               Paste a site like youtube.com/watch or a full http:// or https:// watch link first.
