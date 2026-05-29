@@ -14,13 +14,20 @@ describe('protocol URL classifier', () => {
       'https://m.youtube.com/shorts/abc123',
       'https://www.youtube.com/shorts/abc123',
       'https://youtube.com/watch?v=abc123&list=watch-party',
+      'https://www.youtube.com/embed/abc123',
+      'https://www.youtube.com/live/abc123',
+      'https://music.youtube.com/watch?v=abc123',
       'https://animepahe.ru/play/example',
       'https://animepahe.si/anime/example',
       'https://animepahe.com/watch/example',
+      'https://www.animepahe.ru/play/example',
+      'https://animepahe.si/play/example?episode=2',
       'https://cineby.app/movie/example',
       'https://watch.cineby.app/movie/example',
+      'https://cineby.app/tv/example/season/1/episode/1',
       'https://www.cineby.ru/tv/example',
       'https://www.miruro.tv/watch/example',
+      'https://watch.miruro.tv/watch/example?episode=2',
       'https://miruro.to/watch/example',
       'https://miruro.tv/watch/example?episode=1',
       'https://streaming.example.test/watch/honeystream-night',
@@ -41,10 +48,14 @@ describe('protocol URL classifier', () => {
     expect(classifyMediaProvider('https://www.youtube.com/watch?v=abc123')).toBe('youtube')
     expect(classifyMediaProvider('https://youtu.be/abc123')).toBe('youtube')
     expect(classifyMediaProvider('https://www.youtube-nocookie.com/embed/abc123')).toBe('youtube')
+    expect(classifyMediaProvider('https://music.youtube.com/watch?v=abc123')).toBe('youtube')
     expect(classifyMediaProvider('https://animepahe.si/anime/example')).toBe('animepahe')
+    expect(classifyMediaProvider('https://www.animepahe.ru/play/example')).toBe('animepahe')
     expect(classifyMediaProvider('https://animepahe.com/watch/example')).toBe('animepahe')
     expect(classifyMediaProvider('https://video.cineby.app/movie/example')).toBe('cineby')
+    expect(classifyMediaProvider('https://watch.cineby.app/movie/example')).toBe('cineby')
     expect(classifyMediaProvider('https://www.cineby.ru/tv/example')).toBe('cineby')
+    expect(classifyMediaProvider('https://watch.miruro.tv/watch/example')).toBe('miruro')
     expect(classifyMediaProvider('https://miruro.tv/watch/example')).toBe('miruro')
     expect(classifyMediaProvider('https://miruro.to/watch/example')).toBe('miruro')
     expect(classifyMediaProvider('https://youtube.com.evil/watch?v=abc123')).toBe('unknown')

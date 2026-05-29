@@ -26,8 +26,11 @@ import {
 } from '../playback/engine/playbackEngineContract'
 import { LocalFileMetadata } from '../playback/adapters/local-file'
 import {
+  STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS,
   STREAMING_SITE_CONNECTION_FIXTURES,
-  STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS
+  STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS,
+  STREAMING_SITE_CONNECTION_PROFILES,
+  STREAMING_SITE_CONNECTION_TRIAL_COUNT
 } from '../transport/streaming-site-connection-defaults'
 import { createProjectionStore } from '../ui'
 
@@ -169,6 +172,7 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('room-123')
     expect(html).toContain('0 control bytes')
     expect(html).toContain(`&lt;=${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms mock RT`)
+    expect(html).toContain(`${STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS}ms best mock RT`)
     expect(html).toContain(`${STREAMING_SITE_CONNECTION_FIXTURES.length} local fixtures`)
     expect(html).toContain('Recovered retries counted')
     expect(html).toContain('Paste a supported website')
@@ -188,15 +192,24 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('capped jitter')
     expect(html).toContain('id="runtime_connection_lab_proof"')
     expect(html).toContain('Connection lab proof')
-    expect(html).toContain('Clean fast lane wins')
+    expect(html).toContain('Clean realtime lane wins')
+    expect(html).toContain(
+      `${STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS}ms mock round-trip lane`
+    )
     expect(html).toContain('Retry lane stays green')
     expect(html).toContain('Site matrix covered')
-    expect(html).toContain('5 lanes run for 3 deterministic trials')
+    expect(html).toContain(
+      `${STREAMING_SITE_CONNECTION_PROFILES.length} lanes run for ` +
+        `${STREAMING_SITE_CONNECTION_TRIAL_COUNT} deterministic trials`
+    )
     expect(html).toContain('Cat-side cue')
     expect(html).toContain('Rabbit-side hop')
     expect(html).toContain('Zero-byte-loss controls')
     expect(html).toContain('No skipped controls')
-    expect(html).toContain(`${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms lab round trip`)
+    expect(html).toContain(`${STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS}ms best mock RT`)
+    expect(html).toContain(
+      `${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms lab round trip`
+    )
     expect(html).toContain('Jitter-guarded frames')
     expect(html).toContain('Reliable retry guard')
     expect(html).toContain('Cozy command bar')

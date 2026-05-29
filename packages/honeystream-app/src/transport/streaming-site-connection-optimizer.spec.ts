@@ -4,6 +4,7 @@ import {
 } from './streaming-site-connection-lab'
 import {
   STREAMING_SITE_CONNECTION_BUDGET,
+  STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS,
   STREAMING_SITE_CONNECTION_FIXTURES,
   STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS,
   STREAMING_SITE_CONNECTION_PROFILES,
@@ -70,7 +71,7 @@ const CONNECTION_PROFILES: readonly StreamingSiteConnectionProfile[] = [
 ]
 
 describe('streaming site connection optimizer', () => {
-  it('keeps the default streaming matrix on the clean fast zero-loss lane', async () => {
+  it('keeps the default streaming matrix on the clean realtime zero-loss lane', async () => {
     const result = await optimizeStreamingSiteConnectionProfiles({
       budget: STREAMING_SITE_CONNECTION_BUDGET,
       fixtures: STREAMING_SITE_CONNECTION_FIXTURES,
@@ -81,14 +82,17 @@ describe('streaming site connection optimizer', () => {
     })
 
     expect(result.trialCount).toBe(STREAMING_SITE_CONNECTION_TRIAL_COUNT)
-    expect(result.bestProfile && result.bestProfile.profile.id).toBe('clean-fast')
-    expect(result.rankedProfiles[0].profile.id).toBe('clean-fast')
+    expect(result.bestProfile && result.bestProfile.profile.id).toBe('clean-realtime')
+    expect(result.rankedProfiles[0].profile.id).toBe('clean-realtime')
     expect(result.rankedProfiles[0].allTrialsPassed).toBe(true)
     expect(result.rankedProfiles[0].siteCount).toBe(STREAMING_SITE_CONNECTION_FIXTURES.length)
     expect(result.rankedProfiles[0].maxCombinedByteLossRate).toBe(0)
     expect(result.rankedProfiles[0].maxCombinedDroppedMessages).toBe(0)
     expect(result.rankedProfiles[0].maxEstimatedRoundTripP95LatencyMs).toBeLessThanOrEqual(
       STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS
+    )
+    expect(result.rankedProfiles[0].maxEstimatedRoundTripP95LatencyMs).toBeLessThanOrEqual(
+      STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS
     )
 
     const retryRank = result.rankedProfiles.find(rank => rank.profile.id === 'retry-guarded')
