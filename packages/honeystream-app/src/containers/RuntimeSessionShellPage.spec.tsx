@@ -157,6 +157,10 @@ describe('RuntimeSessionShellPage', () => {
     }
 
     expect(html).toContain('Cozy watch room')
+    expect(html).toContain('id="runtime_buddy_scene"')
+    expect(html).toContain('Cat checks the source')
+    expect(html).toContain('Rabbit gets one hop')
+    expect(html).toContain('Tiny sync lane')
     expect(html).toContain('Room code')
     expect(html).toContain('room-123')
     expect(html).toContain('0 control bytes')

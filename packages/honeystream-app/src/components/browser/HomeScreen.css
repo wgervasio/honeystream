@@ -41,6 +41,12 @@
   transform: translateY(-1px);
 }
 
+.button:focus,
+.siteChip:focus,
+.inputContainer input:focus {
+  box-shadow: var(--app-focus-ring);
+}
+
 .hero {
   padding-top: 2rem;
   text-align: center;

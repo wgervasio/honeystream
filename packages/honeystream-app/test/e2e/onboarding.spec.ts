@@ -78,6 +78,7 @@ describe('onboarding', () => {
     expect(watchLauncher).toContain('Quick chips choose the lane')
     expect(watchLauncher).toContain('source already queued')
     expect(watchLauncher).toContain('Direct MP4')
+    expect(watchLauncher).toContain('Miruro')
     expect(firstActionPath).toContain('01')
     expect(firstActionPath).toContain('Queue source')
     expect(firstActionPath).toContain('02')
