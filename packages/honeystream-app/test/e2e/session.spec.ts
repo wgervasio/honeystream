@@ -167,6 +167,7 @@ describe('session', () => {
         }
       ]
       for (const source of sources) {
+        await page.goto(APP_BASE_URL, APP_READY_OPTIONS)
         await ms.visit(`/join/${hostId}?url=${encodeURIComponent(source.url)}`)
         await page.waitForSelector(RUNTIME_SHELL_SELECTOR)
         await waitForRuntimeText(page, 'Hosting room')
