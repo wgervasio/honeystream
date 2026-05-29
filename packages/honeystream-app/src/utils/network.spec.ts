@@ -13,4 +13,10 @@ describe('utils/network', () => {
 
     expect(formatSessionPath(inviteUrl)).toBe(`${SESSION_HASH}?secret=invite-secret`)
   })
+
+  it('preserves invite query parameters from hash-route join links', () => {
+    const inviteUrl = `${APP_WEBSITE}/#/join/${SESSION_HASH}?secret=invite-secret`
+
+    expect(formatSessionPath(inviteUrl)).toBe(`${SESSION_HASH}?secret=invite-secret`)
+  })
 })

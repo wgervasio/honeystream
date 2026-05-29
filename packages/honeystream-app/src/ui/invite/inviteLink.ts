@@ -50,6 +50,36 @@ const parseRoomIdFromPath = (pathname: string, joinPath: string): string | null 
   return roomId.length > 0 ? roomId : null
 }
 
+const parseInviteUrl = (inviteLink: string, baseUrl: string): URL | null => {
+  try {
+    return new URL(inviteLink, baseUrl || DEFAULT_PARSE_BASE_URL)
+  } catch {
+    return null
+  }
+}
+
+const parseHashInviteUrl = (inviteUrl: URL, baseUrl: string): URL | null => {
+  const hashRoute = inviteUrl.hash.charAt(0) === '#' ? inviteUrl.hash.slice(1) : inviteUrl.hash
+  if (hashRoute.charAt(0) !== '/') {
+    return null
+  }
+
+  return parseInviteUrl(hashRoute, baseUrl)
+}
+
+const findInviteUrlCandidate = (inviteUrl: URL, joinPath: string, baseUrl: string): URL | null => {
+  if (parseRoomIdFromPath(inviteUrl.pathname, joinPath)) {
+    return inviteUrl
+  }
+
+  const hashInviteUrl = parseHashInviteUrl(inviteUrl, baseUrl)
+  if (hashInviteUrl && parseRoomIdFromPath(hashInviteUrl.pathname, joinPath)) {
+    return hashInviteUrl
+  }
+
+  return null
+}
+
 const trimRequired = (value: string, fieldName: string): string => {
   const trimmedValue = value.trim()
   if (trimmedValue.length === 0) {
@@ -110,15 +140,24 @@ export const parsePrivateInviteLink = (
 
   const baseUrl = input.baseUrl ? input.baseUrl.trim() : DEFAULT_PARSE_BASE_URL
 
-  let inviteUrl: URL
-  try {
-    inviteUrl = new URL(inviteLink, baseUrl || DEFAULT_PARSE_BASE_URL)
-  } catch {
+  const parsedInviteUrl = parseInviteUrl(inviteLink, baseUrl)
+  if (!parsedInviteUrl) {
     return {
       ok: false,
       error: {
         code: 'invalid-url',
         message: 'Invite link must be a valid URL or absolute path.'
+      }
+    }
+  }
+
+  const inviteUrl = findInviteUrlCandidate(parsedInviteUrl, joinPath, baseUrl)
+  if (!inviteUrl) {
+    return {
+      ok: false,
+      error: {
+        code: 'missing-room-id',
+        message: `Invite link path must match "${joinPath}/:roomId".`
       }
     }
   }

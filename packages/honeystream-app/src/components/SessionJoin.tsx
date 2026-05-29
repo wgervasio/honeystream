@@ -5,15 +5,101 @@ import { MenuButton } from 'components/menu/MenuButton'
 import { TextInput, InputGroup } from './common/input'
 import { MenuHeader } from './menu/MenuHeader'
 import { t } from 'locale'
+import { parsePrivateInviteLink } from '../ui/invite'
+import { isP2PHash } from '../utils/network'
 
 interface IProps {
   connect: (sessionId: string) => void
 }
 
-export class SessionJoin extends Component<IProps> {
+type JoinInvitePreviewState = 'complete' | 'partial' | 'manual'
+
+interface JoinInvitePreview {
+  readonly detail: string
+  readonly roomLabel: string
+  readonly secretLabel: string
+  readonly state: JoinInvitePreviewState
+  readonly title: string
+}
+
+interface IState {
+  readonly invitePreview?: JoinInvitePreview
+}
+
+const readPreviousFriendCode = (): string => {
+  if (typeof localStorage === 'undefined') {
+    return ''
+  }
+
+  return localStorage.getItem('prevFriendCode') || ''
+}
+
+const shortenRoomCode = (roomId: string): string => {
+  if (roomId.length <= 18) {
+    return roomId
+  }
+
+  return `${roomId.slice(0, 10)}...${roomId.slice(-6)}`
+}
+
+const createInvitePreview = (value: string): JoinInvitePreview | undefined => {
+  const invite = value.trim()
+  if (invite.length === 0) {
+    return undefined
+  }
+
+  const parsedInvite = parsePrivateInviteLink({ inviteLink: invite })
+  if (parsedInvite.ok) {
+    return {
+      detail: 'Full invite detected. You can hop straight into the private rabbit-side seat.',
+      roomLabel: `Room ${shortenRoomCode(parsedInvite.value.roomId)}`,
+      secretLabel: 'Secret included',
+      state: 'complete',
+      title: 'Invite ready'
+    }
+  }
+
+  if (isP2PHash(invite)) {
+    return {
+      detail:
+        'Room code detected. A full invite link is still best when the room expects a secret.',
+      roomLabel: `Room ${shortenRoomCode(invite)}`,
+      secretLabel: 'Secret not included',
+      state: 'partial',
+      title: 'Room code ready'
+    }
+  }
+
+  if (parsedInvite.error.code === 'missing-secret') {
+    return {
+      detail: 'This looks like a room link, but it is missing the private invite secret.',
+      roomLabel: 'Room link detected',
+      secretLabel: 'Secret missing',
+      state: 'partial',
+      title: 'Almost ready'
+    }
+  }
+
+  return {
+    detail: 'Paste the full invite link from cat-side or a 64-character room code.',
+    roomLabel: 'Waiting for room',
+    secretLabel: 'Waiting for secret',
+    state: 'manual',
+    title: 'Checking invite'
+  }
+}
+
+export class SessionJoin extends Component<IProps, IState> {
   private sessionInput: HTMLInputElement | null = null
+  readonly state: IState = {
+    invitePreview: createInvitePreview(readPreviousFriendCode())
+  }
 
   render(): JSX.Element | null {
+    const previousFriendCode = readPreviousFriendCode()
+    const inviteDescriptionId = this.state.invitePreview
+      ? 'join_invite_hint join_invite_preview'
+      : 'join_invite_hint'
     const linkBreakdown = [
       {
         label: 'Invite link',
@@ -118,13 +204,17 @@ export class SessionJoin extends Component<IProps> {
                 theRef={el => (this.sessionInput = el)}
                 className={styles.peerId}
                 placeholder="e.g. https://app.gethoneystream.com/join/abcd123…"
-                defaultValue={localStorage.getItem('prevFriendCode') || undefined}
+                defaultValue={previousFriendCode || undefined}
                 spellCheck={false}
-                aria-describedby="join_invite_hint"
-                onChange={() => {
+                aria-describedby={inviteDescriptionId}
+                onChange={event => {
+                  const input = event.currentTarget as HTMLInputElement
                   if (this.sessionInput) {
                     this.sessionInput.classList.remove('invalid')
                   }
+                  this.setState({
+                    invitePreview: createInvitePreview(input.value)
+                  })
                 }}
                 autoFocus
                 required
@@ -142,6 +232,19 @@ export class SessionJoin extends Component<IProps> {
               Full invite links are best: they carry the room ID and secret together so the
               rabbit-side seat stays private.
             </p>
+            {this.state.invitePreview ? (
+              <div
+                id="join_invite_preview"
+                className={styles.invitePreview}
+                data-invite-preview-state={this.state.invitePreview.state}
+                aria-live="polite"
+              >
+                <span>{this.state.invitePreview.title}</span>
+                <strong>{this.state.invitePreview.roomLabel}</strong>
+                <b>{this.state.invitePreview.secretLabel}</b>
+                <p>{this.state.invitePreview.detail}</p>
+              </div>
+            ) : null}
           </form>
           <div className={styles.hintGrid} aria-hidden="true">
             <span>Private invite</span>
