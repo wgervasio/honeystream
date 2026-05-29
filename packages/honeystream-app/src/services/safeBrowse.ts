@@ -7,6 +7,8 @@ const SAFE_HOSTS = new Set([
   'www.youtu.be',
   'm.youtube.com',
   'youtube.com',
+  'youtube-nocookie.com',
+  'www.youtube-nocookie.com',
   'www.netflix.com',
   'www.crunchyroll.com',
   'www.google.com',
@@ -39,6 +41,38 @@ const SAFE_HOSTS = new Set([
   'www.disneyplus.com'
 ])
 
+const SAFE_PROVIDER_DOMAINS = [
+  'youtube.com',
+  'youtube-nocookie.com',
+  'youtu.be',
+  'animepahe.com',
+  'animepahe.ru',
+  'animepahe.si',
+  'cineby.app',
+  'cineby.ru',
+  'cineby.to',
+  'miruro.to',
+  'miruro.tv'
+] as const
+
+const normalizeHost = (host: string): string =>
+  host
+    .trim()
+    .toLowerCase()
+    .replace(/:\d+$/, '')
+    .replace(/\.$/, '')
+
+const isHostOrSubdomain = (host: string, domain: string): boolean =>
+  host === domain || host.endsWith(`.${domain}`)
+
+export const isSafeBrowseHost = (host: string): boolean => {
+  const normalizedHost = normalizeHost(host)
+  return (
+    SAFE_HOSTS.has(normalizedHost) ||
+    SAFE_PROVIDER_DOMAINS.some(domain => isHostOrSubdomain(normalizedHost, domain))
+  )
+}
+
 let safeBrowse: SafeBrowse | undefined
 
 export class SafeBrowse {
@@ -57,7 +91,10 @@ export class SafeBrowse {
   private load() {
     const value =
       process.env.NODE_ENV === 'development' ? '' : localStorage.getItem(STORAGE_KEY) || ''
-    const hosts = value.split(',')
+    const hosts = value
+      .split(',')
+      .map(normalizeHost)
+      .filter(host => host.length > 0)
     this.persistentHosts = new Set(hosts)
   }
 
@@ -74,14 +111,15 @@ export class SafeBrowse {
     const host = getHost(url)
     if (!host) return true
 
-    const isPermitted = SAFE_HOSTS.has(host) || this.persistentHosts.has(host)
+    const normalizedHost = normalizeHost(host)
+    const isPermitted = isSafeBrowseHost(normalizedHost) || this.persistentHosts.has(normalizedHost)
     return isPermitted
   }
 
   permitURL(url: string) {
     const host = getHost(url)
     if (!host) return
-    this.persistentHosts.add(host)
+    this.persistentHosts.add(normalizeHost(host))
   }
 
   enable() {

@@ -148,83 +148,85 @@ const observeStreamingSiteConnectionProfile = async (
     hostNetwork: profile.hostNetwork,
     guestNetwork: profile.guestNetwork
   })
-
-  const flushAndAdvance = (): void => {
-    pair.flushAll()
-    nowMs += FLUSH_ADVANCE_MS
-  }
-
-  const sendClientCommand = (command: ClientToHostEnvelope['command']): void => {
-    clientSeq += 1
-    const envelope: ClientToHostEnvelope = {
-      version: PROTOCOL_VERSION,
-      direction: 'client-to-host',
-      seq: clientSeq,
-      sentAtMs: nowMs,
-      command
+  try {
+    const flushAndAdvance = (): void => {
+      pair.flushAll()
+      nowMs += FLUSH_ADVANCE_MS
     }
-    pair.guest.send({ seq: envelope.seq, sentAtMs: envelope.sentAtMs, message: envelope })
-  }
 
-  const sendHostEvent = (event: HostToClientEnvelope['event']): void => {
-    hostSeq += 1
-    const envelope: HostToClientEnvelope = {
-      version: PROTOCOL_VERSION,
-      direction: 'host-to-client',
-      seq: hostSeq,
-      sentAtMs: nowMs,
-      event
+    const sendClientCommand = (command: ClientToHostEnvelope['command']): void => {
+      clientSeq += 1
+      const envelope: ClientToHostEnvelope = {
+        version: PROTOCOL_VERSION,
+        direction: 'client-to-host',
+        seq: clientSeq,
+        sentAtMs: nowMs,
+        command
+      }
+      pair.guest.send({ seq: envelope.seq, sentAtMs: envelope.sentAtMs, message: envelope })
     }
-    pair.host.send({ seq: envelope.seq, sentAtMs: envelope.sentAtMs, message: envelope })
-  }
 
-  await pair.host.connect()
+    const sendHostEvent = (event: HostToClientEnvelope['event']): void => {
+      hostSeq += 1
+      const envelope: HostToClientEnvelope = {
+        version: PROTOCOL_VERSION,
+        direction: 'host-to-client',
+        seq: hostSeq,
+        sentAtMs: nowMs,
+        event
+      }
+      pair.host.send({ seq: envelope.seq, sentAtMs: envelope.sentAtMs, message: envelope })
+    }
 
-  for (let index = 0; index < fixtures.length; index += 1) {
-    const media = toMediaSnapshot(fixtures[index], index)
-    const seekPositionMs = Math.min(24000 + index * 1000, media.durationMs || DEFAULT_DURATION_MS)
-    const rate = index % 2 === 0 ? 1 : 1.25
+    await pair.host.connect()
 
-    sendClientCommand({ type: 'addMedia', media })
-    flushAndAdvance()
-    sendHostEvent({ type: 'currentMediaChanged', mediaId: media.mediaId, media })
-    sendHostEvent({
-      type: 'playbackChanged',
-      playback: toPlaybackSnapshot(media, nowMs, 0, 1)
-    })
-    flushAndAdvance()
-    sendClientCommand({ type: 'seek', positionMs: seekPositionMs })
-    flushAndAdvance()
-    sendHostEvent({
-      type: 'playbackChanged',
-      playback: toPlaybackSnapshot(media, nowMs, seekPositionMs, 1)
-    })
-    flushAndAdvance()
-    sendClientCommand({ type: 'setRate', rate })
-    flushAndAdvance()
-    sendHostEvent({
-      type: 'playbackChanged',
-      playback: toPlaybackSnapshot(media, nowMs, seekPositionMs, rate)
-    })
-    flushAndAdvance()
-  }
+    for (let index = 0; index < fixtures.length; index += 1) {
+      const media = toMediaSnapshot(fixtures[index], index)
+      const seekPositionMs = Math.min(24000 + index * 1000, media.durationMs || DEFAULT_DURATION_MS)
+      const rate = index % 2 === 0 ? 1 : 1.25
 
-  const metrics = pair.getAggregateMetrics()
-  const candidate: SimulatedPeerTransportCandidate = {
-    id: profile.id,
-    label: profile.label,
-    metrics
-  }
-  pair.host.dispose()
-  pair.guest.dispose()
+      sendClientCommand({ type: 'addMedia', media })
+      flushAndAdvance()
+      sendHostEvent({ type: 'currentMediaChanged', mediaId: media.mediaId, media })
+      sendHostEvent({
+        type: 'playbackChanged',
+        playback: toPlaybackSnapshot(media, nowMs, 0, 1)
+      })
+      flushAndAdvance()
+      sendClientCommand({ type: 'seek', positionMs: seekPositionMs })
+      flushAndAdvance()
+      sendHostEvent({
+        type: 'playbackChanged',
+        playback: toPlaybackSnapshot(media, nowMs, seekPositionMs, 1)
+      })
+      flushAndAdvance()
+      sendClientCommand({ type: 'setRate', rate })
+      flushAndAdvance()
+      sendHostEvent({
+        type: 'playbackChanged',
+        playback: toPlaybackSnapshot(media, nowMs, seekPositionMs, rate)
+      })
+      flushAndAdvance()
+    }
 
-  return {
-    budgetResult: evaluateSimulatedPeerTransportBudget(metrics, options.budget),
-    candidate,
-    metrics,
-    profile,
-    providers,
-    siteCount: fixtures.length
+    const metrics = pair.getAggregateMetrics()
+    const candidate: SimulatedPeerTransportCandidate = {
+      id: profile.id,
+      label: profile.label,
+      metrics
+    }
+
+    return {
+      budgetResult: evaluateSimulatedPeerTransportBudget(metrics, options.budget),
+      candidate,
+      metrics,
+      profile,
+      providers,
+      siteCount: fixtures.length
+    }
+  } finally {
+    pair.host.dispose()
+    pair.guest.dispose()
   }
 }
 
@@ -232,11 +234,9 @@ export const runStreamingSiteConnectionLab = async (
   options: StreamingSiteConnectionLabOptions
 ): Promise<StreamingSiteConnectionLabResult> => {
   const observations: StreamingSiteConnectionObservation[] = []
-
   for (const profile of options.profiles) {
     observations.push(await observeStreamingSiteConnectionProfile(profile, options.fixtures, options))
   }
-
   const rankedProfiles = rankSimulatedPeerTransportCandidates(
     observations.map(observation => observation.candidate),
     options.budget
@@ -249,7 +249,6 @@ export const runStreamingSiteConnectionLab = async (
       siteCount: observation.siteCount
     }
   })
-
   return {
     bestProfile: rankedProfiles.find(rank => rank.budgetResult.ok),
     observations,
