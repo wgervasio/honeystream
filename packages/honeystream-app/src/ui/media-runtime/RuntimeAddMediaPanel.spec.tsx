@@ -22,7 +22,7 @@ describe('RuntimeAddMediaPanel', () => {
     expect(html).toContain('Paste watch link')
     expect(html).toContain('Buddy check')
     expect(html).toContain('Sync check')
-    expect(html).toContain('reliable retry for transient control drops')
+    expect(html).toContain('visible recovered retries for transient control drops')
     expect(html).toContain('syncs only the tiny control stream')
     expect(html).not.toContain('Add local file')
   })
@@ -149,7 +149,8 @@ describe('RuntimeAddMediaPanel', () => {
       Simulate.change(input)
       expect(container.textContent).toContain('Low-latency sync path')
       expect(container.textContent).toContain('not the video bytes')
-      expect(container.textContent).toContain('mock round trip budgeted under 32ms')
+      expect(container.textContent).toContain('mock round trip budgeted under 10ms')
+      expect(container.textContent).toContain('visible recovered retries')
       expect(container.textContent).toContain('max control-frame size')
 
       input.value = 'https://youtube.com.evil/watch?v=honeystream-demo'

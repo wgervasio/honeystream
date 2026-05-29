@@ -83,6 +83,16 @@ describe('simulated peer transport reliable retry', () => {
     expect(metrics.combinedSentMessages).toBe(6)
     expect(metrics.combinedDeliveredMessages).toBe(6)
     expect(metrics.combinedDroppedMessages).toBe(0)
+    expect(metrics.combinedRetransmittedMessages).toBe(2)
+    expect(metrics.combinedRetransmittedBytes).toBeGreaterThan(0)
+    expect(metrics.combinedRetransmissionRate).toBe(2 / 6)
+    expect(metrics.maxDirectionalRetransmissionRate).toBe(1 / 3)
+    expect(metrics.recentFrames).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ direction: 'guest->host', outcome: 'retransmitted', seq: 2 }),
+        expect.objectContaining({ direction: 'host->guest', outcome: 'retransmitted', seq: 2 })
+      ])
+    )
     expect(metrics.combinedOutOfOrderMessages).toBe(0)
     expect(metrics.combinedSequenceGapMessages).toBe(0)
     expect(metrics.combinedLostBytes).toBe(0)
@@ -116,6 +126,7 @@ describe('simulated peer transport reliable retry', () => {
 
     const metrics = pair.getAggregateMetrics()
     expect(metrics.combinedDroppedMessages).toBe(0)
+    expect(metrics.combinedRetransmittedMessages).toBe(1)
     expect(metrics.combinedLostBytes).toBe(0)
     expect(metrics.combinedMaxLatencyMs).toBe(44)
 

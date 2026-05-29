@@ -17,6 +17,7 @@ export interface SimulatedPeerTransportMetricsRecorder {
     reason: SimulatedPeerTransportDropReason,
     recordedAtMs: number
   ): void
+  recordRetransmitted(bytes: number, seq: number, recordedAtMs: number, fromPeerId: string): void
   recordDelivered(
     bytes: number,
     latencyMs: number,
@@ -65,11 +66,13 @@ export const createSimulatedPeerTransportMetricsRecorder = (
   let sentMessages = 0
   let deliveredMessages = 0
   let droppedMessages = 0
+  let retransmittedMessages = 0
   let outOfOrderMessages = 0
   let sequenceGapMessages = 0
   let sentBytes = 0
   let deliveredBytes = 0
   let lostBytes = 0
+  let retransmittedBytes = 0
   let maxMessageBytes = 0
   let totalLatencyMs = 0
   let maxLatencyMs = 0
@@ -112,6 +115,18 @@ export const createSimulatedPeerTransportMetricsRecorder = (
       lostBytes += bytes
       recordFrameSample(
         createFrameSample('dropped', bytes, outboundDirection, seq, recordedAtMs, undefined, reason)
+      )
+    },
+    recordRetransmitted(
+      bytes: number,
+      seq: number,
+      recordedAtMs: number,
+      fromPeerId: string
+    ): void {
+      retransmittedMessages += 1
+      retransmittedBytes += bytes
+      recordFrameSample(
+        createFrameSample('retransmitted', bytes, inboundDirection(fromPeerId), seq, recordedAtMs)
       )
     },
     recordDelivered(
@@ -163,13 +178,16 @@ export const createSimulatedPeerTransportMetricsRecorder = (
         sentMessages,
         deliveredMessages,
         droppedMessages,
+        retransmittedMessages,
         outOfOrderMessages,
         sequenceGapMessages,
         sentBytes,
         deliveredBytes,
         lostBytes,
+        retransmittedBytes,
         deliveryRate: ratio(sentMessages - droppedMessages, sentMessages),
         byteLossRate: ratio(lostBytes, sentBytes),
+        retransmissionRate: ratio(retransmittedMessages, deliveredMessages + droppedMessages),
         averageMessageBytes: ratio(sentBytes, sentMessages),
         maxMessageBytes,
         averageLatencyMs: ratio(totalLatencyMs, deliveredMessages),

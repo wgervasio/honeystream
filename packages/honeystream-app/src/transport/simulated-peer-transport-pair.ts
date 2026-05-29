@@ -33,13 +33,16 @@ export interface AggregateSimulatedPeerTransportMetrics {
   readonly combinedSentBytes: number
   readonly combinedDeliveredBytes: number
   readonly combinedLostBytes: number
+  readonly combinedRetransmittedBytes: number
   readonly combinedDeliveryRate: number
   readonly combinedByteLossRate: number
+  readonly combinedRetransmissionRate: number
   readonly combinedAverageMessageBytes: number
   readonly combinedMaxMessageBytes: number
   readonly combinedSentMessages: number
   readonly combinedDeliveredMessages: number
   readonly combinedDroppedMessages: number
+  readonly combinedRetransmittedMessages: number
   readonly combinedOutOfOrderMessages: number
   readonly combinedSequenceGapMessages: number
   readonly combinedAverageLatencyMs: number
@@ -53,6 +56,7 @@ export interface AggregateSimulatedPeerTransportMetrics {
   readonly maxDirectionalAverageLatencyMs: number
   readonly directionalAverageLatencySkewMs: number
   readonly maxDirectionalByteLossRate: number
+  readonly maxDirectionalRetransmissionRate: number
   readonly maxDirectionalQueuedMessages: number
   readonly maxDirectionalPeakQueuedMessages: number
   readonly estimatedRoundTripP95LatencyMs: number
@@ -125,10 +129,14 @@ export const createSimulatedPeerTransportPair = <TClientToHostMessage, THostToCl
       const combinedSentBytes = hostMetrics.sentBytes + guestMetrics.sentBytes
       const combinedDeliveredBytes = hostMetrics.deliveredBytes + guestMetrics.deliveredBytes
       const combinedLostBytes = hostMetrics.lostBytes + guestMetrics.lostBytes
+      const combinedRetransmittedBytes =
+        hostMetrics.retransmittedBytes + guestMetrics.retransmittedBytes
       const combinedSentMessages = hostMetrics.sentMessages + guestMetrics.sentMessages
       const combinedDeliveredMessages =
         hostMetrics.deliveredMessages + guestMetrics.deliveredMessages
       const combinedDroppedMessages = hostMetrics.droppedMessages + guestMetrics.droppedMessages
+      const combinedRetransmittedMessages =
+        hostMetrics.retransmittedMessages + guestMetrics.retransmittedMessages
       const combinedOutOfOrderMessages =
         hostMetrics.outOfOrderMessages + guestMetrics.outOfOrderMessages
       const combinedSequenceGapMessages =
@@ -145,8 +153,13 @@ export const createSimulatedPeerTransportPair = <TClientToHostMessage, THostToCl
         combinedSentBytes,
         combinedDeliveredBytes,
         combinedLostBytes,
+        combinedRetransmittedBytes,
         combinedDeliveryRate: ratio(combinedDeliveredMessages, combinedSentMessages),
         combinedByteLossRate: ratio(combinedLostBytes, combinedSentBytes),
+        combinedRetransmissionRate: ratio(
+          combinedRetransmittedMessages,
+          combinedDeliveredMessages + combinedDroppedMessages
+        ),
         combinedAverageMessageBytes: ratio(combinedSentBytes, combinedSentMessages),
         combinedMaxMessageBytes: Math.max(
           hostMetrics.maxMessageBytes,
@@ -155,6 +168,7 @@ export const createSimulatedPeerTransportPair = <TClientToHostMessage, THostToCl
         combinedSentMessages,
         combinedDeliveredMessages,
         combinedDroppedMessages,
+        combinedRetransmittedMessages,
         combinedOutOfOrderMessages,
         combinedSequenceGapMessages,
         combinedAverageLatencyMs: combineAverageLatency(hostMetrics, guestMetrics),
@@ -176,6 +190,10 @@ export const createSimulatedPeerTransportPair = <TClientToHostMessage, THostToCl
           hostMetrics.averageLatencyMs - guestMetrics.averageLatencyMs
         ),
         maxDirectionalByteLossRate: Math.max(hostMetrics.byteLossRate, guestMetrics.byteLossRate),
+        maxDirectionalRetransmissionRate: Math.max(
+          hostMetrics.retransmissionRate,
+          guestMetrics.retransmissionRate
+        ),
         maxDirectionalQueuedMessages: Math.max(
           hostMetrics.queuedMessages,
           guestMetrics.queuedMessages

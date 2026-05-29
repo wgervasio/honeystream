@@ -25,6 +25,10 @@ import {
   PlaybackEngineDesiredState
 } from '../playback/engine/playbackEngineContract'
 import { LocalFileMetadata } from '../playback/adapters/local-file'
+import {
+  STREAMING_SITE_CONNECTION_FIXTURES,
+  STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS
+} from '../transport/streaming-site-connection-defaults'
 import { createProjectionStore } from '../ui'
 
 interface RouteParams {
@@ -164,7 +168,9 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('Room code')
     expect(html).toContain('room-123')
     expect(html).toContain('0 control bytes')
-    expect(html).toContain('Under 32ms mock RT')
+    expect(html).toContain(`&lt;=${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms mock RT`)
+    expect(html).toContain(`${STREAMING_SITE_CONNECTION_FIXTURES.length} local fixtures`)
+    expect(html).toContain('Recovered retries counted')
     expect(html).toContain('Paste a supported website')
     expect(html).toContain('Website lane')
     expect(html).toContain('Direct MP4')
@@ -174,15 +180,17 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('Source picked')
     expect(html).toContain('Controls obvious')
     expect(html).toContain('Sync budget green')
-    expect(html).toContain('Mock host/guest control round trips stay under 32ms')
-    expect(html).toContain('reliable retry')
+    expect(html).toContain(
+      `Mock host/guest control round trips stay at or under ${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms P95`
+    )
+    expect(html).toContain('visible recovered retries')
     expect(html).toContain('no skipped controls')
     expect(html).toContain('capped jitter')
     expect(html).toContain('Cat-side cue')
     expect(html).toContain('Rabbit-side hop')
     expect(html).toContain('Zero-byte-loss controls')
     expect(html).toContain('No skipped controls')
-    expect(html).toContain('32ms mock round trip')
+    expect(html).toContain(`${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms lab round trip`)
     expect(html).toContain('Jitter-guarded frames')
     expect(html).toContain('Reliable retry guard')
     expect(html).toContain('Cozy command bar')
