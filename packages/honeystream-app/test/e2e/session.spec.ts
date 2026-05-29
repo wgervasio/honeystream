@@ -65,6 +65,16 @@ async function waitForPlaybackPositionAtLeast(page: Page, expectedPositionMs: nu
   }, expectedPositionMs)
 }
 
+async function waitForPlaybackState(page: Page, state: 'playing' | 'paused'): Promise<void> {
+  await page.waitForFunction(
+    expectedState => {
+      const controls = document.querySelector('#runtime_playback_controls')
+      return Boolean(controls && controls.getAttribute('data-playback-state') === expectedState)
+    },
+    state
+  )
+}
+
 async function visitRuntimePath(page: Page, path: string): Promise<void> {
   runtimeVisitCounter += 1
   const separator = path.indexOf('?') === -1 ? '?' : '&'
@@ -298,10 +308,12 @@ describe('session', () => {
       await clientPage.waitForSelector(
         '#runtime_playback_controls [data-intent="playPause"]:not([disabled])'
       )
+      await waitForPlaybackState(hostPage, 'playing')
+      await waitForPlaybackState(clientPage, 'playing')
 
       await clientPage.click('#runtime_playback_controls [data-intent="playPause"]')
-      await waitForRuntimeText(hostPage, 'Paused together')
-      await waitForRuntimeText(clientPage, 'Paused together')
+      await waitForPlaybackState(hostPage, 'paused')
+      await waitForPlaybackState(clientPage, 'paused')
 
       await clientPage.click('#runtime_playback_controls [data-intent="rateUp"]')
       await waitForRuntimeText(hostPage, '1.25x')
