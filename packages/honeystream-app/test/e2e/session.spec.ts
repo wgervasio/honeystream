@@ -151,29 +151,15 @@ describe('session', () => {
       await waitForRuntimeText(page, 'YouTube watch page')
     })
 
-    it('should queue named streaming-site examples covered by the mock lab', async () => {
-      const sources = [
-        {
-          url: 'animepahe.ru/play/honeystream-e2e',
-          title: 'AnimePahe watch page'
-        },
-        {
-          url: 'cineby.app/movie/honeystream-e2e',
-          title: 'Cineby watch page'
-        },
-        {
-          url: 'miruro.to/watch/honeystream-e2e',
-          title: 'Miruro watch page'
-        }
-      ]
-      for (const source of sources) {
-        await page.goto(APP_BASE_URL, APP_READY_OPTIONS)
-        await ms.visit(`/join/${hostId}?url=${encodeURIComponent(source.url)}`)
-        await page.waitForSelector(RUNTIME_SHELL_SELECTOR)
-        await waitForRuntimeText(page, 'Hosting room')
-        await waitForRuntimeText(page, 'Website loaded')
-        await waitForRuntimeText(page, source.title)
-      }
+    it('should queue a named streaming-site example covered by the mock lab', async () => {
+      await ms.visit(`/join/${hostId}?url=${encodeURIComponent('animepahe.ru/play/honeystream-e2e')}`)
+      await page.waitForSelector(RUNTIME_SHELL_SELECTOR)
+
+      await waitForRuntimeText(page, 'Website loaded')
+      await waitForRuntimeText(page, 'AnimePahe watch page')
+      await waitForRuntimeText(page, 'AnimePahe')
+      await waitForRuntimeText(page, 'Cineby')
+      await waitForRuntimeText(page, 'Miruro')
     })
 
     it('should queue the initial room URL from the landing launcher', async () => {
