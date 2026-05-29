@@ -54,6 +54,8 @@ export const STREAMING_SITE_CONNECTION_FIXTURES: readonly StreamingSiteConnectio
       title: 'YouTube Music watch page',
       durationMs: 7200000
     },
+    { id: 'youtube-timestamp', source: 'https://www.youtube.com/watch?v=sync&t=42s' },
+    { id: 'youtube-tv', source: 'https://tv.youtube.com/watch/honeystream-sync' },
     {
       id: 'animepahe-ru',
       source: 'https://animepahe.ru/play/honeystream-test',
@@ -81,6 +83,8 @@ export const STREAMING_SITE_CONNECTION_FIXTURES: readonly StreamingSiteConnectio
       title: 'AnimePahe SI episode query',
       durationMs: 1500000
     },
+    { id: 'animepahe-ru-anime', source: 'https://animepahe.ru/anime/honeystream-test' },
+    { id: 'animepahe-com-play', source: 'https://animepahe.com/play/honeystream-test?episode=3' },
     {
       id: 'cineby-app',
       source: 'https://cineby.app/movie/honeystream-test',
@@ -113,6 +117,8 @@ export const STREAMING_SITE_CONNECTION_FIXTURES: readonly StreamingSiteConnectio
       source: 'https://watch.cineby.app/movie/honeystream-test?server=alpha',
       title: 'Cineby watch subdomain'
     },
+    { id: 'cineby-to-movie', source: 'https://cineby.to/movie/honeystream-test' },
+    { id: 'cineby-www-app-watch', source: 'https://www.cineby.app/watch/honeystream-test' },
     {
       id: 'miruro-to',
       source: 'https://miruro.to/watch/honeystream-test',
@@ -134,6 +140,8 @@ export const STREAMING_SITE_CONNECTION_FIXTURES: readonly StreamingSiteConnectio
       source: 'https://watch.miruro.tv/watch/honeystream-test?episode=2',
       title: 'Miruro watch subdomain'
     },
+    { id: 'miruro-to-anime', source: 'https://miruro.to/anime/honeystream-test' },
+    { id: 'miruro-anime-subdomain', source: 'https://anime.miruro.tv/watch/honeystream-test' },
     {
       id: 'generic-site',
       source: 'https://streaming.example.test/watch/honeystream-night',
@@ -178,6 +186,11 @@ export const STREAMING_SITE_CONNECTION_PROFILES: readonly StreamingSiteConnectio
       }
     },
     {
+      id: 'clean-ultra-low-latency',
+      label: 'Clean ultra-low latency lane',
+      network: { latencyMs: 1, maxQueuedFrames: 128 }
+    },
+    {
       id: 'clean-realtime',
       label: 'Clean realtime lane',
       network: { latencyMs: 2, maxQueuedFrames: 128 }
@@ -206,7 +219,7 @@ export const STREAMING_SITE_CONNECTION_RANDOM_SAMPLES: readonly number[] = Objec
   0.75,
   0.5
 ])
-export const STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS = 4
+export const STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS = 2
 export const STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS = 10
 export const STREAMING_SITE_CONNECTION_BUDGET: SimulatedPeerTransportBudget = Object.freeze({
   ...STREAMING_SITE_TRANSPORT_BUDGET,

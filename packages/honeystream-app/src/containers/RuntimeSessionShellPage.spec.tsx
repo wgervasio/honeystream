@@ -193,7 +193,7 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('capped jitter')
     expect(html).toContain('id="runtime_connection_lab_proof"')
     expect(html).toContain('Connection lab proof')
-    expect(html).toContain('Clean realtime lane wins')
+    expect(html).toContain('Ultra-low latency lane wins')
     expect(html).toContain(
       `${STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS}ms mock round-trip lane`
     )
@@ -202,10 +202,10 @@ describe('RuntimeSessionShellPage', () => {
     for (const coverage of STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE) {
       expect(html).toContain(`x${coverage.siteCount}`)
     }
-    expect(html).toContain('YouTube x8')
-    expect(html).toContain('AnimePahe x5')
-    expect(html).toContain('Cineby x6')
-    expect(html).toContain('Miruro x4')
+    expect(html).toContain('YouTube x10')
+    expect(html).toContain('AnimePahe x7')
+    expect(html).toContain('Cineby x8')
+    expect(html).toContain('Miruro x6')
     expect(html).toContain('Bursts stay calm')
     expect(html).toContain('Rapid seek, pause, resume, and rate bursts')
     expect(html).toContain(

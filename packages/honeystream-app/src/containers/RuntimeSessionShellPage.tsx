@@ -295,7 +295,7 @@ const ROOM_READY_SIGNALS = [
 const CONNECTION_LAB_PROOFS = [
   {
     id: 'selected-lane',
-    label: 'Clean realtime lane wins',
+    label: 'Ultra-low latency lane wins',
     detail:
       'The optimizer ranks zero byte loss first, then picks the ' +
       `${STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS}ms mock round-trip lane.`
