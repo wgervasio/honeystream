@@ -1,4 +1,4 @@
-jest.setTimeout(30e3)
+jest.setTimeout(45e3)
 
 const SESSION_HASH = 'a'.repeat(64)
 
@@ -124,6 +124,10 @@ describe('onboarding', () => {
     await page.waitForSelector('#home_starter_url')
 
     await page.type('#home_starter_url', 'youtube.com/watch?v=home-launch')
+    await page.waitForSelector('#home_starter_preview')
+    const starterPreview = await page.$eval('#home_starter_preview', e => e.textContent)
+    expect(starterPreview).toContain('YouTube lane')
+    expect(starterPreview).toContain('HTTPS added')
     await page.click('#home_start_with_url')
 
     await page.waitForSelector('[data-runtime-session-shell="true"]')
