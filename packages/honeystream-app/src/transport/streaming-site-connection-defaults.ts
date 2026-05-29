@@ -35,6 +35,21 @@ export const STREAMING_SITE_CONNECTION_FIXTURES: readonly StreamingSiteConnectio
       title: 'YouTube no-cookie embed'
     },
     {
+      id: 'youtube-embed',
+      source: 'https://www.youtube.com/embed/honeystream-sync',
+      title: 'YouTube embed page'
+    },
+    {
+      id: 'youtube-live',
+      source: 'https://www.youtube.com/live/honeystream-sync',
+      title: 'YouTube live page'
+    },
+    {
+      id: 'youtube-music',
+      source: 'https://music.youtube.com/watch?v=honeystream-sync',
+      title: 'YouTube Music watch page'
+    },
+    {
       id: 'animepahe-ru',
       source: 'https://animepahe.ru/play/honeystream-test',
       title: 'AnimePahe RU episode'
@@ -48,6 +63,16 @@ export const STREAMING_SITE_CONNECTION_FIXTURES: readonly StreamingSiteConnectio
       id: 'animepahe-com',
       source: 'https://animepahe.com/watch/honeystream-test',
       title: 'AnimePahe COM episode'
+    },
+    {
+      id: 'animepahe-www-ru',
+      source: 'https://www.animepahe.ru/play/honeystream-test',
+      title: 'AnimePahe RU www episode'
+    },
+    {
+      id: 'animepahe-si-query',
+      source: 'https://animepahe.si/play/honeystream-test?episode=2',
+      title: 'AnimePahe SI episode query'
     },
     {
       id: 'cineby-app',
@@ -70,6 +95,16 @@ export const STREAMING_SITE_CONNECTION_FIXTURES: readonly StreamingSiteConnectio
       title: 'Cineby subdomain movie'
     },
     {
+      id: 'cineby-app-tv-episode',
+      source: 'https://cineby.app/tv/honeystream-test/season/1/episode/1',
+      title: 'Cineby app episode'
+    },
+    {
+      id: 'cineby-watch-subdomain',
+      source: 'https://watch.cineby.app/movie/honeystream-test?server=alpha',
+      title: 'Cineby watch subdomain'
+    },
+    {
       id: 'miruro-to',
       source: 'https://miruro.to/watch/honeystream-test',
       title: 'Miruro watch page'
@@ -83,6 +118,11 @@ export const STREAMING_SITE_CONNECTION_FIXTURES: readonly StreamingSiteConnectio
       id: 'miruro-query',
       source: 'https://miruro.tv/watch/honeystream-test?episode=1',
       title: 'Miruro episode query'
+    },
+    {
+      id: 'miruro-watch-subdomain',
+      source: 'https://watch.miruro.tv/watch/honeystream-test?episode=2',
+      title: 'Miruro watch subdomain'
     },
     {
       id: 'generic-site',
@@ -116,6 +156,11 @@ export const STREAMING_SITE_CONNECTION_PROFILES: readonly StreamingSiteConnectio
       }
     },
     {
+      id: 'clean-realtime',
+      label: 'Clean realtime lane',
+      network: { latencyMs: 2, maxQueuedFrames: 128 }
+    },
+    {
       id: 'clean-fast',
       label: 'Clean fast lane',
       network: { latencyMs: 4, jitterMs: 1, maxQueuedFrames: 128 }
@@ -134,6 +179,7 @@ export const STREAMING_SITE_CONNECTION_RANDOM_SAMPLES: readonly number[] = Objec
   0.75,
   0.5
 ])
+export const STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS = 4
 export const STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS = 10
 export const STREAMING_SITE_CONNECTION_BUDGET: SimulatedPeerTransportBudget = Object.freeze({
   ...STREAMING_SITE_TRANSPORT_BUDGET,

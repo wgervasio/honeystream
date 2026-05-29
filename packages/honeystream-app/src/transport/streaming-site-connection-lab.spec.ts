@@ -39,8 +39,8 @@ describe('streaming site connection lab', () => {
       random: () => 0.5
     })
 
-    expect(result.bestProfile && result.bestProfile.profile.id).toBe('clean-fast')
-    expect(result.rankedProfiles[0].profile.id).toBe('clean-fast')
+    expect(result.bestProfile && result.bestProfile.profile.id).toBe('clean-realtime')
+    expect(result.rankedProfiles[0].profile.id).toBe('clean-realtime')
     expect(result.rankedProfiles[0].siteCount).toBe(STREAMING_SITE_CONNECTION_FIXTURES.length)
     expect(result.rankedProfiles[0].providers).toEqual([
       'youtube',
@@ -48,20 +48,28 @@ describe('streaming site connection lab', () => {
       'youtube',
       'youtube',
       'youtube',
+      'youtube',
+      'youtube',
+      'youtube',
       'animepahe',
       'animepahe',
       'animepahe',
+      'animepahe',
+      'animepahe',
       'cineby',
       'cineby',
       'cineby',
       'cineby',
+      'cineby',
+      'cineby',
+      'miruro',
       'miruro',
       'miruro',
       'miruro',
       'unknown'
     ])
 
-    const bestObservation = findObservation(result.observations, 'clean-fast')
+    const bestObservation = findObservation(result.observations, 'clean-realtime')
     const metrics = bestObservation.metrics
     expect(bestObservation.budgetResult).toEqual({ ok: true, failures: [] })
     expect(metrics.combinedSentMessages).toBeGreaterThan(STREAMING_SITE_CONNECTION_FIXTURES.length)
@@ -76,7 +84,7 @@ describe('streaming site connection lab', () => {
     expect(metrics.combinedRetransmissionRate).toBe(0)
     expect(metrics.combinedQueuedMessages).toBe(0)
     expect(metrics.maxDirectionalQueuedMessages).toBe(0)
-    expect(metrics.maxDirectionalAverageLatencyMs).toBeLessThanOrEqual(4)
+    expect(metrics.maxDirectionalAverageLatencyMs).toBeLessThanOrEqual(2)
     expect(metrics.estimatedRoundTripP95LatencyMs).toBeLessThanOrEqual(
       STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS
     )

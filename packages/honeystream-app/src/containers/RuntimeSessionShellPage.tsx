@@ -38,6 +38,7 @@ import {
 import {
   STREAMING_SITE_CONNECTION_PROFILES,
   STREAMING_SITE_CONNECTION_FIXTURES,
+  STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS,
   STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS,
   STREAMING_SITE_CONNECTION_TRIAL_COUNT
 } from '../transport/streaming-site-connection-defaults'
@@ -282,9 +283,10 @@ const ROOM_READY_SIGNALS = [
 const CONNECTION_LAB_PROOFS = [
   {
     id: 'selected-lane',
-    label: 'Clean fast lane wins',
+    label: 'Clean realtime lane wins',
     detail:
-      'The optimizer ranks zero byte loss first, then picks the lowest P95 control round trip.'
+      'The optimizer ranks zero byte loss first, then picks the ' +
+      `${STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS}ms mock round-trip lane.`
   },
   {
     id: 'retry-lane',
@@ -330,6 +332,7 @@ const ROOM_MOOD_CHIPS = [
   'Website-ready queue',
   'Zero-byte-loss controls',
   'No skipped controls',
+  `${STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS}ms best mock RT`,
   `${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms lab round trip`,
   'Jitter-guarded frames',
   'Reliable retry guard'
@@ -1345,6 +1348,10 @@ const RuntimeSessionRouteSurface = ({
             <span>
               <strong>Latency</strong>
               {`<=${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms mock RT`}
+            </span>
+            <span>
+              <strong>Best lane</strong>
+              {`${STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS}ms best mock RT`}
             </span>
             <span>
               <strong>Proof</strong>
