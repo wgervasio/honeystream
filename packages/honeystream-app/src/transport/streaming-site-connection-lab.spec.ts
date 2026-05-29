@@ -14,6 +14,11 @@ const STREAMING_SITE_FIXTURES: readonly StreamingSiteConnectionFixture[] = [
     title: 'YouTube watch page'
   },
   {
+    id: 'youtube-bare-watch',
+    source: 'https://youtube.com/watch?v=honeystream-sync',
+    title: 'YouTube bare watch page'
+  },
+  {
     id: 'youtube-short',
     source: 'https://youtu.be/honeystream-sync',
     title: 'YouTube short link'
@@ -119,6 +124,7 @@ describe('streaming site connection lab', () => {
     expect(result.rankedProfiles[0].profile.id).toBe('balanced-low-latency')
     expect(result.rankedProfiles[0].siteCount).toBe(STREAMING_SITE_FIXTURES.length)
     expect(result.rankedProfiles[0].providers).toEqual([
+      'youtube',
       'youtube',
       'youtube',
       'youtube',

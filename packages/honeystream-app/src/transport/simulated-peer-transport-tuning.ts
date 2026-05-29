@@ -18,8 +18,20 @@ export interface SimulatedPeerTransportCandidateRank {
 }
 
 const FAILED_CANDIDATE_SCORE_OFFSET = 1_000_000
+const BYTE_LOSS_RATE_SCORE_WEIGHT = 10_000_000
+const DIRECTIONAL_BYTE_LOSS_RATE_SCORE_WEIGHT = 5_000_000
+const DELIVERY_SHORTFALL_SCORE_WEIGHT = 1_000_000
+const DROPPED_MESSAGE_SCORE_WEIGHT = 100_000
+const SEQUENCE_GAP_SCORE_WEIGHT = 100_000
+const OUT_OF_ORDER_SCORE_WEIGHT = 50_000
 
 const scoreMetrics = (metrics: AggregateSimulatedPeerTransportMetrics): number =>
+  metrics.combinedByteLossRate * BYTE_LOSS_RATE_SCORE_WEIGHT +
+  metrics.maxDirectionalByteLossRate * DIRECTIONAL_BYTE_LOSS_RATE_SCORE_WEIGHT +
+  Math.max(0, 1 - metrics.combinedDeliveryRate) * DELIVERY_SHORTFALL_SCORE_WEIGHT +
+  metrics.combinedDroppedMessages * DROPPED_MESSAGE_SCORE_WEIGHT +
+  metrics.combinedSequenceGapMessages * SEQUENCE_GAP_SCORE_WEIGHT +
+  metrics.combinedOutOfOrderMessages * OUT_OF_ORDER_SCORE_WEIGHT +
   metrics.estimatedRoundTripP95LatencyMs * 1000 +
   metrics.combinedP95LatencyMs * 100 +
   metrics.maxDirectionalAverageLatencyJitterMs * 20 +

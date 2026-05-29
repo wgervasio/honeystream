@@ -141,6 +141,34 @@ describe('session', () => {
       await waitForRuntimeText(page, 'YouTube watch page')
     })
 
+    it('should queue named streaming-site examples covered by the mock lab', async () => {
+      await ms.visit(`/join/${hostId}`)
+      await page.waitForSelector(RUNTIME_SHELL_SELECTOR)
+
+      const sources = [
+        {
+          url: 'animepahe.ru/play/honeystream-e2e',
+          title: 'AnimePahe watch page'
+        },
+        {
+          url: 'cineby.app/movie/honeystream-e2e',
+          title: 'Cineby watch page'
+        },
+        {
+          url: 'miruro.to/watch/honeystream-e2e',
+          title: 'Miruro watch page'
+        }
+      ]
+
+      for (const source of sources) {
+        await page.click('#runtime-add-media-url')
+        await page.type('#runtime-add-media-url', source.url)
+        await page.press('#runtime-add-media-url', 'Enter')
+        await waitForRuntimeText(page, 'Source queued with https:// added')
+        await waitForRuntimeText(page, source.title)
+      }
+    })
+
     it('should queue the initial room URL from the landing launcher', async () => {
       await ms.visit(`/join/${hostId}?url=${encodeURIComponent('youtube.com/watch?v=home-launch')}`)
       await page.waitForSelector(RUNTIME_SHELL_SELECTOR)
