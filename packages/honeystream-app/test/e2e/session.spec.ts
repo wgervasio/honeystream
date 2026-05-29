@@ -152,10 +152,6 @@ describe('session', () => {
     })
 
     it('should queue named streaming-site examples covered by the mock lab', async () => {
-      await ms.visit(`/join/${hostId}`)
-      await page.waitForSelector(RUNTIME_SHELL_SELECTOR)
-      await waitForRuntimeText(page, 'Hosting room')
-
       const sources = [
         {
           url: 'animepahe.ru/play/honeystream-e2e',
@@ -171,9 +167,10 @@ describe('session', () => {
         }
       ]
       for (const source of sources) {
-        await page.waitForSelector('#runtime-add-media-url')
-        await page.fill('#runtime-add-media-url', source.url)
-        await page.press('#runtime-add-media-url', 'Enter')
+        await ms.visit(`/join/${hostId}?url=${encodeURIComponent(source.url)}`)
+        await page.waitForSelector(RUNTIME_SHELL_SELECTOR)
+        await waitForRuntimeText(page, 'Hosting room')
+        await waitForRuntimeText(page, 'Website loaded')
         await waitForRuntimeText(page, source.title)
       }
     })
