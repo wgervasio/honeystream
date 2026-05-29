@@ -265,6 +265,12 @@
   filter: brightness(1.05);
 }
 
+.launcherInput button:focus,
+.starterChips button:focus,
+.btn:focus {
+  box-shadow: var(--app-focus-ring);
+}
+
 .starterError {
   margin: -0.15rem 0 0;
   color: var(--color-honey) !important;
@@ -345,7 +351,7 @@
 
 .starterChips {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(6.8rem, 1fr));
   gap: 0.5rem;
 }
 

@@ -1270,6 +1270,21 @@ const RuntimeSessionRouteSurface = ({
                 </span>
               ))}
             </div>
+            <div
+              id="runtime_buddy_scene"
+              className={styles.buddyScene}
+              aria-label="Cat and rabbit watch booth"
+            >
+              <span data-buddy-scene-seat="cat">
+                <strong>Cat checks the source</strong>
+                <small>Exact website, file, or link is queued first.</small>
+              </span>
+              <span className={styles.buddyScenePulse}>Tiny sync lane</span>
+              <span data-buddy-scene-seat="rabbit">
+                <strong>Rabbit gets one hop</strong>
+                <small>Private invite lands in the same cozy room.</small>
+              </span>
+            </div>
           </div>
           <div className={styles.roomSummary} aria-label="Room summary">
             <span>

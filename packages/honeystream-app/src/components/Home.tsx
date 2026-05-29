@@ -50,6 +50,13 @@ const starterSiteExamples = [
     guidance: 'Use the real movie or show page so rabbit-side lands with you.'
   },
   {
+    id: 'miruro',
+    label: 'Miruro',
+    detail: 'Anime page',
+    placeholder: 'Paste the exact Miruro watch page...',
+    guidance: 'Use the real watch page you want both sides to open together.'
+  },
+  {
     id: 'direct',
     label: 'Direct MP4',
     detail: 'Clean media',
@@ -322,6 +329,7 @@ class Home extends Component<IProps, IState> {
                   <input
                     ref={this.starterInputRef}
                     id="home_starter_url"
+                    type="url"
                     value={this.state.starterUrl}
                     placeholder={
                       selectedStarter
