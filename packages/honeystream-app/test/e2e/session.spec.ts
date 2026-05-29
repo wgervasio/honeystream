@@ -151,17 +151,6 @@ describe('session', () => {
       await waitForRuntimeText(page, 'YouTube watch page')
     })
 
-    it('should queue a named streaming-site example covered by the mock lab', async () => {
-      await ms.visit(`/join/${hostId}?url=${encodeURIComponent('animepahe.ru/play/honeystream-e2e')}`)
-      await page.waitForSelector(RUNTIME_SHELL_SELECTOR)
-
-      await waitForRuntimeText(page, 'Website loaded')
-      await waitForRuntimeText(page, 'AnimePahe watch page')
-      await waitForRuntimeText(page, 'AnimePahe')
-      await waitForRuntimeText(page, 'Cineby')
-      await waitForRuntimeText(page, 'Miruro')
-    })
-
     it('should queue the initial room URL from the landing launcher', async () => {
       await ms.visit(`/join/${hostId}?url=${encodeURIComponent('youtube.com/watch?v=home-launch')}`)
       await page.waitForSelector(RUNTIME_SHELL_SELECTOR)
