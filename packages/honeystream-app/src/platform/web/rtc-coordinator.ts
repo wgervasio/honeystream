@@ -26,6 +26,8 @@ interface Options {
 }
 
 export class WebRTCPeerCoordinator extends PeerCoordinator {
+  readonly ready: Promise<void>
+
   private closed: boolean = false
   private connecting = new Map<string, RTCPeerConn>()
   private sessionClient?: SignalClient
@@ -39,9 +41,11 @@ export class WebRTCPeerCoordinator extends PeerCoordinator {
     this.keepAlive = this.keepAlive.bind(this)
 
     if (this.host) {
-      this.createSession().catch(this.serverConnectionClosed)
+      this.ready = this.createSession()
+      this.ready.catch(this.serverConnectionClosed)
     } else if (opts.hostId) {
-      this.joinSession(opts.hostId).catch(this.handleError)
+      this.ready = this.joinSession(opts.hostId)
+      this.ready.catch(this.handleError)
     } else {
       throw new Error('Failed to initialize WebRTCPeerCoordinator')
     }

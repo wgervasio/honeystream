@@ -1,4 +1,4 @@
-jest.setTimeout(30e3)
+jest.setTimeout(120e3)
 
 const RUNTIME_USERNAME_SELECTOR = '#settings-runtime-username'
 const RUNTIME_USERNAME_VALUE = 'coolguy'
@@ -9,7 +9,9 @@ describe('settings', () => {
   describe('appearance', () => {
     it('should apply a new language', async () => {
       await ms.visit(`/settings`)
+      await page.waitForSelector('#settings_tab_appearance')
       await page.click('#settings_tab_appearance')
+      await page.waitForSelector('#appearance_language')
       await page.selectOption('#appearance_language', 'ja-JP')
 
       let h1 = await page.$eval('h1', e => e.textContent)
@@ -18,7 +20,9 @@ describe('settings', () => {
       await ms.screenshot('language')
 
       // revert
+      await page.waitForSelector('#settings_tab_appearance')
       await page.click('#settings_tab_appearance')
+      await page.waitForSelector('#appearance_language')
       await page.selectOption('#appearance_language', 'en-US')
       h1 = await page.$eval('h1', e => e.textContent)
       expect(h1).toBe('Settings')

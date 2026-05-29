@@ -29,18 +29,52 @@ export class WebPlatform {
     return this.server
   }
 
+  /*
+   * Context: Runtime e2e creates and joins private rooms immediately through the WebRTC signal path.
+   * Invariant: A host lobby is not advertised as started until its signal room is ready.
+   * Options considered: Sleep in e2e, retry guest joins, or expose explicit coordinator readiness.
+   * Decision: Await coordinator readiness and close any prior room before replacing ownership.
+   * Performance impact: No steady-state cost; startup waits only for existing signal setup work.
+   * Memory/lifecycle ownership: WebPlatform owns the active NetServer and closes it before replacement.
+   * Failure mode: Signal setup failure closes the partial server and propagates the original error.
+   * Validation: Covered by live host/client e2e plus existing runtime and transport tests.
+   */
   async createLobby(opts: ILobbyOptions): Promise<void> {
     const coordinators: PeerCoordinator[] = []
+    const readyPromises: Promise<void>[] = []
 
-    if (opts.p2p) {
-      coordinators.push(new WebRTCPeerCoordinator({ host: true }))
+    if (this.server) {
+      this.server.close()
+      this.server = undefined
     }
 
-    this.server = new NetServer({ isHost: true, coordinators })
+    if (opts.p2p) {
+      const coordinator = new WebRTCPeerCoordinator({ host: true })
+      coordinators.push(coordinator)
+      readyPromises.push(coordinator.ready)
+    }
+
+    const server = new NetServer({ isHost: true, coordinators })
+    this.server = server
+
+    try {
+      await Promise.all(readyPromises)
+    } catch (error) {
+      if (this.server === server) {
+        server.close()
+        this.server = undefined
+      }
+      throw error
+    }
   }
 
   private async joinP2PLobby(hash: string): Promise<void> {
     ga('event', { ec: 'session', ea: 'connect', el: 'p2p' })
+
+    if (this.server) {
+      this.server.close()
+      this.server = undefined
+    }
 
     const coordinator = new WebRTCPeerCoordinator({ host: false, hostId: hash })
 

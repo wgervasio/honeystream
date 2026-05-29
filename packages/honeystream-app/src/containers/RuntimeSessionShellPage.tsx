@@ -1673,7 +1673,7 @@ export const RuntimeSessionShellPage = ({ location, match }: RouteComponentProps
   const initialMediaUrl = useMemo(() => readInitialMediaUrl(location.search), [location.search])
   const boundary = useMemo(
     () => createRuntimeSessionShellRouteBoundary(lobbyId, { inviteSecret }),
-    [inviteSecret, lobbyId]
+    [inviteSecret, lobbyId, location.search]
   )
 
   useEffect(() => {
