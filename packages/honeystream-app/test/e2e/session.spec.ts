@@ -6,6 +6,8 @@ const APP_HOST = process.env.HONEYSTREAM_E2E_APP_HOST || '127.0.0.1'
 const APP_PORT = process.env.HONEYSTREAM_E2E_APP_PORT || process.env.PORT || '8080'
 const APP_BASE_URL = process.env.HONEYSTREAM_E2E_APP_URL || `http://${APP_HOST}:${APP_PORT}`
 const APP_READY_OPTIONS = { waitUntil: 'domcontentloaded' as const }
+const PLAYBACK_POSITION_SELECTOR = '#runtime_playback_controls [data-intent="positionMs"]'
+const SEEK_FORWARD_STEP_MS = 10000
 let runtimeVisitCounter = 0
 
 jest.setTimeout(SESSION_E2E_TIMEOUT_MS)
@@ -33,6 +35,43 @@ async function waitForRuntimeText(page: Page, text: string): Promise<void> {
           document.body.textContent.includes(expectedText)
       ),
     text
+  )
+}
+
+async function getPlaybackPositionMs(page: Page): Promise<number> {
+  const positionText = await page.$eval(
+    PLAYBACK_POSITION_SELECTOR,
+    element => element.getAttribute('data-position-ms') || '0'
+  )
+  const positionMs = Number(positionText)
+  if (!Number.isFinite(positionMs)) {
+    throw new Error(`Expected playback position to be numeric, received "${positionText}".`)
+  }
+
+  return positionMs
+}
+
+async function waitForPlaybackPositionAtLeast(page: Page, expectedPositionMs: number): Promise<void> {
+  await page.waitForFunction(expectedPosition => {
+    const positionElement = document.querySelector(
+      '#runtime_playback_controls [data-intent="positionMs"]'
+    )
+    if (!positionElement) {
+      return false
+    }
+
+    const positionMs = Number(positionElement.getAttribute('data-position-ms') || 'NaN')
+    return Number.isFinite(positionMs) && positionMs >= expectedPosition
+  }, expectedPositionMs)
+}
+
+async function waitForPlaybackState(page: Page, state: 'playing' | 'paused'): Promise<void> {
+  await page.waitForFunction(
+    expectedState => {
+      const controls = document.querySelector('#runtime_playback_controls')
+      return Boolean(controls && controls.getAttribute('data-playback-state') === expectedState)
+    },
+    state
   )
 }
 
@@ -237,6 +276,54 @@ describe('session', () => {
       await waitForRuntimeText(clientPage, 'Synced')
       await hostPage.waitForSelector('[data-session-state-tone="synced"]')
       await clientPage.waitForSelector('[data-session-state-tone="synced"]')
+    })
+
+    it('should accept guest queued media and guest playback controls', async () => {
+      await ms.visit(`/join/${hostId}`)
+      const hostPage = page
+      await hostPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
+      const inviteSecret = await getRuntimeInviteSecret(hostPage)
+
+      await visitRuntimePath(
+        clientPage,
+        `/join/${hostId}?secret=${encodeURIComponent(inviteSecret)}`
+      )
+      await clientPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
+      await waitForRuntimeText(hostPage, 'Synced')
+      await waitForRuntimeText(clientPage, 'Synced')
+
+      await clientPage.click('#runtime-add-media-url')
+      await clientPage.type('#runtime-add-media-url', 'youtube.com/watch?v=guest-e2e')
+      await waitForRuntimeText(clientPage, 'Honeystream will add https:// automatically')
+      await clientPage.press('#runtime-add-media-url', 'Enter')
+
+      await waitForRuntimeText(clientPage, 'Source queued with https:// added')
+      await waitForRuntimeText(hostPage, 'Website loaded')
+      await waitForRuntimeText(clientPage, 'Website loaded')
+      await waitForRuntimeText(hostPage, 'YouTube watch page')
+      await waitForRuntimeText(clientPage, 'YouTube watch page')
+      await hostPage.waitForSelector(
+        '#runtime_playback_controls [data-intent="playPause"]:not([disabled])'
+      )
+      await clientPage.waitForSelector(
+        '#runtime_playback_controls [data-intent="playPause"]:not([disabled])'
+      )
+      await waitForPlaybackState(hostPage, 'playing')
+      await waitForPlaybackState(clientPage, 'playing')
+
+      await clientPage.click('#runtime_playback_controls [data-intent="playPause"]')
+      await waitForPlaybackState(hostPage, 'paused')
+      await waitForPlaybackState(clientPage, 'paused')
+
+      await clientPage.click('#runtime_playback_controls [data-intent="rateUp"]')
+      await waitForRuntimeText(hostPage, '1.25x')
+      await waitForRuntimeText(clientPage, '1.25x')
+
+      const expectedSeekPositionMs =
+        (await getPlaybackPositionMs(clientPage)) + SEEK_FORWARD_STEP_MS
+      await clientPage.click('#runtime_playback_controls [data-intent="seekForward"]')
+      await waitForPlaybackPositionAtLeast(hostPage, expectedSeekPositionMs)
+      await waitForPlaybackPositionAtLeast(clientPage, expectedSeekPositionMs)
     })
   })
 })

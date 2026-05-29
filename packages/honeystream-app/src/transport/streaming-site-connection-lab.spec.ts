@@ -145,4 +145,54 @@ describe('streaming site connection lab', () => {
       STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS
     )
   })
+
+  it('observes asymmetric host and guest latency before ranking a mock lane', async () => {
+    const asymmetricBudget = {
+      ...STREAMING_SITE_CONNECTION_BUDGET,
+      maxAverageLatencyMs: 4,
+      maxP95LatencyMs: 4,
+      maxMaxLatencyMs: 4,
+      maxDirectionalAverageLatencyMs: 4,
+      maxDirectionalLatencySkewMs: 2,
+      maxEstimatedRoundTripP95LatencyMs: 6,
+      maxEstimatedRoundTripMaxLatencyMs: 6
+    }
+    const result = await runStreamingSiteConnectionLab({
+      budget: asymmetricBudget,
+      fixtures: STREAMING_SITE_CONNECTION_FIXTURES.slice(0, 4),
+      profiles: [
+        {
+          id: 'asymmetric-clean',
+          label: 'Asymmetric clean lane',
+          hostNetwork: { latencyMs: 2, maxQueuedFrames: 128 },
+          guestNetwork: { latencyMs: 4, maxQueuedFrames: 128 }
+        },
+        {
+          id: 'symmetric-too-slow',
+          label: 'Symmetric slow lane',
+          network: { latencyMs: 5, maxQueuedFrames: 128 }
+        }
+      ],
+      nowStartMs: 12000,
+      random: () => 0.5
+    })
+
+    const asymmetricObservation = findObservation(result.observations, 'asymmetric-clean')
+    const slowRank = findRank(result.rankedProfiles, 'symmetric-too-slow')
+
+    expect(result.bestProfile && result.bestProfile.profile.id).toBe('asymmetric-clean')
+    expect(asymmetricObservation.budgetResult).toEqual({ ok: true, failures: [] })
+    expect(asymmetricObservation.metrics.host.averageLatencyMs).toBeLessThanOrEqual(2)
+    expect(asymmetricObservation.metrics.guest.averageLatencyMs).toBeLessThanOrEqual(4)
+    expect(asymmetricObservation.metrics.directionalAverageLatencySkewMs).toBe(2)
+    expect(asymmetricObservation.metrics.estimatedRoundTripP95LatencyMs).toBe(6)
+    expect(asymmetricObservation.metrics.combinedByteLossRate).toBe(0)
+    expect(slowRank.budgetResult.ok).toBe(false)
+    expect(slowRank.budgetResult.failures).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ metric: 'maxDirectionalAverageLatencyMs' }),
+        expect.objectContaining({ metric: 'estimatedRoundTripP95LatencyMs' })
+      ])
+    )
+  })
 })
