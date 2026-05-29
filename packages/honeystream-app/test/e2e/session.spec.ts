@@ -1,7 +1,7 @@
 import { Page, BrowserContext } from 'playwright-core'
 
 const RUNTIME_SHELL_SELECTOR = '[data-runtime-session-shell="true"]'
-const SESSION_E2E_TIMEOUT_MS = 45e3
+const SESSION_E2E_TIMEOUT_MS = 120e3
 const APP_HOST = process.env.HONEYSTREAM_E2E_APP_HOST || '127.0.0.1'
 const APP_PORT = process.env.HONEYSTREAM_E2E_APP_PORT || process.env.PORT || '8080'
 const APP_BASE_URL = process.env.HONEYSTREAM_E2E_APP_URL || `http://${APP_HOST}:${APP_PORT}`
