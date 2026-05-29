@@ -22,7 +22,8 @@ export const STREAMING_SITE_CONNECTION_FIXTURES: readonly StreamingSiteConnectio
     {
       id: 'youtube-mobile-shorts',
       source: 'https://m.youtube.com/shorts/honeystream-sync',
-      title: 'YouTube mobile short'
+      title: 'YouTube mobile short',
+      durationMs: 45000
     },
     {
       id: 'youtube-short',
@@ -42,17 +43,20 @@ export const STREAMING_SITE_CONNECTION_FIXTURES: readonly StreamingSiteConnectio
     {
       id: 'youtube-live',
       source: 'https://www.youtube.com/live/honeystream-sync',
-      title: 'YouTube live page'
+      title: 'YouTube live page',
+      durationMs: null
     },
     {
       id: 'youtube-music',
       source: 'https://music.youtube.com/watch?v=honeystream-sync',
-      title: 'YouTube Music watch page'
+      title: 'YouTube Music watch page',
+      durationMs: 7200000
     },
     {
       id: 'animepahe-ru',
       source: 'https://animepahe.ru/play/honeystream-test',
-      title: 'AnimePahe RU episode'
+      title: 'AnimePahe RU episode',
+      durationMs: 1440000
     },
     {
       id: 'animepahe-si',
@@ -72,12 +76,14 @@ export const STREAMING_SITE_CONNECTION_FIXTURES: readonly StreamingSiteConnectio
     {
       id: 'animepahe-si-query',
       source: 'https://animepahe.si/play/honeystream-test?episode=2',
-      title: 'AnimePahe SI episode query'
+      title: 'AnimePahe SI episode query',
+      durationMs: 1500000
     },
     {
       id: 'cineby-app',
       source: 'https://cineby.app/movie/honeystream-test',
-      title: 'Cineby movie'
+      title: 'Cineby movie',
+      durationMs: 7200000
     },
     {
       id: 'cineby-to',
@@ -97,7 +103,8 @@ export const STREAMING_SITE_CONNECTION_FIXTURES: readonly StreamingSiteConnectio
     {
       id: 'cineby-app-tv-episode',
       source: 'https://cineby.app/tv/honeystream-test/season/1/episode/1',
-      title: 'Cineby app episode'
+      title: 'Cineby app episode',
+      durationMs: 3300000
     },
     {
       id: 'cineby-watch-subdomain',
@@ -107,7 +114,8 @@ export const STREAMING_SITE_CONNECTION_FIXTURES: readonly StreamingSiteConnectio
     {
       id: 'miruro-to',
       source: 'https://miruro.to/watch/honeystream-test',
-      title: 'Miruro watch page'
+      title: 'Miruro watch page',
+      durationMs: 1500000
     },
     {
       id: 'miruro-tv',
@@ -127,7 +135,8 @@ export const STREAMING_SITE_CONNECTION_FIXTURES: readonly StreamingSiteConnectio
     {
       id: 'generic-site',
       source: 'https://streaming.example.test/watch/honeystream-night',
-      title: 'Generic streaming page'
+      title: 'Generic streaming page',
+      durationMs: 5400000
     }
   ]
 )

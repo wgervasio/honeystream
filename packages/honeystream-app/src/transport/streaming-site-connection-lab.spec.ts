@@ -84,6 +84,7 @@ describe('streaming site connection lab', () => {
     expect(metrics.combinedRetransmissionRate).toBe(0)
     expect(metrics.combinedQueuedMessages).toBe(0)
     expect(metrics.maxDirectionalQueuedMessages).toBe(0)
+    expect(metrics.combinedPeakQueuedMessages).toBeGreaterThanOrEqual(3)
     expect(metrics.maxDirectionalAverageLatencyMs).toBeLessThanOrEqual(2)
     expect(metrics.estimatedRoundTripP95LatencyMs).toBeLessThanOrEqual(
       STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS
@@ -109,6 +110,19 @@ describe('streaming site connection lab', () => {
     expect(sources.some(source => source.includes('cineby'))).toBe(true)
     expect(sources.some(source => source.includes('miruro'))).toBe(true)
     expect(sources.some(source => source.includes('streaming.example.test'))).toBe(true)
+    expect(STREAMING_SITE_CONNECTION_FIXTURES.some(fixture => fixture.durationMs === null)).toBe(
+      true
+    )
+    expect(
+      STREAMING_SITE_CONNECTION_FIXTURES.some(
+        fixture => typeof fixture.durationMs === 'number' && fixture.durationMs < 60000
+      )
+    ).toBe(true)
+    expect(
+      STREAMING_SITE_CONNECTION_FIXTURES.some(
+        fixture => typeof fixture.durationMs === 'number' && fixture.durationMs > 3600000
+      )
+    ).toBe(true)
   })
 
   it('keeps lossy and slow mock profiles out of the selected streaming lane', async () => {

@@ -198,6 +198,8 @@ describe('RuntimeSessionShellPage', () => {
     )
     expect(html).toContain('Retry lane stays green')
     expect(html).toContain('Site matrix covered')
+    expect(html).toContain('Bursts stay calm')
+    expect(html).toContain('Rapid seek, pause, resume, and rate bursts')
     expect(html).toContain(
       `${STREAMING_SITE_CONNECTION_PROFILES.length} lanes run for ` +
         `${STREAMING_SITE_CONNECTION_TRIAL_COUNT} deterministic trials`
@@ -207,9 +209,7 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('Zero-byte-loss controls')
     expect(html).toContain('No skipped controls')
     expect(html).toContain(`${STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS}ms best mock RT`)
-    expect(html).toContain(
-      `${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms lab round trip`
-    )
+    expect(html).toContain(`${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms lab round trip`)
     expect(html).toContain('Jitter-guarded frames')
     expect(html).toContain('Reliable retry guard')
     expect(html).toContain('Cozy command bar')

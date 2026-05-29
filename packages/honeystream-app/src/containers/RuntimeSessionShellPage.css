@@ -474,7 +474,7 @@
 }
 
 .labProofDock {
-  grid-template-columns: auto repeat(3, minmax(0, 1fr));
+  grid-template-columns: auto repeat(4, minmax(0, 1fr));
 }
 
 .signalDock > strong,
