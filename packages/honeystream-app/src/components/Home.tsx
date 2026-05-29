@@ -13,6 +13,10 @@ import {
   createRuntimeAddMediaSourcePreview,
   normalizeRuntimeAddMediaHttpUrl
 } from '../ui/media-runtime/RuntimeAddMediaSourcePreview'
+import {
+  STREAMING_SITE_CONNECTION_FIXTURES,
+  STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS
+} from '../transport/streaming-site-connection-defaults'
 
 interface IProps extends WithNamespaces {
   installable: boolean
@@ -193,7 +197,7 @@ class Home extends Component<IProps, IState> {
     const connectionLabCards = [
       {
         id: 'latency',
-        value: '<=10ms',
+        value: `<=${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms`,
         label: 'mock P95 budget',
         detail: 'Default streaming-site trials keep the clean lane under the visible drift gate.'
       },
@@ -205,7 +209,7 @@ class Home extends Component<IProps, IState> {
       },
       {
         id: 'coverage',
-        value: '24 paths',
+        value: `${STREAMING_SITE_CONNECTION_FIXTURES.length} paths`,
         label: 'site fixtures',
         detail: 'YouTube, AnimePahe, Cineby, Miruro, and a generic watch page.'
       }

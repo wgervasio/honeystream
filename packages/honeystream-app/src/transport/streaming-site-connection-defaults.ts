@@ -134,6 +134,17 @@ export const STREAMING_SITE_CONNECTION_FIXTURES: readonly StreamingSiteConnectio
 
 export const STREAMING_SITE_CONNECTION_PROFILES: readonly StreamingSiteConnectionProfile[] = Object.freeze(
   [
+    /*
+    Context: The optimizer should visibly reject fast lanes that lose controls and slower lanes
+    that exceed the mock round-trip budget.
+    Invariant: The selected streaming profile must have zero byte loss before latency ranking.
+    Options considered: One happy-path profile only, random live-network probes, or explicit lanes.
+    Decision: Keep failing lossy/slow lanes beside clean/retry lanes so tests prove selection behavior.
+    Performance impact: Profile count is fixed and small; lab work remains bounded by fixture count.
+    Memory/lifecycle ownership: No resources are allocated by these static profiles.
+    Failure mode: If budgets drift, the optimizer returns no selected profile instead of guessing.
+    Validation: Covered by streaming-site connection lab and optimizer tests.
+    */
     {
       id: 'lossy-fast',
       label: 'Lossy fast lane',
