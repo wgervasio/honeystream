@@ -27,6 +27,10 @@ import {
   SimulatedPeerTransportOptions
 } from './simulated-peer-transport-types'
 import { connectingState, disconnectedState } from './simulated-peer-transport-state'
+
+const resolveSendTimeMs = (clockNowMs: number, envelopeSentAtMs: number): number =>
+  Number.isFinite(envelopeSentAtMs) ? Math.max(clockNowMs, envelopeSentAtMs) : clockNowMs
+
 export class SimulatedPeerTransport<TInboundMessage, TOutboundMessage>
   implements PeerTransport<TInboundMessage, TOutboundMessage> {
   readonly localPeerId: string
@@ -94,11 +98,13 @@ export class SimulatedPeerTransport<TInboundMessage, TOutboundMessage>
   send(envelope: PeerTransportEnvelope<TOutboundMessage>): void {
     this.ensureCanSend()
     const peer = this.requirePeer()
-    const bytes = byteLength(envelope)
-    const sentAtMs = this.currentTimeMs()
+    const sentAtMs = resolveSendTimeMs(this.currentTimeMs(), envelope.sentAtMs)
+    const outboundEnvelope: PeerTransportEnvelope<TOutboundMessage> =
+      envelope.sentAtMs === sentAtMs ? envelope : { ...envelope, sentAtMs }
+    const bytes = byteLength(outboundEnvelope)
     const sentMessageCount = this.metrics.recordSent(bytes, envelope.seq, sentAtMs)
     const enqueueResult = peer.enqueueFrame(
-      envelope,
+      outboundEnvelope,
       this.localPeerId,
       bytes,
       sentMessageCount,
