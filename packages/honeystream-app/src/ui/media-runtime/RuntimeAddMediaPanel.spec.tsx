@@ -22,6 +22,7 @@ describe('RuntimeAddMediaPanel', () => {
     expect(html).toContain('Paste watch link')
     expect(html).toContain('Buddy check')
     expect(html).toContain('Sync check')
+    expect(html).toContain('reliable retry for transient control drops')
     expect(html).toContain('syncs only the tiny control stream')
     expect(html).not.toContain('Add local file')
   })

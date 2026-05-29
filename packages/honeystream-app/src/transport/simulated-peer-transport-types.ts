@@ -11,6 +11,8 @@ export interface SimulatedPeerNetworkProfile {
   readonly dropRate?: number
   readonly dropEveryNthMessage?: number
   readonly maxQueuedFrames?: number
+  readonly retransmitDroppedFrames?: boolean
+  readonly retransmitDelayMs?: number
 }
 
 export type SimulatedPeerTransportFrameOutcome = 'delivered' | 'dropped' | 'sent'
