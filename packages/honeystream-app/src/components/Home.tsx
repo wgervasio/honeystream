@@ -199,7 +199,8 @@ class Home extends Component<IProps, IState> {
         id: 'latency',
         value: `<=${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms`,
         label: 'mock P95 budget',
-        detail: 'Default streaming-site trials keep the clean lane under the visible drift gate.'
+        detail:
+          'Default streaming-site trials keep the ultra-low lane under the visible drift gate.'
       },
       {
         id: 'loss',

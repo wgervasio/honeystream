@@ -40,8 +40,8 @@ describe('streaming site connection lab', () => {
       random: () => 0.5
     })
 
-    expect(result.bestProfile && result.bestProfile.profile.id).toBe('clean-realtime')
-    expect(result.rankedProfiles[0].profile.id).toBe('clean-realtime')
+    expect(result.bestProfile && result.bestProfile.profile.id).toBe('clean-ultra-low-latency')
+    expect(result.rankedProfiles[0].profile.id).toBe('clean-ultra-low-latency')
     expect(result.rankedProfiles[0].siteCount).toBe(STREAMING_SITE_CONNECTION_FIXTURES.length)
     expect(result.rankedProfiles[0].providers).toEqual([
       'youtube',
@@ -52,17 +52,25 @@ describe('streaming site connection lab', () => {
       'youtube',
       'youtube',
       'youtube',
+      'youtube',
+      'youtube',
       'animepahe',
       'animepahe',
       'animepahe',
       'animepahe',
       'animepahe',
+      'animepahe',
+      'animepahe',
       'cineby',
       'cineby',
       'cineby',
       'cineby',
       'cineby',
       'cineby',
+      'cineby',
+      'cineby',
+      'miruro',
+      'miruro',
       'miruro',
       'miruro',
       'miruro',
@@ -73,14 +81,14 @@ describe('streaming site connection lab', () => {
       STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE
     )
 
-    const bestObservation = findObservation(result.observations, 'clean-realtime')
+    const bestObservation = findObservation(result.observations, 'clean-ultra-low-latency')
     const metrics = bestObservation.metrics
     expect(bestObservation.budgetResult).toEqual({ ok: true, failures: [] })
     expect(bestObservation.providerCoverage).toEqual([
-      { provider: 'youtube', siteCount: 8 },
-      { provider: 'animepahe', siteCount: 5 },
-      { provider: 'cineby', siteCount: 6 },
-      { provider: 'miruro', siteCount: 4 },
+      { provider: 'youtube', siteCount: 10 },
+      { provider: 'animepahe', siteCount: 7 },
+      { provider: 'cineby', siteCount: 8 },
+      { provider: 'miruro', siteCount: 6 },
       { provider: 'unknown', siteCount: 1 }
     ])
     expect(metrics.combinedSentMessages).toBeGreaterThan(STREAMING_SITE_CONNECTION_FIXTURES.length)
@@ -114,7 +122,7 @@ describe('streaming site connection lab', () => {
   it('covers the requested streaming-site matrix before selecting a transport lane', () => {
     const sources = STREAMING_SITE_CONNECTION_FIXTURES.map(fixture => fixture.source)
 
-    expect(STREAMING_SITE_CONNECTION_FIXTURES).toHaveLength(24)
+    expect(STREAMING_SITE_CONNECTION_FIXTURES).toHaveLength(32)
     expect(sources.some(source => source.includes('youtube.com'))).toBe(true)
     expect(sources.some(source => source.includes('youtu.be'))).toBe(true)
     expect(sources.some(source => source.includes('animepahe'))).toBe(true)
@@ -125,10 +133,10 @@ describe('streaming site connection lab', () => {
       true
     )
     expect(STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE).toEqual([
-      { provider: 'youtube', siteCount: 8 },
-      { provider: 'animepahe', siteCount: 5 },
-      { provider: 'cineby', siteCount: 6 },
-      { provider: 'miruro', siteCount: 4 },
+      { provider: 'youtube', siteCount: 10 },
+      { provider: 'animepahe', siteCount: 7 },
+      { provider: 'cineby', siteCount: 8 },
+      { provider: 'miruro', siteCount: 6 },
       { provider: 'unknown', siteCount: 1 }
     ])
     expect(
