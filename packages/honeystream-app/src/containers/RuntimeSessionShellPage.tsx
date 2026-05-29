@@ -9,7 +9,8 @@ import {
   WireEnvelope,
   classifyMediaProvider,
   classifyMediaUrl,
-  parseWireEnvelope
+  parseWireEnvelope,
+  MediaProvider
 } from '../protocol'
 import { ClientCommand, MediaSnapshot } from '../protocol/types'
 import {
@@ -40,6 +41,7 @@ import {
   STREAMING_SITE_CONNECTION_FIXTURES,
   STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS,
   STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS,
+  STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE,
   STREAMING_SITE_CONNECTION_TRIAL_COUNT
 } from '../transport/streaming-site-connection-defaults'
 import {
@@ -151,6 +153,16 @@ const SYSTEM_ERROR_EVENT_TIMESTAMP_OFFSET = 1
 const BOUNDARY_SYSTEM_ERROR_CAP = 64
 const INVITE_SECRET_BYTES = 16
 const STREAMING_SITE_CONNECTION_FIXTURE_COUNT = STREAMING_SITE_CONNECTION_FIXTURES.length
+const PROVIDER_COVERAGE_LABELS: Record<MediaProvider, string> = {
+  youtube: 'YouTube',
+  animepahe: 'AnimePahe',
+  cineby: 'Cineby',
+  miruro: 'Miruro',
+  unknown: 'generic'
+}
+const STREAMING_SITE_PROVIDER_COVERAGE_LABEL = STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE.map(
+  coverage => `${PROVIDER_COVERAGE_LABELS[coverage.provider]} x${coverage.siteCount}`
+).join(' / ')
 const HAPPY_PATH_STEPS = [
   {
     id: 'paste',
@@ -301,7 +313,8 @@ const CONNECTION_LAB_PROOFS = [
     detail:
       `${STREAMING_SITE_CONNECTION_FIXTURE_COUNT} fixtures across ` +
       `${STREAMING_SITE_CONNECTION_PROFILES.length} lanes run for ` +
-      `${STREAMING_SITE_CONNECTION_TRIAL_COUNT} deterministic trials.`
+      `${STREAMING_SITE_CONNECTION_TRIAL_COUNT} deterministic trials: ` +
+      `${STREAMING_SITE_PROVIDER_COVERAGE_LABEL}.`
   },
   {
     id: 'burst-duration-matrix',

@@ -132,6 +132,10 @@ describe('session', () => {
       await waitForRuntimeText(page, 'Clean realtime lane wins')
       await waitForRuntimeText(page, 'Retry lane stays green')
       await waitForRuntimeText(page, 'Site matrix covered')
+      await waitForRuntimeText(page, 'YouTube x8')
+      await waitForRuntimeText(page, 'AnimePahe x5')
+      await waitForRuntimeText(page, 'Cineby x6')
+      await waitForRuntimeText(page, 'Miruro x4')
       await waitForRuntimeText(page, 'Bursts stay calm')
       await waitForRuntimeText(page, 'Rapid seek, pause, resume, and rate bursts')
       await waitForRuntimeText(page, '6 lanes run for 3 deterministic trials')
@@ -193,12 +197,36 @@ describe('session', () => {
       }
     })
 
+    it('should preview named streaming-site watch URLs without remote navigation', async () => {
+      await ms.visit(`/join/${hostId}`)
+      await page.waitForSelector(RUNTIME_SHELL_SELECTOR)
+      await page.waitForSelector('#runtime-add-media-url')
+
+      const sources = [
+        { url: 'youtube.com/watch?v=honeystream-e2e', label: 'YouTube' },
+        { url: 'animepahe.ru/play/honeystream-e2e', label: 'AnimePahe' },
+        { url: 'cineby.app/movie/honeystream-e2e', label: 'Cineby' },
+        { url: 'miruro.to/watch/honeystream-e2e', label: 'Miruro' }
+      ]
+
+      for (const source of sources) {
+        await page.fill('#runtime-add-media-url', source.url)
+        await waitForRuntimeText(page, `${source.label} lane`)
+        await waitForRuntimeText(page, `${source.label} page detected`)
+        await waitForRuntimeText(
+          page,
+          `${source.label} is covered by the low-latency streaming-site mock tests`
+        )
+        await waitForRuntimeText(page, 'Honeystream will add https:// automatically')
+      }
+      await page.fill('#runtime-add-media-url', '')
+    })
+
     it('should queue shorthand streaming URLs with automatic https', async () => {
       await ms.visit(`/join/${hostId}`)
       await page.waitForSelector(RUNTIME_SHELL_SELECTOR)
 
-      await page.click('#runtime-add-media-url')
-      await page.type('#runtime-add-media-url', 'youtube.com/watch?v=honeystream-demo')
+      await page.fill('#runtime-add-media-url', 'youtube.com/watch?v=honeystream-demo')
       await waitForRuntimeText(page, 'Honeystream will add https:// automatically')
       await page.press('#runtime-add-media-url', 'Enter')
 

@@ -8,6 +8,7 @@ import {
   STREAMING_SITE_CONNECTION_BUDGET,
   STREAMING_SITE_CONNECTION_FIXTURES,
   STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS,
+  STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE,
   STREAMING_SITE_CONNECTION_PROFILES
 } from './streaming-site-connection-defaults'
 
@@ -68,10 +69,20 @@ describe('streaming site connection lab', () => {
       'miruro',
       'unknown'
     ])
+    expect(result.rankedProfiles[0].providerCoverage).toEqual(
+      STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE
+    )
 
     const bestObservation = findObservation(result.observations, 'clean-realtime')
     const metrics = bestObservation.metrics
     expect(bestObservation.budgetResult).toEqual({ ok: true, failures: [] })
+    expect(bestObservation.providerCoverage).toEqual([
+      { provider: 'youtube', siteCount: 8 },
+      { provider: 'animepahe', siteCount: 5 },
+      { provider: 'cineby', siteCount: 6 },
+      { provider: 'miruro', siteCount: 4 },
+      { provider: 'unknown', siteCount: 1 }
+    ])
     expect(metrics.combinedSentMessages).toBeGreaterThan(STREAMING_SITE_CONNECTION_FIXTURES.length)
     expect(metrics.combinedDeliveredMessages).toBe(metrics.combinedSentMessages)
     expect(metrics.combinedDroppedMessages).toBe(0)
@@ -113,6 +124,13 @@ describe('streaming site connection lab', () => {
     expect(STREAMING_SITE_CONNECTION_FIXTURES.some(fixture => fixture.durationMs === null)).toBe(
       true
     )
+    expect(STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE).toEqual([
+      { provider: 'youtube', siteCount: 8 },
+      { provider: 'animepahe', siteCount: 5 },
+      { provider: 'cineby', siteCount: 6 },
+      { provider: 'miruro', siteCount: 4 },
+      { provider: 'unknown', siteCount: 1 }
+    ])
     expect(
       STREAMING_SITE_CONNECTION_FIXTURES.some(
         fixture => typeof fixture.durationMs === 'number' && fixture.durationMs < 60000

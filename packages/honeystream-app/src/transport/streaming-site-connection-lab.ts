@@ -20,6 +20,10 @@ import {
   toStreamingSiteMediaSnapshot,
   toStreamingSitePlaybackSnapshot
 } from './streaming-site-connection-snapshot'
+import {
+  countStreamingSiteProviders,
+  StreamingSiteProviderCoverage
+} from './streaming-site-provider-coverage'
 import { Clock, SimulatedPeerNetworkProfile } from './simulated-peer-transport-types'
 
 export interface StreamingSiteConnectionFixture {
@@ -51,12 +55,14 @@ export interface StreamingSiteConnectionObservation {
   readonly candidate: SimulatedPeerTransportCandidate
   readonly metrics: AggregateSimulatedPeerTransportMetrics
   readonly profile: StreamingSiteConnectionProfile
+  readonly providerCoverage: readonly StreamingSiteProviderCoverage[]
   readonly providers: readonly MediaProvider[]
   readonly siteCount: number
 }
 
 export interface StreamingSiteConnectionProfileRank extends SimulatedPeerTransportCandidateRank {
   readonly profile: StreamingSiteConnectionProfile
+  readonly providerCoverage: readonly StreamingSiteProviderCoverage[]
   readonly providers: readonly MediaProvider[]
   readonly siteCount: number
 }
@@ -97,6 +103,7 @@ const observeStreamingSiteConnectionProfile = async (
   let clientSeq = 0
   let hostSeq = 0
   const providers = fixtures.map(fixture => classifyMediaProvider(fixture.source))
+  const providerCoverage = countStreamingSiteProviders(providers)
   const pair = createSimulatedPeerTransportPair<ClientToHostEnvelope, HostToClientEnvelope>({
     hostInboundValidator: createWireEnvelopeValidator('client-to-host'),
     guestInboundValidator: createWireEnvelopeValidator('host-to-client'),
@@ -190,6 +197,7 @@ const observeStreamingSiteConnectionProfile = async (
       candidate,
       metrics,
       profile,
+      providerCoverage,
       providers,
       siteCount: fixtures.length
     }
@@ -216,6 +224,7 @@ export const runStreamingSiteConnectionLab = async (
     return {
       ...rank,
       profile: observation.profile,
+      providerCoverage: observation.providerCoverage,
       providers: observation.providers,
       siteCount: observation.siteCount
     }
