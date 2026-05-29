@@ -132,6 +132,8 @@ describe('session', () => {
       await waitForRuntimeText(page, 'Clean realtime lane wins')
       await waitForRuntimeText(page, 'Retry lane stays green')
       await waitForRuntimeText(page, 'Site matrix covered')
+      await waitForRuntimeText(page, 'Bursts stay calm')
+      await waitForRuntimeText(page, 'Rapid seek, pause, resume, and rate bursts')
       await waitForRuntimeText(page, '6 lanes run for 3 deterministic trials')
       await waitForRuntimeText(page, 'Tonight launchpad')
       await waitForRuntimeText(page, 'Next best move')

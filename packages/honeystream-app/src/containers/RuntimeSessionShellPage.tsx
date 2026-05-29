@@ -302,6 +302,12 @@ const CONNECTION_LAB_PROOFS = [
       `${STREAMING_SITE_CONNECTION_FIXTURE_COUNT} fixtures across ` +
       `${STREAMING_SITE_CONNECTION_PROFILES.length} lanes run for ` +
       `${STREAMING_SITE_CONNECTION_TRIAL_COUNT} deterministic trials.`
+  },
+  {
+    id: 'burst-duration-matrix',
+    label: 'Bursts stay calm',
+    detail:
+      'Rapid seek, pause, resume, and rate bursts run across short, long, and live-style site fixtures.'
   }
 ] as const
 const COMMAND_BAR_LINKS = [
