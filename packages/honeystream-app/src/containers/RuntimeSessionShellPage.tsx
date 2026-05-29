@@ -193,6 +193,12 @@ const SITE_HANDOFF_PROMISES = [
     id: 'control-stream',
     title: 'Only controls sync',
     detail: 'Honeystream sends typed play, pause, seek, rate, and next commands over the tiny lane.'
+  },
+  {
+    id: 'reliable-retry',
+    title: 'Recovered drops stay ordered',
+    detail:
+      'The mock lab retries transient control drops as latency, then rejects lanes that miss the 32ms round-trip budget.'
   }
 ] as const
 const ADD_MEDIA_SUGGESTIONS = [
@@ -256,7 +262,7 @@ const ROOM_READY_SIGNALS = [
     id: 'sync-budget',
     label: 'Sync budget green',
     detail:
-      'Mock host/guest control round trips stay under 32ms with zero byte loss, no skipped controls, capped jitter, and compact frames.'
+      'Mock host/guest control round trips stay under 32ms with zero byte loss, reliable retry, no skipped controls, capped jitter, and compact frames.'
   },
   {
     id: 'notes',
@@ -293,7 +299,8 @@ const ROOM_MOOD_CHIPS = [
   'Zero-byte-loss controls',
   'No skipped controls',
   '32ms mock round trip',
-  'Jitter-guarded frames'
+  'Jitter-guarded frames',
+  'Reliable retry guard'
 ] as const
 const PAIR_GUIDE_CARDS = [
   {
@@ -1163,6 +1170,7 @@ const RuntimeSessionRouteSurface = ({
             <span>Guest follows clearly</span>
             <span>Zero video-byte sharing</span>
             <span>Low-latency control lane</span>
+            <span>Reliable retry guard</span>
           </div>
           <div
             id="runtime_site_handoff"

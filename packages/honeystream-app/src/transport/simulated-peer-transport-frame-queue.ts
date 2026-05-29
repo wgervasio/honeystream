@@ -3,6 +3,8 @@ import { SimulatedPeerTransportMetricsRecorder } from './simulated-peer-transpor
 import {
   resolveFrameLatencyMs,
   resolveMaxQueuedFrames,
+  resolveRetransmitDelayMs,
+  shouldRetransmitDroppedFrame,
   shouldDropFrame
 } from './simulated-peer-transport-network'
 import {
@@ -41,7 +43,8 @@ export class SimulatedPeerTransportFrameQueue<TMessage> {
     sentMessageCount: number,
     sentAtMs: number
   ): SimulatedPeerTransportEnqueueResult {
-    if (shouldDropFrame(sentMessageCount, this.network, this.random)) {
+    const frameDropped = shouldDropFrame(sentMessageCount, this.network, this.random)
+    if (frameDropped && !shouldRetransmitDroppedFrame(this.network)) {
       return { ok: false, reason: 'network-drop' }
     }
 
@@ -49,7 +52,8 @@ export class SimulatedPeerTransportFrameQueue<TMessage> {
       return { ok: false, reason: 'queue-overflow' }
     }
 
-    const dueAtMs = sentAtMs + resolveFrameLatencyMs(this.network, this.random)
+    const retryDelayMs = frameDropped ? resolveRetransmitDelayMs(this.network) : 0
+    const dueAtMs = sentAtMs + resolveFrameLatencyMs(this.network, this.random) + retryDelayMs
     this.frames.push({ dueAtMs, sentAtMs, bytes, fromPeerId, envelope })
     this.metrics.recordQueuedDepth(this.frames.length)
     return { ok: true }
