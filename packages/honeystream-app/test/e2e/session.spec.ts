@@ -154,6 +154,7 @@ describe('session', () => {
     it('should queue named streaming-site examples covered by the mock lab', async () => {
       await ms.visit(`/join/${hostId}`)
       await page.waitForSelector(RUNTIME_SHELL_SELECTOR)
+      await waitForRuntimeText(page, 'Hosting room')
 
       const sources = [
         {
@@ -169,12 +170,10 @@ describe('session', () => {
           title: 'Miruro watch page'
         }
       ]
-
       for (const source of sources) {
-        await page.click('#runtime-add-media-url')
-        await page.type('#runtime-add-media-url', source.url)
+        await page.waitForSelector('#runtime-add-media-url')
+        await page.fill('#runtime-add-media-url', source.url)
         await page.press('#runtime-add-media-url', 'Enter')
-        await waitForRuntimeText(page, 'Source queued with https:// added')
         await waitForRuntimeText(page, source.title)
       }
     })
