@@ -3,6 +3,7 @@ import { AggregateSimulatedPeerTransportMetrics } from './simulated-peer-transpo
 export interface SimulatedPeerTransportBudget {
   readonly minDeliveryRate: number
   readonly maxDroppedMessages: number
+  readonly maxRetransmissionRate: number
   readonly maxOutOfOrderMessages: number
   readonly maxSequenceGapMessages: number
   readonly maxByteLossRate: number
@@ -17,6 +18,7 @@ export interface SimulatedPeerTransportBudget {
   readonly maxDirectionalAverageLatencyMs: number
   readonly maxDirectionalLatencySkewMs: number
   readonly maxDirectionalByteLossRate: number
+  readonly maxDirectionalRetransmissionRate: number
   readonly maxDirectionalQueuedMessages: number
   readonly maxCombinedPeakQueuedMessages: number
   readonly maxDirectionalPeakQueuedMessages: number
@@ -27,6 +29,7 @@ export interface SimulatedPeerTransportBudget {
 export type SimulatedPeerTransportBudgetMetric =
   | 'combinedDeliveryRate'
   | 'combinedDroppedMessages'
+  | 'combinedRetransmissionRate'
   | 'combinedOutOfOrderMessages'
   | 'combinedSequenceGapMessages'
   | 'combinedByteLossRate'
@@ -41,6 +44,7 @@ export type SimulatedPeerTransportBudgetMetric =
   | 'maxDirectionalAverageLatencyMs'
   | 'directionalAverageLatencySkewMs'
   | 'maxDirectionalByteLossRate'
+  | 'maxDirectionalRetransmissionRate'
   | 'maxDirectionalQueuedMessages'
   | 'combinedPeakQueuedMessages'
   | 'maxDirectionalPeakQueuedMessages'
@@ -62,8 +66,8 @@ export interface SimulatedPeerTransportBudgetResult {
 Context: Streaming-site sync tests need a stable host/guest mock-network merge gate.
 Invariant: Website playback shares compact commands only; video bytes stay local to each browser.
 Options considered: Per-test assertions, ad hoc logs, or one reusable budget evaluator.
-Decision: Keep delivery, drop, sequence-integrity, byte-loss, wire-size, jitter, latency,
-round-trip tail, and peak-queue caps in this helper.
+Decision: Keep delivery, drop, retransmission overhead, sequence-integrity, byte-loss,
+wire-size, jitter, latency, round-trip tail, and peak-queue caps in this helper.
 Performance impact: Budget checks are O(1) over aggregate metrics already captured by simulations.
 Memory/lifecycle ownership: Metrics are bounded by the simulated transport recorder.
 Failure mode: Over-budget simulations return typed failures for the exact metric that regressed.
@@ -72,6 +76,7 @@ Validation: Covered by simulated-peer-transport-performance and streaming-site r
 export const STREAMING_SITE_TRANSPORT_BUDGET: SimulatedPeerTransportBudget = Object.freeze({
   minDeliveryRate: 1,
   maxDroppedMessages: 0,
+  maxRetransmissionRate: 0.5,
   maxOutOfOrderMessages: 0,
   maxSequenceGapMessages: 0,
   maxByteLossRate: 0,
@@ -86,6 +91,7 @@ export const STREAMING_SITE_TRANSPORT_BUDGET: SimulatedPeerTransportBudget = Obj
   maxDirectionalAverageLatencyMs: 16,
   maxDirectionalLatencySkewMs: 8,
   maxDirectionalByteLossRate: 0,
+  maxDirectionalRetransmissionRate: 0.5,
   maxDirectionalQueuedMessages: 0,
   maxCombinedPeakQueuedMessages: 64,
   maxDirectionalPeakQueuedMessages: 32,
@@ -136,6 +142,11 @@ export const evaluateSimulatedPeerTransportBudget = (
     minCheck('combinedDeliveryRate', metrics.combinedDeliveryRate, budget.minDeliveryRate),
     maxCheck('combinedDroppedMessages', metrics.combinedDroppedMessages, budget.maxDroppedMessages),
     maxCheck(
+      'combinedRetransmissionRate',
+      metrics.combinedRetransmissionRate,
+      budget.maxRetransmissionRate
+    ),
+    maxCheck(
       'combinedOutOfOrderMessages',
       metrics.combinedOutOfOrderMessages,
       budget.maxOutOfOrderMessages
@@ -150,6 +161,11 @@ export const evaluateSimulatedPeerTransportBudget = (
       'maxDirectionalByteLossRate',
       metrics.maxDirectionalByteLossRate,
       budget.maxDirectionalByteLossRate
+    ),
+    maxCheck(
+      'maxDirectionalRetransmissionRate',
+      metrics.maxDirectionalRetransmissionRate,
+      budget.maxDirectionalRetransmissionRate
     ),
     maxCheck(
       'combinedAverageMessageBytes',

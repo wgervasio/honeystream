@@ -57,6 +57,8 @@ describe('simulated peer transport performance budget', () => {
 
     const metrics = pair.getAggregateMetrics()
     expect(metrics.maxDirectionalByteLossRate).toBe(0)
+    expect(metrics.combinedRetransmissionRate).toBe(0)
+    expect(metrics.maxDirectionalRetransmissionRate).toBe(0)
     expect(metrics.combinedMaxMessageBytes).toBeGreaterThan(0)
     expect(metrics.maxDirectionalAverageLatencyMs).toBe(16)
     expect(metrics.maxDirectionalAverageLatencyJitterMs).toBe(0)
