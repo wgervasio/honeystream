@@ -23,8 +23,10 @@ export interface StreamingSiteConnectionProfileOptimization {
   readonly maxCombinedByteLossRate: number
   readonly maxCombinedDroppedMessages: number
   readonly maxCombinedPeakQueuedMessages: number
+  readonly maxCombinedRetransmissionRate: number
   readonly maxDirectionalAverageLatencyMs: number
   readonly maxDirectionalLatencyJitterMs: number
+  readonly maxDirectionalRetransmissionRate: number
   readonly maxEstimatedRoundTripMaxLatencyMs: number
   readonly maxEstimatedRoundTripP95LatencyMs: number
   readonly passedTrials: number
@@ -90,8 +92,10 @@ const createProfileOptimization = (
   let maxCombinedByteLossRate = 0
   let maxCombinedDroppedMessages = 0
   let maxCombinedPeakQueuedMessages = 0
+  let maxCombinedRetransmissionRate = 0
   let maxDirectionalAverageLatencyMs = 0
   let maxDirectionalLatencyJitterMs = 0
+  let maxDirectionalRetransmissionRate = 0
   let maxEstimatedRoundTripMaxLatencyMs = 0
   let maxEstimatedRoundTripP95LatencyMs = 0
   let totalEstimatedRoundTripP95LatencyMs = 0
@@ -109,6 +113,10 @@ const createProfileOptimization = (
       maxCombinedDroppedMessages,
       metrics.combinedDroppedMessages
     )
+    maxCombinedRetransmissionRate = Math.max(
+      maxCombinedRetransmissionRate,
+      metrics.combinedRetransmissionRate
+    )
     maxCombinedPeakQueuedMessages = Math.max(
       maxCombinedPeakQueuedMessages,
       metrics.combinedPeakQueuedMessages
@@ -120,6 +128,10 @@ const createProfileOptimization = (
     maxDirectionalLatencyJitterMs = Math.max(
       maxDirectionalLatencyJitterMs,
       metrics.maxDirectionalLatencyJitterMs
+    )
+    maxDirectionalRetransmissionRate = Math.max(
+      maxDirectionalRetransmissionRate,
+      metrics.maxDirectionalRetransmissionRate
     )
     maxEstimatedRoundTripMaxLatencyMs = Math.max(
       maxEstimatedRoundTripMaxLatencyMs,
@@ -142,8 +154,10 @@ const createProfileOptimization = (
     maxCombinedByteLossRate,
     maxCombinedDroppedMessages,
     maxCombinedPeakQueuedMessages,
+    maxCombinedRetransmissionRate,
     maxDirectionalAverageLatencyMs,
     maxDirectionalLatencyJitterMs,
+    maxDirectionalRetransmissionRate,
     maxEstimatedRoundTripMaxLatencyMs,
     maxEstimatedRoundTripP95LatencyMs,
     passedTrials,
@@ -166,6 +180,12 @@ const compareOptimizedProfiles = (
   if (left.maxCombinedDroppedMessages !== right.maxCombinedDroppedMessages) {
     return left.maxCombinedDroppedMessages - right.maxCombinedDroppedMessages
   }
+  if (left.maxCombinedRetransmissionRate !== right.maxCombinedRetransmissionRate) {
+    return left.maxCombinedRetransmissionRate - right.maxCombinedRetransmissionRate
+  }
+  if (left.maxDirectionalRetransmissionRate !== right.maxDirectionalRetransmissionRate) {
+    return left.maxDirectionalRetransmissionRate - right.maxDirectionalRetransmissionRate
+  }
   if (left.maxEstimatedRoundTripP95LatencyMs !== right.maxEstimatedRoundTripP95LatencyMs) {
     return left.maxEstimatedRoundTripP95LatencyMs - right.maxEstimatedRoundTripP95LatencyMs
   }
@@ -180,9 +200,11 @@ const compareOptimizedProfiles = (
 
 /*
 Context: Streaming-site merge gates need more than one lucky mock-network pass.
-Invariant: A selected lane must stay zero-loss and low-latency across bounded jitter/drop samples.
+Invariant: A selected lane must stay zero-loss, low-retry, and low-latency across bounded
+jitter/drop samples.
 Options considered: Live third-party smoke tests, unbounded random fuzzing, or deterministic trials.
-Decision: Run the existing host/guest lab over capped deterministic samples and rank by loss first, then latency.
+Decision: Run the existing host/guest lab over capped deterministic samples and rank by loss,
+retry overhead, then latency.
 Performance impact: Work is bounded by profile count, fixture count, and MAX_OPTIMIZATION_TRIALS.
 Memory/lifecycle ownership: No persistent resources; each lab run disposes its simulated transports.
 Failure mode: If every profile fails a trial, bestProfile is undefined and rankedProfiles exposes why.

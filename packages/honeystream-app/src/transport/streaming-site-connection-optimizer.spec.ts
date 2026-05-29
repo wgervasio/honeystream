@@ -88,6 +88,8 @@ describe('streaming site connection optimizer', () => {
     expect(result.rankedProfiles[0].siteCount).toBe(STREAMING_SITE_CONNECTION_FIXTURES.length)
     expect(result.rankedProfiles[0].maxCombinedByteLossRate).toBe(0)
     expect(result.rankedProfiles[0].maxCombinedDroppedMessages).toBe(0)
+    expect(result.rankedProfiles[0].maxCombinedRetransmissionRate).toBe(0)
+    expect(result.rankedProfiles[0].maxDirectionalRetransmissionRate).toBe(0)
     expect(result.rankedProfiles[0].maxEstimatedRoundTripP95LatencyMs).toBeLessThanOrEqual(
       STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS
     )
@@ -99,6 +101,13 @@ describe('streaming site connection optimizer', () => {
     if (!retryRank) throw new Error('Expected retry-guarded profile rank.')
     expect(retryRank.allTrialsPassed).toBe(true)
     expect(retryRank.maxCombinedByteLossRate).toBe(0)
+    expect(retryRank.maxCombinedRetransmissionRate).toBeGreaterThan(0)
+    expect(retryRank.maxCombinedRetransmissionRate).toBeLessThanOrEqual(
+      STREAMING_SITE_CONNECTION_BUDGET.maxRetransmissionRate
+    )
+    expect(retryRank.maxDirectionalRetransmissionRate).toBeLessThanOrEqual(
+      STREAMING_SITE_CONNECTION_BUDGET.maxDirectionalRetransmissionRate
+    )
     expect(retryRank.maxEstimatedRoundTripP95LatencyMs).toBeLessThanOrEqual(
       STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS
     )
@@ -124,12 +133,14 @@ describe('streaming site connection optimizer', () => {
     expect(result.rankedProfiles[0].siteCount).toBe(STREAMING_FIXTURES.length)
     expect(result.rankedProfiles[0].maxCombinedByteLossRate).toBe(0)
     expect(result.rankedProfiles[0].maxCombinedDroppedMessages).toBe(0)
+    expect(result.rankedProfiles[0].maxCombinedRetransmissionRate).toBe(0)
     expect(result.rankedProfiles[0].maxEstimatedRoundTripP95LatencyMs).toBeLessThanOrEqual(20)
 
     const retryRank = result.rankedProfiles.find(rank => rank.profile.id === 'retry-safe')
     if (!retryRank) throw new Error('Expected retry-safe profile rank.')
     expect(retryRank.allTrialsPassed).toBe(true)
     expect(retryRank.maxCombinedByteLossRate).toBe(0)
+    expect(retryRank.maxCombinedRetransmissionRate).toBeGreaterThan(0)
     expect(retryRank.maxEstimatedRoundTripP95LatencyMs).toBeGreaterThan(
       result.rankedProfiles[0].maxEstimatedRoundTripP95LatencyMs
     )
