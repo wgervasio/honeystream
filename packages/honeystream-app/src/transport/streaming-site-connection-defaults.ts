@@ -2,6 +2,10 @@ import {
   StreamingSiteConnectionFixture,
   StreamingSiteConnectionProfile
 } from './streaming-site-connection-lab'
+import {
+  SimulatedPeerTransportBudget,
+  STREAMING_SITE_TRANSPORT_BUDGET
+} from './simulated-peer-transport-performance'
 
 export const STREAMING_SITE_CONNECTION_FIXTURES: readonly StreamingSiteConnectionFixture[] = Object.freeze(
   [
@@ -104,11 +108,11 @@ export const STREAMING_SITE_CONNECTION_PROFILES: readonly StreamingSiteConnectio
       id: 'retry-guarded',
       label: 'Retry guarded lane',
       network: {
-        latencyMs: 4,
+        latencyMs: 3,
         dropEveryNthMessage: 5,
         maxQueuedFrames: 128,
         retransmitDroppedFrames: true,
-        retransmitDelayMs: 8
+        retransmitDelayMs: 2
       }
     },
     {
@@ -131,3 +135,15 @@ export const STREAMING_SITE_CONNECTION_RANDOM_SAMPLES: readonly number[] = Objec
   0.5
 ])
 export const STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS = 10
+export const STREAMING_SITE_CONNECTION_BUDGET: SimulatedPeerTransportBudget = Object.freeze({
+  ...STREAMING_SITE_TRANSPORT_BUDGET,
+  maxAverageLatencyMs: 5,
+  maxAverageLatencyJitterMs: 2,
+  maxP95LatencyMs: 5,
+  maxMaxLatencyMs: 5,
+  maxMaxLatencyJitterMs: 4,
+  maxDirectionalAverageLatencyMs: 5,
+  maxDirectionalLatencySkewMs: 4,
+  maxEstimatedRoundTripP95LatencyMs: STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS,
+  maxEstimatedRoundTripMaxLatencyMs: STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS
+})

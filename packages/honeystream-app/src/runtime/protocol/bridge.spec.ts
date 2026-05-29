@@ -91,6 +91,26 @@ describe('runtime/protocol bridge helpers', () => {
     })
   })
 
+  it('includes media metadata when the first current item is introduced', () => {
+    const initial = createBaseState()
+    const first = transitionQueueMedia(initial, createMedia('m1'), 10)
+
+    const events = toProtocolHostEventsFromTransition(initial, first)
+    const currentChangedEvent = events[0]
+    if (currentChangedEvent.type !== 'currentMediaChanged') {
+      throw new Error('Expected currentMediaChanged event')
+    }
+
+    expect(currentChangedEvent.mediaId).toBe('m1')
+    expect(currentChangedEvent.media).toEqual({
+      mediaId: 'm1',
+      kind: 'website',
+      source: 'https://example.com/m1',
+      title: 'Media m1',
+      durationMs: 120000
+    })
+  })
+
   it('emits currentMediaChanged and playbackChanged when advancing the queue', () => {
     const first = transitionQueueMedia(createBaseState(), createMedia('m1'), 10)
     const second = transitionQueueMedia(first.state, createMedia('m2'), 20)
@@ -105,6 +125,19 @@ describe('runtime/protocol bridge helpers', () => {
       throw new Error('Expected currentMediaChanged event')
     }
     expect(currentChangedEvent.mediaId).toBe('m2')
+    expect(currentChangedEvent.media).toBeUndefined()
+    expect(JSON.stringify(currentChangedEvent).length).toBeLessThan(
+      JSON.stringify({
+        ...currentChangedEvent,
+        media: {
+          mediaId: 'm2',
+          kind: 'website',
+          source: 'https://example.com/m2',
+          title: 'Media m2',
+          durationMs: 120000
+        }
+      }).length
+    )
 
     const playbackChangedEvent = events[1]
     if (playbackChangedEvent.type !== 'playbackChanged') {

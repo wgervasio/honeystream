@@ -95,6 +95,27 @@ const hasPlaybackChanged = (
   )
 }
 
+/*
+Context: Queue advances were resending full media metadata even after the guest had the queued item.
+Invariant: A guest can resolve compact current-media events from its current snapshot or prior queue
+event.
+Options considered: Always include media, always send IDs only, or include metadata only when not
+already known.
+Decision: Send full current media only for newly introduced current items; queue advances send mediaId
+only.
+Performance impact: Reduces host-to-guest control bytes on next-item transitions without adding
+messages.
+Memory/lifecycle ownership: No retained state; the previous bounded queue is the lookup source.
+Failure mode: Reconnect or missed-history paths still receive full snapshots with current media
+metadata.
+Validation: Covered by runtime/protocol bridge tests and architecture analyzer.
+*/
+const shouldIncludeCurrentMediaSnapshot = (
+  previousState: SessionState,
+  nextCurrentMediaId: string | undefined
+): boolean =>
+  typeof nextCurrentMediaId === 'string' && !containsMediaId(previousState.queue, nextCurrentMediaId)
+
 export const toProtocolHostEventsFromTransition = (
   previousState: SessionState,
   transition: TransitionResult,
@@ -110,11 +131,12 @@ export const toProtocolHostEventsFromTransition = (
   const previousCurrentMediaId = previousState.current ? previousState.current.id : undefined
   const nextCurrentMediaId = nextState.current ? nextState.current.id : undefined
   if (previousCurrentMediaId !== nextCurrentMediaId) {
-    const media = nextState.current
-      ? options.resolveMediaKind
-        ? toProtocolMediaSnapshot(nextState.current, options.resolveMediaKind)
-        : toProtocolMediaSnapshot(nextState.current)
-      : undefined
+    const media =
+      nextState.current && shouldIncludeCurrentMediaSnapshot(previousState, nextCurrentMediaId)
+        ? options.resolveMediaKind
+          ? toProtocolMediaSnapshot(nextState.current, options.resolveMediaKind)
+          : toProtocolMediaSnapshot(nextState.current)
+        : undefined
     hostEvents.push({
       type: 'currentMediaChanged',
       mediaId: nextCurrentMediaId,

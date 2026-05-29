@@ -36,8 +36,10 @@ import {
   createInMemoryPeerTransportPair
 } from '../transport/in-memory-peer-transport-pair'
 import {
+  STREAMING_SITE_CONNECTION_PROFILES,
   STREAMING_SITE_CONNECTION_FIXTURES,
-  STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS
+  STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS,
+  STREAMING_SITE_CONNECTION_TRIAL_COUNT
 } from '../transport/streaming-site-connection-defaults'
 import {
   Disposable,
@@ -275,6 +277,29 @@ const ROOM_READY_SIGNALS = [
     id: 'notes',
     label: 'Notes visible',
     detail: 'Errors and room events stay bounded, readable, and calm.'
+  }
+] as const
+const CONNECTION_LAB_PROOFS = [
+  {
+    id: 'selected-lane',
+    label: 'Clean fast lane wins',
+    detail:
+      'The optimizer ranks zero byte loss first, then picks the lowest P95 control round trip.'
+  },
+  {
+    id: 'retry-lane',
+    label: 'Retry lane stays green',
+    detail:
+      'Recovered control drops are counted, stay ordered, and still fit the ' +
+      `${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms P95 round-trip gate.`
+  },
+  {
+    id: 'site-matrix',
+    label: 'Site matrix covered',
+    detail:
+      `${STREAMING_SITE_CONNECTION_FIXTURE_COUNT} fixtures across ` +
+      `${STREAMING_SITE_CONNECTION_PROFILES.length} lanes run for ` +
+      `${STREAMING_SITE_CONNECTION_TRIAL_COUNT} deterministic trials.`
   }
 ] as const
 const COMMAND_BAR_LINKS = [
@@ -1347,6 +1372,20 @@ const RuntimeSessionRouteSurface = ({
             <article key={signal.id}>
               <span>{signal.label}</span>
               <p>{signal.detail}</p>
+            </article>
+          ))}
+        </section>
+
+        <section
+          id="runtime_connection_lab_proof"
+          className={`${styles.card} ${styles.signalDock} ${styles.labProofDock}`}
+          aria-label="Streaming connection lab proof"
+        >
+          <strong>Connection lab proof</strong>
+          {CONNECTION_LAB_PROOFS.map(proof => (
+            <article key={proof.id}>
+              <span>{proof.label}</span>
+              <p>{proof.detail}</p>
             </article>
           ))}
         </section>

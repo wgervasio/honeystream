@@ -5,6 +5,7 @@ import {
   StreamingSiteConnectionProfileRank
 } from './streaming-site-connection-lab'
 import {
+  STREAMING_SITE_CONNECTION_BUDGET,
   STREAMING_SITE_CONNECTION_FIXTURES,
   STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS,
   STREAMING_SITE_CONNECTION_PROFILES
@@ -31,6 +32,7 @@ const findRank = (
 describe('streaming site connection lab', () => {
   it('selects the lowest-latency zero-loss mock connection across supported sites', async () => {
     const result = await runStreamingSiteConnectionLab({
+      budget: STREAMING_SITE_CONNECTION_BUDGET,
       fixtures: STREAMING_SITE_CONNECTION_FIXTURES,
       profiles: STREAMING_SITE_CONNECTION_PROFILES,
       nowStartMs: 5000,
@@ -91,6 +93,7 @@ describe('streaming site connection lab', () => {
 
   it('keeps lossy and slow mock profiles out of the selected streaming lane', async () => {
     const result = await runStreamingSiteConnectionLab({
+      budget: STREAMING_SITE_CONNECTION_BUDGET,
       fixtures: STREAMING_SITE_CONNECTION_FIXTURES,
       profiles: STREAMING_SITE_CONNECTION_PROFILES,
       nowStartMs: 9000,
@@ -118,5 +121,8 @@ describe('streaming site connection lab', () => {
     expect(retryRank.candidate.metrics.combinedDroppedMessages).toBe(0)
     expect(retryRank.candidate.metrics.combinedRetransmittedMessages).toBeGreaterThan(0)
     expect(retryRank.candidate.metrics.combinedRetransmissionRate).toBeGreaterThan(0)
+    expect(retryRank.candidate.metrics.estimatedRoundTripP95LatencyMs).toBeLessThanOrEqual(
+      STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS
+    )
   })
 })

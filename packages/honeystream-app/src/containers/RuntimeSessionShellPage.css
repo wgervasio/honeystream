@@ -473,6 +473,10 @@
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(36, 28, 53, 0.14));
 }
 
+.labProofDock {
+  grid-template-columns: auto repeat(3, minmax(0, 1fr));
+}
+
 .signalDock > strong,
 .signalDock article {
   min-height: 5.6rem;

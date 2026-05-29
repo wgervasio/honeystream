@@ -3,6 +3,7 @@ import {
   StreamingSiteConnectionProfile
 } from './streaming-site-connection-lab'
 import {
+  STREAMING_SITE_CONNECTION_BUDGET,
   STREAMING_SITE_CONNECTION_FIXTURES,
   STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS,
   STREAMING_SITE_CONNECTION_PROFILES,
@@ -71,6 +72,7 @@ const CONNECTION_PROFILES: readonly StreamingSiteConnectionProfile[] = [
 describe('streaming site connection optimizer', () => {
   it('keeps the default streaming matrix on the clean fast zero-loss lane', async () => {
     const result = await optimizeStreamingSiteConnectionProfiles({
+      budget: STREAMING_SITE_CONNECTION_BUDGET,
       fixtures: STREAMING_SITE_CONNECTION_FIXTURES,
       profiles: STREAMING_SITE_CONNECTION_PROFILES,
       nowStartMs: 2000,
@@ -93,6 +95,9 @@ describe('streaming site connection optimizer', () => {
     if (!retryRank) throw new Error('Expected retry-guarded profile rank.')
     expect(retryRank.allTrialsPassed).toBe(true)
     expect(retryRank.maxCombinedByteLossRate).toBe(0)
+    expect(retryRank.maxEstimatedRoundTripP95LatencyMs).toBeLessThanOrEqual(
+      STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS
+    )
     expect(retryRank.maxEstimatedRoundTripP95LatencyMs).toBeGreaterThan(
       result.rankedProfiles[0].maxEstimatedRoundTripP95LatencyMs
     )
