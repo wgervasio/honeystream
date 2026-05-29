@@ -190,6 +190,26 @@ class Home extends Component<IProps, IState> {
         label: 'simple controls'
       }
     ]
+    const connectionLabCards = [
+      {
+        id: 'latency',
+        value: '<=10ms',
+        label: 'mock P95 budget',
+        detail: 'Default streaming-site trials keep the clean lane under the visible drift gate.'
+      },
+      {
+        id: 'loss',
+        value: '0 bytes',
+        label: 'selected-lane loss',
+        detail: 'Lossy lanes stay out of the happy path; retry lanes must recover before selection.'
+      },
+      {
+        id: 'coverage',
+        value: '24 paths',
+        label: 'site fixtures',
+        detail: 'YouTube, AnimePahe, Cineby, Miruro, and a generic watch page.'
+      }
+    ]
     const dateNightRail = [
       'Pick the exact site',
       'Share the room once',
@@ -476,6 +496,26 @@ class Home extends Component<IProps, IState> {
                     <span>{metric.label}</span>
                   </article>
                 ))}
+              </div>
+
+              <div
+                id="home_connection_lab"
+                className={styles.connectionLab}
+                aria-label="Connection lab highlights"
+              >
+                <div className={styles.connectionLabHeader}>
+                  <span>Connection lab</span>
+                  <strong>Mocked sites stay quick before you invite.</strong>
+                </div>
+                <div className={styles.connectionLabCards}>
+                  {connectionLabCards.map(card => (
+                    <article key={card.id}>
+                      <strong>{card.value}</strong>
+                      <span>{card.label}</span>
+                      <p>{card.detail}</p>
+                    </article>
+                  ))}
+                </div>
               </div>
             </div>
 
