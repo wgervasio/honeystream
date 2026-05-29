@@ -1,10 +1,11 @@
 import { Page, BrowserContext } from 'playwright-core'
 
+const { getAppBaseUrl } = require('../environment/server-config') as {
+  getAppBaseUrl(): string
+}
+
 const RUNTIME_SHELL_SELECTOR = '[data-runtime-session-shell="true"]'
 const SESSION_E2E_TIMEOUT_MS = 120e3
-const APP_HOST = process.env.HONEYSTREAM_E2E_APP_HOST || '127.0.0.1'
-const APP_PORT = process.env.HONEYSTREAM_E2E_APP_PORT || process.env.PORT || '8080'
-const APP_BASE_URL = process.env.HONEYSTREAM_E2E_APP_URL || `http://${APP_HOST}:${APP_PORT}`
 const APP_READY_OPTIONS = { waitUntil: 'domcontentloaded' as const }
 const PLAYBACK_POSITION_SELECTOR = '#runtime_playback_controls [data-intent="positionMs"]'
 const SEEK_FORWARD_STEP_MS = 10000
@@ -51,7 +52,10 @@ async function getPlaybackPositionMs(page: Page): Promise<number> {
   return positionMs
 }
 
-async function waitForPlaybackPositionAtLeast(page: Page, expectedPositionMs: number): Promise<void> {
+async function waitForPlaybackPositionAtLeast(
+  page: Page,
+  expectedPositionMs: number
+): Promise<void> {
   await page.waitForFunction(expectedPosition => {
     const positionElement = document.querySelector(
       '#runtime_playback_controls [data-intent="positionMs"]'
@@ -66,20 +70,17 @@ async function waitForPlaybackPositionAtLeast(page: Page, expectedPositionMs: nu
 }
 
 async function waitForPlaybackState(page: Page, state: 'playing' | 'paused'): Promise<void> {
-  await page.waitForFunction(
-    expectedState => {
-      const controls = document.querySelector('#runtime_playback_controls')
-      return Boolean(controls && controls.getAttribute('data-playback-state') === expectedState)
-    },
-    state
-  )
+  await page.waitForFunction(expectedState => {
+    const controls = document.querySelector('#runtime_playback_controls')
+    return Boolean(controls && controls.getAttribute('data-playback-state') === expectedState)
+  }, state)
 }
 
 async function visitRuntimePath(page: Page, path: string): Promise<void> {
   runtimeVisitCounter += 1
   const separator = path.indexOf('?') === -1 ? '?' : '&'
   await page.goto(
-    `${APP_BASE_URL}/#${path}${separator}__e2eVisit=${runtimeVisitCounter}`,
+    `${getAppBaseUrl()}/#${path}${separator}__e2eVisit=${runtimeVisitCounter}`,
     APP_READY_OPTIONS
   )
 }
