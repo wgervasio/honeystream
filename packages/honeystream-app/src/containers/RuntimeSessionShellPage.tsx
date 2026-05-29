@@ -295,6 +295,30 @@ const ROOM_MOOD_CHIPS = [
   '32ms mock round trip',
   'Jitter-guarded frames'
 ] as const
+const PAIR_GUIDE_CARDS = [
+  {
+    id: 'cat',
+    label: 'Cat cue',
+    title: 'Pick the exact source',
+    emptyDetail:
+      'Paste the website, direct link, or local file first so the room has one clear lead.',
+    readyDetail: 'Source is set. Copy the invite, then keep playback host-led and obvious.'
+  },
+  {
+    id: 'rabbit',
+    label: 'Rabbit cue',
+    title: 'Hop in from one invite',
+    emptyDetail: 'Keep the rabbit-side seat private with the full invite link and room secret.',
+    readyDetail: 'Open the same link locally, use the same site login, and follow the shared queue.'
+  },
+  {
+    id: 'together',
+    label: 'Together cue',
+    title: 'Press play when both seats feel ready',
+    emptyDetail: 'The happy path stays source, invite, guest, play; no public-room clutter.',
+    readyDetail: 'Play only when both sides are ready; Honeystream syncs controls, not media bytes.'
+  }
+] as const
 /*
 Context: The runtime route chooses browser playback adapters for mixed streaming sites.
 Invariant: Media bytes stay local; only typed playback commands cross the session transport.
@@ -926,6 +950,26 @@ const RuntimeSessionRouteSurface = ({
         </section>
 
         <section
+          id="runtime_pair_guide"
+          className={`${styles.card} ${styles.pairGuide}`}
+          aria-label="Cat and rabbit watch cues"
+        >
+          <div className={styles.cardHeader}>
+            <p className={styles.kicker}>Pair guide</p>
+            <span>{guest ? 'Two seats live' : 'Rabbit seat saved'}</span>
+          </div>
+          <div className={styles.pairGuideGrid}>
+            {PAIR_GUIDE_CARDS.map(card => (
+              <article key={card.id} data-pair-guide={card.id}>
+                <span>{card.label}</span>
+                <strong>{card.title}</strong>
+                <p>{currentMedia ? card.readyDetail : card.emptyDetail}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section
           id="runtime_room_runway"
           className={`${styles.card} ${styles.roomRunway}`}
           aria-label="Tonight dashboard"
@@ -1241,8 +1285,7 @@ const RuntimeSessionRouteSurface = ({
               Host-led controls
             </span>
             <span>
-              <strong>Loss</strong>
-              0 control bytes lost
+              <strong>Loss</strong>0 control bytes lost
             </span>
             <span>
               <strong>Latency</strong>
