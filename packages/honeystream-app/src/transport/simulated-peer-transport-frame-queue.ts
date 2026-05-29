@@ -53,6 +53,9 @@ export class SimulatedPeerTransportFrameQueue<TMessage> {
     }
 
     const retryDelayMs = frameDropped ? resolveRetransmitDelayMs(this.network) : 0
+    if (frameDropped) {
+      this.metrics.recordRetransmitted(bytes, envelope.seq, sentAtMs, fromPeerId)
+    }
     const dueAtMs = sentAtMs + resolveFrameLatencyMs(this.network, this.random) + retryDelayMs
     this.frames.push({ dueAtMs, sentAtMs, bytes, fromPeerId, envelope })
     this.metrics.recordQueuedDepth(this.frames.length)

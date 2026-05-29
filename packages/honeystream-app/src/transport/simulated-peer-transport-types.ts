@@ -15,7 +15,7 @@ export interface SimulatedPeerNetworkProfile {
   readonly retransmitDelayMs?: number
 }
 
-export type SimulatedPeerTransportFrameOutcome = 'delivered' | 'dropped' | 'sent'
+export type SimulatedPeerTransportFrameOutcome = 'delivered' | 'dropped' | 'retransmitted' | 'sent'
 export type SimulatedPeerTransportDropReason =
   | 'network-drop'
   | 'peer-disconnected'
@@ -35,13 +35,16 @@ export interface SimulatedPeerTransportMetrics {
   readonly sentMessages: number
   readonly deliveredMessages: number
   readonly droppedMessages: number
+  readonly retransmittedMessages: number
   readonly outOfOrderMessages: number
   readonly sequenceGapMessages: number
   readonly sentBytes: number
   readonly deliveredBytes: number
   readonly lostBytes: number
+  readonly retransmittedBytes: number
   readonly deliveryRate: number
   readonly byteLossRate: number
+  readonly retransmissionRate: number
   readonly averageMessageBytes: number
   readonly maxMessageBytes: number
   readonly averageLatencyMs: number

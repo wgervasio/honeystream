@@ -2,6 +2,13 @@ import {
   StreamingSiteConnectionFixture,
   StreamingSiteConnectionProfile
 } from './streaming-site-connection-lab'
+import {
+  STREAMING_SITE_CONNECTION_FIXTURES,
+  STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS,
+  STREAMING_SITE_CONNECTION_PROFILES,
+  STREAMING_SITE_CONNECTION_RANDOM_SAMPLES,
+  STREAMING_SITE_CONNECTION_TRIAL_COUNT
+} from './streaming-site-connection-defaults'
 import { optimizeStreamingSiteConnectionProfiles } from './streaming-site-connection-optimizer'
 
 const STREAMING_FIXTURES: readonly StreamingSiteConnectionFixture[] = [
@@ -62,6 +69,35 @@ const CONNECTION_PROFILES: readonly StreamingSiteConnectionProfile[] = [
 ]
 
 describe('streaming site connection optimizer', () => {
+  it('keeps the default streaming matrix on the clean fast zero-loss lane', async () => {
+    const result = await optimizeStreamingSiteConnectionProfiles({
+      fixtures: STREAMING_SITE_CONNECTION_FIXTURES,
+      profiles: STREAMING_SITE_CONNECTION_PROFILES,
+      nowStartMs: 2000,
+      randomSamples: STREAMING_SITE_CONNECTION_RANDOM_SAMPLES,
+      trialCount: STREAMING_SITE_CONNECTION_TRIAL_COUNT
+    })
+
+    expect(result.trialCount).toBe(STREAMING_SITE_CONNECTION_TRIAL_COUNT)
+    expect(result.bestProfile && result.bestProfile.profile.id).toBe('clean-fast')
+    expect(result.rankedProfiles[0].profile.id).toBe('clean-fast')
+    expect(result.rankedProfiles[0].allTrialsPassed).toBe(true)
+    expect(result.rankedProfiles[0].siteCount).toBe(STREAMING_SITE_CONNECTION_FIXTURES.length)
+    expect(result.rankedProfiles[0].maxCombinedByteLossRate).toBe(0)
+    expect(result.rankedProfiles[0].maxCombinedDroppedMessages).toBe(0)
+    expect(result.rankedProfiles[0].maxEstimatedRoundTripP95LatencyMs).toBeLessThanOrEqual(
+      STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS
+    )
+
+    const retryRank = result.rankedProfiles.find(rank => rank.profile.id === 'retry-guarded')
+    if (!retryRank) throw new Error('Expected retry-guarded profile rank.')
+    expect(retryRank.allTrialsPassed).toBe(true)
+    expect(retryRank.maxCombinedByteLossRate).toBe(0)
+    expect(retryRank.maxEstimatedRoundTripP95LatencyMs).toBeGreaterThan(
+      result.rankedProfiles[0].maxEstimatedRoundTripP95LatencyMs
+    )
+  })
+
   it('selects the fastest profile that stays zero-loss across deterministic trials', async () => {
     const result = await optimizeStreamingSiteConnectionProfiles({
       fixtures: STREAMING_FIXTURES,

@@ -36,6 +36,10 @@ import {
   createInMemoryPeerTransportPair
 } from '../transport/in-memory-peer-transport-pair'
 import {
+  STREAMING_SITE_CONNECTION_FIXTURES,
+  STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS
+} from '../transport/streaming-site-connection-defaults'
+import {
   Disposable,
   InviteLinkPanel,
   PlaybackRuntimeControlIntents,
@@ -143,6 +147,7 @@ const QUEUE_REQUESTED_BY_LABEL = 'Session'
 const SYSTEM_ERROR_EVENT_TIMESTAMP_OFFSET = 1
 const BOUNDARY_SYSTEM_ERROR_CAP = 64
 const INVITE_SECRET_BYTES = 16
+const STREAMING_SITE_CONNECTION_FIXTURE_COUNT = STREAMING_SITE_CONNECTION_FIXTURES.length
 const HAPPY_PATH_STEPS = [
   {
     id: 'paste',
@@ -198,7 +203,8 @@ const SITE_HANDOFF_PROMISES = [
     id: 'reliable-retry',
     title: 'Recovered drops stay ordered',
     detail:
-      'The mock lab retries transient control drops as latency, then rejects lanes that miss the 32ms round-trip budget.'
+      'The mock lab retries transient control drops as latency, counts recovered retries, then ' +
+      `rejects lanes that miss the ${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms P95 round-trip budget.`
   }
 ] as const
 const ADD_MEDIA_SUGGESTIONS = [
@@ -262,7 +268,8 @@ const ROOM_READY_SIGNALS = [
     id: 'sync-budget',
     label: 'Sync budget green',
     detail:
-      'Mock host/guest control round trips stay under 32ms with zero byte loss, reliable retry, no skipped controls, capped jitter, and compact frames.'
+      `Mock host/guest control round trips stay at or under ${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms P95 ` +
+      'with zero byte loss, visible recovered retries, no skipped controls, capped jitter, and compact frames.'
   },
   {
     id: 'notes',
@@ -298,7 +305,7 @@ const ROOM_MOOD_CHIPS = [
   'Website-ready queue',
   'Zero-byte-loss controls',
   'No skipped controls',
-  '32ms mock round trip',
+  `${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms lab round trip`,
   'Jitter-guarded frames',
   'Reliable retry guard'
 ] as const
@@ -1312,7 +1319,15 @@ const RuntimeSessionRouteSurface = ({
             </span>
             <span>
               <strong>Latency</strong>
-              Under 32ms mock RT
+              {`<=${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms mock RT`}
+            </span>
+            <span>
+              <strong>Proof</strong>
+              {`${STREAMING_SITE_CONNECTION_FIXTURE_COUNT} local fixtures`}
+            </span>
+            <span>
+              <strong>Retries</strong>
+              Recovered retries counted
             </span>
           </div>
           <div id="runtime_room_mood" className={styles.roomMoodStrip} aria-label="Room mood">
