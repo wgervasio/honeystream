@@ -1,5 +1,7 @@
 jest.setTimeout(30e3)
 
+const SESSION_HASH = 'a'.repeat(64)
+
 async function waitForText(text: string): Promise<void> {
   await page.waitForFunction(
     expectedText =>
@@ -138,12 +140,18 @@ describe('onboarding', () => {
     await page.waitForSelector('#join_link_breakdown')
     await page.waitForSelector('#join_ready_stack')
     await page.waitForSelector('#join_invite_hint')
+    await page.type(
+      '#join_invite_input',
+      `https://app.gethoneystream.com/#/join/${SESSION_HASH}?secret=rabbit-secret`
+    )
+    await page.waitForSelector('#join_invite_preview')
     const headline = await page.$eval('#join_headline', e => e.textContent)
     const comfortChecks = await page.$eval('#join_comfort_checks', e => e.textContent)
     const inviteRibbon = await page.$eval('#join_invite_ribbon', e => e.textContent)
     const linkBreakdown = await page.$eval('#join_link_breakdown', e => e.textContent)
     const readyStack = await page.$eval('#join_ready_stack', e => e.textContent)
     const inviteHint = await page.$eval('#join_invite_hint', e => e.textContent)
+    const invitePreview = await page.$eval('#join_invite_preview', e => e.textContent)
     expect(headline).toContain('hop into sync')
     expect(comfortChecks).toContain('Cat-side host sends one invite')
     expect(comfortChecks).toContain('Rabbit-side guest lands here')
@@ -155,5 +163,8 @@ describe('onboarding', () => {
     expect(readyStack).toContain('Paste the whole invite')
     expect(readyStack).toContain('Land in one seat')
     expect(readyStack).toContain('Watch the same source')
+    expect(invitePreview).toContain('Invite ready')
+    expect(invitePreview).toContain('Secret included')
+    expect(invitePreview).toContain('rabbit-side seat')
   })
 })

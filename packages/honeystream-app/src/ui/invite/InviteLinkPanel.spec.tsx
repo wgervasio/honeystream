@@ -59,6 +59,20 @@ describe('parsePrivateInviteLink', () => {
     })
   })
 
+  it('parses hash-route invite URLs', () => {
+    expect(
+      parsePrivateInviteLink({
+        inviteLink: 'https://app.gethoneystream.com/#/join/room-1?secret=secret-token'
+      })
+    ).toEqual({
+      ok: true,
+      value: {
+        roomId: 'room-1',
+        secret: 'secret-token'
+      }
+    })
+  })
+
   it('reports missing secret values', () => {
     const result = parsePrivateInviteLink({
       inviteLink: `https://app.gethoneystream.com${DEFAULT_INVITE_JOIN_PATH}/room-1`
