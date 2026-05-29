@@ -112,7 +112,7 @@ describe('session', () => {
       await waitForRuntimeText(page, 'Tiny sync lane')
       await waitForRuntimeText(page, 'Hosting room')
       await waitForRuntimeText(page, '0 control bytes lost')
-      await waitForRuntimeText(page, '32 local fixtures')
+      await waitForRuntimeText(page, '36 local fixtures')
       await waitForRuntimeText(page, 'Recovered retries counted')
       await waitForRuntimeText(page, 'Cat-side cue')
       await waitForRuntimeText(page, 'Best next tap')
@@ -132,10 +132,10 @@ describe('session', () => {
       await waitForRuntimeText(page, 'Ultra-low latency lane wins')
       await waitForRuntimeText(page, 'Retry lane stays green')
       await waitForRuntimeText(page, 'Site matrix covered')
-      await waitForRuntimeText(page, 'YouTube x10')
-      await waitForRuntimeText(page, 'AnimePahe x7')
-      await waitForRuntimeText(page, 'Cineby x8')
-      await waitForRuntimeText(page, 'Miruro x6')
+      await waitForRuntimeText(page, 'YouTube x11')
+      await waitForRuntimeText(page, 'AnimePahe x8')
+      await waitForRuntimeText(page, 'Cineby x9')
+      await waitForRuntimeText(page, 'Miruro x7')
       await waitForRuntimeText(page, 'Bursts stay calm')
       await waitForRuntimeText(page, 'Rapid seek, pause, resume, and rate bursts')
       await waitForRuntimeText(page, '7 lanes run for 3 deterministic trials')
@@ -203,9 +203,13 @@ describe('session', () => {
       await page.waitForSelector('#runtime-add-media-url')
 
       const sources = [
+        { url: 'youtube.com', label: 'YouTube' },
         { url: 'youtube.com/watch?v=honeystream-e2e', label: 'YouTube' },
+        { url: 'animepahe.ru', label: 'AnimePahe' },
         { url: 'animepahe.ru/play/honeystream-e2e', label: 'AnimePahe' },
+        { url: 'cineby.app', label: 'Cineby' },
         { url: 'cineby.app/movie/honeystream-e2e', label: 'Cineby' },
+        { url: 'miruro.to', label: 'Miruro' },
         { url: 'miruro.to/watch/honeystream-e2e', label: 'Miruro' }
       ]
 

@@ -57,6 +57,30 @@ describe('RuntimeAddMediaSourcePreview', () => {
     }
   })
 
+  it('previews exact provider root domains without requiring a deep watch path', () => {
+    const rootDomainCases = [
+      { provider: 'youtube', label: 'YouTube', url: 'youtube.com' },
+      { provider: 'animepahe', label: 'AnimePahe', url: 'animepahe.ru' },
+      { provider: 'cineby', label: 'Cineby', url: 'cineby.app' },
+      { provider: 'miruro', label: 'Miruro', url: 'miruro.to' }
+    ] as const
+
+    for (const providerCase of rootDomainCases) {
+      const preview = createRuntimeAddMediaSourcePreview(providerCase.url)
+
+      expect(preview).toEqual(
+        expect.objectContaining({
+          kind: 'website',
+          normalizedFromShorthand: true,
+          provider: providerCase.provider,
+          label: `${providerCase.label} lane`
+        })
+      )
+      expect(preview && preview.detail).toContain(`${providerCase.label} page detected`)
+      expect(preview && preview.detail).toContain('Honeystream will add https:// automatically')
+    }
+  })
+
   it('keeps unknown websites honest without claiming provider coverage', () => {
     const preview = createRuntimeAddMediaSourcePreview('https://youtube.com.evil/watch')
     const confidenceDetails = createRuntimeAddMediaConfidenceItems(preview).map(item => item.detail)

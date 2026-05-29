@@ -54,6 +54,7 @@ describe('streaming site connection lab', () => {
       'youtube',
       'youtube',
       'youtube',
+      'youtube',
       'animepahe',
       'animepahe',
       'animepahe',
@@ -61,6 +62,7 @@ describe('streaming site connection lab', () => {
       'animepahe',
       'animepahe',
       'animepahe',
+      'animepahe',
       'cineby',
       'cineby',
       'cineby',
@@ -69,6 +71,8 @@ describe('streaming site connection lab', () => {
       'cineby',
       'cineby',
       'cineby',
+      'cineby',
+      'miruro',
       'miruro',
       'miruro',
       'miruro',
@@ -85,10 +89,10 @@ describe('streaming site connection lab', () => {
     const metrics = bestObservation.metrics
     expect(bestObservation.budgetResult).toEqual({ ok: true, failures: [] })
     expect(bestObservation.providerCoverage).toEqual([
-      { provider: 'youtube', siteCount: 10 },
-      { provider: 'animepahe', siteCount: 7 },
-      { provider: 'cineby', siteCount: 8 },
-      { provider: 'miruro', siteCount: 6 },
+      { provider: 'youtube', siteCount: 11 },
+      { provider: 'animepahe', siteCount: 8 },
+      { provider: 'cineby', siteCount: 9 },
+      { provider: 'miruro', siteCount: 7 },
       { provider: 'unknown', siteCount: 1 }
     ])
     expect(metrics.combinedSentMessages).toBeGreaterThan(STREAMING_SITE_CONNECTION_FIXTURES.length)
@@ -122,7 +126,15 @@ describe('streaming site connection lab', () => {
   it('covers the requested streaming-site matrix before selecting a transport lane', () => {
     const sources = STREAMING_SITE_CONNECTION_FIXTURES.map(fixture => fixture.source)
 
-    expect(STREAMING_SITE_CONNECTION_FIXTURES).toHaveLength(32)
+    expect(STREAMING_SITE_CONNECTION_FIXTURES).toHaveLength(36)
+    expect(sources).toEqual(
+      expect.arrayContaining([
+        'https://youtube.com',
+        'https://animepahe.ru',
+        'https://cineby.app',
+        'https://miruro.to'
+      ])
+    )
     expect(sources.some(source => source.includes('youtube.com'))).toBe(true)
     expect(sources.some(source => source.includes('youtu.be'))).toBe(true)
     expect(sources.some(source => source.includes('animepahe'))).toBe(true)
@@ -133,10 +145,10 @@ describe('streaming site connection lab', () => {
       true
     )
     expect(STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE).toEqual([
-      { provider: 'youtube', siteCount: 10 },
-      { provider: 'animepahe', siteCount: 7 },
-      { provider: 'cineby', siteCount: 8 },
-      { provider: 'miruro', siteCount: 6 },
+      { provider: 'youtube', siteCount: 11 },
+      { provider: 'animepahe', siteCount: 8 },
+      { provider: 'cineby', siteCount: 9 },
+      { provider: 'miruro', siteCount: 7 },
       { provider: 'unknown', siteCount: 1 }
     ])
     expect(
