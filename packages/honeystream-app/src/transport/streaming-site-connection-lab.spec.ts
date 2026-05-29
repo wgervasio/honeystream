@@ -99,6 +99,18 @@ describe('streaming site connection lab', () => {
     )
   })
 
+  it('covers the requested streaming-site matrix before selecting a transport lane', () => {
+    const sources = STREAMING_SITE_CONNECTION_FIXTURES.map(fixture => fixture.source)
+
+    expect(STREAMING_SITE_CONNECTION_FIXTURES).toHaveLength(24)
+    expect(sources.some(source => source.includes('youtube.com'))).toBe(true)
+    expect(sources.some(source => source.includes('youtu.be'))).toBe(true)
+    expect(sources.some(source => source.includes('animepahe'))).toBe(true)
+    expect(sources.some(source => source.includes('cineby'))).toBe(true)
+    expect(sources.some(source => source.includes('miruro'))).toBe(true)
+    expect(sources.some(source => source.includes('streaming.example.test'))).toBe(true)
+  })
+
   it('keeps lossy and slow mock profiles out of the selected streaming lane', async () => {
     const result = await runStreamingSiteConnectionLab({
       budget: STREAMING_SITE_CONNECTION_BUDGET,
