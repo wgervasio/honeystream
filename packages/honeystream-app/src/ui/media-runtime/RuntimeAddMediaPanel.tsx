@@ -121,10 +121,10 @@ export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
         <strong>{URL_SAFETY_TITLE}</strong>
         <span>
           Use exact watch pages both browsers can open: YouTube, AnimePahe, Cineby, Miruro, or any
-          site you can test together. The streaming connection lab picks the lowest-loss lane
-          first and keeps those quick lanes on a zero-loss, under-32ms mock round trip with
-          reliable retry for transient control drops and no skipped controls. Honeystream keeps
-          media bytes local and syncs only the typed control stream.
+          site you can test together. The streaming connection lab feeds the optimizer, picks the
+          lowest-loss lane first, then latency-tunes it with a zero-loss, under-32ms mock round
+          trip, reliable retry for transient control drops, and no skipped controls. Honeystream
+          keeps media bytes local and syncs only the typed control stream.
         </span>
       </div>
       {sourceSuggestions.length > 0 ? (
