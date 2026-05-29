@@ -1,3 +1,4 @@
+import { classifyMediaProvider } from 'protocol'
 import {
   StreamingSiteConnectionFixture,
   StreamingSiteConnectionProfile
@@ -6,6 +7,7 @@ import {
   SimulatedPeerTransportBudget,
   STREAMING_SITE_TRANSPORT_BUDGET
 } from './simulated-peer-transport-performance'
+import { countStreamingSiteProviders } from './streaming-site-provider-coverage'
 
 export const STREAMING_SITE_CONNECTION_FIXTURES: readonly StreamingSiteConnectionFixture[] = Object.freeze(
   [
@@ -194,6 +196,11 @@ export const STREAMING_SITE_CONNECTION_PROFILES: readonly StreamingSiteConnectio
 )
 
 export const STREAMING_SITE_CONNECTION_TRIAL_COUNT = 3
+export const STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE = Object.freeze(
+  countStreamingSiteProviders(
+    STREAMING_SITE_CONNECTION_FIXTURES.map(fixture => classifyMediaProvider(fixture.source))
+  )
+)
 export const STREAMING_SITE_CONNECTION_RANDOM_SAMPLES: readonly number[] = Object.freeze([
   0.25,
   0.75,

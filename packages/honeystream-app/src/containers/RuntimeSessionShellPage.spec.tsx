@@ -29,6 +29,7 @@ import {
   STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS,
   STREAMING_SITE_CONNECTION_FIXTURES,
   STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS,
+  STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE,
   STREAMING_SITE_CONNECTION_PROFILES,
   STREAMING_SITE_CONNECTION_TRIAL_COUNT
 } from '../transport/streaming-site-connection-defaults'
@@ -198,6 +199,13 @@ describe('RuntimeSessionShellPage', () => {
     )
     expect(html).toContain('Retry lane stays green')
     expect(html).toContain('Site matrix covered')
+    for (const coverage of STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE) {
+      expect(html).toContain(`x${coverage.siteCount}`)
+    }
+    expect(html).toContain('YouTube x8')
+    expect(html).toContain('AnimePahe x5')
+    expect(html).toContain('Cineby x6')
+    expect(html).toContain('Miruro x4')
     expect(html).toContain('Bursts stay calm')
     expect(html).toContain('Rapid seek, pause, resume, and rate bursts')
     expect(html).toContain(
