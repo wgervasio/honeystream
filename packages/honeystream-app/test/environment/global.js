@@ -93,8 +93,7 @@ async function resolveServerConfig() {
     undefined,
     'SIGNAL_SERVER_PORT'
   )
-  const signalServerUrl =
-    process.env.HONEYSTREAM_SIGNAL_SERVER || `ws://${signalServerHost}:${signalServerPort}`
+  const signalServerUrl = `ws://${signalServerHost}:${signalServerPort}`
   const appBaseUrl = process.env.HONEYSTREAM_E2E_APP_URL || `http://${appHost}:${appPort}`
 
   process.env.HONEYSTREAM_E2E_APP_HOST = appHost
