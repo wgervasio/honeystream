@@ -217,7 +217,8 @@ export class DefaultSessionRuntime implements SessionRuntime {
     this.assertHostRunning('dispatchHostCommand')
     await this.applyHostClientCommand(
       hostCommandToClientCommand(command),
-      this.transport.localPeerId
+      this.transport.localPeerId,
+      this.now()
     )
   }
 
@@ -281,7 +282,10 @@ export class DefaultSessionRuntime implements SessionRuntime {
     if (!parsed.ok) {
       this.recordProtocolDiagnostic(parsed.error)
       if (this.role === 'host')
-        this.trySendHostEvent({ type: 'protocolRejected', error: parsed.error })
+        this.trySendHostEvent(
+          { type: 'protocolRejected', error: parsed.error },
+          this.runtimeTimeAtOrAfter(delivery.receivedAtMs)
+        )
       return
     }
 
@@ -289,15 +293,25 @@ export class DefaultSessionRuntime implements SessionRuntime {
       if (parsed.value.direction !== 'client-to-host') {
         const protocolError = invalidDirectionError(parsed.value.direction)
         this.recordProtocolDiagnostic(protocolError)
-        this.trySendHostEvent({ type: 'protocolRejected', error: protocolError })
+        this.trySendHostEvent(
+          { type: 'protocolRejected', error: protocolError },
+          this.runtimeTimeAtOrAfter(delivery.receivedAtMs)
+        )
         return
       }
       const sequenceError = this.validateInboundDeliverySequence(parsed.value.seq)
       if (sequenceError) {
-        this.trySendHostEvent({ type: 'protocolRejected', error: sequenceError })
+        this.trySendHostEvent(
+          { type: 'protocolRejected', error: sequenceError },
+          this.runtimeTimeAtOrAfter(delivery.receivedAtMs)
+        )
         return
       }
-      await this.applyHostClientCommand(parsed.value.command, delivery.fromPeerId)
+      await this.applyHostClientCommand(
+        parsed.value.command,
+        delivery.fromPeerId,
+        delivery.receivedAtMs
+      )
       return
     }
 
@@ -308,7 +322,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
       }
       const sequenceError = this.validateInboundDeliverySequence(parsed.value.seq)
       if (sequenceError) {
-        this.tryRequestGuestSnapshot('resync')
+        this.tryRequestGuestSnapshot('resync', delivery.receivedAtMs)
         return
       }
       await this.applyGuestHostEvent(parsed.value.event)
@@ -318,9 +332,12 @@ export class DefaultSessionRuntime implements SessionRuntime {
     this.recordRuntimeError('Received protocol envelope before runtime startup.')
   }
 
-  private async applyHostClientCommand(command: ClientCommand, fromPeerId: string): Promise<void> {
+  private async applyHostClientCommand(
+    command: ClientCommand,
+    fromPeerId: string,
+    nowHostMs: number
+  ): Promise<void> {
     const state = this.requireHostState()
-    const nowHostMs = this.now()
     let nextState = state
     let domainErrors: readonly DomainError[] = []
     let transition: TransitionResult | undefined
@@ -334,7 +351,10 @@ export class DefaultSessionRuntime implements SessionRuntime {
             'command.inviteSecret'
           )
           this.recordProtocolDiagnostic(protocolError)
-          this.trySendHostEvent({ type: 'protocolRejected', error: protocolError })
+          this.trySendHostEvent(
+            { type: 'protocolRejected', error: protocolError },
+            this.runtimeTimeAtOrAfter(nowHostMs)
+          )
           return
         }
         transition = transitionGuestJoined(state, fromPeerId, command.username, nowHostMs)
@@ -384,11 +404,14 @@ export class DefaultSessionRuntime implements SessionRuntime {
       } catch (error) {
         const message = toErrorMessage(error)
         this.recordRuntimeError(`[playback] ${message}`)
-        this.trySendHostEvent({
-          type: 'systemError',
-          errorCode: PLAYBACK_APPLY_FAILED_ERROR_CODE,
-          message: `Playback adapter failed: ${message}`
-        })
+        this.trySendHostEvent(
+          {
+            type: 'systemError',
+            errorCode: PLAYBACK_APPLY_FAILED_ERROR_CODE,
+            message: `Playback adapter failed: ${message}`
+          },
+          this.runtimeTimeAtOrAfter(nowHostMs)
+        )
       }
     }
 
@@ -399,11 +422,12 @@ export class DefaultSessionRuntime implements SessionRuntime {
 
     const snapshot = toSessionSnapshot(this.requireHostState(), this.eventCursor)
     this.updateProjection({ session: snapshot })
+    const responseSentAtMs = this.runtimeTimeAtOrAfter(nowHostMs)
 
     if (transition && stateChanged) {
       const events = toProtocolHostEventsFromTransition(state, transition)
       for (const event of events) {
-        this.trySendHostEvent(event)
+        this.trySendHostEvent(event, responseSentAtMs)
       }
     }
 
@@ -411,7 +435,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
       requestSnapshot ||
       (command.type === 'join' && transition && transition.errors.length === 0)
     ) {
-      this.trySendHostEvent({ type: 'snapshot', snapshot })
+      this.trySendHostEvent({ type: 'snapshot', snapshot }, responseSentAtMs)
     }
   }
 
@@ -460,23 +484,24 @@ export class DefaultSessionRuntime implements SessionRuntime {
     }
   }
 
-  private trySendHostEvent(event: HostEvent): void {
+  private trySendHostEvent(event: HostEvent, sentAtMs: number = this.now()): void {
     if (this.disposed) return
     if (this.transport.getState().status !== 'connected') return
     this.sendWireEnvelope({
       version: PROTOCOL_VERSION,
       direction: 'host-to-client',
       seq: this.nextSequence(),
-      sentAtMs: this.now(),
+      sentAtMs,
       event
     })
   }
 
-  private tryRequestGuestSnapshot(reason: SnapshotRequestReason): void {
+  private tryRequestGuestSnapshot(reason: SnapshotRequestReason, notBeforeMs?: number): void {
     if (this.disposed) return
     if (this.role !== 'guest') return
     if (this.transport.getState().status !== 'connected') return
-    const nowMs = this.now()
+    const nowMs =
+      typeof notBeforeMs === 'number' ? this.runtimeTimeAtOrAfter(notBeforeMs) : this.now()
     if (
       reason === 'resync' &&
       typeof this.lastGuestSnapshotRequestAtMs === 'number' &&
@@ -496,6 +521,11 @@ export class DefaultSessionRuntime implements SessionRuntime {
         reason
       }
     })
+  }
+
+  private runtimeTimeAtOrAfter(notBeforeMs: number): number {
+    const nowMs = this.now()
+    return Number.isFinite(notBeforeMs) ? Math.max(nowMs, notBeforeMs) : nowMs
   }
 
   private sendWireEnvelope(envelope: WireEnvelope): void {

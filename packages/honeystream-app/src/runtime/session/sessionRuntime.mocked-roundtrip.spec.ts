@@ -13,6 +13,11 @@ import { createSessionRuntime } from './sessionRuntime'
 type ClientToHostWireEnvelope = Extract<WireEnvelope, { direction: 'client-to-host' }>
 type HostToClientWireEnvelope = Extract<WireEnvelope, { direction: 'host-to-client' }>
 
+interface HostEnvelopeObservation {
+  readonly receivedAtMs: number
+  readonly sentAtMs: number
+}
+
 class CapturingPlaybackEngine implements SessionRuntimePlaybackEngine {
   readonly desiredStates: PlaybackEngineDesiredState[] = []
   disposeCallCount = 0
@@ -109,6 +114,7 @@ const findPlaybackMediaSource = (
 describe('runtime/session mocked host-guest e2e', () => {
   it('runs join, queue, play, seek, rate, next, and leave with zero control-byte loss', async () => {
     let nowMs = 50000
+    const initialNowMs = nowMs
     const pair = createSimulatedPeerTransportPair<
       ClientToHostWireEnvelope,
       HostToClientWireEnvelope
@@ -135,6 +141,15 @@ describe('runtime/session mocked host-guest e2e', () => {
       playback: guestPlayback,
       now: () => nowMs
     })
+    const hostEventObservations: HostEnvelopeObservation[] = []
+    const unsubscribeGuestProbe = pair.guest.subscribe(event => {
+      if (event.type === 'message') {
+        hostEventObservations.push({
+          receivedAtMs: event.delivery.receivedAtMs,
+          sentAtMs: event.delivery.envelope.message.sentAtMs
+        })
+      }
+    })
 
     const flushConnection = async (): Promise<void> => {
       for (let pass = 0; pass < 5; pass += 1) {
@@ -156,6 +171,10 @@ describe('runtime/session mocked host-guest e2e', () => {
         inviteSecret: 'invite-secret'
       })
       await flushConnection()
+      expect(hostEventObservations[0]).toEqual({
+        sentAtMs: initialNowMs + 7,
+        receivedAtMs: initialNowMs + 14
+      })
 
       for (let index = 0; index < streamingRoundTripMedia.length; index += 1) {
         const media = streamingRoundTripMedia[index]
@@ -239,6 +258,7 @@ describe('runtime/session mocked host-guest e2e', () => {
         failures: []
       })
     } finally {
+      unsubscribeGuestProbe()
       hostRuntime.dispose()
       guestRuntime.dispose()
     }
