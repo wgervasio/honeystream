@@ -129,12 +129,20 @@ describe('streaming site connection merge gate', () => {
         maxProviderSequenceGapMessages: 0
       })
     )
+    expect(mergeGate.providerFixtureCounts).toEqual(
+      expect.arrayContaining([
+        { provider: 'youtube', siteCount: 16 },
+        { provider: 'animepahe', siteCount: 13 },
+        { provider: 'cineby', siteCount: 14 }
+      ])
+    )
   })
 
   it('fails when selected provider quality hides skipped or reordered controls', () => {
     const mergeGate = summarizeStreamingSiteConnectionMergeGate(
       createProviderOrderRegressionResult(),
       {
+        minFixturesPerRequiredProvider: 1,
         maxProviderOutOfOrderMessages: 0,
         maxProviderSequenceGapMessages: 0,
         requiredProviders: ['youtube']
@@ -148,6 +156,22 @@ describe('streaming site connection merge gate', () => {
       'YouTube provider reordered more than 0 controls.',
       'YouTube provider skipped more than 0 controls.'
     ])
+  })
+
+  it('fails when a required provider has too few streaming-site fixtures to prove coverage', () => {
+    const mergeGate = summarizeStreamingSiteConnectionMergeGate(
+      createProviderOrderRegressionResult(),
+      {
+        minFixturesPerRequiredProvider: 2,
+        maxProviderOutOfOrderMessages: 1,
+        maxProviderSequenceGapMessages: 2,
+        requiredProviders: ['youtube']
+      }
+    )
+
+    expect(mergeGate.ok).toBe(false)
+    expect(mergeGate.providerFixtureCounts).toEqual([{ provider: 'youtube', siteCount: 1 }])
+    expect(mergeGate.failures).toEqual(['YouTube coverage has fewer than 2 streaming-site fixtures.'])
   })
 
   it('fails when recovered retry bytes exceed the configured merge budget', async () => {

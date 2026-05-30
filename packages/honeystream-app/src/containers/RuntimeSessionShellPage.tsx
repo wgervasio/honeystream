@@ -36,6 +36,7 @@ import {
   InMemoryPeerTransportPair,
   createInMemoryPeerTransportPair
 } from '../transport/in-memory-peer-transport-pair'
+import { ObservablePeerTransport } from '../transport/observable-peer-transport'
 import {
   STREAMING_SITE_CONNECTION_BUDGET,
   STREAMING_SITE_CONNECTION_PROFILES,
@@ -318,7 +319,7 @@ const CONNECTION_LAB_PROOFS = [
       `${STREAMING_SITE_CONNECTION_FIXTURE_COUNT} fixtures across ` +
       `${STREAMING_SITE_CONNECTION_PROFILES.length} lanes run for ` +
       `${STREAMING_SITE_CONNECTION_TRIAL_COUNT} deterministic trials: ` +
-      `${STREAMING_SITE_PROVIDER_COVERAGE_LABEL}.`
+      `${STREAMING_SITE_PROVIDER_COVERAGE_LABEL}; every named provider keeps at least two fixtures.`
   },
   {
     id: 'burst-duration-matrix',
@@ -382,7 +383,14 @@ const MERGE_GATE_METRICS = [
     label: 'Provider gate',
     value: `${STREAMING_SITE_NAMED_PROVIDER_COUNT} providers`,
     detail:
-      'YouTube, AnimePahe, Cineby, and Miruro each keep their own loss, retry, skipped-control, and latency proof.'
+      'YouTube, AnimePahe, Cineby, and Miruro each keep their own multi-fixture loss, retry, skipped-control, and latency proof.'
+  },
+  {
+    id: 'trace-cap',
+    label: 'Trace gate',
+    value: '64 recent frames',
+    detail:
+      'Mock and live transport wrappers keep bounded sent, received, state, and error observations for debugging without unbounded logs.'
   }
 ] as const
 const COMMAND_BAR_LINKS = [
@@ -416,7 +424,8 @@ const ROOM_MOOD_CHIPS = [
   `${STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS}ms best mock RT`,
   `${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms lab round trip`,
   'Jitter-guarded frames',
-  'Reliable retry guard'
+  'Reliable retry guard',
+  'Observable trace cap'
 ] as const
 const PAIR_GUIDE_CARDS = [
   {
@@ -554,15 +563,27 @@ const createRuntimeFromTransport = (
 ): {
   readonly runtime: RuntimeSession
   readonly playback: SessionRuntimePlaybackEngine
+  readonly transport: ObservablePeerTransport<unknown, unknown>
 } => {
   const playback = input.createPlaybackEngine()
-  const runtime = input.createRuntime({
-    now: input.now,
+  const observedTransport = new ObservablePeerTransport({
     transport,
-    playback
+    now: input.now
   })
+  let runtime: RuntimeSession
+  try {
+    runtime = input.createRuntime({
+      now: input.now,
+      transport: observedTransport,
+      playback
+    })
+  } catch (error) {
+    observedTransport.dispose()
+    playback.dispose()
+    throw error
+  }
 
-  return { runtime, playback }
+  return { runtime, playback, transport: observedTransport }
 }
 
 const createMediaElementAdapter = (
@@ -596,7 +617,7 @@ const createLocalRuntimeHandle = (
   createTransportPair: (now: () => number) => RuntimeRouteTransportPair
 ): RuntimeRouteRuntimeHandle => {
   const transportPair = createTransportPair(input.now)
-  const { runtime, playback } = createRuntimeFromTransport(input, transportPair.host)
+  const { runtime, playback, transport } = createRuntimeFromTransport(input, transportPair.host)
   let disposed = false
 
   return {
@@ -607,6 +628,7 @@ const createLocalRuntimeHandle = (
       if (disposed) return
       disposed = true
       runtime.dispose()
+      transport.dispose()
       transportPair.guest.dispose()
     }
   }
@@ -637,17 +659,18 @@ const createLiveRuntimeHandle = async (
       localPeerId,
       now: input.now
     })
-    const { runtime, playback } = createRuntimeFromTransport(input, transport)
+    const runtimeHandle = createRuntimeFromTransport(input, transport)
     let disposed = false
 
     return {
-      runtime,
-      playback,
+      runtime: runtimeHandle.runtime,
+      playback: runtimeHandle.playback,
       role,
       dispose(): void {
         if (disposed) return
         disposed = true
-        runtime.dispose()
+        runtimeHandle.runtime.dispose()
+        runtimeHandle.transport.dispose()
         platform.leaveLobby(input.roomId)
       }
     }
@@ -1506,6 +1529,7 @@ const RuntimeSessionRouteSurface = ({
           data-byte-loss-rate="0"
           data-provider-count={STREAMING_SITE_NAMED_PROVIDER_COUNT}
           data-site-count={STREAMING_SITE_CONNECTION_FIXTURE_COUNT}
+          data-trace-cap="64"
           data-zero-loss-required="true"
         >
           <div className={styles.cardHeader}>

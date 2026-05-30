@@ -2,6 +2,8 @@ import { StreamingSiteConnectionOptimizationResult } from './streaming-site-conn
 import {
   createStreamingSiteConnectionMergeGateFailures,
   getCoveredProviders,
+  getProviderFixtureCount,
+  getProviderFixtureCounts,
   hasCoveredProvider,
   maxProviderQualityValue,
   selectedMetric
@@ -38,9 +40,15 @@ export const summarizeStreamingSiteConnectionMergeGate = (
   const missingProviders = requiredOptions.requiredProviders.filter(
     provider => !hasCoveredProvider(observedProfile, provider)
   )
+  const undercoveredProviders = requiredOptions.requiredProviders.filter(provider => {
+    const siteCount = getProviderFixtureCount(observedProfile, provider)
+    return siteCount > 0 && siteCount < requiredOptions.minFixturesPerRequiredProvider
+  })
+  const providerFixtureCounts = getProviderFixtureCounts(observedProfile)
   const failures = createStreamingSiteConnectionMergeGateFailures(
     selectedProfile,
     missingProviders,
+    undercoveredProviders,
     requiredOptions
   )
 
@@ -104,11 +112,14 @@ export const summarizeStreamingSiteConnectionMergeGate = (
       quality => quality.maxSequenceGapMessages
     ),
     missingProviders,
+    minFixturesPerRequiredProvider: requiredOptions.minFixturesPerRequiredProvider,
     ok: failures.length === 0,
+    providerFixtureCounts,
     requiredProviders: requiredOptions.requiredProviders,
     selectedProfileId: selectedProfile ? selectedProfile.profile.id : undefined,
     selectedProfileLabel: selectedProfile ? selectedProfile.profile.label : undefined,
     siteCount: observedProfile ? observedProfile.siteCount : 0,
-    trialCount: result.trialCount
+    trialCount: result.trialCount,
+    undercoveredProviders
   }
 }
