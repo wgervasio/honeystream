@@ -344,6 +344,12 @@ const MERGE_GATE_METRICS = [
     detail: 'Typed play, pause, seek, rate, and next frames stay compact.'
   },
   {
+    id: 'retry-byte-overhead',
+    label: 'Retry byte gate',
+    value: `<=${STREAMING_SITE_CONNECTION_BUDGET.maxRetransmissionByteRate * 100}%`,
+    detail: 'Recovered retry bytes stay budgeted so repair never hides waste.'
+  },
+  {
     id: 'coverage',
     label: 'Coverage gate',
     value: `${STREAMING_SITE_CONNECTION_FIXTURE_COUNT} sites`,
@@ -354,7 +360,7 @@ const MERGE_GATE_METRICS = [
     label: 'Per-site proof',
     value: `${STREAMING_SITE_CONNECTION_FIXTURE_COUNT} observed`,
     detail:
-      'Each site fixture records delivered controls, lost bytes, retries, skipped controls, payload size, and round-trip latency.'
+      'Each site fixture records delivered controls, lost bytes, retry bytes, skipped controls, payload size, and round-trip latency.'
   }
 ] as const
 const COMMAND_BAR_LINKS = [

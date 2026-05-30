@@ -19,7 +19,9 @@ export interface StreamingSiteFixtureObservation {
   readonly maxMessageBytes: number
   readonly outOfOrderMessages: number
   readonly provider: MediaProvider
+  readonly retransmissionByteRate: number
   readonly retransmissionRate: number
+  readonly retransmittedBytes: number
   readonly retransmittedMessages: number
   readonly sequenceGapMessages: number
   readonly sentBytes: number
@@ -102,7 +104,10 @@ export const createStreamingSiteFixtureObservation = (
   const retransmittedMessages =
     after.combinedRetransmittedMessages - before.combinedRetransmittedMessages
   const sentBytes = after.combinedSentBytes - before.combinedSentBytes
+  const deliveredBytes = after.combinedDeliveredBytes - before.combinedDeliveredBytes
   const lostBytes = after.combinedLostBytes - before.combinedLostBytes
+  const retransmittedBytes =
+    after.combinedRetransmittedBytes - before.combinedRetransmittedBytes
 
   return {
     averageMessageBytes: ratio(sentBytes, sentMessages),
@@ -115,7 +120,9 @@ export const createStreamingSiteFixtureObservation = (
     maxMessageBytes: getMaxMessageBytes(fixtureFrames),
     outOfOrderMessages: after.combinedOutOfOrderMessages - before.combinedOutOfOrderMessages,
     provider: input.provider,
+    retransmissionByteRate: ratio(retransmittedBytes, deliveredBytes + lostBytes),
     retransmissionRate: ratio(retransmittedMessages, deliveredMessages + droppedMessages),
+    retransmittedBytes,
     retransmittedMessages,
     sequenceGapMessages: after.combinedSequenceGapMessages - before.combinedSequenceGapMessages,
     sentBytes,

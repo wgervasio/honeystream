@@ -71,8 +71,14 @@ describe('simulated peer transport retransmission budget', () => {
     expect(metrics.combinedRetransmissionRate).toBeGreaterThan(
       STREAMING_SITE_TRANSPORT_BUDGET.maxRetransmissionRate
     )
+    expect(metrics.combinedRetransmissionByteRate).toBeGreaterThan(
+      STREAMING_SITE_TRANSPORT_BUDGET.maxRetransmissionByteRate
+    )
     expect(metrics.maxDirectionalRetransmissionRate).toBeGreaterThan(
       STREAMING_SITE_TRANSPORT_BUDGET.maxDirectionalRetransmissionRate
+    )
+    expect(metrics.maxDirectionalRetransmissionByteRate).toBeGreaterThan(
+      STREAMING_SITE_TRANSPORT_BUDGET.maxDirectionalRetransmissionByteRate
     )
 
     const budgetResult = evaluateSimulatedPeerTransportBudget(metrics)
@@ -83,7 +89,13 @@ describe('simulated peer transport retransmission budget', () => {
           metric: 'combinedRetransmissionRate'
         }),
         expect.objectContaining({
+          metric: 'combinedRetransmissionByteRate'
+        }),
+        expect.objectContaining({
           metric: 'maxDirectionalRetransmissionRate'
+        }),
+        expect.objectContaining({
+          metric: 'maxDirectionalRetransmissionByteRate'
         })
       ])
     )

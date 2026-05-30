@@ -14,7 +14,9 @@ export interface StreamingSiteConnectionMergeGateOptions {
   readonly maxFixtureByteLossRate?: number
   readonly maxFixtureDroppedMessages?: number
   readonly maxFixtureRoundTripP95LatencyMs?: number
+  readonly maxRetransmissionByteRate?: number
   readonly maxRoundTripP95LatencyMs?: number
+  readonly maxDirectionalRetransmissionByteRate?: number
   readonly requiredProviders?: readonly MediaProvider[]
 }
 
@@ -24,11 +26,14 @@ export interface StreamingSiteConnectionMergeGateSummary {
   readonly maxCombinedAverageMessageBytes: number
   readonly maxCombinedByteLossRate: number
   readonly maxCombinedDroppedMessages: number
+  readonly maxCombinedRetransmissionByteRate: number
   readonly maxCombinedRetransmissionRate: number
+  readonly maxDirectionalRetransmissionByteRate: number
   readonly maxEstimatedRoundTripP95LatencyMs: number
   readonly maxFixtureByteLossRate: number
   readonly maxFixtureDroppedMessages: number
   readonly maxFixtureEstimatedRoundTripP95LatencyMs: number
+  readonly maxFixtureRetransmissionByteRate: number
   readonly missingProviders: readonly MediaProvider[]
   readonly ok: boolean
   readonly requiredProviders: readonly MediaProvider[]
@@ -115,6 +120,18 @@ const createFailureList = (
   if (profile && profile.maxFixtureDroppedMessages > options.maxFixtureDroppedMessages) {
     failures.push(`A site fixture dropped more than ${options.maxFixtureDroppedMessages} controls.`)
   }
+  if (profile && profile.maxCombinedRetransmissionByteRate > options.maxRetransmissionByteRate) {
+    failures.push(`Recovered retry bytes exceeded ${options.maxRetransmissionByteRate}.`)
+  }
+  if (
+    profile &&
+    profile.maxDirectionalRetransmissionByteRate >
+      options.maxDirectionalRetransmissionByteRate
+  ) {
+    failures.push(
+      `Directional recovered retry bytes exceeded ${options.maxDirectionalRetransmissionByteRate}.`
+    )
+  }
   if (
     profile &&
     profile.maxFixtureEstimatedRoundTripP95LatencyMs >
@@ -172,10 +189,18 @@ export const summarizeStreamingSiteConnectionMergeGate = (
         options.maxRoundTripP95LatencyMs,
         STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS
       ),
+    maxRetransmissionByteRate:
+      typeof options.maxRetransmissionByteRate === 'number'
+        ? options.maxRetransmissionByteRate
+        : STREAMING_SITE_CONNECTION_BUDGET.maxRetransmissionByteRate,
     maxRoundTripP95LatencyMs:
       typeof options.maxRoundTripP95LatencyMs === 'number'
         ? options.maxRoundTripP95LatencyMs
         : STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS,
+    maxDirectionalRetransmissionByteRate:
+      typeof options.maxDirectionalRetransmissionByteRate === 'number'
+        ? options.maxDirectionalRetransmissionByteRate
+        : STREAMING_SITE_CONNECTION_BUDGET.maxDirectionalRetransmissionByteRate,
     requiredProviders: options.requiredProviders || DEFAULT_REQUIRED_PROVIDERS
   }
   const selectedProfile = result.bestProfile
@@ -193,8 +218,14 @@ export const summarizeStreamingSiteConnectionMergeGate = (
       : 0,
     maxCombinedByteLossRate: selectedProfile ? selectedProfile.maxCombinedByteLossRate : 0,
     maxCombinedDroppedMessages: selectedProfile ? selectedProfile.maxCombinedDroppedMessages : 0,
+    maxCombinedRetransmissionByteRate: selectedProfile
+      ? selectedProfile.maxCombinedRetransmissionByteRate
+      : 0,
     maxCombinedRetransmissionRate: selectedProfile
       ? selectedProfile.maxCombinedRetransmissionRate
+      : 0,
+    maxDirectionalRetransmissionByteRate: selectedProfile
+      ? selectedProfile.maxDirectionalRetransmissionByteRate
       : 0,
     maxEstimatedRoundTripP95LatencyMs: selectedProfile
       ? selectedProfile.maxEstimatedRoundTripP95LatencyMs
@@ -203,6 +234,9 @@ export const summarizeStreamingSiteConnectionMergeGate = (
     maxFixtureDroppedMessages: selectedProfile ? selectedProfile.maxFixtureDroppedMessages : 0,
     maxFixtureEstimatedRoundTripP95LatencyMs: selectedProfile
       ? selectedProfile.maxFixtureEstimatedRoundTripP95LatencyMs
+      : 0,
+    maxFixtureRetransmissionByteRate: selectedProfile
+      ? selectedProfile.maxFixtureRetransmissionByteRate
       : 0,
     missingProviders,
     ok: failures.length === 0,

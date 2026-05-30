@@ -188,6 +188,7 @@ export const createSimulatedPeerTransportMetricsRecorder = (
         deliveryRate: ratio(sentMessages - droppedMessages, sentMessages),
         byteLossRate: ratio(lostBytes, sentBytes),
         retransmissionRate: ratio(retransmittedMessages, deliveredMessages + droppedMessages),
+        retransmissionByteRate: ratio(retransmittedBytes, deliveredBytes + lostBytes),
         averageMessageBytes: ratio(sentBytes, sentMessages),
         maxMessageBytes,
         averageLatencyMs: ratio(totalLatencyMs, deliveredMessages),

@@ -71,6 +71,33 @@ describe('streaming site connection merge gate', () => {
     )
   })
 
+  it('fails when recovered retry bytes exceed the configured merge budget', async () => {
+    const retryProfiles = STREAMING_SITE_CONNECTION_PROFILES.filter(
+      profile => profile.id === 'retry-guarded'
+    )
+    const result = await optimizeStreamingSiteConnectionProfiles({
+      budget: STREAMING_SITE_CONNECTION_BUDGET,
+      fixtures: STREAMING_SITE_CONNECTION_FIXTURES,
+      profiles: retryProfiles,
+      nowStartMs: 6500,
+      randomSamples: STREAMING_SITE_CONNECTION_RANDOM_SAMPLES,
+      trialCount: 1
+    })
+    const mergeGate = summarizeStreamingSiteConnectionMergeGate(result, {
+      maxRetransmissionByteRate: 0,
+      maxDirectionalRetransmissionByteRate: 0
+    })
+
+    expect(result.bestProfile && result.bestProfile.profile.id).toBe('retry-guarded')
+    expect(mergeGate.ok).toBe(false)
+    expect(mergeGate.maxCombinedRetransmissionByteRate).toBeGreaterThan(0)
+    expect(mergeGate.maxFixtureRetransmissionByteRate).toBeGreaterThan(0)
+    expect(mergeGate.failures).toEqual([
+      'Recovered retry bytes exceeded 0.',
+      'Directional recovered retry bytes exceeded 0.'
+    ])
+  })
+
   it('fails when a selected lane hides a per-site latency regression', async () => {
     const maxFixtureRoundTripP95LatencyMs = STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS - 1
     const result = await optimizeStreamingSiteConnectionProfiles({

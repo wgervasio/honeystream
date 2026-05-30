@@ -149,6 +149,8 @@ describe('session', () => {
       await waitForRuntimeText(page, '<=10ms P95')
       await waitForRuntimeText(page, 'Payload gate')
       await waitForRuntimeText(page, '<=2048B')
+      await waitForRuntimeText(page, 'Retry byte gate')
+      await waitForRuntimeText(page, 'Recovered retry bytes stay budgeted')
       await waitForRuntimeText(page, 'Coverage gate')
       await waitForRuntimeText(page, '50 sites')
       await waitForRuntimeText(page, 'Tonight launchpad')
