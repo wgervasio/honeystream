@@ -12,9 +12,12 @@ export interface StreamingSiteFixtureObservation {
   readonly averageMessageBytes: number
   readonly byteLossRate: number
   readonly deliveredMessages: number
+  readonly directionalLatencySkewMs: number
   readonly droppedMessages: number
   readonly estimatedRoundTripP95LatencyMs: number
   readonly fixtureId: string
+  readonly guestToHostP95LatencyMs: number
+  readonly hostToGuestP95LatencyMs: number
   readonly lostBytes: number
   readonly maxMessageBytes: number
   readonly outOfOrderMessages: number
@@ -61,7 +64,7 @@ const getMaxMessageBytes = (frames: readonly SimulatedPeerTransportFrameSample[]
 
 const getDirectionalP95LatencyMs = (
   frames: readonly SimulatedPeerTransportFrameSample[]
-): readonly number[] => {
+): { readonly [direction: string]: number } => {
   const directionalLatencies: { [direction: string]: number[] } = {}
   for (const frame of frames) {
     if (typeof frame.latencyMs !== 'number') continue
@@ -70,23 +73,70 @@ const getDirectionalP95LatencyMs = (
     directionalLatencies[frame.direction] = samples
   }
 
-  return Object.keys(directionalLatencies)
-    .map(direction => percentile(directionalLatencies[direction], 0.95))
-    .sort((left, right) => right - left)
+  const directionalP95LatencyMs: { [direction: string]: number } = {}
+  for (const direction of Object.keys(directionalLatencies)) {
+    directionalP95LatencyMs[direction] = percentile(directionalLatencies[direction], 0.95)
+  }
+  return directionalP95LatencyMs
 }
 
-const estimateRoundTripP95LatencyMs = (
-  frames: readonly SimulatedPeerTransportFrameSample[]
+const getFallbackDirectionalLatencyMs = (
+  directionalP95LatencyMs: { readonly [direction: string]: number },
+  excludedDirection: string
 ): number => {
+  const fallback = Object.keys(directionalP95LatencyMs)
+    .filter(direction => direction !== excludedDirection)
+    .map(direction => directionalP95LatencyMs[direction])
+    .sort((left, right) => right - left)[0]
+  return fallback || 0
+}
+
+const getNamedDirectionalLatencyMs = (
+  directionalP95LatencyMs: { readonly [direction: string]: number },
+  direction: string,
+  fallbackExcludedDirection: string
+): number => {
+  const latencyMs = directionalP95LatencyMs[direction]
+  return typeof latencyMs === 'number'
+    ? latencyMs
+    : getFallbackDirectionalLatencyMs(directionalP95LatencyMs, fallbackExcludedDirection)
+}
+
+const estimateDirectionalLatencyMs = (
+  frames: readonly SimulatedPeerTransportFrameSample[]
+): {
+  readonly directionalLatencySkewMs: number
+  readonly estimatedRoundTripP95LatencyMs: number
+  readonly guestToHostP95LatencyMs: number
+  readonly hostToGuestP95LatencyMs: number
+} => {
   const directionalP95LatencyMs = getDirectionalP95LatencyMs(frames)
-  return (directionalP95LatencyMs[0] || 0) + (directionalP95LatencyMs[1] || 0)
+  const hostToGuestP95LatencyMs = getNamedDirectionalLatencyMs(
+    directionalP95LatencyMs,
+    'host->guest',
+    'guest->host'
+  )
+  const guestToHostP95LatencyMs = getNamedDirectionalLatencyMs(
+    directionalP95LatencyMs,
+    'guest->host',
+    'host->guest'
+  )
+
+  return {
+    directionalLatencySkewMs: Math.abs(hostToGuestP95LatencyMs - guestToHostP95LatencyMs),
+    estimatedRoundTripP95LatencyMs: hostToGuestP95LatencyMs + guestToHostP95LatencyMs,
+    guestToHostP95LatencyMs,
+    hostToGuestP95LatencyMs
+  }
 }
 
 /*
 Context: Streaming-site tuning should prove each requested site shape, not just aggregate lanes.
-Invariant: A fixture observation is derived from bounded recent frames and monotonic counters only.
+Invariant: A fixture observation is derived from bounded recent frames and monotonic counters only,
+including both host-to-guest and guest-to-host latency so averages cannot hide skew.
 Options considered: Live third-party probes, full frame history, or per-fixture metric deltas.
-Decision: Capture compact deltas around each mocked site fixture and keep latency from recent frames.
+Decision: Capture compact deltas around each mocked site fixture and keep directional latency from
+recent frames.
 Performance impact: O(recent frame cap) per fixture; frame history remains bounded by transport metrics.
 Memory/lifecycle ownership: No resources are retained beyond the returned observation values.
 Failure mode: Missing direction samples report 0ms latency, while sent/dropped counters still expose loss.
@@ -98,6 +148,7 @@ export const createStreamingSiteFixtureObservation = (
   after: AggregateSimulatedPeerTransportMetrics
 ): StreamingSiteFixtureObservation => {
   const fixtureFrames = getFixtureFrames(before, after)
+  const directionalLatency = estimateDirectionalLatencyMs(fixtureFrames)
   const sentMessages = after.combinedSentMessages - before.combinedSentMessages
   const deliveredMessages = after.combinedDeliveredMessages - before.combinedDeliveredMessages
   const droppedMessages = after.combinedDroppedMessages - before.combinedDroppedMessages
@@ -113,9 +164,12 @@ export const createStreamingSiteFixtureObservation = (
     averageMessageBytes: ratio(sentBytes, sentMessages),
     byteLossRate: ratio(lostBytes, sentBytes),
     deliveredMessages,
+    directionalLatencySkewMs: directionalLatency.directionalLatencySkewMs,
     droppedMessages,
-    estimatedRoundTripP95LatencyMs: estimateRoundTripP95LatencyMs(fixtureFrames),
+    estimatedRoundTripP95LatencyMs: directionalLatency.estimatedRoundTripP95LatencyMs,
     fixtureId: input.fixtureId,
+    guestToHostP95LatencyMs: directionalLatency.guestToHostP95LatencyMs,
+    hostToGuestP95LatencyMs: directionalLatency.hostToGuestP95LatencyMs,
     lostBytes,
     maxMessageBytes: getMaxMessageBytes(fixtureFrames),
     outOfOrderMessages: after.combinedOutOfOrderMessages - before.combinedOutOfOrderMessages,

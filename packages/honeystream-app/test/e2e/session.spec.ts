@@ -235,19 +235,34 @@ describe('session', () => {
       await page.waitForSelector('#runtime-add-media-url')
 
       const sources = [
-        { url: 'youtube.com', label: 'YouTube' },
-        { url: 'youtube.com/watch?v=honeystream-e2e', label: 'YouTube' },
-        { url: 'youtube.com:443/watch?v=honeystream-e2e', label: 'YouTube' },
-        { url: 'animepahe.ru', label: 'AnimePahe' },
-        { url: 'animepahe.ru/play/honeystream-e2e', label: 'AnimePahe' },
-        { url: 'cineby.app', label: 'Cineby' },
-        { url: 'cineby.app/movie/honeystream-e2e', label: 'Cineby' },
-        { url: 'miruro.to', label: 'Miruro' },
-        { url: 'miruro.to/watch/honeystream-e2e', label: 'Miruro' }
+        { url: 'youtube.com', label: 'YouTube', provider: 'youtube' },
+        {
+          url: 'youtube.com/watch?v=honeystream-e2e',
+          label: 'YouTube',
+          provider: 'youtube'
+        },
+        {
+          url: 'youtube.com:443/watch?v=honeystream-e2e',
+          label: 'YouTube',
+          provider: 'youtube'
+        },
+        { url: 'animepahe.ru', label: 'AnimePahe', provider: 'animepahe' },
+        {
+          url: 'animepahe.ru/play/honeystream-e2e',
+          label: 'AnimePahe',
+          provider: 'animepahe'
+        },
+        { url: 'cineby.app', label: 'Cineby', provider: 'cineby' },
+        { url: 'cineby.app/movie/honeystream-e2e', label: 'Cineby', provider: 'cineby' },
+        { url: 'miruro.to', label: 'Miruro', provider: 'miruro' },
+        { url: 'miruro.to/watch/honeystream-e2e', label: 'Miruro', provider: 'miruro' }
       ]
 
       for (const source of sources) {
         await page.fill('#runtime-add-media-url', source.url)
+        await page.waitForSelector(
+          `[data-add-media-source-preview="website"][data-add-media-provider="${source.provider}"]`
+        )
         await waitForRuntimeText(page, `${source.label} lane`)
         await waitForRuntimeText(page, `${source.label} page detected`)
         await waitForRuntimeText(
@@ -399,6 +414,47 @@ describe('session', () => {
       const expectedSeekPositionMs =
         (await getPlaybackPositionMs(clientPage)) + SEEK_FORWARD_STEP_MS
       await clientPage.click('#runtime_playback_controls [data-intent="seekForward"]')
+      await waitForPlaybackPositionAtLeast(hostPage, expectedSeekPositionMs)
+      await waitForPlaybackPositionAtLeast(clientPage, expectedSeekPositionMs)
+    })
+
+    it('should mirror host queued media and host playback controls to the guest', async () => {
+      await ms.visit(`/join/${hostId}`)
+      const hostPage = page
+      await hostPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
+      const inviteSecret = await getRuntimeInviteSecret(hostPage)
+
+      await visitRuntimePath(
+        clientPage,
+        `/join/${hostId}?secret=${encodeURIComponent(inviteSecret)}`
+      )
+      await clientPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
+      await waitForRuntimeText(hostPage, 'Synced')
+      await waitForRuntimeText(clientPage, 'Synced')
+
+      await hostPage.click('#runtime-add-media-url')
+      await hostPage.type('#runtime-add-media-url', 'youtube.com/watch?v=host-e2e')
+      await waitForRuntimeText(hostPage, 'Honeystream will add https:// automatically')
+      await hostPage.press('#runtime-add-media-url', 'Enter')
+
+      await waitForRuntimeText(hostPage, 'Source queued with https:// added')
+      await waitForRuntimeText(hostPage, 'Website loaded')
+      await waitForRuntimeText(clientPage, 'Website loaded')
+      await waitForRuntimeText(hostPage, 'YouTube watch page')
+      await waitForRuntimeText(clientPage, 'YouTube watch page')
+      await waitForPlaybackState(hostPage, 'playing')
+      await waitForPlaybackState(clientPage, 'playing')
+
+      await hostPage.click('#runtime_playback_controls [data-intent="playPause"]')
+      await waitForPlaybackState(hostPage, 'paused')
+      await waitForPlaybackState(clientPage, 'paused')
+
+      await hostPage.click('#runtime_playback_controls [data-intent="rateUp"]')
+      await waitForRuntimeText(hostPage, '1.25x')
+      await waitForRuntimeText(clientPage, '1.25x')
+
+      const expectedSeekPositionMs = (await getPlaybackPositionMs(hostPage)) + SEEK_FORWARD_STEP_MS
+      await hostPage.click('#runtime_playback_controls [data-intent="seekForward"]')
       await waitForPlaybackPositionAtLeast(hostPage, expectedSeekPositionMs)
       await waitForPlaybackPositionAtLeast(clientPage, expectedSeekPositionMs)
     })

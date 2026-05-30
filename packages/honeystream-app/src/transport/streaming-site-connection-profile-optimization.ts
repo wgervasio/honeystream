@@ -8,6 +8,7 @@ import {
   summarizeStreamingSiteProviderQuality
 } from './streaming-site-provider-quality'
 import { StreamingSiteProviderCoverage } from './streaming-site-provider-coverage'
+
 export interface StreamingSiteConnectionProfileOptimization {
   readonly allTrialsPassed: boolean
   readonly averageEstimatedRoundTripP95LatencyMs: number
@@ -27,6 +28,7 @@ export interface StreamingSiteConnectionProfileOptimization {
   readonly maxEstimatedRoundTripP95LatencyMs: number
   readonly maxFixtureAverageMessageBytes: number
   readonly maxFixtureByteLossRate: number
+  readonly maxFixtureDirectionalLatencySkewMs: number
   readonly maxFixtureDroppedMessages: number
   readonly maxFixtureEstimatedRoundTripP95LatencyMs: number
   readonly maxFixtureLostBytes: number
@@ -77,6 +79,7 @@ export const createStreamingSiteConnectionProfileOptimization = (
   let maxEstimatedRoundTripP95LatencyMs = 0
   let maxFixtureAverageMessageBytes = 0
   let maxFixtureByteLossRate = 0
+  let maxFixtureDirectionalLatencySkewMs = 0
   let maxFixtureDroppedMessages = 0
   let maxFixtureEstimatedRoundTripP95LatencyMs = 0
   let maxFixtureLostBytes = 0
@@ -144,6 +147,10 @@ export const createStreamingSiteConnectionProfileOptimization = (
         fixture.averageMessageBytes
       )
       maxFixtureByteLossRate = Math.max(maxFixtureByteLossRate, fixture.byteLossRate)
+      maxFixtureDirectionalLatencySkewMs = Math.max(
+        maxFixtureDirectionalLatencySkewMs,
+        fixture.directionalLatencySkewMs
+      )
       maxFixtureDroppedMessages = Math.max(maxFixtureDroppedMessages, fixture.droppedMessages)
       maxFixtureEstimatedRoundTripP95LatencyMs = Math.max(
         maxFixtureEstimatedRoundTripP95LatencyMs,
@@ -183,6 +190,7 @@ export const createStreamingSiteConnectionProfileOptimization = (
     maxEstimatedRoundTripP95LatencyMs,
     maxFixtureAverageMessageBytes,
     maxFixtureByteLossRate,
+    maxFixtureDirectionalLatencySkewMs,
     maxFixtureDroppedMessages,
     maxFixtureEstimatedRoundTripP95LatencyMs,
     maxFixtureLostBytes,
@@ -196,62 +204,4 @@ export const createStreamingSiteConnectionProfileOptimization = (
     siteCount: firstRank ? firstRank.siteCount : 0,
     trialCount
   }
-}
-export const compareStreamingSiteConnectionProfileOptimizations = (
-  left: StreamingSiteConnectionProfileOptimization,
-  right: StreamingSiteConnectionProfileOptimization
-): number => {
-  if (left.allTrialsPassed !== right.allTrialsPassed) return left.allTrialsPassed ? -1 : 1
-  if (left.passedTrials !== right.passedTrials) return right.passedTrials - left.passedTrials
-  if (left.maxFixtureByteLossRate !== right.maxFixtureByteLossRate) {
-    return left.maxFixtureByteLossRate - right.maxFixtureByteLossRate
-  }
-  if (left.maxCombinedByteLossRate !== right.maxCombinedByteLossRate) {
-    return left.maxCombinedByteLossRate - right.maxCombinedByteLossRate
-  }
-  if (left.maxFixtureDroppedMessages !== right.maxFixtureDroppedMessages) {
-    return left.maxFixtureDroppedMessages - right.maxFixtureDroppedMessages
-  }
-  if (left.maxCombinedDroppedMessages !== right.maxCombinedDroppedMessages) {
-    return left.maxCombinedDroppedMessages - right.maxCombinedDroppedMessages
-  }
-  if (
-    left.maxFixtureEstimatedRoundTripP95LatencyMs !==
-    right.maxFixtureEstimatedRoundTripP95LatencyMs
-  ) {
-    return (
-      left.maxFixtureEstimatedRoundTripP95LatencyMs -
-      right.maxFixtureEstimatedRoundTripP95LatencyMs
-    )
-  }
-  if (left.maxCombinedRetransmissionRate !== right.maxCombinedRetransmissionRate) {
-    return left.maxCombinedRetransmissionRate - right.maxCombinedRetransmissionRate
-  }
-  if (left.maxCombinedRetransmissionByteRate !== right.maxCombinedRetransmissionByteRate) {
-    return left.maxCombinedRetransmissionByteRate - right.maxCombinedRetransmissionByteRate
-  }
-  if (left.maxFixtureRetransmissionByteRate !== right.maxFixtureRetransmissionByteRate) {
-    return left.maxFixtureRetransmissionByteRate - right.maxFixtureRetransmissionByteRate
-  }
-  if (left.maxDirectionalRetransmissionRate !== right.maxDirectionalRetransmissionRate) {
-    return left.maxDirectionalRetransmissionRate - right.maxDirectionalRetransmissionRate
-  }
-  if (left.maxDirectionalRetransmissionByteRate !== right.maxDirectionalRetransmissionByteRate) {
-    return (
-      left.maxDirectionalRetransmissionByteRate - right.maxDirectionalRetransmissionByteRate
-    )
-  }
-  if (left.maxEstimatedRoundTripP95LatencyMs !== right.maxEstimatedRoundTripP95LatencyMs) {
-    return left.maxEstimatedRoundTripP95LatencyMs - right.maxEstimatedRoundTripP95LatencyMs
-  }
-  if (left.maxDirectionalAverageLatencyMs !== right.maxDirectionalAverageLatencyMs) {
-    return left.maxDirectionalAverageLatencyMs - right.maxDirectionalAverageLatencyMs
-  }
-  if (left.maxDirectionalLatencySkewMs !== right.maxDirectionalLatencySkewMs) {
-    return left.maxDirectionalLatencySkewMs - right.maxDirectionalLatencySkewMs
-  }
-  if (left.maxCombinedAverageMessageBytes !== right.maxCombinedAverageMessageBytes) {
-    return left.maxCombinedAverageMessageBytes - right.maxCombinedAverageMessageBytes
-  }
-  return left.profile.id.localeCompare(right.profile.id)
 }

@@ -34,6 +34,7 @@ const createProviderOrderRegressionResult = (): StreamingSiteConnectionOptimizat
     maxEstimatedRoundTripP95LatencyMs: STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS,
     maxFixtureAverageMessageBytes: 512,
     maxFixtureByteLossRate: 0,
+    maxFixtureDirectionalLatencySkewMs: 0,
     maxFixtureDroppedMessages: 0,
     maxFixtureEstimatedRoundTripP95LatencyMs: STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS,
     maxFixtureLostBytes: 0,
@@ -47,8 +48,11 @@ const createProviderOrderRegressionResult = (): StreamingSiteConnectionOptimizat
         provider: 'youtube',
         siteCount: 1,
         maxByteLossRate: 0,
+        maxDirectionalLatencySkewMs: 0,
         maxDroppedMessages: 0,
         maxEstimatedRoundTripP95LatencyMs: STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS,
+        maxGuestToHostP95LatencyMs: 1,
+        maxHostToGuestP95LatencyMs: 1,
         maxLostBytes: 0,
         maxOutOfOrderMessages: 1,
         maxRetransmissionByteRate: 0,
@@ -122,9 +126,11 @@ describe('streaming site connection merge gate', () => {
       expect.objectContaining({
         ok: true,
         maxFixtureByteLossRate: 0,
+        maxFixtureDirectionalLatencySkewMs: 0,
         maxFixtureDroppedMessages: 0,
         maxFixtureEstimatedRoundTripP95LatencyMs: STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS,
         maxFixtureLostBytes: 0,
+        maxProviderDirectionalLatencySkewMs: 0,
         maxProviderLostBytes: 0,
         maxProviderOutOfOrderMessages: 0,
         maxProviderRoundTripP95LatencyMs: STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS,
@@ -222,35 +228,4 @@ describe('streaming site connection merge gate', () => {
     ])
   })
 
-  it('fails when a selected lane hides directional latency skew behind round-trip averages', async () => {
-    const result = await optimizeStreamingSiteConnectionProfiles({
-      budget: {
-        ...STREAMING_SITE_CONNECTION_BUDGET,
-        maxDirectionalAverageLatencyMs: 10,
-        maxDirectionalLatencySkewMs: 10,
-        maxMaxLatencyMs: 10,
-        maxP95LatencyMs: 10
-      },
-      fixtures: STREAMING_SITE_CONNECTION_FIXTURES,
-      profiles: [
-        {
-          id: 'skewed-safe',
-          label: 'Skewed safe lane',
-          hostNetwork: { latencyMs: 1, maxQueuedFrames: 128 },
-          guestNetwork: { latencyMs: 8, maxQueuedFrames: 128 }
-        }
-      ],
-      nowStartMs: 7500,
-      randomSamples: STREAMING_SITE_CONNECTION_RANDOM_SAMPLES,
-      trialCount: 1
-    })
-    const mergeGate = summarizeStreamingSiteConnectionMergeGate(result, {
-      maxDirectionalLatencySkewMs: 2
-    })
-
-    expect(result.bestProfile && result.bestProfile.profile.id).toBe('skewed-safe')
-    expect(mergeGate.ok).toBe(false)
-    expect(mergeGate.maxDirectionalLatencySkewMs).toBeGreaterThan(2)
-    expect(mergeGate.failures).toEqual(['Directional latency skew exceeded 2ms.'])
-  })
 })

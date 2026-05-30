@@ -88,6 +88,12 @@ const createProviderQualityFailures = (
           `${options.maxProviderRoundTripP95LatencyMs}ms.`
       )
     }
+    if (quality.maxDirectionalLatencySkewMs > options.maxProviderDirectionalLatencySkewMs) {
+      failures.push(
+        `${label} provider directional latency skew exceeded ` +
+          `${options.maxProviderDirectionalLatencySkewMs}ms.`
+      )
+    }
     if (quality.maxSequenceGapMessages > options.maxProviderSequenceGapMessages) {
       failures.push(
         `${label} provider skipped more than ${options.maxProviderSequenceGapMessages} controls.`
@@ -128,6 +134,15 @@ export const createStreamingSiteConnectionMergeGateFailures = (
   }
   if (profile && profile.maxFixtureLostBytes > options.maxFixtureLostBytes) {
     failures.push(`A site fixture lost more than ${options.maxFixtureLostBytes} control bytes.`)
+  }
+  if (
+    profile &&
+    profile.maxFixtureDirectionalLatencySkewMs > options.maxFixtureDirectionalLatencySkewMs
+  ) {
+    failures.push(
+      `A site fixture directional latency skew exceeded ` +
+        `${options.maxFixtureDirectionalLatencySkewMs}ms.`
+    )
   }
   failures.push(...createProviderQualityFailures(profile, options))
   if (profile && profile.maxCombinedRetransmissionByteRate > options.maxRetransmissionByteRate) {

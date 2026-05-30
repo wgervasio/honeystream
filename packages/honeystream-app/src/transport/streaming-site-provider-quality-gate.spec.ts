@@ -27,6 +27,7 @@ describe('streaming site provider quality gate', () => {
         ok: true,
         selectedProfileId: 'clean-ultra-low-latency',
         maxProviderByteLossRate: 0,
+        maxProviderDirectionalLatencySkewMs: 0,
         maxProviderDroppedMessages: 0,
         maxProviderLostBytes: 0,
         maxProviderOutOfOrderMessages: 0,
@@ -71,6 +72,48 @@ describe('streaming site provider quality gate', () => {
         'AnimePahe provider recovered retry bytes exceeded 0.',
         'Cineby provider recovered retry bytes exceeded 0.',
         'Miruro provider recovered retry bytes exceeded 0.'
+      ])
+    )
+  })
+
+  it('fails when a passing lane hides provider-specific directional latency skew', async () => {
+    const result = await optimizeStreamingSiteConnectionProfiles({
+      budget: {
+        ...STREAMING_SITE_CONNECTION_BUDGET,
+        maxDirectionalAverageLatencyMs: 10,
+        maxDirectionalLatencySkewMs: 10,
+        maxEstimatedRoundTripMaxLatencyMs: 20,
+        maxEstimatedRoundTripP95LatencyMs: 20,
+        maxMaxLatencyMs: 10,
+        maxP95LatencyMs: 10
+      },
+      fixtures: STREAMING_SITE_CONNECTION_FIXTURES,
+      profiles: [
+        {
+          id: 'provider-skewed',
+          label: 'Provider skewed lane',
+          hostNetwork: { latencyMs: 1, maxQueuedFrames: 128 },
+          guestNetwork: { latencyMs: 8, maxQueuedFrames: 128 }
+        }
+      ],
+      nowStartMs: 8000,
+      randomSamples: STREAMING_SITE_CONNECTION_RANDOM_SAMPLES,
+      trialCount: 1
+    })
+
+    const providerGate = summarizeStreamingSiteProviderQualityGate(result, {
+      maxProviderDirectionalLatencySkewMs: 2
+    })
+
+    expect(result.bestProfile && result.bestProfile.profile.id).toBe('provider-skewed')
+    expect(providerGate.ok).toBe(false)
+    expect(providerGate.maxProviderDirectionalLatencySkewMs).toBe(7)
+    expect(providerGate.failures).toEqual(
+      expect.arrayContaining([
+        'YouTube provider directional latency skew exceeded 2ms.',
+        'AnimePahe provider directional latency skew exceeded 2ms.',
+        'Cineby provider directional latency skew exceeded 2ms.',
+        'Miruro provider directional latency skew exceeded 2ms.'
       ])
     )
   })

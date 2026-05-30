@@ -31,9 +31,11 @@ describe('RuntimeAddMediaPanel', () => {
     const html = renderToStaticMarkup(
       <RuntimeAddMediaPanel onAddUrl={jest.fn()} onAddLocalFile={jest.fn()} />
     )
-
     expect(html).toContain('Add local file')
     expect(html).toContain('Drop the matching local copy here')
+    expect(html).toContain('Drop the matching local copy here')
+    expect(html).toContain('aria-describedby="runtime-add-local-file-help"')
+    expect(html).toContain('id="runtime-add-local-file-help"')
   })
 
   it('queues local files from the cozy drop lane input', () => {
