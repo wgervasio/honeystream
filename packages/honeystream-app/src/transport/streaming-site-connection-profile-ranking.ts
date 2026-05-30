@@ -26,13 +26,13 @@ const RANKING_METRICS: readonly RankMetric[] = Object.freeze([
   profile => profile.maxFixtureMissingDirectionalDeliveryCount,
   profile => profile.maxFixtureDroppedMessages,
   profile => profile.maxCombinedDroppedMessages,
-  profile => profile.maxFixtureEstimatedRoundTripP95LatencyMs,
-  profile => profile.maxFixtureDirectionalLatencySkewMs,
   profile => profile.maxCombinedRetransmissionRate,
   profile => profile.maxCombinedRetransmissionByteRate,
   profile => profile.maxFixtureRetransmissionByteRate,
   profile => profile.maxDirectionalRetransmissionRate,
   profile => profile.maxDirectionalRetransmissionByteRate,
+  profile => profile.maxFixtureEstimatedRoundTripP95LatencyMs,
+  profile => profile.maxFixtureDirectionalLatencySkewMs,
   profile => profile.maxEstimatedRoundTripP95LatencyMs,
   profile => profile.maxDirectionalAverageLatencyMs,
   profile => profile.maxDirectionalLatencySkewMs,
@@ -40,8 +40,8 @@ const RANKING_METRICS: readonly RankMetric[] = Object.freeze([
 ])
 
 /*
-Context: Profile ranking should prefer zero loss, then low per-site latency and balanced directionality.
-Invariant: A passing profile with lower fixture loss, drops, tail latency, or directional skew wins.
+Context: Profile ranking should prefer zero loss, minimal repair overhead, then low latency.
+Invariant: A passing profile with lower fixture loss, drops, retransmission cost, tail latency, or skew wins.
 Options considered: Keep ranking inline with optimization, use opaque scores, or ordered pure metrics.
 Decision: Use ordered scalar comparisons so the merge gate can diagnose the exact regressed dimension.
 Performance impact: O(metric count) for a fixed, tiny profile list.
