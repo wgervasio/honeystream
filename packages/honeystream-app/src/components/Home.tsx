@@ -15,7 +15,8 @@ import {
 } from '../ui/media-runtime/RuntimeAddMediaSourcePreview'
 import {
   STREAMING_SITE_CONNECTION_FIXTURES,
-  STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS
+  STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS,
+  STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE
 } from '../transport/streaming-site-connection-defaults'
 
 interface IProps extends WithNamespaces {
@@ -68,6 +69,9 @@ const starterSiteExamples = [
     guidance: 'Use this when the URL already points at playable media.'
   }
 ] as const
+const STREAMING_SITE_NAMED_PROVIDER_COUNT = STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE.filter(
+  coverage => coverage.provider !== 'unknown'
+).length
 
 class Home extends Component<IProps, IState> {
   private starterInputRef = React.createRef<HTMLInputElement>()
@@ -213,6 +217,12 @@ class Home extends Component<IProps, IState> {
         value: `${STREAMING_SITE_CONNECTION_FIXTURES.length} paths`,
         label: 'site fixtures',
         detail: 'YouTube, AnimePahe, Cineby, Miruro, and a generic watch page.'
+      },
+      {
+        id: 'providers',
+        value: `${STREAMING_SITE_NAMED_PROVIDER_COUNT} providers`,
+        label: 'provider gates',
+        detail: 'Named sites keep their own loss, retry, and latency proof before the room opens.'
       }
     ]
     const dateNightRail = [

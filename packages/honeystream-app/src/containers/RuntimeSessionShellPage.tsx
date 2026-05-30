@@ -164,6 +164,9 @@ const PROVIDER_COVERAGE_LABELS: Record<MediaProvider, string> = {
 const STREAMING_SITE_PROVIDER_COVERAGE_LABEL = STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE.map(
   coverage => `${PROVIDER_COVERAGE_LABELS[coverage.provider]} x${coverage.siteCount}`
 ).join(' / ')
+const STREAMING_SITE_NAMED_PROVIDER_COUNT = STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE.filter(
+  coverage => coverage.provider !== 'unknown'
+).length
 const HAPPY_PATH_STEPS = [
   {
     id: 'paste',
@@ -361,6 +364,13 @@ const MERGE_GATE_METRICS = [
     value: `${STREAMING_SITE_CONNECTION_FIXTURE_COUNT} observed`,
     detail:
       'Each site fixture records delivered controls, lost bytes, retry bytes, skipped controls, payload size, and round-trip latency.'
+  },
+  {
+    id: 'provider-quality',
+    label: 'Provider gate',
+    value: `${STREAMING_SITE_NAMED_PROVIDER_COUNT} providers`,
+    detail:
+      'YouTube, AnimePahe, Cineby, and Miruro each keep their own loss, retry, skipped-control, and latency proof.'
   }
 ] as const
 const COMMAND_BAR_LINKS = [

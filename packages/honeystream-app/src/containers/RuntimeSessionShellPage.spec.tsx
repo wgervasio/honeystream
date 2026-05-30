@@ -239,6 +239,11 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain(
       'Each site fixture records delivered controls, lost bytes, retry bytes, skipped controls, payload size, and round-trip latency'
     )
+    expect(html).toContain('Provider gate')
+    expect(html).toContain('4 providers')
+    expect(html).toContain(
+      'YouTube, AnimePahe, Cineby, and Miruro each keep their own loss, retry, skipped-control, and latency proof'
+    )
     expect(html).toContain('Cat-side cue')
     expect(html).toContain('Rabbit-side hop')
     expect(html).toContain('Zero-byte-loss controls')
