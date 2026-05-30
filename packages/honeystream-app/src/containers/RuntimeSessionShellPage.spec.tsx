@@ -209,6 +209,7 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('Miruro x7')
     expect(html).toContain('Bursts stay calm')
     expect(html).toContain('Rapid seek, pause, resume, and rate bursts')
+    expect(html).toContain('include next/resync controls')
     expect(html).toContain(
       `${STREAMING_SITE_CONNECTION_PROFILES.length} lanes run for ` +
         `${STREAMING_SITE_CONNECTION_TRIAL_COUNT} deterministic trials`

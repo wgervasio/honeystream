@@ -11,6 +11,9 @@ import {
 export interface StreamingSiteConnectionMergeGateOptions {
   readonly maxByteLossRate?: number
   readonly maxDroppedMessages?: number
+  readonly maxFixtureByteLossRate?: number
+  readonly maxFixtureDroppedMessages?: number
+  readonly maxFixtureRoundTripP95LatencyMs?: number
   readonly maxRoundTripP95LatencyMs?: number
   readonly requiredProviders?: readonly MediaProvider[]
 }
@@ -23,6 +26,9 @@ export interface StreamingSiteConnectionMergeGateSummary {
   readonly maxCombinedDroppedMessages: number
   readonly maxCombinedRetransmissionRate: number
   readonly maxEstimatedRoundTripP95LatencyMs: number
+  readonly maxFixtureByteLossRate: number
+  readonly maxFixtureDroppedMessages: number
+  readonly maxFixtureEstimatedRoundTripP95LatencyMs: number
   readonly missingProviders: readonly MediaProvider[]
   readonly ok: boolean
   readonly requiredProviders: readonly MediaProvider[]
@@ -38,6 +44,16 @@ const DEFAULT_REQUIRED_PROVIDERS: readonly MediaProvider[] = Object.freeze([
   'cineby',
   'miruro'
 ])
+
+const resolveNumberOption = (
+  value: number | undefined,
+  inheritedValue: number | undefined,
+  fallback: number
+): number => {
+  if (typeof value === 'number') return value
+  if (typeof inheritedValue === 'number') return inheritedValue
+  return fallback
+}
 
 const providerLabel = (provider: MediaProvider): string => {
   switch (provider) {
@@ -93,6 +109,21 @@ const createFailureList = (
   if (profile && profile.maxCombinedDroppedMessages > options.maxDroppedMessages) {
     failures.push(`Dropped controls exceeded ${options.maxDroppedMessages}.`)
   }
+  if (profile && profile.maxFixtureByteLossRate > options.maxFixtureByteLossRate) {
+    failures.push(`A site fixture byte-loss rate exceeded ${options.maxFixtureByteLossRate}.`)
+  }
+  if (profile && profile.maxFixtureDroppedMessages > options.maxFixtureDroppedMessages) {
+    failures.push(`A site fixture dropped more than ${options.maxFixtureDroppedMessages} controls.`)
+  }
+  if (
+    profile &&
+    profile.maxFixtureEstimatedRoundTripP95LatencyMs >
+      options.maxFixtureRoundTripP95LatencyMs
+  ) {
+    failures.push(
+      `A site fixture P95 mock round trip exceeded ${options.maxFixtureRoundTripP95LatencyMs}ms.`
+    )
+  }
   if (profile && profile.maxEstimatedRoundTripP95LatencyMs > options.maxRoundTripP95LatencyMs) {
     failures.push(`P95 mock round trip exceeded ${options.maxRoundTripP95LatencyMs}ms.`)
   }
@@ -123,6 +154,24 @@ export const summarizeStreamingSiteConnectionMergeGate = (
       typeof options.maxDroppedMessages === 'number'
         ? options.maxDroppedMessages
         : STREAMING_SITE_CONNECTION_BUDGET.maxDroppedMessages,
+    maxFixtureByteLossRate:
+      resolveNumberOption(
+        options.maxFixtureByteLossRate,
+        options.maxByteLossRate,
+        STREAMING_SITE_CONNECTION_BUDGET.maxByteLossRate
+      ),
+    maxFixtureDroppedMessages:
+      resolveNumberOption(
+        options.maxFixtureDroppedMessages,
+        options.maxDroppedMessages,
+        STREAMING_SITE_CONNECTION_BUDGET.maxDroppedMessages
+      ),
+    maxFixtureRoundTripP95LatencyMs:
+      resolveNumberOption(
+        options.maxFixtureRoundTripP95LatencyMs,
+        options.maxRoundTripP95LatencyMs,
+        STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS
+      ),
     maxRoundTripP95LatencyMs:
       typeof options.maxRoundTripP95LatencyMs === 'number'
         ? options.maxRoundTripP95LatencyMs
@@ -149,6 +198,11 @@ export const summarizeStreamingSiteConnectionMergeGate = (
       : 0,
     maxEstimatedRoundTripP95LatencyMs: selectedProfile
       ? selectedProfile.maxEstimatedRoundTripP95LatencyMs
+      : 0,
+    maxFixtureByteLossRate: selectedProfile ? selectedProfile.maxFixtureByteLossRate : 0,
+    maxFixtureDroppedMessages: selectedProfile ? selectedProfile.maxFixtureDroppedMessages : 0,
+    maxFixtureEstimatedRoundTripP95LatencyMs: selectedProfile
+      ? selectedProfile.maxFixtureEstimatedRoundTripP95LatencyMs
       : 0,
     missingProviders,
     ok: failures.length === 0,

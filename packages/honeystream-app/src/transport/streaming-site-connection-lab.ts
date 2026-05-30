@@ -185,6 +185,8 @@ const observeStreamingSiteConnectionProfile = async (
         sendClientCommand({ type: 'seek', positionMs: Math.max(0, seekPositionMs - 5000) })
         sendClientCommand({ type: 'playPause', playing: false })
         sendClientCommand({ type: 'playPause', playing: true })
+        sendClientCommand({ type: 'next' })
+        sendClientCommand({ type: 'requestSnapshot', reason: 'resync' })
         flushAndAdvance()
         sendHostEvent({
           type: 'playbackChanged',
