@@ -146,22 +146,26 @@ export class ObservablePeerTransport<TInboundMessage, TOutboundMessage>
   getState(): PeerTransportConnectionState { return this.transport.getState() }
 
   send(envelope: PeerTransportEnvelope<TOutboundMessage>): void {
+    if (this.disposed) {
+      throw new Error(`[ObservablePeerTransport:${this.localPeerId}] send called after dispose`)
+    }
     const outboundEnvelope = this.beforeSend
       ? this.beforeSend(envelope, { localPeerId: this.localPeerId, remotePeerId: this.remotePeerId })
       : envelope
     const bytes = serializedByteLength(outboundEnvelope)
+    const atMs = this.now()
+    this.transport.send(outboundEnvelope)
     this.sentMessages += 1
     this.sentBytes += bytes
     this.maxSentFrameBytes = Math.max(this.maxSentFrameBytes, bytes)
     this.recordObservation({
       type: 'sent',
-      atMs: this.now(),
+      atMs,
       bytes,
       envelope: outboundEnvelope,
       localPeerId: this.localPeerId,
       remotePeerId: this.remotePeerId
     })
-    this.transport.send(outboundEnvelope)
   }
 
   subscribe(listener: PeerTransportListener<TInboundMessage>): TransportUnsubscribe {

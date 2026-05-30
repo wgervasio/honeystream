@@ -176,4 +176,46 @@ describe('observable peer transport', () => {
       guest.dispose()
     }
   })
+
+  it('does not count failed sends as observed control bytes', async () => {
+    const pair = createInMemoryPeerTransportPair<PingMessage, PongMessage>({
+      hostInboundValidator: pingValidator,
+      guestInboundValidator: pongValidator,
+      now: () => 4000
+    })
+    const guest = new ObservablePeerTransport({ transport: pair.guest, now: () => 4000 })
+
+    try {
+      expect(() =>
+        guest.send({ seq: 1, sentAtMs: 4000, message: { type: 'ping', nonce: 1 } })
+      ).toThrow('cannot send while disconnected')
+      expect(guest.getObservationSnapshot()).toEqual(
+        expect.objectContaining({
+          sentMessages: 0,
+          sentBytes: 0,
+          maxSentFrameBytes: 0
+        })
+      )
+      expect(guest.getObservationSnapshot().recentObservations).toHaveLength(0)
+
+      guest.dispose()
+      expect(() =>
+        guest.send({ seq: 2, sentAtMs: 4000, message: { type: 'ping', nonce: 2 } })
+      ).toThrow('send called after dispose')
+      const snapshotAfterDisposedSend = guest.getObservationSnapshot()
+      expect(snapshotAfterDisposedSend).toEqual(
+        expect.objectContaining({
+          sentMessages: 0,
+          sentBytes: 0,
+          maxSentFrameBytes: 0
+        })
+      )
+      expect(
+        snapshotAfterDisposedSend.recentObservations.some(observation => observation.type === 'sent')
+      ).toBe(false)
+    } finally {
+      pair.host.dispose()
+      guest.dispose()
+    }
+  })
 })

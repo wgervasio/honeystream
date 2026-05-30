@@ -47,8 +47,8 @@ describe('RuntimeAddMediaSourcePreview', () => {
             `${providerCase.label} is covered by the low-latency streaming-site mock tests`
           ),
           expect.stringContaining('not the video bytes'),
+          expect.stringContaining('clean lanes winning before recovered retries'),
           expect.stringContaining('mock round trip budgeted under 10ms'),
-          expect.stringContaining('visible recovered retries'),
           expect.stringContaining('no skipped controls'),
           expect.stringContaining('peak queues'),
           expect.stringContaining('max control-frame size')

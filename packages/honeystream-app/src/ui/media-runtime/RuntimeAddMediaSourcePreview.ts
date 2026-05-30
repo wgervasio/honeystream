@@ -64,7 +64,7 @@ const getSyncBudgetDetail = (sourcePreview: RuntimeAddMediaSourcePreview | undef
     return 'Honeystream keeps video local and syncs only the tiny control stream.'
   }
 
-  return 'Low-latency sync sends compact playback commands, not the video bytes, with the mock round trip budgeted under 10ms, visible recovered retries, no skipped controls, and capped jitter, peak queues, and max control-frame size.'
+  return 'Low-latency sync sends compact playback commands, not the video bytes, with clean lanes winning before recovered retries, the mock round trip budgeted under 10ms, no skipped controls, and capped jitter, peak queues, and max control-frame size.'
 }
 
 export const createRuntimeAddMediaSourcePreview = (
