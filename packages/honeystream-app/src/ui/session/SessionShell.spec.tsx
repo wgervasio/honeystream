@@ -97,7 +97,7 @@ describe('SessionShell', () => {
       />
     )
 
-    expect(html).toContain('Connected')
+    expect(html).toContain('Synced')
     expect(html).toContain('Host: HostUser')
     expect(html).toContain('Guest: GuestUser')
     expect(html).toContain('Sync issues')

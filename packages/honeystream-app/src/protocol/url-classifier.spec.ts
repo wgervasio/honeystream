@@ -18,6 +18,9 @@ describe('protocol URL classifier', () => {
       'https://www.youtube.com/live/abc123',
       'https://music.youtube.com/watch?v=abc123',
       'https://tv.youtube.com/watch/abc123',
+      'https://www.youtube.com/playlist?list=abc123',
+      'https://www.youtube.com/@honeystream/videos',
+      'https://youtu.be/abc123?t=42',
       'https://youtube.com',
       'https://animepahe.ru/play/example',
       'https://animepahe.si/anime/example',
@@ -25,18 +28,24 @@ describe('protocol URL classifier', () => {
       'https://animepahe.com/play/example?episode=3',
       'https://www.animepahe.ru/play/example',
       'https://animepahe.si/play/example?episode=2',
+      'https://www.animepahe.si/play/example?episode=4',
+      'https://animepahe.com/anime/example',
       'https://animepahe.ru',
       'https://cineby.app/movie/example',
       'https://cineby.to/movie/example',
       'https://watch.cineby.app/movie/example',
+      'https://cdn.cineby.app/movie/example?server=beta',
       'https://cineby.app/tv/example/season/1/episode/1',
+      'https://cineby.to/tv/example/season/2/episode/3',
       'https://www.cineby.ru/tv/example',
       'https://cineby.app',
       'https://www.miruro.tv/watch/example',
       'https://watch.miruro.tv/watch/example?episode=2',
       'https://anime.miruro.tv/watch/example',
+      'https://beta.miruro.tv/watch/example?episode=3',
       'https://miruro.to/watch/example',
       'https://miruro.tv/watch/example?episode=1',
+      'https://www.miruro.to/watch/example?dub=1',
       'https://miruro.to',
       'https://streaming.example.test/watch/honeystream-night',
       'https://shows.example.test/title/honeystream-night?episode=1',
@@ -58,17 +67,29 @@ describe('protocol URL classifier', () => {
     expect(classifyMediaProvider('https://www.youtube-nocookie.com/embed/abc123')).toBe('youtube')
     expect(classifyMediaProvider('https://music.youtube.com/watch?v=abc123')).toBe('youtube')
     expect(classifyMediaProvider('https://tv.youtube.com/watch/abc123')).toBe('youtube')
+    expect(classifyMediaProvider('https://www.youtube.com/playlist?list=abc123')).toBe('youtube')
+    expect(classifyMediaProvider('https://www.youtube.com/@honeystream/videos')).toBe('youtube')
     expect(classifyMediaProvider('https://youtube.com')).toBe('youtube')
     expect(classifyMediaProvider('https://animepahe.si/anime/example')).toBe('animepahe')
     expect(classifyMediaProvider('https://www.animepahe.ru/play/example')).toBe('animepahe')
     expect(classifyMediaProvider('https://animepahe.com/watch/example')).toBe('animepahe')
     expect(classifyMediaProvider('https://animepahe.com/play/example?episode=3')).toBe('animepahe')
+    expect(classifyMediaProvider('https://www.animepahe.si/play/example?episode=4')).toBe(
+      'animepahe'
+    )
     expect(classifyMediaProvider('https://animepahe.ru')).toBe('animepahe')
+    expect(classifyMediaProvider('https://cdn.cineby.app/movie/example?server=beta')).toBe(
+      'cineby'
+    )
     expect(classifyMediaProvider('https://video.cineby.app/movie/example')).toBe('cineby')
     expect(classifyMediaProvider('https://watch.cineby.app/movie/example')).toBe('cineby')
+    expect(classifyMediaProvider('https://cineby.to/tv/example/season/2/episode/3')).toBe(
+      'cineby'
+    )
     expect(classifyMediaProvider('https://cineby.to/movie/example')).toBe('cineby')
     expect(classifyMediaProvider('https://www.cineby.ru/tv/example')).toBe('cineby')
     expect(classifyMediaProvider('https://cineby.app')).toBe('cineby')
+    expect(classifyMediaProvider('https://beta.miruro.tv/watch/example?episode=3')).toBe('miruro')
     expect(classifyMediaProvider('https://watch.miruro.tv/watch/example')).toBe('miruro')
     expect(classifyMediaProvider('https://anime.miruro.tv/watch/example')).toBe('miruro')
     expect(classifyMediaProvider('https://miruro.tv/watch/example')).toBe('miruro')

@@ -203,10 +203,10 @@ describe('RuntimeSessionShellPage', () => {
     for (const coverage of STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE) {
       expect(html).toContain(`x${coverage.siteCount}`)
     }
-    expect(html).toContain('YouTube x11')
-    expect(html).toContain('AnimePahe x8')
-    expect(html).toContain('Cineby x9')
-    expect(html).toContain('Miruro x7')
+    expect(html).toContain('YouTube x14')
+    expect(html).toContain('AnimePahe x11')
+    expect(html).toContain('Cineby x12')
+    expect(html).toContain('Miruro x10')
     expect(html).toContain('Bursts stay calm')
     expect(html).toContain('Rapid seek, pause, resume, and rate bursts')
     expect(html).toContain('include next/resync controls')
