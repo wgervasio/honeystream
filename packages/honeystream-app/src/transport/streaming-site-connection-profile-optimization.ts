@@ -3,6 +3,10 @@ import {
   StreamingSiteConnectionLabResult,
   StreamingSiteConnectionProfile
 } from './streaming-site-connection-lab'
+import {
+  StreamingSiteProviderQuality,
+  summarizeStreamingSiteProviderQuality
+} from './streaming-site-provider-quality'
 import { StreamingSiteProviderCoverage } from './streaming-site-provider-coverage'
 
 export interface StreamingSiteConnectionProfileOptimization {
@@ -31,6 +35,7 @@ export interface StreamingSiteConnectionProfileOptimization {
   readonly passedTrials: number
   readonly profile: StreamingSiteConnectionProfile
   readonly providerCoverage: readonly StreamingSiteProviderCoverage[]
+  readonly providerQuality: readonly StreamingSiteProviderQuality[]
   readonly providers: readonly MediaProvider[]
   readonly siteCount: number
   readonly trialCount: number
@@ -187,6 +192,7 @@ export const createStreamingSiteConnectionProfileOptimization = (
     passedTrials,
     profile,
     providerCoverage: firstRank ? firstRank.providerCoverage : [],
+    providerQuality: summarizeStreamingSiteProviderQuality(profile, trialResults),
     providers: firstRank ? firstRank.providers : [],
     siteCount: firstRank ? firstRank.siteCount : 0,
     trialCount

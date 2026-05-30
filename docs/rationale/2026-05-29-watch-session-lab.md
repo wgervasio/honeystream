@@ -6,8 +6,8 @@ Honeystream needs the migration UI and tests to show that supported streaming si
 
 ## Decision
 
-Keep the existing typed simulated transport lab as the source of performance proof, add explicit coverage assertions for the YouTube, AnimePahe, Cineby, Miruro, and generic streaming fixture matrix, and surface the home-page connection lab highlights for latency budget, selected-lane byte loss, burst-control pressure, realistic short/long/live durations, and site coverage.
+Keep the existing typed simulated transport lab as the source of performance proof, add explicit coverage assertions for the YouTube, AnimePahe, Cineby, Miruro, and generic streaming fixture matrix, and surface the home-page connection lab highlights for latency budget, selected-lane byte loss, burst-control pressure, realistic short/long/live durations, site coverage, and provider-specific quality gates.
 
 ## Consequences
 
-The branch now ties the cozy home UX to the deterministic mock-connection gate while preserving the host-authoritative 1:1 architecture. Future runtime adapters should keep media bytes local, preserve zero-loss selected lanes under bursty controls, and update the visible lab proof if fixture count, duration coverage, or latency budgets change.
+The branch now ties the cozy home UX to the deterministic mock-connection gate while preserving the host-authoritative 1:1 architecture. Future runtime adapters should keep media bytes local, preserve zero-loss selected lanes under bursty controls, keep each named provider under its own loss/retry/latency budget, and update the visible lab proof if fixture count, duration coverage, provider coverage, or latency budgets change.
