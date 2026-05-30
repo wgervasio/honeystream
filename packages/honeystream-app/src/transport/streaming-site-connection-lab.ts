@@ -20,6 +20,7 @@ import {
   toStreamingSiteMediaSnapshot,
   toStreamingSitePlaybackSnapshot
 } from './streaming-site-connection-snapshot'
+import { emitSiteJoin, emitSiteSnapshot } from './streaming-site-connection-scenario'
 import {
   createStreamingSiteFixtureObservation,
   StreamingSiteFixtureObservation
@@ -150,6 +151,8 @@ const observeStreamingSiteConnectionProfile = async (
     }
 
     await pair.host.connect()
+    emitSiteJoin(sendClientCommand, sendHostEvent)
+    flushAndAdvance()
 
     for (let index = 0; index < fixtures.length; index += 1) {
       const fixture = fixtures[index]
@@ -188,6 +191,7 @@ const observeStreamingSiteConnectionProfile = async (
         sendClientCommand({ type: 'next' })
         sendClientCommand({ type: 'requestSnapshot', reason: 'resync' })
         flushAndAdvance()
+        emitSiteSnapshot(sendHostEvent, media, nowMs, seekPositionMs, rate)
         sendHostEvent({
           type: 'playbackChanged',
           playback: toStreamingSitePlaybackSnapshot(media, nowMs, seekPositionMs, rate)

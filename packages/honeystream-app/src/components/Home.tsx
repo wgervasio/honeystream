@@ -204,7 +204,7 @@ class Home extends Component<IProps, IState> {
         value: `<=${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms`,
         label: 'mock P95 budget',
         detail:
-          'Default streaming-site trials keep the ultra-low lane under the visible drift gate.'
+          'Join, resync, and playback trials keep the ultra-low lane under the drift gate.'
       },
       {
         id: 'loss',
