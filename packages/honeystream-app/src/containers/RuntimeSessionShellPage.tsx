@@ -335,6 +335,12 @@ const MERGE_GATE_METRICS = [
     detail: 'The selected lane must deliver every control byte before latency ranking.'
   },
   {
+    id: 'control-order',
+    label: 'Order gate',
+    value: '0 skipped',
+    detail: 'Provider observations reject skipped or reordered controls before merge.'
+  },
+  {
     id: 'tail-latency',
     label: 'Tail latency gate',
     value: `<=${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms P95`,
