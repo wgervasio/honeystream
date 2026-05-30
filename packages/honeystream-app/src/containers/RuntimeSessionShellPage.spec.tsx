@@ -228,6 +228,11 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('Coverage gate')
     expect(html).toContain(`${STREAMING_SITE_CONNECTION_FIXTURES.length} sites`)
     expect(html).toContain('YouTube, AnimePahe, Cineby, Miruro, and generic pages')
+    expect(html).toContain('Per-site proof')
+    expect(html).toContain(`${STREAMING_SITE_CONNECTION_FIXTURES.length} observed`)
+    expect(html).toContain(
+      'Each site fixture records delivered controls, lost bytes, retries, skipped controls, payload size, and round-trip latency'
+    )
     expect(html).toContain('Cat-side cue')
     expect(html).toContain('Rabbit-side hop')
     expect(html).toContain('Zero-byte-loss controls')

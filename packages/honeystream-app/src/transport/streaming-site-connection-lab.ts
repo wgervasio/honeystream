@@ -21,6 +21,10 @@ import {
   toStreamingSitePlaybackSnapshot
 } from './streaming-site-connection-snapshot'
 import {
+  createStreamingSiteFixtureObservation,
+  StreamingSiteFixtureObservation
+} from './streaming-site-connection-site-observation'
+import {
   countStreamingSiteProviders,
   StreamingSiteProviderCoverage
 } from './streaming-site-provider-coverage'
@@ -53,6 +57,7 @@ export interface StreamingSiteConnectionLabOptions {
 export interface StreamingSiteConnectionObservation {
   readonly budgetResult: SimulatedPeerTransportBudgetResult
   readonly candidate: SimulatedPeerTransportCandidate
+  readonly fixtureObservations: readonly StreamingSiteFixtureObservation[]
   readonly metrics: AggregateSimulatedPeerTransportMetrics
   readonly profile: StreamingSiteConnectionProfile
   readonly providerCoverage: readonly StreamingSiteProviderCoverage[]
@@ -104,6 +109,7 @@ const observeStreamingSiteConnectionProfile = async (
   let hostSeq = 0
   const providers = fixtures.map(fixture => classifyMediaProvider(fixture.source))
   const providerCoverage = countStreamingSiteProviders(providers)
+  const fixtureObservations: StreamingSiteFixtureObservation[] = []
   const pair = createSimulatedPeerTransportPair<ClientToHostEnvelope, HostToClientEnvelope>({
     hostInboundValidator: createWireEnvelopeValidator('client-to-host'),
     guestInboundValidator: createWireEnvelopeValidator('host-to-client'),
@@ -146,7 +152,10 @@ const observeStreamingSiteConnectionProfile = async (
     await pair.host.connect()
 
     for (let index = 0; index < fixtures.length; index += 1) {
-      const media = toStreamingSiteMediaSnapshot(fixtures[index], index)
+      const fixture = fixtures[index]
+      const provider = providers[index]
+      const beforeFixtureMetrics = pair.getAggregateMetrics()
+      const media = toStreamingSiteMediaSnapshot(fixture, index)
       const seekPositionMs = resolveStreamingSiteSeekPositionMs(media, index)
       const rate = index % 2 === 0 ? 1 : 1.25
 
@@ -183,6 +192,13 @@ const observeStreamingSiteConnectionProfile = async (
         })
         flushAndAdvance()
       }
+      fixtureObservations.push(
+        createStreamingSiteFixtureObservation(
+          { fixtureId: fixture.id, provider, source: fixture.source },
+          beforeFixtureMetrics,
+          pair.getAggregateMetrics()
+        )
+      )
     }
 
     const metrics = pair.getAggregateMetrics()
@@ -195,6 +211,7 @@ const observeStreamingSiteConnectionProfile = async (
     return {
       budgetResult: evaluateSimulatedPeerTransportBudget(metrics, options.budget),
       candidate,
+      fixtureObservations,
       metrics,
       profile,
       providerCoverage,
