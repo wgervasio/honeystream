@@ -23,6 +23,7 @@ const compareOrderedMetrics = (
 const RANKING_METRICS: readonly RankMetric[] = Object.freeze([
   profile => profile.maxFixtureByteLossRate,
   profile => profile.maxCombinedByteLossRate,
+  profile => profile.maxFixtureMissingDirectionalDeliveryCount,
   profile => profile.maxFixtureDroppedMessages,
   profile => profile.maxCombinedDroppedMessages,
   profile => profile.maxFixtureEstimatedRoundTripP95LatencyMs,

@@ -12,10 +12,12 @@ export interface StreamingSiteConnectionMergeGateOptions {
   readonly maxFixtureByteLossRate?: number
   readonly maxFixtureDroppedMessages?: number
   readonly maxFixtureLostBytes?: number
+  readonly maxFixtureMissingDirectionalDeliveryCount?: number
   readonly maxFixtureRoundTripP95LatencyMs?: number
   readonly minFixturesPerRequiredProvider?: number
   readonly maxProviderDirectionalLatencySkewMs?: number
   readonly maxProviderLostBytes?: number
+  readonly maxProviderMissingDirectionalDeliveryCount?: number
   readonly maxProviderOutOfOrderMessages?: number
   readonly maxProviderRoundTripP95LatencyMs?: number
   readonly maxProviderSequenceGapMessages?: number
@@ -41,9 +43,11 @@ export interface StreamingSiteConnectionMergeGateSummary {
   readonly maxFixtureDroppedMessages: number
   readonly maxFixtureEstimatedRoundTripP95LatencyMs: number
   readonly maxFixtureLostBytes: number
+  readonly maxFixtureMissingDirectionalDeliveryCount: number
   readonly maxFixtureRetransmissionByteRate: number
   readonly maxProviderDirectionalLatencySkewMs: number
   readonly maxProviderLostBytes: number
+  readonly maxProviderMissingDirectionalDeliveryCount: number
   readonly maxProviderOutOfOrderMessages: number
   readonly maxProviderRoundTripP95LatencyMs: number
   readonly maxProviderSequenceGapMessages: number
@@ -130,6 +134,11 @@ export const resolveStreamingSiteConnectionMergeGateOptions = (
     STREAMING_SITE_CONNECTION_BUDGET.maxDroppedMessages
   ),
   maxFixtureLostBytes: resolveNumberOption(options.maxFixtureLostBytes, undefined, 0),
+  maxFixtureMissingDirectionalDeliveryCount: resolveNumberOption(
+    options.maxFixtureMissingDirectionalDeliveryCount,
+    undefined,
+    0
+  ),
   maxFixtureRoundTripP95LatencyMs: resolveNumberOption(
     options.maxFixtureRoundTripP95LatencyMs,
     options.maxRoundTripP95LatencyMs,
@@ -144,6 +153,11 @@ export const resolveStreamingSiteConnectionMergeGateOptions = (
     STREAMING_SITE_CONNECTION_BUDGET.maxDirectionalLatencySkewMs
   ),
   maxProviderLostBytes: resolveNumberOption(options.maxProviderLostBytes, undefined, 0),
+  maxProviderMissingDirectionalDeliveryCount: resolveNumberOption(
+    options.maxProviderMissingDirectionalDeliveryCount,
+    undefined,
+    0
+  ),
   maxProviderOutOfOrderMessages:
     typeof options.maxProviderOutOfOrderMessages === 'number'
       ? options.maxProviderOutOfOrderMessages

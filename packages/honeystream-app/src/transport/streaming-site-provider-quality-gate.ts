@@ -11,6 +11,7 @@ export interface StreamingSiteProviderQualityGateOptions {
   readonly maxProviderDirectionalLatencySkewMs?: number
   readonly maxProviderDroppedMessages?: number
   readonly maxProviderLostBytes?: number
+  readonly maxProviderMissingDirectionalDeliveryCount?: number
   readonly maxProviderOutOfOrderMessages?: number
   readonly maxProviderRetransmissionByteRate?: number
   readonly maxProviderRoundTripP95LatencyMs?: number
@@ -24,6 +25,7 @@ export interface StreamingSiteProviderQualityGateSummary {
   readonly maxProviderDirectionalLatencySkewMs: number
   readonly maxProviderDroppedMessages: number
   readonly maxProviderLostBytes: number
+  readonly maxProviderMissingDirectionalDeliveryCount: number
   readonly maxProviderOutOfOrderMessages: number
   readonly maxProviderRetransmissionByteRate: number
   readonly maxProviderRoundTripP95LatencyMs: number
@@ -98,6 +100,15 @@ const createFailureList = (
         `${label} provider lost more than ${options.maxProviderLostBytes} control bytes.`
       )
     }
+    if (
+      quality.maxMissingDirectionalDeliveryCount >
+      options.maxProviderMissingDirectionalDeliveryCount
+    ) {
+      failures.push(
+        `${label} provider missed more than ` +
+          `${options.maxProviderMissingDirectionalDeliveryCount} delivery directions.`
+      )
+    }
     if (quality.maxOutOfOrderMessages > options.maxProviderOutOfOrderMessages) {
       failures.push(
         `${label} provider reordered more than ${options.maxProviderOutOfOrderMessages} controls.`
@@ -165,6 +176,10 @@ export const summarizeStreamingSiteProviderQualityGate = (
       typeof options.maxProviderLostBytes === 'number'
         ? options.maxProviderLostBytes
         : 0,
+    maxProviderMissingDirectionalDeliveryCount:
+      typeof options.maxProviderMissingDirectionalDeliveryCount === 'number'
+        ? options.maxProviderMissingDirectionalDeliveryCount
+        : 0,
     maxProviderOutOfOrderMessages:
       typeof options.maxProviderOutOfOrderMessages === 'number'
         ? options.maxProviderOutOfOrderMessages
@@ -201,6 +216,10 @@ export const summarizeStreamingSiteProviderQualityGate = (
       quality => quality.maxDroppedMessages
     ),
     maxProviderLostBytes: maxQualityValue(providerQuality, quality => quality.maxLostBytes),
+    maxProviderMissingDirectionalDeliveryCount: maxQualityValue(
+      providerQuality,
+      quality => quality.maxMissingDirectionalDeliveryCount
+    ),
     maxProviderOutOfOrderMessages: maxQualityValue(
       providerQuality,
       quality => quality.maxOutOfOrderMessages

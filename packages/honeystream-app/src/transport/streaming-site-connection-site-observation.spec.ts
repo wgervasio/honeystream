@@ -75,6 +75,9 @@ describe('streaming site fixture observations', () => {
       expect(fixtureObservation.estimatedRoundTripP95LatencyMs).toBeLessThanOrEqual(
         STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS
       )
+      expect(fixtureObservation.hostToGuestDeliveredMessages).toBeGreaterThan(0)
+      expect(fixtureObservation.guestToHostDeliveredMessages).toBeGreaterThan(0)
+      expect(fixtureObservation.missingDirectionalDeliveryCount).toBe(0)
       expect(fixtureObservation.hostToGuestP95LatencyMs).toBeLessThanOrEqual(1)
       expect(fixtureObservation.guestToHostP95LatencyMs).toBeLessThanOrEqual(1)
       expect(fixtureObservation.directionalLatencySkewMs).toBe(0)
@@ -107,6 +110,7 @@ describe('streaming site fixture observations', () => {
         STREAMING_SITE_CONNECTION_BUDGET.maxRetransmissionByteRate
       )
       expect(fixtureObservation.sequenceGapMessages).toBe(0)
+      expect(fixtureObservation.missingDirectionalDeliveryCount).toBe(0)
       expect(fixtureObservation.estimatedRoundTripP95LatencyMs).toBeLessThanOrEqual(
         STREAMING_SITE_CONNECTION_BUDGET.maxEstimatedRoundTripP95LatencyMs
       )
@@ -133,6 +137,9 @@ describe('streaming site fixture observations', () => {
 
     expect(fixtureObservation.hostToGuestP95LatencyMs).toBe(8)
     expect(fixtureObservation.guestToHostP95LatencyMs).toBe(1)
+    expect(fixtureObservation.hostToGuestDeliveredMessages).toBeGreaterThan(0)
+    expect(fixtureObservation.guestToHostDeliveredMessages).toBeGreaterThan(0)
+    expect(fixtureObservation.missingDirectionalDeliveryCount).toBe(0)
     expect(fixtureObservation.estimatedRoundTripP95LatencyMs).toBe(9)
     expect(fixtureObservation.directionalLatencySkewMs).toBe(7)
     expect(fixtureObservation.byteLossRate).toBe(0)

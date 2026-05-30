@@ -14,7 +14,9 @@ import {
   StreamingSiteConnectionOptimizationResult,
   StreamingSiteConnectionProfileOptimization
 } from './streaming-site-connection-optimizer'
-const createProviderOrderRegressionResult = (): StreamingSiteConnectionOptimizationResult => {
+const createProviderOrderRegressionResult = (
+  missingDirectionalDeliveryCount = 0
+): StreamingSiteConnectionOptimizationResult => {
   const selectedProfile: StreamingSiteConnectionProfileOptimization = {
     allTrialsPassed: true,
     averageEstimatedRoundTripP95LatencyMs: STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS,
@@ -38,6 +40,7 @@ const createProviderOrderRegressionResult = (): StreamingSiteConnectionOptimizat
     maxFixtureDroppedMessages: 0,
     maxFixtureEstimatedRoundTripP95LatencyMs: STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS,
     maxFixtureLostBytes: 0,
+    maxFixtureMissingDirectionalDeliveryCount: missingDirectionalDeliveryCount,
     maxFixtureRetransmissionByteRate: 0,
     maxFixtureRetransmissionRate: 0,
     passedTrials: 1,
@@ -54,6 +57,7 @@ const createProviderOrderRegressionResult = (): StreamingSiteConnectionOptimizat
         maxGuestToHostP95LatencyMs: 1,
         maxHostToGuestP95LatencyMs: 1,
         maxLostBytes: 0,
+        maxMissingDirectionalDeliveryCount: missingDirectionalDeliveryCount,
         maxOutOfOrderMessages: 1,
         maxRetransmissionByteRate: 0,
         maxRetransmissionRate: 0,
@@ -130,8 +134,10 @@ describe('streaming site connection merge gate', () => {
         maxFixtureDroppedMessages: 0,
         maxFixtureEstimatedRoundTripP95LatencyMs: STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS,
         maxFixtureLostBytes: 0,
+        maxFixtureMissingDirectionalDeliveryCount: 0,
         maxProviderDirectionalLatencySkewMs: 0,
         maxProviderLostBytes: 0,
+        maxProviderMissingDirectionalDeliveryCount: 0,
         maxProviderOutOfOrderMessages: 0,
         maxProviderRoundTripP95LatencyMs: STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS,
         maxProviderSequenceGapMessages: 0
@@ -158,6 +164,26 @@ describe('streaming site connection merge gate', () => {
       'YouTube provider reordered more than 0 controls.',
       'YouTube provider P95 mock round trip exceeded 1ms.',
       'YouTube provider skipped more than 0 controls.'
+    ])
+  })
+
+  it('fails when selected site fixtures do not prove both transport directions', () => {
+    const mergeGate = summarizeStreamingSiteConnectionMergeGate(
+      createProviderOrderRegressionResult(1),
+      {
+        maxProviderOutOfOrderMessages: 1,
+        maxProviderSequenceGapMessages: 2,
+        requiredProviders: ['youtube']
+      }
+    )
+
+    expect(mergeGate.ok).toBe(false)
+    expect(mergeGate.maxFixtureMissingDirectionalDeliveryCount).toBe(1)
+    expect(mergeGate.maxProviderMissingDirectionalDeliveryCount).toBe(1)
+    expect(mergeGate.failures).toEqual([
+      'YouTube coverage has fewer than 2 streaming-site fixtures.',
+      'A site fixture missed more than 0 delivery directions.',
+      'YouTube provider missed more than 0 delivery directions.'
     ])
   })
 

@@ -348,6 +348,12 @@ const MERGE_GATE_METRICS = [
     detail: 'Provider quality gates fail if any covered site loses a control byte.'
   },
   {
+    id: 'two-way-delivery',
+    label: 'Two-way gate',
+    value: 'both ways',
+    detail: 'Every site fixture must deliver guest commands and host events before merge.'
+  },
+  {
     id: 'tail-latency',
     label: 'Tail latency gate',
     value: `<=${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms P95`,

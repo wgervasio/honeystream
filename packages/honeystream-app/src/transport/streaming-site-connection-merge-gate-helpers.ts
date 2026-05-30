@@ -82,6 +82,15 @@ const createProviderQualityFailures = (
         `${label} provider lost more than ${options.maxProviderLostBytes} control bytes.`
       )
     }
+    if (
+      quality.maxMissingDirectionalDeliveryCount >
+      options.maxProviderMissingDirectionalDeliveryCount
+    ) {
+      failures.push(
+        `${label} provider missed more than ` +
+          `${options.maxProviderMissingDirectionalDeliveryCount} delivery directions.`
+      )
+    }
     if (quality.maxEstimatedRoundTripP95LatencyMs > options.maxProviderRoundTripP95LatencyMs) {
       failures.push(
         `${label} provider P95 mock round trip exceeded ` +
@@ -134,6 +143,16 @@ export const createStreamingSiteConnectionMergeGateFailures = (
   }
   if (profile && profile.maxFixtureLostBytes > options.maxFixtureLostBytes) {
     failures.push(`A site fixture lost more than ${options.maxFixtureLostBytes} control bytes.`)
+  }
+  if (
+    profile &&
+    profile.maxFixtureMissingDirectionalDeliveryCount >
+      options.maxFixtureMissingDirectionalDeliveryCount
+  ) {
+    failures.push(
+      `A site fixture missed more than ` +
+        `${options.maxFixtureMissingDirectionalDeliveryCount} delivery directions.`
+    )
   }
   if (
     profile &&
