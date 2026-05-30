@@ -203,10 +203,10 @@ describe('RuntimeSessionShellPage', () => {
     for (const coverage of STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE) {
       expect(html).toContain(`x${coverage.siteCount}`)
     }
-    expect(html).toContain('YouTube x14')
-    expect(html).toContain('AnimePahe x11')
-    expect(html).toContain('Cineby x12')
-    expect(html).toContain('Miruro x10')
+    expect(html).toContain('YouTube x16')
+    expect(html).toContain('AnimePahe x13')
+    expect(html).toContain('Cineby x14')
+    expect(html).toContain('Miruro x12')
     expect(html).toContain('Bursts stay calm')
     expect(html).toContain('Rapid seek, pause, resume, and rate bursts')
     expect(html).toContain('include next/resync controls')
@@ -276,7 +276,7 @@ describe('RuntimeSessionShellPage', () => {
     )
     expect(html).toContain(`data-site-count="${STREAMING_SITE_CONNECTION_FIXTURES.length}"`)
     expect(html).toContain(
-      `data-provider-coverage="YouTube x14 / AnimePahe x11 / Cineby x12 / Miruro x10 / generic x3"`
+      `data-provider-coverage="YouTube x16 / AnimePahe x13 / Cineby x14 / Miruro x12 / generic x3"`
     )
     expect(html).toContain(`data-profile-count="${STREAMING_SITE_CONNECTION_PROFILES.length}"`)
     expect(html).toContain(`data-trial-count="${STREAMING_SITE_CONNECTION_TRIAL_COUNT}"`)
