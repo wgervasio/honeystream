@@ -103,7 +103,7 @@ describe('session', () => {
       await page.waitForSelector('#runtime_pair_guide')
       await page.waitForSelector('[data-streaming-proof="byte-loss"][data-byte-loss-rate="0"]')
       await page.waitForSelector(
-        '#runtime_connection_lab_proof[data-site-count="50"][data-trial-count="3"]'
+        '#runtime_connection_lab_proof[data-site-count="58"][data-trial-count="3"]'
       )
       await page.waitForSelector(
         '#runtime_merge_gate[data-zero-loss-required="true"][data-provider-count="4"]'
@@ -121,7 +121,7 @@ describe('session', () => {
       await waitForRuntimeText(page, 'Tiny sync lane')
       await waitForRuntimeText(page, 'Hosting room')
       await waitForRuntimeText(page, '0 control bytes lost')
-      await waitForRuntimeText(page, '50 local fixtures')
+      await waitForRuntimeText(page, '58 local fixtures')
       await waitForRuntimeText(page, 'Recovered retries counted')
       await waitForRuntimeText(page, 'Cat-side cue')
       await waitForRuntimeText(page, 'Best next tap')
@@ -141,10 +141,10 @@ describe('session', () => {
       await waitForRuntimeText(page, 'Ultra-low latency lane wins')
       await waitForRuntimeText(page, 'Retry lane stays green')
       await waitForRuntimeText(page, 'Site matrix covered')
-      await waitForRuntimeText(page, 'YouTube x14')
-      await waitForRuntimeText(page, 'AnimePahe x11')
-      await waitForRuntimeText(page, 'Cineby x12')
-      await waitForRuntimeText(page, 'Miruro x10')
+      await waitForRuntimeText(page, 'YouTube x16')
+      await waitForRuntimeText(page, 'AnimePahe x13')
+      await waitForRuntimeText(page, 'Cineby x14')
+      await waitForRuntimeText(page, 'Miruro x12')
       await waitForRuntimeText(page, 'Bursts stay calm')
       await waitForRuntimeText(page, 'Rapid seek, pause, resume, and rate bursts')
       await waitForRuntimeText(page, 'include next/resync controls')
@@ -163,7 +163,7 @@ describe('session', () => {
       await waitForRuntimeText(page, 'Retry byte gate')
       await waitForRuntimeText(page, 'Recovered retry bytes stay budgeted')
       await waitForRuntimeText(page, 'Coverage gate')
-      await waitForRuntimeText(page, '50 sites')
+      await waitForRuntimeText(page, '58 sites')
       await waitForRuntimeText(page, 'Provider gate')
       await waitForRuntimeText(page, '4 providers')
       await waitForRuntimeText(page, 'each keep their own loss, retry, skipped-control, and latency proof')

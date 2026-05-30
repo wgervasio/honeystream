@@ -38,10 +38,10 @@ describe('streaming site provider quality gate', () => {
     )
     expect(providerGate.providerQuality).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ provider: 'youtube', siteCount: 14 }),
-        expect.objectContaining({ provider: 'animepahe', siteCount: 11 }),
-        expect.objectContaining({ provider: 'cineby', siteCount: 12 }),
-        expect.objectContaining({ provider: 'miruro', siteCount: 10 })
+        expect.objectContaining({ provider: 'youtube', siteCount: 16 }),
+        expect.objectContaining({ provider: 'animepahe', siteCount: 13 }),
+        expect.objectContaining({ provider: 'cineby', siteCount: 14 }),
+        expect.objectContaining({ provider: 'miruro', siteCount: 12 })
       ])
     )
   })

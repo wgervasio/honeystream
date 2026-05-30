@@ -107,7 +107,7 @@ describe('onboarding', () => {
     expect(connectionLab).toContain('Connection lab')
     expect(connectionLab).toContain('<=10ms')
     expect(connectionLab).toContain('0 bytes')
-    expect(connectionLab).toContain('50 paths')
+    expect(connectionLab).toContain('58 paths')
     expect(connectionLab).toContain('4 providers')
     expect(connectionLab).toContain('provider gates')
     expect(connectionLab).toContain('Mocked sites stay quick')

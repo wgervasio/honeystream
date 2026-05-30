@@ -20,6 +20,7 @@ import {
   toStreamingSiteMediaSnapshot,
   toStreamingSitePlaybackSnapshot
 } from './streaming-site-connection-snapshot'
+import { emitSiteJoin, emitSiteSnapshot } from './streaming-site-connection-scenario'
 import {
   createStreamingSiteFixtureObservation,
   StreamingSiteFixtureObservation
@@ -94,8 +95,7 @@ const findObservation = (
   profileId: string
 ): StreamingSiteConnectionObservation => {
   const observation = observations.find(item => item.profile.id === profileId)
-  if (!observation)
-    throw new Error(`Streaming connection lab profile "${profileId}" was not observed.`)
+  if (!observation) throw new Error(`Missing streaming lab profile "${profileId}".`)
   return observation
 }
 
@@ -150,6 +150,8 @@ const observeStreamingSiteConnectionProfile = async (
     }
 
     await pair.host.connect()
+    emitSiteJoin(sendClientCommand, sendHostEvent)
+    flushAndAdvance()
 
     for (let index = 0; index < fixtures.length; index += 1) {
       const fixture = fixtures[index]
@@ -188,6 +190,7 @@ const observeStreamingSiteConnectionProfile = async (
         sendClientCommand({ type: 'next' })
         sendClientCommand({ type: 'requestSnapshot', reason: 'resync' })
         flushAndAdvance()
+        emitSiteSnapshot(sendHostEvent, media, nowMs, seekPositionMs, rate)
         sendHostEvent({
           type: 'playbackChanged',
           playback: toStreamingSitePlaybackSnapshot(media, nowMs, seekPositionMs, rate)
@@ -229,11 +232,11 @@ const observeStreamingSiteConnectionProfile = async (
 export const runStreamingSiteConnectionLab = async (
   options: StreamingSiteConnectionLabOptions
 ): Promise<StreamingSiteConnectionLabResult> => {
+  const observeProfile = observeStreamingSiteConnectionProfile
   const observations: StreamingSiteConnectionObservation[] = []
   for (const profile of options.profiles) {
-    observations.push(
-      await observeStreamingSiteConnectionProfile(profile, options.fixtures, options)
-    )
+    const observation = await observeProfile(profile, options.fixtures, options)
+    observations.push(observation)
   }
   const rankedProfiles = rankSimulatedPeerTransportCandidates(
     observations.map(observation => observation.candidate),

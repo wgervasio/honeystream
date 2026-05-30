@@ -48,6 +48,7 @@ export const STREAMING_SITE_CONNECTION_FIXTURES: readonly StreamingSiteConnectio
     { id: 'youtube-root', source: 'https://youtube.com', title: 'YouTube root page' },
     { id: 'youtube-timestamp', source: 'https://www.youtube.com/watch?v=sync&t=42s' },
     { id: 'youtube-tv', source: 'https://tv.youtube.com/watch/honeystream-sync' },
+    { id: 'youtube-watch-list', source: 'https://youtube.com/watch?v=sync&list=PLhoneystream' },
     {
       id: 'youtube-playlist',
       source: 'https://www.youtube.com/playlist?list=honeystream-sync',
@@ -62,6 +63,10 @@ export const STREAMING_SITE_CONNECTION_FIXTURES: readonly StreamingSiteConnectio
       id: 'youtube-short-timestamp',
       source: 'https://youtu.be/honeystream-sync?t=42',
       title: 'YouTube short link timestamp'
+    },
+    {
+      id: 'youtube-www-shorts-share',
+      source: 'https://www.youtube.com/shorts/honeystream-sync?feature=share'
     },
     {
       id: 'animepahe-ru',
@@ -94,12 +99,17 @@ export const STREAMING_SITE_CONNECTION_FIXTURES: readonly StreamingSiteConnectio
     { id: 'animepahe-com-play', source: 'https://animepahe.com/play/honeystream-test?episode=3' },
     { id: 'animepahe-root', source: 'https://animepahe.ru', title: 'AnimePahe root page' },
     { id: 'animepahe-ru-watch', source: 'https://animepahe.ru/watch/honeystream-test' },
+    { id: 'animepahe-si-watch', source: 'https://animepahe.si/watch/honeystream-test?episode=5' },
     {
       id: 'animepahe-www-si-play',
       source: 'https://www.animepahe.si/play/honeystream-test?episode=4',
       title: 'AnimePahe SI www episode'
     },
     { id: 'animepahe-com-anime', source: 'https://animepahe.com/anime/honeystream-test' },
+    {
+      id: 'animepahe-ru-play-session',
+      source: 'https://animepahe.ru/play/honeystream-test?session=alpha'
+    },
     {
       id: 'cineby-app',
       source: 'https://cineby.app/movie/honeystream-test',
@@ -136,6 +146,10 @@ export const STREAMING_SITE_CONNECTION_FIXTURES: readonly StreamingSiteConnectio
     { id: 'cineby-www-app-watch', source: 'https://www.cineby.app/watch/honeystream-test' },
     { id: 'cineby-root', source: 'https://cineby.app', title: 'Cineby root page' },
     {
+      id: 'cineby-app-server',
+      source: 'https://cineby.app/movie/honeystream-test?server=gamma&autoplay=true'
+    },
+    {
       id: 'cineby-app-watch-episode',
       source: 'https://cineby.app/watch/honeystream-test?episode=1',
       title: 'Cineby watch episode'
@@ -149,6 +163,10 @@ export const STREAMING_SITE_CONNECTION_FIXTURES: readonly StreamingSiteConnectio
       id: 'cineby-cdn-subdomain',
       source: 'https://cdn.cineby.app/movie/honeystream-test?server=beta',
       title: 'Cineby CDN subdomain movie'
+    },
+    {
+      id: 'cineby-watch-to-movie',
+      source: 'https://watch.cineby.to/movie/honeystream-test?server=delta'
     },
     {
       id: 'miruro-to',
@@ -175,6 +193,7 @@ export const STREAMING_SITE_CONNECTION_FIXTURES: readonly StreamingSiteConnectio
     { id: 'miruro-anime-subdomain', source: 'https://anime.miruro.tv/watch/honeystream-test' },
     { id: 'miruro-root', source: 'https://miruro.to', title: 'Miruro root page' },
     { id: 'miruro-tv-anime', source: 'https://miruro.tv/anime/honeystream-test' },
+    { id: 'miruro-to-watch-time', source: 'https://miruro.to/watch/honeystream-test?t=90' },
     {
       id: 'miruro-www-to-dub',
       source: 'https://www.miruro.to/watch/honeystream-test?dub=1',
@@ -184,6 +203,10 @@ export const STREAMING_SITE_CONNECTION_FIXTURES: readonly StreamingSiteConnectio
       id: 'miruro-beta-subdomain',
       source: 'https://beta.miruro.tv/watch/honeystream-test?episode=3',
       title: 'Miruro beta subdomain watch page'
+    },
+    {
+      id: 'miruro-tv-dub-episode',
+      source: 'https://miruro.tv/watch/honeystream-test?episode=4&dub=1'
     },
     {
       id: 'generic-site',
