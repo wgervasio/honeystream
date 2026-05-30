@@ -26,6 +26,7 @@ import {
 } from '../playback/engine/playbackEngineContract'
 import { LocalFileMetadata } from '../playback/adapters/local-file'
 import {
+  STREAMING_SITE_CONNECTION_BUDGET,
   STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS,
   STREAMING_SITE_CONNECTION_FIXTURES,
   STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS,
@@ -212,6 +213,21 @@ describe('RuntimeSessionShellPage', () => {
       `${STREAMING_SITE_CONNECTION_PROFILES.length} lanes run for ` +
         `${STREAMING_SITE_CONNECTION_TRIAL_COUNT} deterministic trials`
     )
+    expect(html).toContain('id="runtime_merge_gate"')
+    expect(html).toContain('Streaming merge gate')
+    expect(html).toContain('Zero-loss required')
+    expect(html).toContain('Byte loss gate')
+    expect(html).toContain('0%')
+    expect(html).toContain('deliver every control byte before latency ranking')
+    expect(html).toContain('Tail latency gate')
+    expect(html).toContain(`&lt;=${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms P95`)
+    expect(html).toContain('Host and guest mock round trips stay under the merge budget')
+    expect(html).toContain('Payload gate')
+    expect(html).toContain(`&lt;=${STREAMING_SITE_CONNECTION_BUDGET.maxMessageBytes}B`)
+    expect(html).toContain('Typed play, pause, seek, rate, and next frames stay compact')
+    expect(html).toContain('Coverage gate')
+    expect(html).toContain(`${STREAMING_SITE_CONNECTION_FIXTURES.length} sites`)
+    expect(html).toContain('YouTube, AnimePahe, Cineby, Miruro, and generic pages')
     expect(html).toContain('Cat-side cue')
     expect(html).toContain('Rabbit-side hop')
     expect(html).toContain('Zero-byte-loss controls')

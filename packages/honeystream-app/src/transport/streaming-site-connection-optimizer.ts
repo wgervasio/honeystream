@@ -4,7 +4,9 @@ import {
   StreamingSiteConnectionLabResult,
   StreamingSiteConnectionProfile
 } from './streaming-site-connection-lab'
+import { MediaProvider } from 'protocol'
 import { SimulatedPeerTransportBudget } from './simulated-peer-transport-performance'
+import { StreamingSiteProviderCoverage } from './streaming-site-provider-coverage'
 
 export interface StreamingSiteConnectionOptimizationOptions {
   readonly budget?: SimulatedPeerTransportBudget
@@ -31,6 +33,8 @@ export interface StreamingSiteConnectionProfileOptimization {
   readonly maxEstimatedRoundTripP95LatencyMs: number
   readonly passedTrials: number
   readonly profile: StreamingSiteConnectionProfile
+  readonly providerCoverage: readonly StreamingSiteProviderCoverage[]
+  readonly providers: readonly MediaProvider[]
   readonly siteCount: number
   readonly trialCount: number
 }
@@ -145,6 +149,9 @@ const createProfileOptimization = (
   }
 
   const trialCount = trialResults.length
+  const firstRank =
+    trialResults.length === 0 ? undefined : findProfileRank(trialResults[0], profile.id)
+
   return {
     allTrialsPassed: passedTrials === trialCount,
     averageEstimatedRoundTripP95LatencyMs:
@@ -162,8 +169,9 @@ const createProfileOptimization = (
     maxEstimatedRoundTripP95LatencyMs,
     passedTrials,
     profile,
-    siteCount:
-      trialResults.length === 0 ? 0 : findProfileRank(trialResults[0], profile.id).siteCount,
+    providerCoverage: firstRank ? firstRank.providerCoverage : [],
+    providers: firstRank ? firstRank.providers : [],
+    siteCount: firstRank ? firstRank.siteCount : 0,
     trialCount
   }
 }

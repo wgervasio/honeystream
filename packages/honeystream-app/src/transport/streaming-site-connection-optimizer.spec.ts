@@ -11,6 +11,7 @@ import {
   STREAMING_SITE_CONNECTION_RANDOM_SAMPLES,
   STREAMING_SITE_CONNECTION_TRIAL_COUNT
 } from './streaming-site-connection-defaults'
+import { summarizeStreamingSiteConnectionMergeGate } from './streaming-site-connection-merge-gate'
 import { optimizeStreamingSiteConnectionProfiles } from './streaming-site-connection-optimizer'
 
 const STREAMING_FIXTURES: readonly StreamingSiteConnectionFixture[] = [
@@ -96,6 +97,33 @@ describe('streaming site connection optimizer', () => {
     expect(result.rankedProfiles[0].maxEstimatedRoundTripP95LatencyMs).toBeLessThanOrEqual(
       STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS
     )
+    const mergeGate = summarizeStreamingSiteConnectionMergeGate(result)
+    expect(mergeGate).toEqual(
+      expect.objectContaining({
+        ok: true,
+        selectedProfileId: 'clean-ultra-low-latency',
+        selectedProfileLabel: 'Clean ultra-low latency lane',
+        siteCount: STREAMING_SITE_CONNECTION_FIXTURES.length,
+        trialCount: STREAMING_SITE_CONNECTION_TRIAL_COUNT,
+        maxCombinedByteLossRate: 0,
+        maxCombinedDroppedMessages: 0,
+        maxCombinedRetransmissionRate: 0,
+        maxEstimatedRoundTripP95LatencyMs: STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS,
+        missingProviders: [],
+        failures: []
+      })
+    )
+    expect(mergeGate.coveredProviders).toEqual([
+      'youtube',
+      'animepahe',
+      'cineby',
+      'miruro',
+      'unknown'
+    ])
+    expect(mergeGate.requiredProviders).toEqual(['youtube', 'animepahe', 'cineby', 'miruro'])
+    expect(mergeGate.maxCombinedAverageMessageBytes).toBeLessThanOrEqual(
+      STREAMING_SITE_CONNECTION_BUDGET.maxAverageMessageBytes
+    )
 
     const retryRank = result.rankedProfiles.find(rank => rank.profile.id === 'retry-guarded')
     if (!retryRank) throw new Error('Expected retry-guarded profile rank.')
@@ -174,5 +202,47 @@ describe('streaming site connection optimizer', () => {
     expect(result.bestProfile).toBeUndefined()
     expect(result.rankedProfiles.every(rank => !rank.allTrialsPassed)).toBe(true)
     expect(result.rankedProfiles[0].passedTrials).toBe(0)
+
+    const mergeGate = summarizeStreamingSiteConnectionMergeGate(result, {
+      maxRoundTripP95LatencyMs: 20,
+      requiredProviders: ['youtube', 'miruro']
+    })
+    expect(mergeGate.ok).toBe(false)
+    expect(mergeGate.selectedProfileId).toBeUndefined()
+    expect(mergeGate.coveredProviders).toEqual([
+      'youtube',
+      'animepahe',
+      'cineby',
+      'miruro',
+      'unknown'
+    ])
+    expect(mergeGate.missingProviders).toEqual([])
+    expect(mergeGate.failures).toEqual(
+      expect.arrayContaining(['No streaming-site transport lane passed every deterministic trial.'])
+    )
+  })
+
+  it('fails the merge gate when a passing lane does not cover requested providers', async () => {
+    const result = await optimizeStreamingSiteConnectionProfiles({
+      fixtures: STREAMING_FIXTURES.slice(0, 1),
+      profiles: [CONNECTION_PROFILES[1]],
+      nowStartMs: 3000,
+      randomSamples: [0.5],
+      trialCount: 1
+    })
+
+    const mergeGate = summarizeStreamingSiteConnectionMergeGate(result, {
+      maxRoundTripP95LatencyMs: 20,
+      requiredProviders: ['youtube', 'miruro']
+    })
+
+    expect(result.bestProfile && result.bestProfile.profile.id).toBe('reliable-low-latency')
+    expect(mergeGate.ok).toBe(false)
+    expect(mergeGate.selectedProfileId).toBe('reliable-low-latency')
+    expect(mergeGate.coveredProviders).toEqual(['youtube'])
+    expect(mergeGate.missingProviders).toEqual(['miruro'])
+    expect(mergeGate.failures).toEqual([
+      'Miruro coverage is missing from the streaming-site matrix.'
+    ])
   })
 })

@@ -37,6 +37,7 @@ import {
   createInMemoryPeerTransportPair
 } from '../transport/in-memory-peer-transport-pair'
 import {
+  STREAMING_SITE_CONNECTION_BUDGET,
   STREAMING_SITE_CONNECTION_PROFILES,
   STREAMING_SITE_CONNECTION_FIXTURES,
   STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS,
@@ -321,6 +322,32 @@ const CONNECTION_LAB_PROOFS = [
     label: 'Bursts stay calm',
     detail:
       'Rapid seek, pause, resume, and rate bursts run across short, long, and live-style site fixtures.'
+  }
+] as const
+const MERGE_GATE_METRICS = [
+  {
+    id: 'byte-loss',
+    label: 'Byte loss gate',
+    value: '0%',
+    detail: 'The selected lane must deliver every control byte before latency ranking.'
+  },
+  {
+    id: 'tail-latency',
+    label: 'Tail latency gate',
+    value: `<=${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms P95`,
+    detail: 'Host and guest mock round trips stay under the merge budget across site fixtures.'
+  },
+  {
+    id: 'payload-cap',
+    label: 'Payload gate',
+    value: `<=${STREAMING_SITE_CONNECTION_BUDGET.maxMessageBytes}B`,
+    detail: 'Typed play, pause, seek, rate, and next frames stay compact.'
+  },
+  {
+    id: 'coverage',
+    label: 'Coverage gate',
+    value: `${STREAMING_SITE_CONNECTION_FIXTURE_COUNT} sites`,
+    detail: 'YouTube, AnimePahe, Cineby, Miruro, and generic pages stay in the matrix.'
   }
 ] as const
 const COMMAND_BAR_LINKS = [
@@ -1414,6 +1441,26 @@ const RuntimeSessionRouteSurface = ({
               <p>{proof.detail}</p>
             </article>
           ))}
+        </section>
+
+        <section
+          id="runtime_merge_gate"
+          className={`${styles.card} ${styles.mergeGate}`}
+          aria-label="Streaming merge gate"
+        >
+          <div className={styles.cardHeader}>
+            <p className={styles.kicker}>Streaming merge gate</p>
+            <span>Zero-loss required</span>
+          </div>
+          <div className={styles.mergeGateGrid}>
+            {MERGE_GATE_METRICS.map(metric => (
+              <article key={metric.id}>
+                <span>{metric.label}</span>
+                <strong>{metric.value}</strong>
+                <p>{metric.detail}</p>
+              </article>
+            ))}
+          </div>
         </section>
 
         <SessionRuntimeShellContainer
