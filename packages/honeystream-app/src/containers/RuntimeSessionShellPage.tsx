@@ -1398,7 +1398,15 @@ const RuntimeSessionRouteSurface = ({
               </span>
             </div>
           </div>
-          <div className={styles.roomSummary} aria-label="Room summary">
+          <div
+            className={styles.roomSummary}
+            aria-label="Room summary"
+            data-streaming-proof="room-summary"
+            data-byte-loss-rate="0"
+            data-best-round-trip-ms={STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS}
+            data-round-trip-p95-budget-ms={STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}
+            data-site-count={STREAMING_SITE_CONNECTION_FIXTURE_COUNT}
+          >
             <span>
               <strong>Room code</strong>
               <code>{lobbyId}</code>
@@ -1411,22 +1419,31 @@ const RuntimeSessionRouteSurface = ({
               <strong>Sync</strong>
               Host-led controls
             </span>
-            <span>
+            <span data-streaming-proof="byte-loss" data-byte-loss-rate="0">
               <strong>Loss</strong>0 control bytes lost
             </span>
-            <span>
+            <span
+              data-streaming-proof="round-trip-p95"
+              data-round-trip-p95-budget-ms={STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}
+            >
               <strong>Latency</strong>
               {`<=${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms mock RT`}
             </span>
-            <span>
+            <span
+              data-streaming-proof="best-lane"
+              data-best-round-trip-ms={STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS}
+            >
               <strong>Best lane</strong>
               {`${STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS}ms best mock RT`}
             </span>
-            <span>
+            <span
+              data-streaming-proof="site-fixtures"
+              data-site-count={STREAMING_SITE_CONNECTION_FIXTURE_COUNT}
+            >
               <strong>Proof</strong>
               {`${STREAMING_SITE_CONNECTION_FIXTURE_COUNT} local fixtures`}
             </span>
-            <span>
+            <span data-streaming-proof="retries" data-retry-proof="counted">
               <strong>Retries</strong>
               Recovered retries counted
             </span>
@@ -1456,10 +1473,14 @@ const RuntimeSessionRouteSurface = ({
           id="runtime_connection_lab_proof"
           className={`${styles.card} ${styles.signalDock} ${styles.labProofDock}`}
           aria-label="Streaming connection lab proof"
+          data-provider-coverage={STREAMING_SITE_PROVIDER_COVERAGE_LABEL}
+          data-profile-count={STREAMING_SITE_CONNECTION_PROFILES.length}
+          data-site-count={STREAMING_SITE_CONNECTION_FIXTURE_COUNT}
+          data-trial-count={STREAMING_SITE_CONNECTION_TRIAL_COUNT}
         >
           <strong>Connection lab proof</strong>
           {CONNECTION_LAB_PROOFS.map(proof => (
-            <article key={proof.id}>
+            <article key={proof.id} data-connection-lab-proof={proof.id}>
               <span>{proof.label}</span>
               <p>{proof.detail}</p>
             </article>
@@ -1470,6 +1491,10 @@ const RuntimeSessionRouteSurface = ({
           id="runtime_merge_gate"
           className={`${styles.card} ${styles.mergeGate}`}
           aria-label="Streaming merge gate"
+          data-byte-loss-rate="0"
+          data-provider-count={STREAMING_SITE_NAMED_PROVIDER_COUNT}
+          data-site-count={STREAMING_SITE_CONNECTION_FIXTURE_COUNT}
+          data-zero-loss-required="true"
         >
           <div className={styles.cardHeader}>
             <p className={styles.kicker}>Streaming merge gate</p>
@@ -1477,7 +1502,11 @@ const RuntimeSessionRouteSurface = ({
           </div>
           <div className={styles.mergeGateGrid}>
             {MERGE_GATE_METRICS.map(metric => (
-              <article key={metric.id}>
+              <article
+                key={metric.id}
+                data-merge-gate-metric={metric.id}
+                data-merge-gate-value={metric.value}
+              >
                 <span>{metric.label}</span>
                 <strong>{metric.value}</strong>
                 <p>{metric.detail}</p>
