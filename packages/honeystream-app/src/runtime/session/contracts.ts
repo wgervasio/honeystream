@@ -17,11 +17,19 @@ export interface SessionRuntimePlaybackEngine extends PlaybackEngineStateApplica
   dispose(): void
 }
 
+export interface SessionRuntimeClockSyncSnapshot {
+  readonly estimatedHostOffsetMs: number
+  readonly lastRoundTripMs: number
+  readonly lastSyncedAtMs: number
+  readonly sampleCount: number
+}
+
 export interface SessionRuntimeProjection {
   readonly role: SessionRuntimeRole
   readonly lifecycle: SessionRuntimeLifecycle
   readonly transportState: PeerTransportConnectionState
   readonly session?: SessionSnapshot
+  readonly clockSync?: SessionRuntimeClockSyncSnapshot
   readonly diagnostics: readonly ProtocolError[]
   readonly runtimeErrors: readonly string[]
 }
@@ -75,6 +83,7 @@ export interface SessionRuntimeDependencies {
   readonly queueCap?: number
   readonly diagnosticsCap?: number
   readonly runtimeErrorCap?: number
+  readonly heartbeatIntervalMs?: number
 }
 
 export interface SessionRuntimeProjectionSource {

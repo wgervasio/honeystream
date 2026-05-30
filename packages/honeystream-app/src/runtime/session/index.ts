@@ -2,6 +2,7 @@ export { createSessionRuntime, DefaultSessionRuntime } from './sessionRuntime'
 export type {
   HostSessionCommand,
   SessionRuntime,
+  SessionRuntimeClockSyncSnapshot,
   SessionRuntimeDependencies,
   SessionRuntimeLifecycle,
   SessionRuntimePlaybackEngine,

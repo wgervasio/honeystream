@@ -1,4 +1,5 @@
 import { SessionMediaItem, SessionMediaKind, SessionState } from 'domain/session-state'
+import { derivePlaybackPosition } from 'domain/playback-clock'
 import { PlaybackEngineDesiredState } from 'playback/engine/playbackEngineContract'
 import { PlaybackMediaSource } from 'playback/adapters/shared/playbackAdapter'
 import { HostEvent, MediaSnapshot, SessionSnapshot } from 'protocol/types'
@@ -74,7 +75,8 @@ export const toSessionSnapshot = (state: SessionState, eventCursor: number): Ses
 
 const toPlaybackDesiredState = (
   playback: SessionSnapshot['playback'],
-  media: MediaSnapshot | undefined
+  media: MediaSnapshot | undefined,
+  nowAdjustedToHostMs?: number
 ): PlaybackEngineDesiredState => ({
   media: media
     ? {
@@ -85,8 +87,14 @@ const toPlaybackDesiredState = (
     : undefined,
   playback: {
     state: playback.state,
-    positionMs: playback.positionMs,
-    updatedAtHostMs: playback.updatedAtHostMs,
+    positionMs:
+      playback.state === 'playing' && typeof nowAdjustedToHostMs === 'number'
+        ? derivePlaybackPosition(playback, nowAdjustedToHostMs)
+        : playback.positionMs,
+    updatedAtHostMs:
+      playback.state === 'playing' && typeof nowAdjustedToHostMs === 'number'
+        ? nowAdjustedToHostMs
+        : playback.updatedAtHostMs,
     rate: playback.rate,
     durationMs: playback.durationMs
   }
@@ -129,9 +137,14 @@ export const resolveCurrentMediaSnapshot = (
 
 export const toPlaybackDesiredStateFromSnapshot = (
   snapshot: SessionSnapshot,
-  knownMedia: readonly MediaSnapshot[]
+  knownMedia: readonly MediaSnapshot[],
+  nowAdjustedToHostMs?: number
 ): PlaybackEngineDesiredState =>
-  toPlaybackDesiredState(snapshot.playback, resolveCurrentMediaSnapshot(snapshot, knownMedia))
+  toPlaybackDesiredState(
+    snapshot.playback,
+    resolveCurrentMediaSnapshot(snapshot, knownMedia),
+    nowAdjustedToHostMs
+  )
 
 export const upsertKnownMedia = (
   knownMedia: readonly MediaSnapshot[],
@@ -251,5 +264,7 @@ export const applyHostEventToSessionSnapshot = (
         ...current,
         eventCursor: nextCursor(current)
       }
+    case 'heartbeat':
+      return current
   }
 }

@@ -188,6 +188,7 @@ describe('session', () => {
       await waitForRuntimeText(page, 'syncs only the tiny control stream')
       await waitForRuntimeText(page, 'typed control stream')
       await waitForRuntimeText(page, 'Low-latency control lane')
+      await waitForRuntimeText(page, 'Heartbeat clock check warms up after rabbit joins')
       await waitForRuntimeText(page, 'Zero video-byte sharing')
       await waitForRuntimeText(page, 'Website opens locally')
       await waitForRuntimeText(page, 'Popup fallback ready')

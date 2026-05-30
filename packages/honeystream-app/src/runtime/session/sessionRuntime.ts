@@ -38,6 +38,7 @@ import {
 import {
   HostSessionCommand,
   SessionRuntime,
+  SessionRuntimeClockSyncSnapshot,
   SessionRuntimeDependencies,
   SessionRuntimeProjection,
   StartGuestSessionInput,
@@ -56,6 +57,7 @@ const DEFAULT_DIAGNOSTICS_CAP = 64
 const DEFAULT_RUNTIME_ERROR_CAP = 32
 const DEFAULT_MEDIA_CACHE_CAP = 32
 const DEFAULT_SNAPSHOT_REQUEST_COOLDOWN_MS = 500
+const DEFAULT_CLOCK_SYNC_SAMPLE_CAP = 5
 const PLAYBACK_APPLY_FAILED_ERROR_CODE = 'playback-apply-failed'
 
 const normalizeCap = (value: number | undefined, fallback: number): number => {
@@ -97,6 +99,24 @@ const hostCommandToClientCommand = (command: HostSessionCommand): ClientCommand 
 const toProtocolErrorFromDomainError = (error: DomainError): ProtocolError =>
   invalidCommandError(error.message, `domain.${error.code}`)
 
+const normalizeHeartbeatInterval = (value: number | undefined): number | undefined => {
+  if (
+    typeof value !== 'number' ||
+    !Number.isFinite(value) ||
+    !Number.isInteger(value) ||
+    value < 1
+  ) {
+    return undefined
+  }
+  return value
+}
+
+const median = (samples: readonly number[]): number => {
+  if (samples.length === 0) return 0
+  const sortedSamples = samples.slice().sort((left, right) => left - right)
+  return sortedSamples[Math.floor(sortedSamples.length / 2)]
+}
+
 export class DefaultSessionRuntime implements SessionRuntime {
   private readonly transport: SessionRuntimeDependencies['transport']
   private readonly playback: SessionRuntimeDependencies['playback']
@@ -105,6 +125,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
   private readonly diagnosticsCap: number
   private readonly runtimeErrorCap: number
   private readonly mediaCacheCap: number
+  private readonly heartbeatIntervalMs?: number
 
   private readonly projectionStore: ProjectionStore<SessionRuntimeProjection>
   private readonly unsubscribeTransport: TransportUnsubscribe
@@ -126,6 +147,9 @@ export class DefaultSessionRuntime implements SessionRuntime {
   private lastGuestSnapshotRequestAtMs: number | undefined
   private disposed = false
   private inboundQueue: Promise<void> = Promise.resolve()
+  private heartbeatTimer: ReturnType<typeof setInterval> | undefined
+  private clockSync?: SessionRuntimeClockSyncSnapshot
+  private clockSyncOffsetSamples: readonly number[] = []
 
   constructor(dependencies: SessionRuntimeDependencies) {
     this.transport = dependencies.transport
@@ -135,11 +159,13 @@ export class DefaultSessionRuntime implements SessionRuntime {
     this.diagnosticsCap = normalizeCap(dependencies.diagnosticsCap, DEFAULT_DIAGNOSTICS_CAP)
     this.runtimeErrorCap = normalizeCap(dependencies.runtimeErrorCap, DEFAULT_RUNTIME_ERROR_CAP)
     this.mediaCacheCap = DEFAULT_MEDIA_CACHE_CAP
+    this.heartbeatIntervalMs = normalizeHeartbeatInterval(dependencies.heartbeatIntervalMs)
 
     this.projection = {
       role: this.role,
       lifecycle: this.lifecycle,
       transportState: this.transport.getState(),
+      clockSync: this.clockSync,
       diagnostics: [],
       runtimeErrors: []
     }
@@ -211,6 +237,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
       username: input.username,
       inviteSecret: input.inviteSecret
     })
+    this.startHeartbeatLoop()
   }
 
   async dispatchHostCommand(command: HostSessionCommand): Promise<void> {
@@ -238,6 +265,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
 
     this.disposed = true
     this.lifecycle = 'disposed'
+    this.stopHeartbeatLoop()
     this.unsubscribeTransport()
     this.transport.dispose()
     this.playback.dispose()
@@ -325,7 +353,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
         this.tryRequestGuestSnapshot('resync', delivery.receivedAtMs)
         return
       }
-      await this.applyGuestHostEvent(parsed.value.event)
+      await this.applyGuestHostEvent(parsed.value.event, delivery.receivedAtMs)
       return
     }
 
@@ -344,6 +372,19 @@ export class DefaultSessionRuntime implements SessionRuntime {
     let requestSnapshot = command.type === 'requestSnapshot'
 
     switch (command.type) {
+      case 'heartbeat': {
+        const responseSentAtMs = this.runtimeTimeAtOrAfter(nowHostMs)
+        this.trySendHostEvent(
+          {
+            type: 'heartbeat',
+            clientSentAtMs: command.clientSentAtMs,
+            hostReceivedAtMs: nowHostMs,
+            hostSentAtMs: responseSentAtMs
+          },
+          responseSentAtMs
+        )
+        return
+      }
       case 'join':
         if (command.inviteSecret !== this.hostInviteSecret) {
           const protocolError = invalidCommandError(
@@ -439,7 +480,13 @@ export class DefaultSessionRuntime implements SessionRuntime {
     }
   }
 
-  private async applyGuestHostEvent(event: HostEvent): Promise<void> {
+  private async applyGuestHostEvent(event: HostEvent, receivedAtMs: number): Promise<void> {
+    if (event.type === 'heartbeat') {
+      this.recordClockSync(event, receivedAtMs)
+      await this.reapplyGuestPlaybackAfterClockSync(receivedAtMs)
+      return
+    }
+
     if (event.type === 'protocolRejected') {
       this.recordProtocolDiagnostic(event.error)
       if (event.error.code === 'unsupportedVersion') {
@@ -477,7 +524,28 @@ export class DefaultSessionRuntime implements SessionRuntime {
     this.updateProjection({ session: nextSession })
     try {
       await this.playback.applyDesiredState(
-        toPlaybackDesiredStateFromSnapshot(nextSession, this.knownGuestMedia)
+        toPlaybackDesiredStateFromSnapshot(
+          nextSession,
+          this.knownGuestMedia,
+          this.toEstimatedHostTime(receivedAtMs)
+        )
+      )
+    } catch (error) {
+      this.recordRuntimeError(`[playback] ${toErrorMessage(error)}`)
+    }
+  }
+
+  private async reapplyGuestPlaybackAfterClockSync(receivedAtMs: number): Promise<void> {
+    const session = this.projection.session
+    if (!session || session.playback.state !== 'playing') return
+
+    try {
+      await this.playback.applyDesiredState(
+        toPlaybackDesiredStateFromSnapshot(
+          session,
+          this.knownGuestMedia,
+          this.toEstimatedHostTime(receivedAtMs)
+        )
       )
     } catch (error) {
       this.recordRuntimeError(`[playback] ${toErrorMessage(error)}`)
@@ -523,6 +591,72 @@ export class DefaultSessionRuntime implements SessionRuntime {
     })
   }
 
+  private startHeartbeatLoop(): void {
+    this.stopHeartbeatLoop()
+    if (typeof this.heartbeatIntervalMs !== 'number') return
+
+    this.sendGuestHeartbeat()
+    this.heartbeatTimer = setInterval(() => {
+      if (this.disposed) return
+      try {
+        this.sendGuestHeartbeat()
+      } catch (error) {
+        this.recordRuntimeError(`[heartbeat] ${toErrorMessage(error)}`)
+      }
+    }, this.heartbeatIntervalMs)
+  }
+
+  private stopHeartbeatLoop(): void {
+    if (!this.heartbeatTimer) return
+    clearInterval(this.heartbeatTimer)
+    this.heartbeatTimer = undefined
+  }
+
+  private sendGuestHeartbeat(): void {
+    if (this.disposed) return
+    if (this.role !== 'guest') return
+    if (this.lifecycle !== 'running') return
+    if (this.transport.getState().status !== 'connected') return
+
+    const nowMs = this.now()
+    this.sendWireEnvelope({
+      version: PROTOCOL_VERSION,
+      direction: 'client-to-host',
+      seq: this.nextSequence(),
+      sentAtMs: nowMs,
+      command: {
+        type: 'heartbeat',
+        clientSentAtMs: nowMs
+      }
+    })
+  }
+
+  private recordClockSync(
+    event: Extract<HostEvent, { readonly type: 'heartbeat' }>,
+    receivedAtMs: number
+  ): void {
+    const hostProcessingMs = Math.max(0, event.hostSentAtMs - event.hostReceivedAtMs)
+    const roundTripMs = Math.max(0, receivedAtMs - event.clientSentAtMs - hostProcessingMs)
+    const estimatedHostOffsetMs =
+      (event.hostReceivedAtMs - event.clientSentAtMs + event.hostSentAtMs - receivedAtMs) / 2
+    this.clockSyncOffsetSamples = [
+      ...this.clockSyncOffsetSamples,
+      estimatedHostOffsetMs
+    ].slice(-DEFAULT_CLOCK_SYNC_SAMPLE_CAP)
+    this.clockSync = {
+      estimatedHostOffsetMs: median(this.clockSyncOffsetSamples),
+      lastRoundTripMs: roundTripMs,
+      lastSyncedAtMs: receivedAtMs,
+      sampleCount: this.clockSyncOffsetSamples.length
+    }
+    this.updateProjection({ clockSync: this.clockSync })
+  }
+
+  private toEstimatedHostTime(clientNowMs: number): number {
+    const offsetMs = this.clockSync ? this.clockSync.estimatedHostOffsetMs : 0
+    return clientNowMs + offsetMs
+  }
+
   private runtimeTimeAtOrAfter(notBeforeMs: number): number {
     const nowMs = this.now()
     return Number.isFinite(notBeforeMs) ? Math.max(nowMs, notBeforeMs) : nowMs
@@ -558,6 +692,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
       lifecycle: this.lifecycle,
       transportState: this.transport.getState(),
       session: this.projection.session,
+      clockSync: this.clockSync,
       diagnostics: this.diagnostics,
       runtimeErrors: this.runtimeErrors,
       ...overrides

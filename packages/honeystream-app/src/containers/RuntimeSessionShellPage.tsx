@@ -575,7 +575,8 @@ const createRuntimeFromTransport = (
     runtime = input.createRuntime({
       now: input.now,
       transport: observedTransport,
-      playback
+      playback,
+      heartbeatIntervalMs: 5000
     })
   } catch (error) {
     observedTransport.dispose()
@@ -805,6 +806,7 @@ const mapProjectionToShellSnapshot = (
   return {
     role: projection.role,
     session,
+    clockSync: projection.clockSync,
     systemErrors: [
       ...(includeLocalWarning ? [LOCAL_ONLY_WARNING] : []),
       ...projection.diagnostics.map(mapProtocolErrorToSystemError),
@@ -930,6 +932,15 @@ const getPlaybackStateLabel = (state: SessionSnapshot['playback']['state']): str
   }
 }
 
+const getClockSyncLabel = (
+  clockSync: SessionRuntimeProjectionSnapshot['clockSync'] | undefined
+): string =>
+  clockSync
+    ? `${Math.round(clockSync.lastRoundTripMs)}ms heartbeat RT / ${Math.round(
+        clockSync.estimatedHostOffsetMs
+      )}ms host offset`
+    : 'Heartbeat clock check warms up after rabbit joins'
+
 const formatQueuedCountLabel = (count: number): string =>
   count === 1 ? '1 pick queued' : `${count} picks queued`
 
@@ -1036,6 +1047,7 @@ const RuntimeSessionRouteSurface = ({
     const queuedCountLabel = formatQueuedCountLabel(viewModel.snapshot.session.queue.length)
     const stageKindLabel = getStageKindLabel(currentMedia)
     const playbackStateLabel = getPlaybackStateLabel(viewModel.snapshot.session.playback.state)
+    const clockSyncLabel = getClockSyncLabel(viewModel.snapshot.clockSync)
     const launchSteps = createLaunchSteps(
       currentMedia,
       guest ? guest.username : undefined,
@@ -1310,6 +1322,9 @@ const RuntimeSessionRouteSurface = ({
             <span>Zero video-byte sharing</span>
             <span>Low-latency control lane</span>
             <span>Reliable retry guard</span>
+            <span data-clock-sync-state={viewModel.snapshot.clockSync ? 'synced' : 'warming'}>
+              {clockSyncLabel}
+            </span>
           </div>
           <div
             id="runtime_site_handoff"
