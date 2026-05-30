@@ -269,7 +269,7 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain(
       `data-best-round-trip-ms="${STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS}"`
     )
-    expect(html).toContain(`data-site-count="${STREAMING_SITE_CONNECTION_FIXTURE_COUNT}"`)
+    expect(html).toContain(`data-site-count="${STREAMING_SITE_CONNECTION_FIXTURES.length}"`)
     expect(html).toContain(
       `data-provider-coverage="YouTube x14 / AnimePahe x11 / Cineby x12 / Miruro x10 / generic x3"`
     )
