@@ -155,6 +155,9 @@ describe('session', () => {
       await waitForRuntimeText(page, 'deliver every control byte before latency ranking')
       await waitForRuntimeText(page, 'Tail latency gate')
       await waitForRuntimeText(page, '<=10ms P95')
+      await waitForRuntimeText(page, 'Balance gate')
+      await waitForRuntimeText(page, '<=4ms skew')
+      await waitForRuntimeText(page, 'averages cannot hide lag')
       await waitForRuntimeText(page, 'Payload gate')
       await waitForRuntimeText(page, '<=2048B')
       await waitForRuntimeText(page, 'Retry byte gate')
@@ -230,6 +233,7 @@ describe('session', () => {
       const sources = [
         { url: 'youtube.com', label: 'YouTube' },
         { url: 'youtube.com/watch?v=honeystream-e2e', label: 'YouTube' },
+        { url: 'youtube.com:443/watch?v=honeystream-e2e', label: 'YouTube' },
         { url: 'animepahe.ru', label: 'AnimePahe' },
         { url: 'animepahe.ru/play/honeystream-e2e', label: 'AnimePahe' },
         { url: 'cineby.app', label: 'Cineby' },

@@ -341,6 +341,12 @@ const MERGE_GATE_METRICS = [
     detail: 'Host and guest mock round trips stay under the merge budget across site fixtures.'
   },
   {
+    id: 'directional-skew',
+    label: 'Balance gate',
+    value: `<=${STREAMING_SITE_CONNECTION_BUDGET.maxDirectionalLatencySkewMs}ms skew`,
+    detail: 'Host-to-guest and guest-to-host lanes stay balanced so averages cannot hide lag.'
+  },
+  {
     id: 'payload-cap',
     label: 'Payload gate',
     value: `<=${STREAMING_SITE_CONNECTION_BUDGET.maxMessageBytes}B`,

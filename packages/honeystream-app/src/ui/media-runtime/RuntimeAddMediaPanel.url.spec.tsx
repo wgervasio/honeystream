@@ -71,6 +71,34 @@ describe('RuntimeAddMediaPanel URL handling', () => {
     }
   })
 
+  it('normalizes shorthand watch links that include an explicit port', () => {
+    const onAddUrl = jest.fn()
+    const container = document.createElement('div')
+    document.body.appendChild(container)
+
+    try {
+      ReactDOM.render(<RuntimeAddMediaPanel onAddUrl={onAddUrl} />, container)
+
+      const input = container.querySelector('#runtime-add-media-url') as HTMLInputElement
+      input.value = 'youtube.com:443/watch?v=honeystream-demo'
+      Simulate.change(input)
+
+      expect(container.querySelector('[data-add-media-source-preview="website"]')).not.toBeNull()
+      expect(container.querySelector('[data-add-media-provider="youtube"]')).not.toBeNull()
+      expect(container.textContent).toContain('HTTPS added')
+
+      const form = container.querySelector('form') as HTMLFormElement
+      Simulate.submit(form)
+
+      expect(onAddUrl).toHaveBeenCalledWith('https://youtube.com/watch?v=honeystream-demo')
+      expect(container.querySelector('[data-add-media-error="true"]')).toBeNull()
+      expect(container.textContent).toContain('Source queued with https:// added')
+    } finally {
+      ReactDOM.unmountComponentAtNode(container)
+      container.remove()
+    }
+  })
+
   it('clears URL validation feedback when the user edits the input', () => {
     const container = document.createElement('div')
     document.body.appendChild(container)

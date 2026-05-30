@@ -7,10 +7,10 @@ import {
   StreamingSiteConnectionOptimizationResult,
   StreamingSiteConnectionProfileOptimization
 } from './streaming-site-connection-optimizer'
-
 export interface StreamingSiteConnectionMergeGateOptions {
   readonly maxByteLossRate?: number
   readonly maxDroppedMessages?: number
+  readonly maxDirectionalLatencySkewMs?: number
   readonly maxFixtureByteLossRate?: number
   readonly maxFixtureDroppedMessages?: number
   readonly maxFixtureRoundTripP95LatencyMs?: number
@@ -19,7 +19,6 @@ export interface StreamingSiteConnectionMergeGateOptions {
   readonly maxDirectionalRetransmissionByteRate?: number
   readonly requiredProviders?: readonly MediaProvider[]
 }
-
 export interface StreamingSiteConnectionMergeGateSummary {
   readonly coveredProviders: readonly MediaProvider[]
   readonly failures: readonly string[]
@@ -28,6 +27,7 @@ export interface StreamingSiteConnectionMergeGateSummary {
   readonly maxCombinedDroppedMessages: number
   readonly maxCombinedRetransmissionByteRate: number
   readonly maxCombinedRetransmissionRate: number
+  readonly maxDirectionalLatencySkewMs: number
   readonly maxDirectionalRetransmissionByteRate: number
   readonly maxEstimatedRoundTripP95LatencyMs: number
   readonly maxFixtureByteLossRate: number
@@ -123,6 +123,9 @@ const createFailureList = (
   if (profile && profile.maxCombinedRetransmissionByteRate > options.maxRetransmissionByteRate) {
     failures.push(`Recovered retry bytes exceeded ${options.maxRetransmissionByteRate}.`)
   }
+  if (profile && profile.maxDirectionalLatencySkewMs > options.maxDirectionalLatencySkewMs) {
+    failures.push(`Directional latency skew exceeded ${options.maxDirectionalLatencySkewMs}ms.`)
+  }
   if (
     profile &&
     profile.maxDirectionalRetransmissionByteRate >
@@ -149,8 +152,8 @@ const createFailureList = (
 
 /*
 Context: The streaming-site mock lab should produce a compact merge gate, not just raw ranks.
-Invariant: A merge-ready lane covers the requested providers, loses zero control bytes, and stays
-within the deterministic P95 round-trip budget.
+Invariant: A merge-ready lane covers the requested providers, loses zero control bytes, stays
+within the deterministic P95 round-trip budget, and keeps both directions balanced.
 Options considered: UI-only copy, live third-party checks, or a typed summary over lab observations.
 Decision: Summarize optimizer output into a small pure value that tests and UI copy can assert.
 Performance impact: O(provider count) over capped provider coverage and one selected profile.
@@ -171,6 +174,10 @@ export const summarizeStreamingSiteConnectionMergeGate = (
       typeof options.maxDroppedMessages === 'number'
         ? options.maxDroppedMessages
         : STREAMING_SITE_CONNECTION_BUDGET.maxDroppedMessages,
+    maxDirectionalLatencySkewMs:
+      typeof options.maxDirectionalLatencySkewMs === 'number'
+        ? options.maxDirectionalLatencySkewMs
+        : STREAMING_SITE_CONNECTION_BUDGET.maxDirectionalLatencySkewMs,
     maxFixtureByteLossRate:
       resolveNumberOption(
         options.maxFixtureByteLossRate,
@@ -223,6 +230,9 @@ export const summarizeStreamingSiteConnectionMergeGate = (
       : 0,
     maxCombinedRetransmissionRate: selectedProfile
       ? selectedProfile.maxCombinedRetransmissionRate
+      : 0,
+    maxDirectionalLatencySkewMs: selectedProfile
+      ? selectedProfile.maxDirectionalLatencySkewMs
       : 0,
     maxDirectionalRetransmissionByteRate: selectedProfile
       ? selectedProfile.maxDirectionalRetransmissionByteRate

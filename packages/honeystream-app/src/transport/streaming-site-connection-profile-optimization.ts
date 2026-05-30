@@ -8,7 +8,6 @@ import {
   summarizeStreamingSiteProviderQuality
 } from './streaming-site-provider-quality'
 import { StreamingSiteProviderCoverage } from './streaming-site-provider-coverage'
-
 export interface StreamingSiteConnectionProfileOptimization {
   readonly allTrialsPassed: boolean
   readonly averageEstimatedRoundTripP95LatencyMs: number
@@ -21,6 +20,7 @@ export interface StreamingSiteConnectionProfileOptimization {
   readonly maxCombinedRetransmissionRate: number
   readonly maxDirectionalAverageLatencyMs: number
   readonly maxDirectionalLatencyJitterMs: number
+  readonly maxDirectionalLatencySkewMs: number
   readonly maxDirectionalRetransmissionByteRate: number
   readonly maxDirectionalRetransmissionRate: number
   readonly maxEstimatedRoundTripMaxLatencyMs: number
@@ -40,7 +40,6 @@ export interface StreamingSiteConnectionProfileOptimization {
   readonly siteCount: number
   readonly trialCount: number
 }
-
 const findProfileRank = (
   result: StreamingSiteConnectionLabResult,
   profileId: string
@@ -49,7 +48,6 @@ const findProfileRank = (
   if (!rank) throw new Error(`Streaming connection optimizer missed profile "${profileId}".`)
   return rank
 }
-
 const findProfileObservation = (
   result: StreamingSiteConnectionLabResult,
   profileId: string
@@ -59,7 +57,6 @@ const findProfileObservation = (
     throw new Error(`Streaming connection optimizer missed observation "${profileId}".`)
   return observation
 }
-
 export const createStreamingSiteConnectionProfileOptimization = (
   profile: StreamingSiteConnectionProfile,
   trialResults: readonly StreamingSiteConnectionLabResult[]
@@ -73,6 +70,7 @@ export const createStreamingSiteConnectionProfileOptimization = (
   let maxCombinedRetransmissionRate = 0
   let maxDirectionalAverageLatencyMs = 0
   let maxDirectionalLatencyJitterMs = 0
+  let maxDirectionalLatencySkewMs = 0
   let maxDirectionalRetransmissionByteRate = 0
   let maxDirectionalRetransmissionRate = 0
   let maxEstimatedRoundTripMaxLatencyMs = 0
@@ -85,7 +83,6 @@ export const createStreamingSiteConnectionProfileOptimization = (
   let maxFixtureRetransmissionByteRate = 0
   let maxFixtureRetransmissionRate = 0
   let totalEstimatedRoundTripP95LatencyMs = 0
-
   for (const result of trialResults) {
     const rank = findProfileRank(result, profile.id)
     const metrics = rank.candidate.metrics
@@ -119,6 +116,10 @@ export const createStreamingSiteConnectionProfileOptimization = (
       maxDirectionalLatencyJitterMs,
       metrics.maxDirectionalLatencyJitterMs
     )
+    maxDirectionalLatencySkewMs = Math.max(
+      maxDirectionalLatencySkewMs,
+      metrics.directionalAverageLatencySkewMs
+    )
     maxDirectionalRetransmissionRate = Math.max(
       maxDirectionalRetransmissionRate,
       metrics.maxDirectionalRetransmissionRate
@@ -136,7 +137,6 @@ export const createStreamingSiteConnectionProfileOptimization = (
       metrics.estimatedRoundTripP95LatencyMs
     )
     totalEstimatedRoundTripP95LatencyMs += metrics.estimatedRoundTripP95LatencyMs
-
     const observation = findProfileObservation(result, profile.id)
     for (const fixture of observation.fixtureObservations) {
       maxFixtureAverageMessageBytes = Math.max(
@@ -160,11 +160,9 @@ export const createStreamingSiteConnectionProfileOptimization = (
       )
     }
   }
-
   const trialCount = trialResults.length
   const firstRank =
     trialResults.length === 0 ? undefined : findProfileRank(trialResults[0], profile.id)
-
   return {
     allTrialsPassed: passedTrials === trialCount,
     averageEstimatedRoundTripP95LatencyMs:
@@ -178,6 +176,7 @@ export const createStreamingSiteConnectionProfileOptimization = (
     maxCombinedRetransmissionRate,
     maxDirectionalAverageLatencyMs,
     maxDirectionalLatencyJitterMs,
+    maxDirectionalLatencySkewMs,
     maxDirectionalRetransmissionByteRate,
     maxDirectionalRetransmissionRate,
     maxEstimatedRoundTripMaxLatencyMs,
@@ -198,7 +197,6 @@ export const createStreamingSiteConnectionProfileOptimization = (
     trialCount
   }
 }
-
 export const compareStreamingSiteConnectionProfileOptimizations = (
   left: StreamingSiteConnectionProfileOptimization,
   right: StreamingSiteConnectionProfileOptimization
@@ -248,6 +246,9 @@ export const compareStreamingSiteConnectionProfileOptimizations = (
   }
   if (left.maxDirectionalAverageLatencyMs !== right.maxDirectionalAverageLatencyMs) {
     return left.maxDirectionalAverageLatencyMs - right.maxDirectionalAverageLatencyMs
+  }
+  if (left.maxDirectionalLatencySkewMs !== right.maxDirectionalLatencySkewMs) {
+    return left.maxDirectionalLatencySkewMs - right.maxDirectionalLatencySkewMs
   }
   if (left.maxCombinedAverageMessageBytes !== right.maxCombinedAverageMessageBytes) {
     return left.maxCombinedAverageMessageBytes - right.maxCombinedAverageMessageBytes

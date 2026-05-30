@@ -13,7 +13,6 @@ import {
 } from './streaming-site-connection-defaults'
 import { summarizeStreamingSiteConnectionMergeGate } from './streaming-site-connection-merge-gate'
 import { optimizeStreamingSiteConnectionProfiles } from './streaming-site-connection-optimizer'
-
 const STREAMING_FIXTURES: readonly StreamingSiteConnectionFixture[] = [
   {
     id: 'youtube-watch',
@@ -91,6 +90,7 @@ describe('streaming site connection optimizer', () => {
     expect(result.rankedProfiles[0].maxCombinedDroppedMessages).toBe(0)
     expect(result.rankedProfiles[0].maxCombinedRetransmissionRate).toBe(0)
     expect(result.rankedProfiles[0].maxDirectionalRetransmissionRate).toBe(0)
+    expect(result.rankedProfiles[0].maxDirectionalLatencySkewMs).toBe(0)
     expect(result.rankedProfiles[0].maxEstimatedRoundTripP95LatencyMs).toBeLessThanOrEqual(
       STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS
     )
@@ -109,6 +109,7 @@ describe('streaming site connection optimizer', () => {
         maxCombinedDroppedMessages: 0,
         maxCombinedRetransmissionRate: 0,
         maxCombinedRetransmissionByteRate: 0,
+        maxDirectionalLatencySkewMs: 0,
         maxEstimatedRoundTripP95LatencyMs: STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS,
         missingProviders: [],
         failures: []

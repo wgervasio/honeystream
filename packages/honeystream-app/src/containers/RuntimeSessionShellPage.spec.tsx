@@ -223,6 +223,11 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('Tail latency gate')
     expect(html).toContain(`&lt;=${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms P95`)
     expect(html).toContain('Host and guest mock round trips stay under the merge budget')
+    expect(html).toContain('Balance gate')
+    expect(html).toContain(
+      `&lt;=${STREAMING_SITE_CONNECTION_BUDGET.maxDirectionalLatencySkewMs}ms skew`
+    )
+    expect(html).toContain('averages cannot hide lag')
     expect(html).toContain('Payload gate')
     expect(html).toContain(`&lt;=${STREAMING_SITE_CONNECTION_BUDGET.maxMessageBytes}B`)
     expect(html).toContain('Typed play, pause, seek, rate, and next frames stay compact')
