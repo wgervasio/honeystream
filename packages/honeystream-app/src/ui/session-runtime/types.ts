@@ -8,9 +8,17 @@ export interface SessionRuntimeSystemErrorSnapshot {
   readonly message: string
 }
 
+export interface SessionRuntimeClockSyncSnapshot {
+  readonly estimatedHostOffsetMs: number
+  readonly lastRoundTripMs: number
+  readonly lastSyncedAtMs: number
+  readonly sampleCount: number
+}
+
 export interface SessionRuntimeProjectionSnapshot {
   readonly role: SessionRuntimeProjectionRole
   readonly session: SessionSnapshot
+  readonly clockSync?: SessionRuntimeClockSyncSnapshot
   readonly systemErrors: readonly SessionRuntimeSystemErrorSnapshot[]
 }
 

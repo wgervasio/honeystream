@@ -62,6 +62,11 @@ export const parseClientCommand = (
       if (!reasonResult.ok) return reasonResult
       return ok({ type: value.type, reason: reasonResult.value })
     }
+    case 'heartbeat':
+      if (!isNonNegativeNumber(value.clientSentAtMs)) {
+        return err(malformedValueError(`${path}.clientSentAtMs`, 'Expected non-negative clientSentAtMs.'))
+      }
+      return ok({ type: value.type, clientSentAtMs: value.clientSentAtMs })
     default:
       return err(invalidCommandError(`Unknown command type "${value.type}".`, `${path}.type`))
   }

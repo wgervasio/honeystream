@@ -14,7 +14,6 @@ import {
   StreamingSiteConnectionOptimizationResult,
   StreamingSiteConnectionProfileOptimization
 } from './streaming-site-connection-optimizer'
-
 const createProviderOrderRegressionResult = (): StreamingSiteConnectionOptimizationResult => {
   const selectedProfile: StreamingSiteConnectionProfileOptimization = {
     allTrialsPassed: true,
@@ -133,7 +132,8 @@ describe('streaming site connection merge gate', () => {
       expect.arrayContaining([
         { provider: 'youtube', siteCount: 16 },
         { provider: 'animepahe', siteCount: 13 },
-        { provider: 'cineby', siteCount: 14 }
+        { provider: 'cineby', siteCount: 14 },
+        { provider: 'miruro', siteCount: 12 }
       ])
     )
   })

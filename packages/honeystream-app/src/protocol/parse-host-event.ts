@@ -3,7 +3,7 @@ import { parseProtocolError } from './parse-protocol-error'
 import { parseMediaSnapshot, parseParticipantSnapshot, parsePlaybackSnapshot, parseSessionSnapshot } from './parse-shared'
 import { err, ok, ProtocolResult } from './result'
 import { HostEvent } from './types'
-import { isNonEmptyString, isNonNegativeInteger, isRecord, isString } from './validation'
+import { isNonEmptyString, isNonNegativeInteger, isNonNegativeNumber, isRecord, isString } from './validation'
 
 export const parseHostEvent = (value: unknown, path: string = 'event'): ProtocolResult<HostEvent> => {
   if (!isRecord(value)) return err(invalidEventError('Expected event object.', path))
@@ -62,6 +62,22 @@ export const parseHostEvent = (value: unknown, path: string = 'event'): Protocol
       if (!errorResult.ok) return errorResult
       return ok({ type: value.type, error: errorResult.value })
     }
+    case 'heartbeat':
+      if (!isNonNegativeNumber(value.clientSentAtMs)) {
+        return err(malformedValueError(`${path}.clientSentAtMs`, 'Expected non-negative clientSentAtMs.'))
+      }
+      if (!isNonNegativeNumber(value.hostReceivedAtMs)) {
+        return err(malformedValueError(`${path}.hostReceivedAtMs`, 'Expected non-negative hostReceivedAtMs.'))
+      }
+      if (!isNonNegativeNumber(value.hostSentAtMs)) {
+        return err(malformedValueError(`${path}.hostSentAtMs`, 'Expected non-negative hostSentAtMs.'))
+      }
+      return ok({
+        type: value.type,
+        clientSentAtMs: value.clientSentAtMs,
+        hostReceivedAtMs: value.hostReceivedAtMs,
+        hostSentAtMs: value.hostSentAtMs
+      })
     default:
       return err(invalidEventError(`Unknown event type "${value.type}".`, `${path}.type`))
   }

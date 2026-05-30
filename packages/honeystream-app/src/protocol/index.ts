@@ -1,4 +1,5 @@
 export { err, ok, ProtocolResult } from './result'
+export { HeartbeatCommand, HeartbeatEvent } from './heartbeat'
 export {
   PROTOCOL_VERSION,
   ClientCommand,

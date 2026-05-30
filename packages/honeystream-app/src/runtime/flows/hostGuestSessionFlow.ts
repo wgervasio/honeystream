@@ -338,6 +338,8 @@ export const applyHostEventToSnapshot = (
         ...snapshot,
         eventCursor: nextEventCursor(snapshot)
       }
+    case 'heartbeat':
+      return snapshot
   }
 }
 
@@ -557,6 +559,17 @@ export const createHostGuestSessionFlow = (
     const activeGuestId = state.participants.guest ? state.participants.guest.id : undefined
     if (isGuestCommand(command) && activeGuestId !== fromPeerId) {
       rejectCommand(command, 'Guest must join the host session before issuing commands.')
+      return
+    }
+
+    if (command.type === 'heartbeat') {
+      const hostReceivedAtMs = options.clock.nowMs()
+      emitHostEvent({
+        type: 'heartbeat',
+        clientSentAtMs: command.clientSentAtMs,
+        hostReceivedAtMs,
+        hostSentAtMs: options.clock.nowMs()
+      })
       return
     }
 

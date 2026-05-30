@@ -157,6 +157,62 @@ describe('runtime/session/SessionRuntime', () => {
     expect(guestSession.current).toEqual(createMedia('media-guest'))
   })
 
+  it('records heartbeat clock sync and reapplies playing guest playback at receive time', async () => {
+    let nowMs = 10000
+    const pair = createInMemoryPeerTransportPair({
+      hostInboundValidator: acceptsUnknownMessage,
+      guestInboundValidator: acceptsUnknownMessage,
+      now: () => nowMs
+    })
+    const guestPlayback = new FakePlaybackEngine()
+    const hostRuntime = createSessionRuntime({
+      transport: pair.host,
+      playback: new FakePlaybackEngine(),
+      now: () => nowMs
+    })
+    const guestRuntime = createSessionRuntime({
+      transport: pair.guest,
+      playback: guestPlayback,
+      now: () => nowMs
+    })
+
+    await hostRuntime.startHostSession({
+      roomId: 'room-1',
+      hostUsername: 'Host',
+      inviteSecret: 'invite-secret'
+    })
+    await guestRuntime.startGuestSession({
+      roomId: 'room-1',
+      username: 'Guest',
+      inviteSecret: 'invite-secret'
+    })
+    await flushRuntime()
+
+    await hostRuntime.dispatchHostCommand({
+      type: 'addMedia',
+      media: createMedia('heartbeat-media')
+    })
+    await flushRuntime()
+    nowMs += 125
+    await guestRuntime.dispatchGuestCommand({
+      type: 'heartbeat',
+      clientSentAtMs: nowMs
+    })
+    await flushRuntime()
+
+    const clockSync = guestRuntime.getSnapshot().clockSync
+    const lastDesiredState = guestPlayback.desiredStates[guestPlayback.desiredStates.length - 1]
+    expect(clockSync).toEqual({
+      estimatedHostOffsetMs: 0,
+      lastRoundTripMs: 0,
+      lastSyncedAtMs: nowMs,
+      sampleCount: 1
+    })
+    expect(lastDesiredState.playback.state).toBe('playing')
+    expect(lastDesiredState.playback.positionMs).toBe(125)
+    expect(lastDesiredState.playback.updatedAtHostMs).toBe(nowMs)
+  })
+
   it('records protocol diagnostics for malformed inbound envelopes', async () => {
     let nowMs = 5000
     const pair = createInMemoryPeerTransportPair({

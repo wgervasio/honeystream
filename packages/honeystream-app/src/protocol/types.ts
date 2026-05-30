@@ -1,5 +1,5 @@
+import { HeartbeatCommand, HeartbeatEvent } from './heartbeat'
 export const PROTOCOL_VERSION = 1 as const
-
 export type ProtocolVersion = typeof PROTOCOL_VERSION
 export type WireDirection = 'client-to-host' | 'host-to-client'
 export type SessionStatus = 'idle' | 'hosting' | 'joining' | 'connected' | 'ended'
@@ -87,9 +87,7 @@ export type SetRateCommand = {
   readonly rate: number
 }
 
-export type NextCommand = {
-  readonly type: 'next'
-}
+export type NextCommand = { readonly type: 'next' }
 
 export type RequestSnapshotCommand = {
   readonly type: 'requestSnapshot'
@@ -106,6 +104,7 @@ export type ClientCommand =
   | SetRateCommand
   | NextCommand
   | RequestSnapshotCommand
+  | HeartbeatCommand
 
 type ProtocolErrorBase<TCode extends ProtocolErrorCode> = {
   readonly type: 'protocolError'
@@ -162,6 +161,7 @@ export type HostEvent =
   | { readonly type: 'playbackChanged'; readonly playback: PlaybackSnapshot }
   | { readonly type: 'systemError'; readonly errorCode: string; readonly message: string }
   | { readonly type: 'protocolRejected'; readonly error: ProtocolError }
+  | HeartbeatEvent
 
 export type ClientToHostEnvelope = SequenceMetadata & {
   readonly direction: 'client-to-host'
