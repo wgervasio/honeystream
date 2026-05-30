@@ -1193,7 +1193,7 @@ const RuntimeSessionRouteSurface = ({
               hosting: 'Hosting room',
               joining: 'Joining room',
               connected: 'Synced',
-              ended: 'Ended'
+              ended: 'Room closed'
             }}
             {...viewModel.sessionShellProps}
           />

@@ -113,7 +113,7 @@ describe('session', () => {
       await waitForRuntimeText(page, 'Tiny sync lane')
       await waitForRuntimeText(page, 'Hosting room')
       await waitForRuntimeText(page, '0 control bytes lost')
-      await waitForRuntimeText(page, '36 local fixtures')
+      await waitForRuntimeText(page, '50 local fixtures')
       await waitForRuntimeText(page, 'Recovered retries counted')
       await waitForRuntimeText(page, 'Cat-side cue')
       await waitForRuntimeText(page, 'Best next tap')
@@ -133,10 +133,10 @@ describe('session', () => {
       await waitForRuntimeText(page, 'Ultra-low latency lane wins')
       await waitForRuntimeText(page, 'Retry lane stays green')
       await waitForRuntimeText(page, 'Site matrix covered')
-      await waitForRuntimeText(page, 'YouTube x11')
-      await waitForRuntimeText(page, 'AnimePahe x8')
-      await waitForRuntimeText(page, 'Cineby x9')
-      await waitForRuntimeText(page, 'Miruro x7')
+      await waitForRuntimeText(page, 'YouTube x14')
+      await waitForRuntimeText(page, 'AnimePahe x11')
+      await waitForRuntimeText(page, 'Cineby x12')
+      await waitForRuntimeText(page, 'Miruro x10')
       await waitForRuntimeText(page, 'Bursts stay calm')
       await waitForRuntimeText(page, 'Rapid seek, pause, resume, and rate bursts')
       await waitForRuntimeText(page, 'include next/resync controls')
@@ -150,7 +150,7 @@ describe('session', () => {
       await waitForRuntimeText(page, 'Payload gate')
       await waitForRuntimeText(page, '<=2048B')
       await waitForRuntimeText(page, 'Coverage gate')
-      await waitForRuntimeText(page, '36 sites')
+      await waitForRuntimeText(page, '50 sites')
       await waitForRuntimeText(page, 'Tonight launchpad')
       await waitForRuntimeText(page, 'Next best move')
       await waitForRuntimeText(page, 'Buddy passport')
@@ -242,13 +242,22 @@ describe('session', () => {
       await ms.visit(`/join/${hostId}`)
       await page.waitForSelector(RUNTIME_SHELL_SELECTOR)
 
-      await page.fill('#runtime-add-media-url', 'youtube.com/watch?v=honeystream-demo')
-      await waitForRuntimeText(page, 'Honeystream will add https:// automatically')
-      await page.press('#runtime-add-media-url', 'Enter')
+      const sources = [
+        { url: 'youtube.com/watch?v=honeystream-demo', title: 'YouTube watch page' },
+        { url: 'animepahe.ru/play/honeystream-demo', title: 'AnimePahe watch page' },
+        { url: 'cineby.app/movie/honeystream-demo', title: 'Cineby watch page' },
+        { url: 'miruro.to/watch/honeystream-demo', title: 'Miruro watch page' }
+      ]
 
-      await waitForRuntimeText(page, 'Source queued with https:// added')
-      await waitForRuntimeText(page, 'Website loaded')
-      await waitForRuntimeText(page, 'YouTube watch page')
+      for (const source of sources) {
+        await page.fill('#runtime-add-media-url', source.url)
+        await waitForRuntimeText(page, 'Honeystream will add https:// automatically')
+        await page.press('#runtime-add-media-url', 'Enter')
+
+        await waitForRuntimeText(page, 'Source queued with https:// added')
+        await waitForRuntimeText(page, 'Website loaded')
+        await waitForRuntimeText(page, source.title)
+      }
     })
 
     it('should queue the initial room URL from the landing launcher', async () => {

@@ -43,44 +43,12 @@ describe('streaming site connection lab', () => {
     expect(result.bestProfile && result.bestProfile.profile.id).toBe('clean-ultra-low-latency')
     expect(result.rankedProfiles[0].profile.id).toBe('clean-ultra-low-latency')
     expect(result.rankedProfiles[0].siteCount).toBe(STREAMING_SITE_CONNECTION_FIXTURES.length)
-    expect(result.rankedProfiles[0].providers).toEqual([
-      'youtube',
-      'youtube',
-      'youtube',
-      'youtube',
-      'youtube',
-      'youtube',
-      'youtube',
-      'youtube',
-      'youtube',
-      'youtube',
-      'youtube',
-      'animepahe',
-      'animepahe',
-      'animepahe',
-      'animepahe',
-      'animepahe',
-      'animepahe',
-      'animepahe',
-      'animepahe',
-      'cineby',
-      'cineby',
-      'cineby',
-      'cineby',
-      'cineby',
-      'cineby',
-      'cineby',
-      'cineby',
-      'cineby',
-      'miruro',
-      'miruro',
-      'miruro',
-      'miruro',
-      'miruro',
-      'miruro',
-      'miruro',
-      'unknown'
-    ])
+    const providers = result.rankedProfiles[0].providers
+    expect(providers.filter(provider => provider === 'youtube')).toHaveLength(14)
+    expect(providers.filter(provider => provider === 'animepahe')).toHaveLength(11)
+    expect(providers.filter(provider => provider === 'cineby')).toHaveLength(12)
+    expect(providers.filter(provider => provider === 'miruro')).toHaveLength(10)
+    expect(providers.filter(provider => provider === 'unknown')).toHaveLength(3)
     expect(result.rankedProfiles[0].providerCoverage).toEqual(
       STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE
     )
@@ -89,11 +57,11 @@ describe('streaming site connection lab', () => {
     const metrics = bestObservation.metrics
     expect(bestObservation.budgetResult).toEqual({ ok: true, failures: [] })
     expect(bestObservation.providerCoverage).toEqual([
-      { provider: 'youtube', siteCount: 11 },
-      { provider: 'animepahe', siteCount: 8 },
-      { provider: 'cineby', siteCount: 9 },
-      { provider: 'miruro', siteCount: 7 },
-      { provider: 'unknown', siteCount: 1 }
+      { provider: 'youtube', siteCount: 14 },
+      { provider: 'animepahe', siteCount: 11 },
+      { provider: 'cineby', siteCount: 12 },
+      { provider: 'miruro', siteCount: 10 },
+      { provider: 'unknown', siteCount: 3 }
     ])
     expect(metrics.combinedSentMessages).toBeGreaterThan(STREAMING_SITE_CONNECTION_FIXTURES.length)
     expect(metrics.combinedDeliveredMessages).toBe(metrics.combinedSentMessages)
@@ -126,13 +94,18 @@ describe('streaming site connection lab', () => {
   it('covers the requested streaming-site matrix before selecting a transport lane', () => {
     const sources = STREAMING_SITE_CONNECTION_FIXTURES.map(fixture => fixture.source)
 
-    expect(STREAMING_SITE_CONNECTION_FIXTURES).toHaveLength(36)
+    expect(STREAMING_SITE_CONNECTION_FIXTURES).toHaveLength(50)
     expect(sources).toEqual(
       expect.arrayContaining([
         'https://youtube.com',
+        'https://www.youtube.com/playlist?list=honeystream-sync',
         'https://animepahe.ru',
+        'https://www.animepahe.si/play/honeystream-test?episode=4',
         'https://cineby.app',
-        'https://miruro.to'
+        'https://cdn.cineby.app/movie/honeystream-test?server=beta',
+        'https://miruro.to',
+        'https://beta.miruro.tv/watch/honeystream-test?episode=3',
+        'https://shows.example.test/title/honeystream-night?episode=1'
       ])
     )
     expect(sources.some(source => source.includes('youtube.com'))).toBe(true)
@@ -145,11 +118,11 @@ describe('streaming site connection lab', () => {
       true
     )
     expect(STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE).toEqual([
-      { provider: 'youtube', siteCount: 11 },
-      { provider: 'animepahe', siteCount: 8 },
-      { provider: 'cineby', siteCount: 9 },
-      { provider: 'miruro', siteCount: 7 },
-      { provider: 'unknown', siteCount: 1 }
+      { provider: 'youtube', siteCount: 14 },
+      { provider: 'animepahe', siteCount: 11 },
+      { provider: 'cineby', siteCount: 12 },
+      { provider: 'miruro', siteCount: 10 },
+      { provider: 'unknown', siteCount: 3 }
     ])
     expect(
       STREAMING_SITE_CONNECTION_FIXTURES.some(

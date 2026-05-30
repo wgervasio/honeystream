@@ -111,7 +111,7 @@ describe('SessionRuntimeShellContainer', () => {
       <SessionRuntimeShellContainer store={store} intents={intents} errorTitle="Runtime issues" />
     )
 
-    expect(html).toContain('Connected')
+    expect(html).toContain('Synced')
     expect(html).toContain('Host: HostUser')
     expect(html).toContain('Guest: GuestUser')
     expect(html).toContain('Runtime issues')

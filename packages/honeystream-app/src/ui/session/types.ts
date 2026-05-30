@@ -2,11 +2,11 @@ export type SessionViewState = 'idle' | 'hosting' | 'joining' | 'connected' | 'e
 export type SessionViewStateTone = 'warming' | 'waiting' | 'joining' | 'synced' | 'ended'
 
 export const SESSION_VIEW_STATE_LABELS: Readonly<Record<SessionViewState, string>> = Object.freeze({
-  idle: 'Idle',
-  hosting: 'Hosting',
-  joining: 'Joining',
-  connected: 'Connected',
-  ended: 'Ended'
+  idle: 'Warming up',
+  hosting: 'Hosting room',
+  joining: 'Joining room',
+  connected: 'Synced',
+  ended: 'Room closed'
 })
 
 export const SESSION_VIEW_STATE_TONES: Readonly<Record<SessionViewState, SessionViewStateTone>> =
