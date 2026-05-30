@@ -30,6 +30,7 @@ describe('streaming site provider quality gate', () => {
         maxProviderDirectionalLatencySkewMs: 0,
         maxProviderDroppedMessages: 0,
         maxProviderLostBytes: 0,
+        maxProviderMissingDirectionalDeliveryCount: 0,
         maxProviderOutOfOrderMessages: 0,
         maxProviderRetransmissionByteRate: 0,
         maxProviderSequenceGapMessages: 0,

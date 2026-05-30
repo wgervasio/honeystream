@@ -16,10 +16,13 @@ export interface StreamingSiteFixtureObservation {
   readonly droppedMessages: number
   readonly estimatedRoundTripP95LatencyMs: number
   readonly fixtureId: string
+  readonly guestToHostDeliveredMessages: number
   readonly guestToHostP95LatencyMs: number
+  readonly hostToGuestDeliveredMessages: number
   readonly hostToGuestP95LatencyMs: number
   readonly lostBytes: number
   readonly maxMessageBytes: number
+  readonly missingDirectionalDeliveryCount: number
   readonly outOfOrderMessages: number
   readonly provider: MediaProvider
   readonly retransmissionByteRate: number
@@ -80,6 +83,16 @@ const getDirectionalP95LatencyMs = (
   return directionalP95LatencyMs
 }
 
+const countDeliveredFrames = (
+  frames: readonly SimulatedPeerTransportFrameSample[],
+  direction: string
+): number =>
+  frames.reduce(
+    (count, frame) =>
+      frame.outcome === 'delivered' && frame.direction === direction ? count + 1 : count,
+    0
+  )
+
 const getFallbackDirectionalLatencyMs = (
   directionalP95LatencyMs: { readonly [direction: string]: number },
   excludedDirection: string
@@ -107,10 +120,15 @@ const estimateDirectionalLatencyMs = (
 ): {
   readonly directionalLatencySkewMs: number
   readonly estimatedRoundTripP95LatencyMs: number
+  readonly guestToHostDeliveredMessages: number
   readonly guestToHostP95LatencyMs: number
+  readonly hostToGuestDeliveredMessages: number
   readonly hostToGuestP95LatencyMs: number
+  readonly missingDirectionalDeliveryCount: number
 } => {
   const directionalP95LatencyMs = getDirectionalP95LatencyMs(frames)
+  const hostToGuestDeliveredMessages = countDeliveredFrames(frames, 'host->guest')
+  const guestToHostDeliveredMessages = countDeliveredFrames(frames, 'guest->host')
   const hostToGuestP95LatencyMs = getNamedDirectionalLatencyMs(
     directionalP95LatencyMs,
     'host->guest',
@@ -125,8 +143,12 @@ const estimateDirectionalLatencyMs = (
   return {
     directionalLatencySkewMs: Math.abs(hostToGuestP95LatencyMs - guestToHostP95LatencyMs),
     estimatedRoundTripP95LatencyMs: hostToGuestP95LatencyMs + guestToHostP95LatencyMs,
+    guestToHostDeliveredMessages,
     guestToHostP95LatencyMs,
-    hostToGuestP95LatencyMs
+    hostToGuestDeliveredMessages,
+    hostToGuestP95LatencyMs,
+    missingDirectionalDeliveryCount:
+      (hostToGuestDeliveredMessages > 0 ? 0 : 1) + (guestToHostDeliveredMessages > 0 ? 0 : 1)
   }
 }
 
@@ -135,11 +157,11 @@ Context: Streaming-site tuning should prove each requested site shape, not just 
 Invariant: A fixture observation is derived from bounded recent frames and monotonic counters only,
 including both host-to-guest and guest-to-host latency so averages cannot hide skew.
 Options considered: Live third-party probes, full frame history, or per-fixture metric deltas.
-Decision: Capture compact deltas around each mocked site fixture and keep directional latency from
-recent frames.
+Decision: Capture compact deltas around each mocked site fixture, keep directional latency from
+recent frames, and require both command and event directions to be exercised.
 Performance impact: O(recent frame cap) per fixture; frame history remains bounded by transport metrics.
 Memory/lifecycle ownership: No resources are retained beyond the returned observation values.
-Failure mode: Missing direction samples report 0ms latency, while sent/dropped counters still expose loss.
+Failure mode: Missing direction samples are surfaced as missing directional deliveries.
 Validation: Covered by streaming-site connection lab tests.
 */
 export const createStreamingSiteFixtureObservation = (
@@ -168,10 +190,13 @@ export const createStreamingSiteFixtureObservation = (
     droppedMessages,
     estimatedRoundTripP95LatencyMs: directionalLatency.estimatedRoundTripP95LatencyMs,
     fixtureId: input.fixtureId,
+    guestToHostDeliveredMessages: directionalLatency.guestToHostDeliveredMessages,
     guestToHostP95LatencyMs: directionalLatency.guestToHostP95LatencyMs,
+    hostToGuestDeliveredMessages: directionalLatency.hostToGuestDeliveredMessages,
     hostToGuestP95LatencyMs: directionalLatency.hostToGuestP95LatencyMs,
     lostBytes,
     maxMessageBytes: getMaxMessageBytes(fixtureFrames),
+    missingDirectionalDeliveryCount: directionalLatency.missingDirectionalDeliveryCount,
     outOfOrderMessages: after.combinedOutOfOrderMessages - before.combinedOutOfOrderMessages,
     provider: input.provider,
     retransmissionByteRate: ratio(retransmittedBytes, deliveredBytes + lostBytes),

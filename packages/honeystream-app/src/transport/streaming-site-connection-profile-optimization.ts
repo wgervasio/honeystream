@@ -32,6 +32,7 @@ export interface StreamingSiteConnectionProfileOptimization {
   readonly maxFixtureDroppedMessages: number
   readonly maxFixtureEstimatedRoundTripP95LatencyMs: number
   readonly maxFixtureLostBytes: number
+  readonly maxFixtureMissingDirectionalDeliveryCount: number
   readonly maxFixtureRetransmissionByteRate: number
   readonly maxFixtureRetransmissionRate: number
   readonly passedTrials: number
@@ -83,6 +84,7 @@ export const createStreamingSiteConnectionProfileOptimization = (
   let maxFixtureDroppedMessages = 0
   let maxFixtureEstimatedRoundTripP95LatencyMs = 0
   let maxFixtureLostBytes = 0
+  let maxFixtureMissingDirectionalDeliveryCount = 0
   let maxFixtureRetransmissionByteRate = 0
   let maxFixtureRetransmissionRate = 0
   let totalEstimatedRoundTripP95LatencyMs = 0
@@ -157,6 +159,10 @@ export const createStreamingSiteConnectionProfileOptimization = (
         fixture.estimatedRoundTripP95LatencyMs
       )
       maxFixtureLostBytes = Math.max(maxFixtureLostBytes, fixture.lostBytes)
+      maxFixtureMissingDirectionalDeliveryCount = Math.max(
+        maxFixtureMissingDirectionalDeliveryCount,
+        fixture.missingDirectionalDeliveryCount
+      )
       maxFixtureRetransmissionByteRate = Math.max(
         maxFixtureRetransmissionByteRate,
         fixture.retransmissionByteRate
@@ -194,6 +200,7 @@ export const createStreamingSiteConnectionProfileOptimization = (
     maxFixtureDroppedMessages,
     maxFixtureEstimatedRoundTripP95LatencyMs,
     maxFixtureLostBytes,
+    maxFixtureMissingDirectionalDeliveryCount,
     maxFixtureRetransmissionByteRate,
     maxFixtureRetransmissionRate,
     passedTrials,

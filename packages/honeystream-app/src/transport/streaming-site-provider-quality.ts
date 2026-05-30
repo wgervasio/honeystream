@@ -15,6 +15,7 @@ export interface StreamingSiteProviderQuality {
   readonly maxGuestToHostP95LatencyMs: number
   readonly maxHostToGuestP95LatencyMs: number
   readonly maxLostBytes: number
+  readonly maxMissingDirectionalDeliveryCount: number
   readonly maxOutOfOrderMessages: number
   readonly maxRetransmissionByteRate: number
   readonly maxRetransmissionRate: number
@@ -31,6 +32,7 @@ interface StreamingSiteProviderQualityDraft {
   maxGuestToHostP95LatencyMs: number
   maxHostToGuestP95LatencyMs: number
   maxLostBytes: number
+  maxMissingDirectionalDeliveryCount: number
   maxOutOfOrderMessages: number
   maxRetransmissionByteRate: number
   maxRetransmissionRate: number
@@ -55,6 +57,7 @@ const createDraft = (provider: MediaProvider): StreamingSiteProviderQualityDraft
   maxGuestToHostP95LatencyMs: 0,
   maxHostToGuestP95LatencyMs: 0,
   maxLostBytes: 0,
+  maxMissingDirectionalDeliveryCount: 0,
   maxOutOfOrderMessages: 0,
   maxRetransmissionByteRate: 0,
   maxRetransmissionRate: 0,
@@ -112,6 +115,10 @@ const recordFixture = (
     fixture.hostToGuestP95LatencyMs
   )
   draft.maxLostBytes = Math.max(draft.maxLostBytes, fixture.lostBytes)
+  draft.maxMissingDirectionalDeliveryCount = Math.max(
+    draft.maxMissingDirectionalDeliveryCount,
+    fixture.missingDirectionalDeliveryCount
+  )
   draft.maxOutOfOrderMessages = Math.max(
     draft.maxOutOfOrderMessages,
     fixture.outOfOrderMessages
@@ -142,6 +149,7 @@ const finalizeDraft = (
   maxGuestToHostP95LatencyMs: draft.maxGuestToHostP95LatencyMs,
   maxHostToGuestP95LatencyMs: draft.maxHostToGuestP95LatencyMs,
   maxLostBytes: draft.maxLostBytes,
+  maxMissingDirectionalDeliveryCount: draft.maxMissingDirectionalDeliveryCount,
   maxOutOfOrderMessages: draft.maxOutOfOrderMessages,
   maxRetransmissionByteRate: draft.maxRetransmissionByteRate,
   maxRetransmissionRate: draft.maxRetransmissionRate,
@@ -150,8 +158,8 @@ const finalizeDraft = (
 
 /*
 Context: Aggregate streaming metrics can hide one provider regressing behind another provider.
-Invariant: A selected lane must expose provider-specific byte loss, retry, sequence, directional skew,
-and latency maxima.
+Invariant: A selected lane must expose provider-specific byte loss, retry, sequence, two-way delivery,
+directional skew, and latency maxima.
 Options considered: Aggregate-only gates, live third-party probes, or bounded provider summaries.
 Decision: Summarize per-provider fixture observations from deterministic host/guest mock trials.
 Performance impact: O(trial count * fixture count) over capped lab inputs; no runtime network work.
