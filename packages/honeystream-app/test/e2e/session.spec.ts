@@ -103,7 +103,7 @@ describe('session', () => {
       await page.waitForSelector('#runtime_pair_guide')
       await page.waitForSelector('[data-streaming-proof="byte-loss"][data-byte-loss-rate="0"]')
       await page.waitForSelector(
-        '#runtime_connection_lab_proof[data-site-count="50"][data-trial-count="3"]'
+        '#runtime_connection_lab_proof[data-site-count="58"][data-trial-count="3"]'
       )
       await page.waitForSelector(
         '#runtime_merge_gate[data-zero-loss-required="true"][data-provider-count="4"]'
