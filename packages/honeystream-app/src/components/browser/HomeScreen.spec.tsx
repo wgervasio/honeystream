@@ -145,6 +145,35 @@ describe('browser/HomeScreen', () => {
     }
   })
 
+  it('normalizes shorthand watch links with explicit ports before requesting them', () => {
+    const onRequestUrl = jest.fn()
+    const container = document.createElement('div')
+    document.body.appendChild(container)
+
+    try {
+      ReactDOM.render(
+        <HomeScreen onRequestUrl={onRequestUrl} onRequestLocalFile={() => undefined} />,
+        container
+      )
+
+      const input = container.querySelector('#urlinput') as HTMLInputElement
+      input.value = 'youtube.com:443/watch?v=honeystream-demo'
+      Simulate.change(input)
+
+      expect(container.textContent).toContain('YouTube lane')
+      expect(container.textContent).toContain('Honeystream will add https:// automatically')
+
+      const form = container.querySelector('form') as HTMLFormElement
+      Simulate.submit(form)
+
+      expect(onRequestUrl).toHaveBeenCalledWith('https://youtube.com/watch?v=honeystream-demo')
+      expect(input.getAttribute('aria-invalid')).toBeNull()
+    } finally {
+      ReactDOM.unmountComponentAtNode(container)
+      container.remove()
+    }
+  })
+
   it('requests local files from the cozy file lane input', () => {
     const onRequestLocalFile = jest.fn()
     const container = document.createElement('div')

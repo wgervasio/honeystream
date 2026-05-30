@@ -81,6 +81,30 @@ describe('RuntimeAddMediaSourcePreview', () => {
     }
   })
 
+  it('normalizes shorthand hosts that include explicit ports', () => {
+    const providerPreview = createRuntimeAddMediaSourcePreview(
+      'youtube.com:443/watch?v=honeystream-test'
+    )
+    expect(providerPreview).toEqual(
+      expect.objectContaining({
+        kind: 'website',
+        normalizedFromShorthand: true,
+        normalizedUrl: 'https://youtube.com/watch?v=honeystream-test',
+        provider: 'youtube'
+      })
+    )
+
+    const localPreview = createRuntimeAddMediaSourcePreview('localhost:3000/watch-room')
+    expect(localPreview).toEqual(
+      expect.objectContaining({
+        kind: 'website',
+        normalizedFromShorthand: true,
+        normalizedUrl: 'https://localhost:3000/watch-room',
+        provider: 'unknown'
+      })
+    )
+  })
+
   it('keeps unknown websites honest without claiming provider coverage', () => {
     const preview = createRuntimeAddMediaSourcePreview('https://youtube.com.evil/watch')
     const confidenceDetails = createRuntimeAddMediaConfidenceItems(preview).map(item => item.detail)

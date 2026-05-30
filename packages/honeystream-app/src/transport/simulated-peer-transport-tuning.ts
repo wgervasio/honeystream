@@ -26,6 +26,7 @@ const RETRANSMITTED_MESSAGE_SCORE_WEIGHT = 12_000
 const RETRANSMITTED_BYTE_RATE_SCORE_WEIGHT = 750_000
 const SEQUENCE_GAP_SCORE_WEIGHT = 100_000
 const OUT_OF_ORDER_SCORE_WEIGHT = 50_000
+const DIRECTIONAL_LATENCY_SKEW_SCORE_WEIGHT = 500
 
 const scoreMetrics = (metrics: AggregateSimulatedPeerTransportMetrics): number =>
   metrics.combinedByteLossRate * BYTE_LOSS_RATE_SCORE_WEIGHT +
@@ -38,6 +39,7 @@ const scoreMetrics = (metrics: AggregateSimulatedPeerTransportMetrics): number =
   metrics.combinedSequenceGapMessages * SEQUENCE_GAP_SCORE_WEIGHT +
   metrics.combinedOutOfOrderMessages * OUT_OF_ORDER_SCORE_WEIGHT +
   metrics.estimatedRoundTripP95LatencyMs * 1000 +
+  metrics.directionalAverageLatencySkewMs * DIRECTIONAL_LATENCY_SKEW_SCORE_WEIGHT +
   metrics.combinedP95LatencyMs * 100 +
   metrics.maxDirectionalAverageLatencyJitterMs * 20 +
   metrics.combinedPeakQueuedMessages * 10 +
