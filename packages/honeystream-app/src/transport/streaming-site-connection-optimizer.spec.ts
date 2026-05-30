@@ -108,6 +108,7 @@ describe('streaming site connection optimizer', () => {
         maxCombinedByteLossRate: 0,
         maxCombinedDroppedMessages: 0,
         maxCombinedRetransmissionRate: 0,
+        maxCombinedRetransmissionByteRate: 0,
         maxEstimatedRoundTripP95LatencyMs: STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS,
         missingProviders: [],
         failures: []
@@ -133,8 +134,16 @@ describe('streaming site connection optimizer', () => {
     expect(retryRank.maxCombinedRetransmissionRate).toBeLessThanOrEqual(
       STREAMING_SITE_CONNECTION_BUDGET.maxRetransmissionRate
     )
+    expect(retryRank.maxCombinedRetransmissionByteRate).toBeGreaterThan(0)
+    expect(retryRank.maxCombinedRetransmissionByteRate).toBeLessThanOrEqual(
+      STREAMING_SITE_CONNECTION_BUDGET.maxRetransmissionByteRate
+    )
+    expect(retryRank.maxFixtureRetransmissionByteRate).toBeGreaterThan(0)
     expect(retryRank.maxDirectionalRetransmissionRate).toBeLessThanOrEqual(
       STREAMING_SITE_CONNECTION_BUDGET.maxDirectionalRetransmissionRate
+    )
+    expect(retryRank.maxDirectionalRetransmissionByteRate).toBeLessThanOrEqual(
+      STREAMING_SITE_CONNECTION_BUDGET.maxDirectionalRetransmissionByteRate
     )
     expect(retryRank.maxEstimatedRoundTripP95LatencyMs).toBeLessThanOrEqual(
       STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS

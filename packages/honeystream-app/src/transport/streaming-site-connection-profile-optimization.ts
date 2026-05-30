@@ -12,10 +12,12 @@ export interface StreamingSiteConnectionProfileOptimization {
   readonly maxCombinedAverageMessageBytes: number
   readonly maxCombinedByteLossRate: number
   readonly maxCombinedDroppedMessages: number
+  readonly maxCombinedRetransmissionByteRate: number
   readonly maxCombinedPeakQueuedMessages: number
   readonly maxCombinedRetransmissionRate: number
   readonly maxDirectionalAverageLatencyMs: number
   readonly maxDirectionalLatencyJitterMs: number
+  readonly maxDirectionalRetransmissionByteRate: number
   readonly maxDirectionalRetransmissionRate: number
   readonly maxEstimatedRoundTripMaxLatencyMs: number
   readonly maxEstimatedRoundTripP95LatencyMs: number
@@ -24,6 +26,7 @@ export interface StreamingSiteConnectionProfileOptimization {
   readonly maxFixtureDroppedMessages: number
   readonly maxFixtureEstimatedRoundTripP95LatencyMs: number
   readonly maxFixtureLostBytes: number
+  readonly maxFixtureRetransmissionByteRate: number
   readonly maxFixtureRetransmissionRate: number
   readonly passedTrials: number
   readonly profile: StreamingSiteConnectionProfile
@@ -60,10 +63,12 @@ export const createStreamingSiteConnectionProfileOptimization = (
   let maxCombinedAverageMessageBytes = 0
   let maxCombinedByteLossRate = 0
   let maxCombinedDroppedMessages = 0
+  let maxCombinedRetransmissionByteRate = 0
   let maxCombinedPeakQueuedMessages = 0
   let maxCombinedRetransmissionRate = 0
   let maxDirectionalAverageLatencyMs = 0
   let maxDirectionalLatencyJitterMs = 0
+  let maxDirectionalRetransmissionByteRate = 0
   let maxDirectionalRetransmissionRate = 0
   let maxEstimatedRoundTripMaxLatencyMs = 0
   let maxEstimatedRoundTripP95LatencyMs = 0
@@ -72,6 +77,7 @@ export const createStreamingSiteConnectionProfileOptimization = (
   let maxFixtureDroppedMessages = 0
   let maxFixtureEstimatedRoundTripP95LatencyMs = 0
   let maxFixtureLostBytes = 0
+  let maxFixtureRetransmissionByteRate = 0
   let maxFixtureRetransmissionRate = 0
   let totalEstimatedRoundTripP95LatencyMs = 0
 
@@ -92,6 +98,10 @@ export const createStreamingSiteConnectionProfileOptimization = (
       maxCombinedRetransmissionRate,
       metrics.combinedRetransmissionRate
     )
+    maxCombinedRetransmissionByteRate = Math.max(
+      maxCombinedRetransmissionByteRate,
+      metrics.combinedRetransmissionByteRate
+    )
     maxCombinedPeakQueuedMessages = Math.max(
       maxCombinedPeakQueuedMessages,
       metrics.combinedPeakQueuedMessages
@@ -107,6 +117,10 @@ export const createStreamingSiteConnectionProfileOptimization = (
     maxDirectionalRetransmissionRate = Math.max(
       maxDirectionalRetransmissionRate,
       metrics.maxDirectionalRetransmissionRate
+    )
+    maxDirectionalRetransmissionByteRate = Math.max(
+      maxDirectionalRetransmissionByteRate,
+      metrics.maxDirectionalRetransmissionByteRate
     )
     maxEstimatedRoundTripMaxLatencyMs = Math.max(
       maxEstimatedRoundTripMaxLatencyMs,
@@ -131,6 +145,10 @@ export const createStreamingSiteConnectionProfileOptimization = (
         fixture.estimatedRoundTripP95LatencyMs
       )
       maxFixtureLostBytes = Math.max(maxFixtureLostBytes, fixture.lostBytes)
+      maxFixtureRetransmissionByteRate = Math.max(
+        maxFixtureRetransmissionByteRate,
+        fixture.retransmissionByteRate
+      )
       maxFixtureRetransmissionRate = Math.max(
         maxFixtureRetransmissionRate,
         fixture.retransmissionRate
@@ -150,10 +168,12 @@ export const createStreamingSiteConnectionProfileOptimization = (
     maxCombinedAverageMessageBytes,
     maxCombinedByteLossRate,
     maxCombinedDroppedMessages,
+    maxCombinedRetransmissionByteRate,
     maxCombinedPeakQueuedMessages,
     maxCombinedRetransmissionRate,
     maxDirectionalAverageLatencyMs,
     maxDirectionalLatencyJitterMs,
+    maxDirectionalRetransmissionByteRate,
     maxDirectionalRetransmissionRate,
     maxEstimatedRoundTripMaxLatencyMs,
     maxEstimatedRoundTripP95LatencyMs,
@@ -162,6 +182,7 @@ export const createStreamingSiteConnectionProfileOptimization = (
     maxFixtureDroppedMessages,
     maxFixtureEstimatedRoundTripP95LatencyMs,
     maxFixtureLostBytes,
+    maxFixtureRetransmissionByteRate,
     maxFixtureRetransmissionRate,
     passedTrials,
     profile,
@@ -202,8 +223,19 @@ export const compareStreamingSiteConnectionProfileOptimizations = (
   if (left.maxCombinedRetransmissionRate !== right.maxCombinedRetransmissionRate) {
     return left.maxCombinedRetransmissionRate - right.maxCombinedRetransmissionRate
   }
+  if (left.maxCombinedRetransmissionByteRate !== right.maxCombinedRetransmissionByteRate) {
+    return left.maxCombinedRetransmissionByteRate - right.maxCombinedRetransmissionByteRate
+  }
+  if (left.maxFixtureRetransmissionByteRate !== right.maxFixtureRetransmissionByteRate) {
+    return left.maxFixtureRetransmissionByteRate - right.maxFixtureRetransmissionByteRate
+  }
   if (left.maxDirectionalRetransmissionRate !== right.maxDirectionalRetransmissionRate) {
     return left.maxDirectionalRetransmissionRate - right.maxDirectionalRetransmissionRate
+  }
+  if (left.maxDirectionalRetransmissionByteRate !== right.maxDirectionalRetransmissionByteRate) {
+    return (
+      left.maxDirectionalRetransmissionByteRate - right.maxDirectionalRetransmissionByteRate
+    )
   }
   if (left.maxEstimatedRoundTripP95LatencyMs !== right.maxEstimatedRoundTripP95LatencyMs) {
     return left.maxEstimatedRoundTripP95LatencyMs - right.maxEstimatedRoundTripP95LatencyMs

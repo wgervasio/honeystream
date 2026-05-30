@@ -4,6 +4,7 @@ export interface SimulatedPeerTransportBudget {
   readonly minDeliveryRate: number
   readonly maxDroppedMessages: number
   readonly maxRetransmissionRate: number
+  readonly maxRetransmissionByteRate: number
   readonly maxOutOfOrderMessages: number
   readonly maxSequenceGapMessages: number
   readonly maxByteLossRate: number
@@ -19,6 +20,7 @@ export interface SimulatedPeerTransportBudget {
   readonly maxDirectionalLatencySkewMs: number
   readonly maxDirectionalByteLossRate: number
   readonly maxDirectionalRetransmissionRate: number
+  readonly maxDirectionalRetransmissionByteRate: number
   readonly maxDirectionalQueuedMessages: number
   readonly maxCombinedPeakQueuedMessages: number
   readonly maxDirectionalPeakQueuedMessages: number
@@ -30,6 +32,7 @@ export type SimulatedPeerTransportBudgetMetric =
   | 'combinedDeliveryRate'
   | 'combinedDroppedMessages'
   | 'combinedRetransmissionRate'
+  | 'combinedRetransmissionByteRate'
   | 'combinedOutOfOrderMessages'
   | 'combinedSequenceGapMessages'
   | 'combinedByteLossRate'
@@ -45,6 +48,7 @@ export type SimulatedPeerTransportBudgetMetric =
   | 'directionalAverageLatencySkewMs'
   | 'maxDirectionalByteLossRate'
   | 'maxDirectionalRetransmissionRate'
+  | 'maxDirectionalRetransmissionByteRate'
   | 'maxDirectionalQueuedMessages'
   | 'combinedPeakQueuedMessages'
   | 'maxDirectionalPeakQueuedMessages'
@@ -77,6 +81,7 @@ export const STREAMING_SITE_TRANSPORT_BUDGET: SimulatedPeerTransportBudget = Obj
   minDeliveryRate: 1,
   maxDroppedMessages: 0,
   maxRetransmissionRate: 0.5,
+  maxRetransmissionByteRate: 0.5,
   maxOutOfOrderMessages: 0,
   maxSequenceGapMessages: 0,
   maxByteLossRate: 0,
@@ -92,6 +97,7 @@ export const STREAMING_SITE_TRANSPORT_BUDGET: SimulatedPeerTransportBudget = Obj
   maxDirectionalLatencySkewMs: 8,
   maxDirectionalByteLossRate: 0,
   maxDirectionalRetransmissionRate: 0.5,
+  maxDirectionalRetransmissionByteRate: 0.5,
   maxDirectionalQueuedMessages: 0,
   maxCombinedPeakQueuedMessages: 64,
   maxDirectionalPeakQueuedMessages: 32,
@@ -147,6 +153,11 @@ export const evaluateSimulatedPeerTransportBudget = (
       budget.maxRetransmissionRate
     ),
     maxCheck(
+      'combinedRetransmissionByteRate',
+      metrics.combinedRetransmissionByteRate,
+      budget.maxRetransmissionByteRate
+    ),
+    maxCheck(
       'combinedOutOfOrderMessages',
       metrics.combinedOutOfOrderMessages,
       budget.maxOutOfOrderMessages
@@ -166,6 +177,11 @@ export const evaluateSimulatedPeerTransportBudget = (
       'maxDirectionalRetransmissionRate',
       metrics.maxDirectionalRetransmissionRate,
       budget.maxDirectionalRetransmissionRate
+    ),
+    maxCheck(
+      'maxDirectionalRetransmissionByteRate',
+      metrics.maxDirectionalRetransmissionByteRate,
+      budget.maxDirectionalRetransmissionByteRate
     ),
     maxCheck(
       'combinedAverageMessageBytes',

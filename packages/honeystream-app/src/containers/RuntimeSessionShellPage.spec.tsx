@@ -226,13 +226,18 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('Payload gate')
     expect(html).toContain(`&lt;=${STREAMING_SITE_CONNECTION_BUDGET.maxMessageBytes}B`)
     expect(html).toContain('Typed play, pause, seek, rate, and next frames stay compact')
+    expect(html).toContain('Retry byte gate')
+    expect(html).toContain(
+      `&lt;=${STREAMING_SITE_CONNECTION_BUDGET.maxRetransmissionByteRate * 100}%`
+    )
+    expect(html).toContain('Recovered retry bytes stay budgeted')
     expect(html).toContain('Coverage gate')
     expect(html).toContain(`${STREAMING_SITE_CONNECTION_FIXTURES.length} sites`)
     expect(html).toContain('YouTube, AnimePahe, Cineby, Miruro, and generic pages')
     expect(html).toContain('Per-site proof')
     expect(html).toContain(`${STREAMING_SITE_CONNECTION_FIXTURES.length} observed`)
     expect(html).toContain(
-      'Each site fixture records delivered controls, lost bytes, retries, skipped controls, payload size, and round-trip latency'
+      'Each site fixture records delivered controls, lost bytes, retry bytes, skipped controls, payload size, and round-trip latency'
     )
     expect(html).toContain('Cat-side cue')
     expect(html).toContain('Rabbit-side hop')

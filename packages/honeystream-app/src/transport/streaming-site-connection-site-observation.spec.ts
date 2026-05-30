@@ -67,7 +67,9 @@ describe('streaming site fixture observations', () => {
       expect(fixtureObservation.lostBytes).toBe(0)
       expect(fixtureObservation.byteLossRate).toBe(0)
       expect(fixtureObservation.retransmittedMessages).toBe(0)
+      expect(fixtureObservation.retransmittedBytes).toBe(0)
       expect(fixtureObservation.retransmissionRate).toBe(0)
+      expect(fixtureObservation.retransmissionByteRate).toBe(0)
       expect(fixtureObservation.outOfOrderMessages).toBe(0)
       expect(fixtureObservation.sequenceGapMessages).toBe(0)
       expect(fixtureObservation.estimatedRoundTripP95LatencyMs).toBeLessThanOrEqual(
@@ -94,9 +96,13 @@ describe('streaming site fixture observations', () => {
     const observation = findObservation(result.observations, 'retry-guarded')
 
     expect(observation.fixtureObservations.some(item => item.retransmittedMessages > 0)).toBe(true)
+    expect(observation.fixtureObservations.some(item => item.retransmittedBytes > 0)).toBe(true)
     for (const fixtureObservation of observation.fixtureObservations) {
       expect(fixtureObservation.byteLossRate).toBe(0)
       expect(fixtureObservation.lostBytes).toBe(0)
+      expect(fixtureObservation.retransmissionByteRate).toBeLessThanOrEqual(
+        STREAMING_SITE_CONNECTION_BUDGET.maxRetransmissionByteRate
+      )
       expect(fixtureObservation.sequenceGapMessages).toBe(0)
       expect(fixtureObservation.estimatedRoundTripP95LatencyMs).toBeLessThanOrEqual(
         STREAMING_SITE_CONNECTION_BUDGET.maxEstimatedRoundTripP95LatencyMs

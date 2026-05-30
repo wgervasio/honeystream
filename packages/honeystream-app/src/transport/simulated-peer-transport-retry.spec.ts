@@ -86,7 +86,9 @@ describe('simulated peer transport reliable retry', () => {
     expect(metrics.combinedRetransmittedMessages).toBe(2)
     expect(metrics.combinedRetransmittedBytes).toBeGreaterThan(0)
     expect(metrics.combinedRetransmissionRate).toBe(2 / 6)
+    expect(metrics.combinedRetransmissionByteRate).toBe(2 / 6)
     expect(metrics.maxDirectionalRetransmissionRate).toBe(1 / 3)
+    expect(metrics.maxDirectionalRetransmissionByteRate).toBe(1 / 3)
     expect(metrics.recentFrames).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ direction: 'guest->host', outcome: 'retransmitted', seq: 2 }),

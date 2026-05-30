@@ -45,6 +45,7 @@ export interface SimulatedPeerTransportMetrics {
   readonly deliveryRate: number
   readonly byteLossRate: number
   readonly retransmissionRate: number
+  readonly retransmissionByteRate: number
   readonly averageMessageBytes: number
   readonly maxMessageBytes: number
   readonly averageLatencyMs: number
