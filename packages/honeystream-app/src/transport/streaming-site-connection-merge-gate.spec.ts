@@ -1,0 +1,97 @@
+import {
+  STREAMING_SITE_CONNECTION_BUDGET,
+  STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS,
+  STREAMING_SITE_CONNECTION_FIXTURES,
+  STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS,
+  STREAMING_SITE_CONNECTION_PROFILES,
+  STREAMING_SITE_CONNECTION_RANDOM_SAMPLES,
+  STREAMING_SITE_CONNECTION_TRIAL_COUNT
+} from './streaming-site-connection-defaults'
+import { runStreamingSiteConnectionLab } from './streaming-site-connection-lab'
+import { summarizeStreamingSiteConnectionMergeGate } from './streaming-site-connection-merge-gate'
+import { optimizeStreamingSiteConnectionProfiles } from './streaming-site-connection-optimizer'
+
+describe('streaming site connection merge gate', () => {
+  it('keeps every selected site fixture observation lossless and under latency budget', async () => {
+    const result = await runStreamingSiteConnectionLab({
+      budget: STREAMING_SITE_CONNECTION_BUDGET,
+      fixtures: STREAMING_SITE_CONNECTION_FIXTURES,
+      profiles: STREAMING_SITE_CONNECTION_PROFILES,
+      nowStartMs: 5000,
+      random: () => 0.5
+    })
+    const observation = result.observations.find(
+      item => item.profile.id === 'clean-ultra-low-latency'
+    )
+
+    if (!observation) throw new Error('Expected clean-ultra-low-latency observation.')
+    expect(observation.fixtureObservations).toHaveLength(STREAMING_SITE_CONNECTION_FIXTURES.length)
+    expect(
+      observation.fixtureObservations.every(
+        fixture =>
+          fixture.sentMessages > 0 &&
+          fixture.deliveredMessages === fixture.sentMessages &&
+          fixture.droppedMessages === 0 &&
+          fixture.lostBytes === 0 &&
+          fixture.byteLossRate === 0 &&
+          fixture.outOfOrderMessages === 0 &&
+          fixture.sequenceGapMessages === 0 &&
+          fixture.estimatedRoundTripP95LatencyMs <=
+            STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS
+      )
+    ).toBe(true)
+  })
+
+  it('surfaces per-site fixture loss and latency metrics for the selected lane', async () => {
+    const result = await optimizeStreamingSiteConnectionProfiles({
+      budget: STREAMING_SITE_CONNECTION_BUDGET,
+      fixtures: STREAMING_SITE_CONNECTION_FIXTURES,
+      profiles: STREAMING_SITE_CONNECTION_PROFILES,
+      nowStartMs: 6000,
+      randomSamples: STREAMING_SITE_CONNECTION_RANDOM_SAMPLES,
+      trialCount: STREAMING_SITE_CONNECTION_TRIAL_COUNT
+    })
+    const selectedProfile = result.bestProfile
+    const mergeGate = summarizeStreamingSiteConnectionMergeGate(result)
+
+    expect(selectedProfile && selectedProfile.profile.id).toBe('clean-ultra-low-latency')
+    expect(selectedProfile && selectedProfile.maxFixtureByteLossRate).toBe(0)
+    expect(selectedProfile && selectedProfile.maxFixtureDroppedMessages).toBe(0)
+    expect(selectedProfile && selectedProfile.maxFixtureLostBytes).toBe(0)
+    expect(selectedProfile && selectedProfile.maxFixtureEstimatedRoundTripP95LatencyMs).toBe(
+      STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS
+    )
+    expect(mergeGate).toEqual(
+      expect.objectContaining({
+        ok: true,
+        maxFixtureByteLossRate: 0,
+        maxFixtureDroppedMessages: 0,
+        maxFixtureEstimatedRoundTripP95LatencyMs: STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS
+      })
+    )
+  })
+
+  it('fails when a selected lane hides a per-site latency regression', async () => {
+    const maxFixtureRoundTripP95LatencyMs = STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS - 1
+    const result = await optimizeStreamingSiteConnectionProfiles({
+      budget: STREAMING_SITE_CONNECTION_BUDGET,
+      fixtures: STREAMING_SITE_CONNECTION_FIXTURES,
+      profiles: STREAMING_SITE_CONNECTION_PROFILES,
+      nowStartMs: 7000,
+      randomSamples: STREAMING_SITE_CONNECTION_RANDOM_SAMPLES,
+      trialCount: STREAMING_SITE_CONNECTION_TRIAL_COUNT
+    })
+    const mergeGate = summarizeStreamingSiteConnectionMergeGate(result, {
+      maxFixtureRoundTripP95LatencyMs
+    })
+
+    expect(result.bestProfile && result.bestProfile.profile.id).toBe('clean-ultra-low-latency')
+    expect(mergeGate.ok).toBe(false)
+    expect(mergeGate.maxFixtureEstimatedRoundTripP95LatencyMs).toBe(
+      STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS
+    )
+    expect(mergeGate.failures).toEqual([
+      `A site fixture P95 mock round trip exceeded ${maxFixtureRoundTripP95LatencyMs}ms.`
+    ])
+  })
+})

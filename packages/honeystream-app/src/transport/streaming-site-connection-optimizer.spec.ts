@@ -245,4 +245,5 @@ describe('streaming site connection optimizer', () => {
       'Miruro coverage is missing from the streaming-site matrix.'
     ])
   })
+
 })

@@ -321,7 +321,7 @@ const CONNECTION_LAB_PROOFS = [
     id: 'burst-duration-matrix',
     label: 'Bursts stay calm',
     detail:
-      'Rapid seek, pause, resume, and rate bursts run across short, long, and live-style site fixtures.'
+      'Rapid seek, pause, resume, and rate bursts include next/resync controls across short, long, and live-style site fixtures.'
   }
 ] as const
 const MERGE_GATE_METRICS = [

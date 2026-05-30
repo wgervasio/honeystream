@@ -139,6 +139,7 @@ describe('session', () => {
       await waitForRuntimeText(page, 'Miruro x7')
       await waitForRuntimeText(page, 'Bursts stay calm')
       await waitForRuntimeText(page, 'Rapid seek, pause, resume, and rate bursts')
+      await waitForRuntimeText(page, 'include next/resync controls')
       await waitForRuntimeText(page, '7 lanes run for 3 deterministic trials')
       await waitForRuntimeText(page, 'Streaming merge gate')
       await waitForRuntimeText(page, 'Zero-loss required')
