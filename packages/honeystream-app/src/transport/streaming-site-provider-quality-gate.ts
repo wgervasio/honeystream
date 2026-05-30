@@ -9,6 +9,7 @@ import { StreamingSiteProviderQuality } from './streaming-site-provider-quality'
 export interface StreamingSiteProviderQualityGateOptions {
   readonly maxProviderByteLossRate?: number
   readonly maxProviderDroppedMessages?: number
+  readonly maxProviderLostBytes?: number
   readonly maxProviderOutOfOrderMessages?: number
   readonly maxProviderRetransmissionByteRate?: number
   readonly maxProviderRoundTripP95LatencyMs?: number
@@ -20,6 +21,7 @@ export interface StreamingSiteProviderQualityGateSummary {
   readonly failures: readonly string[]
   readonly maxProviderByteLossRate: number
   readonly maxProviderDroppedMessages: number
+  readonly maxProviderLostBytes: number
   readonly maxProviderOutOfOrderMessages: number
   readonly maxProviderRetransmissionByteRate: number
   readonly maxProviderRoundTripP95LatencyMs: number
@@ -89,6 +91,11 @@ const createFailureList = (
         `${label} provider dropped more than ${options.maxProviderDroppedMessages} controls.`
       )
     }
+    if (quality.maxLostBytes > options.maxProviderLostBytes) {
+      failures.push(
+        `${label} provider lost more than ${options.maxProviderLostBytes} control bytes.`
+      )
+    }
     if (quality.maxOutOfOrderMessages > options.maxProviderOutOfOrderMessages) {
       failures.push(
         `${label} provider reordered more than ${options.maxProviderOutOfOrderMessages} controls.`
@@ -121,7 +128,8 @@ const createFailureList = (
 Context: The streaming merge gate should catch provider-specific regressions hidden by averages.
 Invariant: Every named provider must expose zero byte loss, ordered controls, and bounded P95 latency.
 Options considered: UI-only provider badges, live website probes, or a pure gate over lab summaries.
-Decision: Gate selected optimizer provider-quality observations with explicit per-provider budgets.
+Decision: Gate selected optimizer provider-quality observations with explicit per-provider loss,
+lost-byte, retry, ordering, and latency budgets.
 Performance impact: O(provider count) over five provider buckets; no additional mock transport runs.
 Memory/lifecycle ownership: No resources are allocated; optimizer owns and disposes simulations.
 Failure mode: Missing observations or over-budget providers become explicit failure strings.
@@ -140,6 +148,10 @@ export const summarizeStreamingSiteProviderQualityGate = (
       typeof options.maxProviderDroppedMessages === 'number'
         ? options.maxProviderDroppedMessages
         : STREAMING_SITE_CONNECTION_BUDGET.maxDroppedMessages,
+    maxProviderLostBytes:
+      typeof options.maxProviderLostBytes === 'number'
+        ? options.maxProviderLostBytes
+        : 0,
     maxProviderOutOfOrderMessages:
       typeof options.maxProviderOutOfOrderMessages === 'number'
         ? options.maxProviderOutOfOrderMessages
@@ -171,6 +183,7 @@ export const summarizeStreamingSiteProviderQualityGate = (
       providerQuality,
       quality => quality.maxDroppedMessages
     ),
+    maxProviderLostBytes: maxQualityValue(providerQuality, quality => quality.maxLostBytes),
     maxProviderOutOfOrderMessages: maxQualityValue(
       providerQuality,
       quality => quality.maxOutOfOrderMessages

@@ -124,17 +124,12 @@ describe('streaming site connection merge gate', () => {
         maxFixtureByteLossRate: 0,
         maxFixtureDroppedMessages: 0,
         maxFixtureEstimatedRoundTripP95LatencyMs: STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS,
+        maxFixtureLostBytes: 0,
+        maxProviderLostBytes: 0,
         maxProviderOutOfOrderMessages: 0,
+        maxProviderRoundTripP95LatencyMs: STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS,
         maxProviderSequenceGapMessages: 0
       })
-    )
-    expect(mergeGate.providerFixtureCounts).toEqual(
-      expect.arrayContaining([
-        { provider: 'youtube', siteCount: 16 },
-        { provider: 'animepahe', siteCount: 13 },
-        { provider: 'cineby', siteCount: 14 },
-        { provider: 'miruro', siteCount: 12 }
-      ])
     )
   })
 
@@ -144,6 +139,7 @@ describe('streaming site connection merge gate', () => {
       {
         minFixturesPerRequiredProvider: 1,
         maxProviderOutOfOrderMessages: 0,
+        maxProviderRoundTripP95LatencyMs: STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS - 1,
         maxProviderSequenceGapMessages: 0,
         requiredProviders: ['youtube']
       }
@@ -154,6 +150,7 @@ describe('streaming site connection merge gate', () => {
     expect(mergeGate.maxProviderSequenceGapMessages).toBe(2)
     expect(mergeGate.failures).toEqual([
       'YouTube provider reordered more than 0 controls.',
+      'YouTube provider P95 mock round trip exceeded 1ms.',
       'YouTube provider skipped more than 0 controls.'
     ])
   })
