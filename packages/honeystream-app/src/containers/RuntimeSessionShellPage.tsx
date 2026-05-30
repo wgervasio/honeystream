@@ -382,14 +382,16 @@ const MERGE_GATE_METRICS = [
     label: 'Per-site proof',
     value: `${STREAMING_SITE_CONNECTION_FIXTURE_COUNT} observed`,
     detail:
-      'Each site fixture records delivered controls, lost bytes, retry bytes, skipped controls, payload size, and round-trip latency.'
+      'Each site fixture records delivered controls, lost bytes, retry bytes, skipped controls, ' +
+      'payload size, directional skew, and round-trip latency.'
   },
   {
     id: 'provider-quality',
     label: 'Provider gate',
     value: `${STREAMING_SITE_NAMED_PROVIDER_COUNT} providers`,
     detail:
-      'YouTube, AnimePahe, Cineby, and Miruro each keep their own multi-fixture loss, retry, skipped-control, and latency proof.'
+      'YouTube, AnimePahe, Cineby, and Miruro each keep their own multi-fixture loss, retry, ' +
+      'skipped-control, directional-skew, and latency proof.'
   },
   {
     id: 'trace-cap',

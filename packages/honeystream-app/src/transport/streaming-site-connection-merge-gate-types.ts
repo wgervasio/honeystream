@@ -8,11 +8,13 @@ export interface StreamingSiteConnectionMergeGateOptions {
   readonly maxByteLossRate?: number
   readonly maxDroppedMessages?: number
   readonly maxDirectionalLatencySkewMs?: number
+  readonly maxFixtureDirectionalLatencySkewMs?: number
   readonly maxFixtureByteLossRate?: number
   readonly maxFixtureDroppedMessages?: number
   readonly maxFixtureLostBytes?: number
   readonly maxFixtureRoundTripP95LatencyMs?: number
   readonly minFixturesPerRequiredProvider?: number
+  readonly maxProviderDirectionalLatencySkewMs?: number
   readonly maxProviderLostBytes?: number
   readonly maxProviderOutOfOrderMessages?: number
   readonly maxProviderRoundTripP95LatencyMs?: number
@@ -35,10 +37,12 @@ export interface StreamingSiteConnectionMergeGateSummary {
   readonly maxDirectionalRetransmissionByteRate: number
   readonly maxEstimatedRoundTripP95LatencyMs: number
   readonly maxFixtureByteLossRate: number
+  readonly maxFixtureDirectionalLatencySkewMs: number
   readonly maxFixtureDroppedMessages: number
   readonly maxFixtureEstimatedRoundTripP95LatencyMs: number
   readonly maxFixtureLostBytes: number
   readonly maxFixtureRetransmissionByteRate: number
+  readonly maxProviderDirectionalLatencySkewMs: number
   readonly maxProviderLostBytes: number
   readonly maxProviderOutOfOrderMessages: number
   readonly maxProviderRoundTripP95LatencyMs: number
@@ -110,6 +114,11 @@ export const resolveStreamingSiteConnectionMergeGateOptions = (
     typeof options.maxDirectionalLatencySkewMs === 'number'
       ? options.maxDirectionalLatencySkewMs
       : STREAMING_SITE_CONNECTION_BUDGET.maxDirectionalLatencySkewMs,
+  maxFixtureDirectionalLatencySkewMs: resolveNumberOption(
+    options.maxFixtureDirectionalLatencySkewMs,
+    options.maxDirectionalLatencySkewMs,
+    STREAMING_SITE_CONNECTION_BUDGET.maxDirectionalLatencySkewMs
+  ),
   maxFixtureByteLossRate: resolveNumberOption(
     options.maxFixtureByteLossRate,
     options.maxByteLossRate,
@@ -128,6 +137,11 @@ export const resolveStreamingSiteConnectionMergeGateOptions = (
   ),
   minFixturesPerRequiredProvider: resolveMinimumFixtureCount(
     options.minFixturesPerRequiredProvider
+  ),
+  maxProviderDirectionalLatencySkewMs: resolveNumberOption(
+    options.maxProviderDirectionalLatencySkewMs,
+    options.maxDirectionalLatencySkewMs,
+    STREAMING_SITE_CONNECTION_BUDGET.maxDirectionalLatencySkewMs
   ),
   maxProviderLostBytes: resolveNumberOption(options.maxProviderLostBytes, undefined, 0),
   maxProviderOutOfOrderMessages:

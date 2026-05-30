@@ -36,13 +36,14 @@ export const RuntimeAddLocalFileDrop = memo(function RuntimeAddLocalFileDrop(
     <label
       htmlFor="runtime-add-media-file"
       data-local-file-drop={dropActive ? 'active' : 'idle'}
+      aria-describedby="runtime-add-local-file-help"
       onDragEnter={activateDrop}
       onDragOver={activateDrop}
       onDragLeave={deactivateDrop}
       onDrop={dropFile}
     >
       {props.addFileLabel || 'Add local file'}
-      <span data-local-file-drop-copy="true">
+      <span id="runtime-add-local-file-help" data-local-file-drop-copy="true">
         Drop the matching local copy here, or click to browse.
       </span>
       <input

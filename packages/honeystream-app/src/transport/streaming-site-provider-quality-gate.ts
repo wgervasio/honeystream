@@ -8,6 +8,7 @@ import { StreamingSiteProviderQuality } from './streaming-site-provider-quality'
 
 export interface StreamingSiteProviderQualityGateOptions {
   readonly maxProviderByteLossRate?: number
+  readonly maxProviderDirectionalLatencySkewMs?: number
   readonly maxProviderDroppedMessages?: number
   readonly maxProviderLostBytes?: number
   readonly maxProviderOutOfOrderMessages?: number
@@ -20,6 +21,7 @@ export interface StreamingSiteProviderQualityGateOptions {
 export interface StreamingSiteProviderQualityGateSummary {
   readonly failures: readonly string[]
   readonly maxProviderByteLossRate: number
+  readonly maxProviderDirectionalLatencySkewMs: number
   readonly maxProviderDroppedMessages: number
   readonly maxProviderLostBytes: number
   readonly maxProviderOutOfOrderMessages: number
@@ -106,6 +108,12 @@ const createFailureList = (
         `${label} provider skipped more than ${options.maxProviderSequenceGapMessages} controls.`
       )
     }
+    if (quality.maxDirectionalLatencySkewMs > options.maxProviderDirectionalLatencySkewMs) {
+      failures.push(
+        `${label} provider directional latency skew exceeded ` +
+          `${options.maxProviderDirectionalLatencySkewMs}ms.`
+      )
+    }
     if (quality.maxRetransmissionByteRate > options.maxProviderRetransmissionByteRate) {
       failures.push(
         `${label} provider recovered retry bytes exceeded ${
@@ -126,7 +134,8 @@ const createFailureList = (
 
 /*
 Context: The streaming merge gate should catch provider-specific regressions hidden by averages.
-Invariant: Every named provider must expose zero byte loss, ordered controls, and bounded P95 latency.
+Invariant: Every named provider must expose zero byte loss, ordered controls, bounded directional skew,
+and bounded P95 latency.
 Options considered: UI-only provider badges, live website probes, or a pure gate over lab summaries.
 Decision: Gate selected optimizer provider-quality observations with explicit per-provider loss,
 lost-byte, retry, ordering, and latency budgets.
@@ -144,6 +153,10 @@ export const summarizeStreamingSiteProviderQualityGate = (
       typeof options.maxProviderByteLossRate === 'number'
         ? options.maxProviderByteLossRate
         : STREAMING_SITE_CONNECTION_BUDGET.maxByteLossRate,
+    maxProviderDirectionalLatencySkewMs:
+      typeof options.maxProviderDirectionalLatencySkewMs === 'number'
+        ? options.maxProviderDirectionalLatencySkewMs
+        : STREAMING_SITE_CONNECTION_BUDGET.maxDirectionalLatencySkewMs,
     maxProviderDroppedMessages:
       typeof options.maxProviderDroppedMessages === 'number'
         ? options.maxProviderDroppedMessages
@@ -179,6 +192,10 @@ export const summarizeStreamingSiteProviderQualityGate = (
   return {
     failures,
     maxProviderByteLossRate: maxQualityValue(providerQuality, quality => quality.maxByteLossRate),
+    maxProviderDirectionalLatencySkewMs: maxQualityValue(
+      providerQuality,
+      quality => quality.maxDirectionalLatencySkewMs
+    ),
     maxProviderDroppedMessages: maxQualityValue(
       providerQuality,
       quality => quality.maxDroppedMessages

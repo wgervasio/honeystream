@@ -6,10 +6,10 @@ import {
 } from './streaming-site-connection-lab'
 import { SimulatedPeerTransportBudget } from './simulated-peer-transport-performance'
 import {
-  compareStreamingSiteConnectionProfileOptimizations,
   createStreamingSiteConnectionProfileOptimization,
   StreamingSiteConnectionProfileOptimization
 } from './streaming-site-connection-profile-optimization'
+import { compareStreamingSiteConnectionProfileOptimizations } from './streaming-site-connection-profile-ranking'
 
 export { StreamingSiteConnectionProfileOptimization }
 

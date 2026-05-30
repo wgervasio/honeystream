@@ -9,8 +9,11 @@ export interface StreamingSiteProviderQuality {
   readonly provider: MediaProvider
   readonly siteCount: number
   readonly maxByteLossRate: number
+  readonly maxDirectionalLatencySkewMs: number
   readonly maxDroppedMessages: number
   readonly maxEstimatedRoundTripP95LatencyMs: number
+  readonly maxGuestToHostP95LatencyMs: number
+  readonly maxHostToGuestP95LatencyMs: number
   readonly maxLostBytes: number
   readonly maxOutOfOrderMessages: number
   readonly maxRetransmissionByteRate: number
@@ -22,8 +25,11 @@ interface StreamingSiteProviderQualityDraft {
   provider: MediaProvider
   fixtureIds: string[]
   maxByteLossRate: number
+  maxDirectionalLatencySkewMs: number
   maxDroppedMessages: number
   maxEstimatedRoundTripP95LatencyMs: number
+  maxGuestToHostP95LatencyMs: number
+  maxHostToGuestP95LatencyMs: number
   maxLostBytes: number
   maxOutOfOrderMessages: number
   maxRetransmissionByteRate: number
@@ -43,8 +49,11 @@ const createDraft = (provider: MediaProvider): StreamingSiteProviderQualityDraft
   provider,
   fixtureIds: [],
   maxByteLossRate: 0,
+  maxDirectionalLatencySkewMs: 0,
   maxDroppedMessages: 0,
   maxEstimatedRoundTripP95LatencyMs: 0,
+  maxGuestToHostP95LatencyMs: 0,
+  maxHostToGuestP95LatencyMs: 0,
   maxLostBytes: 0,
   maxOutOfOrderMessages: 0,
   maxRetransmissionByteRate: 0,
@@ -85,10 +94,22 @@ const recordFixture = (
     draft.fixtureIds.push(fixture.fixtureId)
   }
   draft.maxByteLossRate = Math.max(draft.maxByteLossRate, fixture.byteLossRate)
+  draft.maxDirectionalLatencySkewMs = Math.max(
+    draft.maxDirectionalLatencySkewMs,
+    fixture.directionalLatencySkewMs
+  )
   draft.maxDroppedMessages = Math.max(draft.maxDroppedMessages, fixture.droppedMessages)
   draft.maxEstimatedRoundTripP95LatencyMs = Math.max(
     draft.maxEstimatedRoundTripP95LatencyMs,
     fixture.estimatedRoundTripP95LatencyMs
+  )
+  draft.maxGuestToHostP95LatencyMs = Math.max(
+    draft.maxGuestToHostP95LatencyMs,
+    fixture.guestToHostP95LatencyMs
+  )
+  draft.maxHostToGuestP95LatencyMs = Math.max(
+    draft.maxHostToGuestP95LatencyMs,
+    fixture.hostToGuestP95LatencyMs
   )
   draft.maxLostBytes = Math.max(draft.maxLostBytes, fixture.lostBytes)
   draft.maxOutOfOrderMessages = Math.max(
@@ -115,8 +136,11 @@ const finalizeDraft = (
   provider: draft.provider,
   siteCount: draft.fixtureIds.length,
   maxByteLossRate: draft.maxByteLossRate,
+  maxDirectionalLatencySkewMs: draft.maxDirectionalLatencySkewMs,
   maxDroppedMessages: draft.maxDroppedMessages,
   maxEstimatedRoundTripP95LatencyMs: draft.maxEstimatedRoundTripP95LatencyMs,
+  maxGuestToHostP95LatencyMs: draft.maxGuestToHostP95LatencyMs,
+  maxHostToGuestP95LatencyMs: draft.maxHostToGuestP95LatencyMs,
   maxLostBytes: draft.maxLostBytes,
   maxOutOfOrderMessages: draft.maxOutOfOrderMessages,
   maxRetransmissionByteRate: draft.maxRetransmissionByteRate,
@@ -126,7 +150,8 @@ const finalizeDraft = (
 
 /*
 Context: Aggregate streaming metrics can hide one provider regressing behind another provider.
-Invariant: A selected lane must expose provider-specific byte loss, retry, sequence, and latency maxima.
+Invariant: A selected lane must expose provider-specific byte loss, retry, sequence, directional skew,
+and latency maxima.
 Options considered: Aggregate-only gates, live third-party probes, or bounded provider summaries.
 Decision: Summarize per-provider fixture observations from deterministic host/guest mock trials.
 Performance impact: O(trial count * fixture count) over capped lab inputs; no runtime network work.

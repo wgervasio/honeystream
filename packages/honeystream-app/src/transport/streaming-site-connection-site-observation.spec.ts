@@ -75,6 +75,9 @@ describe('streaming site fixture observations', () => {
       expect(fixtureObservation.estimatedRoundTripP95LatencyMs).toBeLessThanOrEqual(
         STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS
       )
+      expect(fixtureObservation.hostToGuestP95LatencyMs).toBeLessThanOrEqual(1)
+      expect(fixtureObservation.guestToHostP95LatencyMs).toBeLessThanOrEqual(1)
+      expect(fixtureObservation.directionalLatencySkewMs).toBe(0)
       expect(fixtureObservation.maxMessageBytes).toBeLessThanOrEqual(
         STREAMING_SITE_TRANSPORT_BUDGET.maxMessageBytes
       )
@@ -108,5 +111,31 @@ describe('streaming site fixture observations', () => {
         STREAMING_SITE_CONNECTION_BUDGET.maxEstimatedRoundTripP95LatencyMs
       )
     }
+  })
+
+  it('exposes fixture-level directional latency skew for asymmetric mock links', async () => {
+    const result = await runStreamingSiteConnectionLab({
+      fixtures: [STREAMING_SITE_CONNECTION_FIXTURES[0]],
+      profiles: [
+        {
+          id: 'fixture-asymmetric',
+          label: 'Fixture asymmetric lane',
+          hostNetwork: { latencyMs: 1, maxQueuedFrames: 128 },
+          guestNetwork: { latencyMs: 8, maxQueuedFrames: 128 }
+        }
+      ],
+      nowStartMs: 23000,
+      random: () => 0.5
+    })
+
+    const observation = findObservation(result.observations, 'fixture-asymmetric')
+    const fixtureObservation = findFixtureObservation(observation.fixtureObservations, 'youtube-watch')
+
+    expect(fixtureObservation.hostToGuestP95LatencyMs).toBe(8)
+    expect(fixtureObservation.guestToHostP95LatencyMs).toBe(1)
+    expect(fixtureObservation.estimatedRoundTripP95LatencyMs).toBe(9)
+    expect(fixtureObservation.directionalLatencySkewMs).toBe(7)
+    expect(fixtureObservation.byteLossRate).toBe(0)
+    expect(fixtureObservation.sequenceGapMessages).toBe(0)
   })
 })

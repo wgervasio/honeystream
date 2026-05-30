@@ -91,6 +91,10 @@ export const summarizeStreamingSiteConnectionMergeGate = (
       selectedProfile,
       profile => profile.maxFixtureByteLossRate
     ),
+    maxFixtureDirectionalLatencySkewMs: selectedMetric(
+      selectedProfile,
+      profile => profile.maxFixtureDirectionalLatencySkewMs
+    ),
     maxFixtureDroppedMessages: selectedMetric(
       selectedProfile,
       profile => profile.maxFixtureDroppedMessages
@@ -106,6 +110,10 @@ export const summarizeStreamingSiteConnectionMergeGate = (
     maxFixtureRetransmissionByteRate: selectedMetric(
       selectedProfile,
       profile => profile.maxFixtureRetransmissionByteRate
+    ),
+    maxProviderDirectionalLatencySkewMs: maxProviderQualityValue(
+      selectedProfile,
+      quality => quality.maxDirectionalLatencySkewMs
     ),
     maxProviderLostBytes: maxProviderQualityValue(
       selectedProfile,

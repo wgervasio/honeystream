@@ -243,12 +243,12 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('Per-site proof')
     expect(html).toContain(`${STREAMING_SITE_CONNECTION_FIXTURES.length} observed`)
     expect(html).toContain(
-      'Each site fixture records delivered controls, lost bytes, retry bytes, skipped controls, payload size, and round-trip latency'
+      'Each site fixture records delivered controls, lost bytes, retry bytes, skipped controls, payload size, directional skew, and round-trip latency'
     )
     expect(html).toContain('Provider gate')
     expect(html).toContain('4 providers')
     expect(html).toContain(
-      'YouTube, AnimePahe, Cineby, and Miruro each keep their own multi-fixture loss, retry, skipped-control, and latency proof'
+      'YouTube, AnimePahe, Cineby, and Miruro each keep their own multi-fixture loss, retry, skipped-control, directional-skew, and latency proof'
     )
     expect(html).toContain('Trace gate')
     expect(html).toContain('64 recent frames')
