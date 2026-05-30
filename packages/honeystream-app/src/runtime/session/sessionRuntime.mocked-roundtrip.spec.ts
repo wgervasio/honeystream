@@ -263,4 +263,102 @@ describe('runtime/session mocked host-guest e2e', () => {
       guestRuntime.dispose()
     }
   })
+
+  it('recovers transient streaming-site control drops without byte loss', async () => {
+    let nowMs = 80000
+    const pair = createSimulatedPeerTransportPair<
+      ClientToHostWireEnvelope,
+      HostToClientWireEnvelope
+    >({
+      hostInboundValidator: createWireEnvelopeValidator('client-to-host'),
+      guestInboundValidator: createWireEnvelopeValidator('host-to-client'),
+      now: () => nowMs,
+      random: () => 0.5,
+      network: {
+        latencyMs: 3,
+        dropEveryNthMessage: 5,
+        maxQueuedFrames: 128,
+        retransmitDroppedFrames: true,
+        retransmitDelayMs: 2
+      }
+    })
+    const hostPlayback = new CapturingPlaybackEngine()
+    const guestPlayback = new CapturingPlaybackEngine()
+    const hostRuntime = createSessionRuntime({
+      transport: pair.host,
+      playback: hostPlayback,
+      now: () => nowMs
+    })
+    const guestRuntime = createSessionRuntime({
+      transport: pair.guest,
+      playback: guestPlayback,
+      now: () => nowMs
+    })
+
+    const flushConnection = async (): Promise<void> => {
+      for (let pass = 0; pass < 6; pass += 1) {
+        pair.flushAll()
+        await settleRuntime()
+      }
+      nowMs += 12
+    }
+
+    try {
+      await hostRuntime.startHostSession({
+        roomId: 'retry-e2e-room',
+        hostUsername: 'Honey Cat',
+        inviteSecret: 'invite-secret'
+      })
+      await guestRuntime.startGuestSession({
+        roomId: 'retry-e2e-room',
+        username: 'Rabbit Buddy',
+        inviteSecret: 'invite-secret'
+      })
+      await flushConnection()
+
+      for (let index = 0; index < 4; index += 1) {
+        const media = streamingRoundTripMedia[index]
+        await guestRuntime.dispatchGuestCommand({ type: 'addMedia', media })
+        await flushConnection()
+
+        if (index > 0) {
+          await hostRuntime.dispatchHostCommand({ type: 'next' })
+          await flushConnection()
+        }
+
+        await hostRuntime.dispatchHostCommand({
+          type: 'seek',
+          positionMs: Math.min(45000 + index * 500, media.durationMs || 45000)
+        })
+        await flushConnection()
+      }
+
+      const finalMedia = streamingRoundTripMedia[3]
+      const hostSession = hostRuntime.getSnapshot().session
+      const guestSession = guestRuntime.getSnapshot().session
+      expect(hostSession && hostSession.currentMediaId).toBe(finalMedia.mediaId)
+      expect(guestSession && guestSession.currentMediaId).toBe(finalMedia.mediaId)
+
+      const metrics = pair.getAggregateMetrics()
+      expect(metrics.combinedRetransmittedMessages).toBeGreaterThan(0)
+      expect(metrics.combinedRetransmittedBytes).toBeGreaterThan(0)
+      expect(metrics.combinedDroppedMessages).toBe(0)
+      expect(metrics.combinedLostBytes).toBe(0)
+      expect(metrics.combinedDeliveryRate).toBe(1)
+      expect(metrics.combinedByteLossRate).toBe(0)
+      expect(metrics.combinedOutOfOrderMessages).toBe(0)
+      expect(metrics.combinedSequenceGapMessages).toBe(0)
+      expect(metrics.maxDirectionalRetransmissionRate).toBeLessThanOrEqual(0.5)
+      expect(metrics.maxDirectionalRetransmissionByteRate).toBeLessThanOrEqual(0.5)
+      expect(metrics.estimatedRoundTripP95LatencyMs).toBeLessThanOrEqual(10)
+      expect(metrics.combinedMaxMessageBytes).toBeLessThanOrEqual(2048)
+      expect(evaluateSimulatedPeerTransportBudget(metrics)).toEqual({
+        ok: true,
+        failures: []
+      })
+    } finally {
+      hostRuntime.dispose()
+      guestRuntime.dispose()
+    }
+  })
 })
