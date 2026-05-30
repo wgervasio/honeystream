@@ -348,6 +348,13 @@ const MERGE_GATE_METRICS = [
     label: 'Coverage gate',
     value: `${STREAMING_SITE_CONNECTION_FIXTURE_COUNT} sites`,
     detail: 'YouTube, AnimePahe, Cineby, Miruro, and generic pages stay in the matrix.'
+  },
+  {
+    id: 'per-site-observation',
+    label: 'Per-site proof',
+    value: `${STREAMING_SITE_CONNECTION_FIXTURE_COUNT} observed`,
+    detail:
+      'Each site fixture records delivered controls, lost bytes, retries, skipped controls, payload size, and round-trip latency.'
   }
 ] as const
 const COMMAND_BAR_LINKS = [
