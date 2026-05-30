@@ -261,6 +261,25 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('>Invite</b>')
     expect(html).toContain('>Buddy</b>')
     expect(html).toContain('>Play</b>')
+    expect(html).toContain('data-streaming-proof="byte-loss"')
+    expect(html).toContain('data-byte-loss-rate="0"')
+    expect(html).toContain(
+      `data-round-trip-p95-budget-ms="${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}"`
+    )
+    expect(html).toContain(
+      `data-best-round-trip-ms="${STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS}"`
+    )
+    expect(html).toContain(`data-site-count="${STREAMING_SITE_CONNECTION_FIXTURE_COUNT}"`)
+    expect(html).toContain(
+      `data-provider-coverage="YouTube x14 / AnimePahe x11 / Cineby x12 / Miruro x10 / generic x3"`
+    )
+    expect(html).toContain(`data-profile-count="${STREAMING_SITE_CONNECTION_PROFILES.length}"`)
+    expect(html).toContain(`data-trial-count="${STREAMING_SITE_CONNECTION_TRIAL_COUNT}"`)
+    expect(html).toContain('data-connection-lab-proof="site-matrix"')
+    expect(html).toContain('data-provider-count="4"')
+    expect(html).toContain('data-zero-loss-required="true"')
+    expect(html).toContain('data-merge-gate-metric="byte-loss"')
+    expect(html).toContain('data-merge-gate-value="0%"')
     expect(html).toContain('Paste source')
     expect(html).toContain('href="#runtime-add-media-url"')
     expect(html).toContain('href="#runtime_invite_panel"')
