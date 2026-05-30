@@ -342,6 +342,12 @@ const MERGE_GATE_METRICS = [
     detail: 'Provider observations reject skipped or reordered controls before merge.'
   },
   {
+    id: 'provider-lost-bytes',
+    label: 'Lost-byte gate',
+    value: '0B',
+    detail: 'Provider quality gates fail if any covered site loses a control byte.'
+  },
+  {
     id: 'tail-latency',
     label: 'Tail latency gate',
     value: `<=${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms P95`,

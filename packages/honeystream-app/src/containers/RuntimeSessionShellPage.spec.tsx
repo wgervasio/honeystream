@@ -291,6 +291,8 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('data-zero-loss-required="true"')
     expect(html).toContain('data-merge-gate-metric="byte-loss"')
     expect(html).toContain('data-merge-gate-value="0%"')
+    expect(html).toContain('data-merge-gate-metric="provider-lost-bytes"')
+    expect(html).toContain('data-merge-gate-value="0B"')
     expect(html).toContain('data-merge-gate-metric="trace-cap"')
     expect(html).toContain('Paste source')
     expect(html).toContain('href="#runtime-add-media-url"')

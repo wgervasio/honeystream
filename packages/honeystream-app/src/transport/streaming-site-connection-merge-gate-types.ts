@@ -10,9 +10,12 @@ export interface StreamingSiteConnectionMergeGateOptions {
   readonly maxDirectionalLatencySkewMs?: number
   readonly maxFixtureByteLossRate?: number
   readonly maxFixtureDroppedMessages?: number
+  readonly maxFixtureLostBytes?: number
   readonly maxFixtureRoundTripP95LatencyMs?: number
   readonly minFixturesPerRequiredProvider?: number
+  readonly maxProviderLostBytes?: number
   readonly maxProviderOutOfOrderMessages?: number
+  readonly maxProviderRoundTripP95LatencyMs?: number
   readonly maxProviderSequenceGapMessages?: number
   readonly maxRetransmissionByteRate?: number
   readonly maxRoundTripP95LatencyMs?: number
@@ -34,8 +37,11 @@ export interface StreamingSiteConnectionMergeGateSummary {
   readonly maxFixtureByteLossRate: number
   readonly maxFixtureDroppedMessages: number
   readonly maxFixtureEstimatedRoundTripP95LatencyMs: number
+  readonly maxFixtureLostBytes: number
   readonly maxFixtureRetransmissionByteRate: number
+  readonly maxProviderLostBytes: number
   readonly maxProviderOutOfOrderMessages: number
+  readonly maxProviderRoundTripP95LatencyMs: number
   readonly maxProviderSequenceGapMessages: number
   readonly missingProviders: readonly MediaProvider[]
   readonly minFixturesPerRequiredProvider: number
@@ -114,6 +120,7 @@ export const resolveStreamingSiteConnectionMergeGateOptions = (
     options.maxDroppedMessages,
     STREAMING_SITE_CONNECTION_BUDGET.maxDroppedMessages
   ),
+  maxFixtureLostBytes: resolveNumberOption(options.maxFixtureLostBytes, undefined, 0),
   maxFixtureRoundTripP95LatencyMs: resolveNumberOption(
     options.maxFixtureRoundTripP95LatencyMs,
     options.maxRoundTripP95LatencyMs,
@@ -122,10 +129,16 @@ export const resolveStreamingSiteConnectionMergeGateOptions = (
   minFixturesPerRequiredProvider: resolveMinimumFixtureCount(
     options.minFixturesPerRequiredProvider
   ),
+  maxProviderLostBytes: resolveNumberOption(options.maxProviderLostBytes, undefined, 0),
   maxProviderOutOfOrderMessages:
     typeof options.maxProviderOutOfOrderMessages === 'number'
       ? options.maxProviderOutOfOrderMessages
       : STREAMING_SITE_CONNECTION_BUDGET.maxOutOfOrderMessages,
+  maxProviderRoundTripP95LatencyMs: resolveNumberOption(
+    options.maxProviderRoundTripP95LatencyMs,
+    options.maxRoundTripP95LatencyMs,
+    STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS
+  ),
   maxProviderSequenceGapMessages:
     typeof options.maxProviderSequenceGapMessages === 'number'
       ? options.maxProviderSequenceGapMessages

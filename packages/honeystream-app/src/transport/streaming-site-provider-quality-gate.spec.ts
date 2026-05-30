@@ -28,6 +28,7 @@ describe('streaming site provider quality gate', () => {
         selectedProfileId: 'clean-ultra-low-latency',
         maxProviderByteLossRate: 0,
         maxProviderDroppedMessages: 0,
+        maxProviderLostBytes: 0,
         maxProviderOutOfOrderMessages: 0,
         maxProviderRetransmissionByteRate: 0,
         maxProviderSequenceGapMessages: 0,

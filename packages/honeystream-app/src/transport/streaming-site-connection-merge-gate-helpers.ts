@@ -77,6 +77,17 @@ const createProviderQualityFailures = (
         `${label} provider reordered more than ${options.maxProviderOutOfOrderMessages} controls.`
       )
     }
+    if (quality.maxLostBytes > options.maxProviderLostBytes) {
+      failures.push(
+        `${label} provider lost more than ${options.maxProviderLostBytes} control bytes.`
+      )
+    }
+    if (quality.maxEstimatedRoundTripP95LatencyMs > options.maxProviderRoundTripP95LatencyMs) {
+      failures.push(
+        `${label} provider P95 mock round trip exceeded ` +
+          `${options.maxProviderRoundTripP95LatencyMs}ms.`
+      )
+    }
     if (quality.maxSequenceGapMessages > options.maxProviderSequenceGapMessages) {
       failures.push(
         `${label} provider skipped more than ${options.maxProviderSequenceGapMessages} controls.`
@@ -114,6 +125,9 @@ export const createStreamingSiteConnectionMergeGateFailures = (
   }
   if (profile && profile.maxFixtureDroppedMessages > options.maxFixtureDroppedMessages) {
     failures.push(`A site fixture dropped more than ${options.maxFixtureDroppedMessages} controls.`)
+  }
+  if (profile && profile.maxFixtureLostBytes > options.maxFixtureLostBytes) {
+    failures.push(`A site fixture lost more than ${options.maxFixtureLostBytes} control bytes.`)
   }
   failures.push(...createProviderQualityFailures(profile, options))
   if (profile && profile.maxCombinedRetransmissionByteRate > options.maxRetransmissionByteRate) {
