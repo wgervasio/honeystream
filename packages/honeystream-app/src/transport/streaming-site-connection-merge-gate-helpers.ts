@@ -2,7 +2,8 @@ import { MediaProvider } from 'protocol'
 import { StreamingSiteConnectionProfileOptimization } from './streaming-site-connection-optimizer'
 import {
   PROVIDER_LABELS,
-  ResolvedMergeGateOptions
+  ResolvedMergeGateOptions,
+  StreamingSiteProviderFixtureCount
 } from './streaming-site-connection-merge-gate-types'
 
 type ProviderQuality = StreamingSiteConnectionProfileOptimization['providerQuality'][number]
@@ -26,6 +27,28 @@ export const getCoveredProviders = (
         .filter(coverage => coverage.siteCount > 0)
         .map(coverage => coverage.provider)
     : []
+
+export const getProviderFixtureCounts = (
+  profile: StreamingSiteConnectionProfileOptimization | undefined
+): readonly StreamingSiteProviderFixtureCount[] =>
+  profile
+    ? profile.providerCoverage
+        .filter(coverage => coverage.siteCount > 0)
+        .map(coverage => ({
+          provider: coverage.provider,
+          siteCount: coverage.siteCount
+        }))
+    : []
+
+export const getProviderFixtureCount = (
+  profile: StreamingSiteConnectionProfileOptimization | undefined,
+  provider: MediaProvider
+): number => {
+  const coverage = profile
+    ? profile.providerCoverage.find(item => item.provider === provider)
+    : undefined
+  return coverage ? coverage.siteCount : 0
+}
 
 export const selectedMetric = (
   profile: StreamingSiteConnectionProfileOptimization | undefined,
@@ -66,12 +89,19 @@ const createProviderQualityFailures = (
 export const createStreamingSiteConnectionMergeGateFailures = (
   profile: StreamingSiteConnectionProfileOptimization | undefined,
   missingProviders: readonly MediaProvider[],
+  undercoveredProviders: readonly MediaProvider[],
   options: ResolvedMergeGateOptions
 ): readonly string[] => {
   const failures: string[] = []
   if (!profile) failures.push('No streaming-site transport lane passed every deterministic trial.')
   for (const provider of missingProviders) {
     failures.push(`${PROVIDER_LABELS[provider]} coverage is missing from the streaming-site matrix.`)
+  }
+  for (const provider of undercoveredProviders) {
+    failures.push(
+      `${PROVIDER_LABELS[provider]} coverage has fewer than ` +
+        `${options.minFixturesPerRequiredProvider} streaming-site fixtures.`
+    )
   }
   if (profile && profile.maxCombinedByteLossRate > options.maxByteLossRate) {
     failures.push(`Byte loss exceeded ${options.maxByteLossRate}.`)

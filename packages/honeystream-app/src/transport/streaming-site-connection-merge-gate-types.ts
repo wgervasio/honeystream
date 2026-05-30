@@ -11,6 +11,7 @@ export interface StreamingSiteConnectionMergeGateOptions {
   readonly maxFixtureByteLossRate?: number
   readonly maxFixtureDroppedMessages?: number
   readonly maxFixtureRoundTripP95LatencyMs?: number
+  readonly minFixturesPerRequiredProvider?: number
   readonly maxProviderOutOfOrderMessages?: number
   readonly maxProviderSequenceGapMessages?: number
   readonly maxRetransmissionByteRate?: number
@@ -37,12 +38,20 @@ export interface StreamingSiteConnectionMergeGateSummary {
   readonly maxProviderOutOfOrderMessages: number
   readonly maxProviderSequenceGapMessages: number
   readonly missingProviders: readonly MediaProvider[]
+  readonly minFixturesPerRequiredProvider: number
   readonly ok: boolean
+  readonly providerFixtureCounts: readonly StreamingSiteProviderFixtureCount[]
   readonly requiredProviders: readonly MediaProvider[]
   readonly selectedProfileId?: string
   readonly selectedProfileLabel?: string
   readonly siteCount: number
   readonly trialCount: number
+  readonly undercoveredProviders: readonly MediaProvider[]
+}
+
+export interface StreamingSiteProviderFixtureCount {
+  readonly provider: MediaProvider
+  readonly siteCount: number
 }
 
 export type ResolvedMergeGateOptions = Required<StreamingSiteConnectionMergeGateOptions>
@@ -61,6 +70,7 @@ const DEFAULT_REQUIRED_PROVIDERS: readonly MediaProvider[] = Object.freeze([
   'cineby',
   'miruro'
 ])
+const DEFAULT_MIN_REQUIRED_PROVIDER_FIXTURES = 2
 
 const resolveNumberOption = (
   value: number | undefined,
@@ -70,6 +80,13 @@ const resolveNumberOption = (
   if (typeof value === 'number') return value
   if (typeof inheritedValue === 'number') return inheritedValue
   return fallback
+}
+
+const resolveMinimumFixtureCount = (value: number | undefined): number => {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 1) {
+    return DEFAULT_MIN_REQUIRED_PROVIDER_FIXTURES
+  }
+  return Math.floor(value)
 }
 
 export const resolveStreamingSiteConnectionMergeGateOptions = (
@@ -101,6 +118,9 @@ export const resolveStreamingSiteConnectionMergeGateOptions = (
     options.maxFixtureRoundTripP95LatencyMs,
     options.maxRoundTripP95LatencyMs,
     STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS
+  ),
+  minFixturesPerRequiredProvider: resolveMinimumFixtureCount(
+    options.minFixturesPerRequiredProvider
   ),
   maxProviderOutOfOrderMessages:
     typeof options.maxProviderOutOfOrderMessages === 'number'

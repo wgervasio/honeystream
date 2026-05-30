@@ -252,8 +252,8 @@ describe('streaming site connection optimizer', () => {
     expect(mergeGate.coveredProviders).toEqual(['youtube'])
     expect(mergeGate.missingProviders).toEqual(['miruro'])
     expect(mergeGate.failures).toEqual([
-      'Miruro coverage is missing from the streaming-site matrix.'
+      'Miruro coverage is missing from the streaming-site matrix.',
+      'YouTube coverage has fewer than 2 streaming-site fixtures.'
     ])
   })
-
 })
