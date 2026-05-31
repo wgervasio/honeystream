@@ -8,11 +8,13 @@ import { createSimulatedPeerTransportPair } from './simulated-peer-transport-pai
 type ClientToHostMessage = {
   readonly type: 'ping'
   readonly nonce: number
+  readonly payload?: string
 }
 
 type HostToClientMessage = {
   readonly type: 'pong'
   readonly nonce: number
+  readonly payload?: string
 }
 
 type UnknownRecord = { readonly [key: string]: unknown }
@@ -25,7 +27,8 @@ const clientToHostValidator: TransportMessageValidator<ClientToHostMessage> = {
     isUnknownRecord(value) &&
     value.type === 'ping' &&
     typeof value.nonce === 'number' &&
-    value.nonce >= 0,
+    value.nonce >= 0 &&
+    (typeof value.payload === 'undefined' || typeof value.payload === 'string'),
   describeInvalidMessage: () => 'Expected ping message.'
 }
 
@@ -34,7 +37,8 @@ const hostToClientValidator: TransportMessageValidator<HostToClientMessage> = {
     isUnknownRecord(value) &&
     value.type === 'pong' &&
     typeof value.nonce === 'number' &&
-    value.nonce >= 0,
+    value.nonce >= 0 &&
+    (typeof value.payload === 'undefined' || typeof value.payload === 'string'),
   describeInvalidMessage: () => 'Expected pong message.'
 }
 
@@ -122,5 +126,44 @@ describe('simulated peer transport queue pressure', () => {
 
     expect(pair.flushAll()).toBe(0)
     expect(hostMessages).toEqual([])
+  })
+
+  it('rejects byte-starved mock lanes before frame count pressure is reached', async () => {
+    let nowMs = 13000
+    const pair = createSimulatedPeerTransportPair({
+      hostInboundValidator: clientToHostValidator,
+      guestInboundValidator: hostToClientValidator,
+      now: () => nowMs,
+      network: { latencyMs: 50, maxQueuedFrames: 128, maxQueuedBytes: 1 }
+    })
+
+    await pair.host.connect()
+    pair.guest.send({
+      seq: 1,
+      sentAtMs: nowMs,
+      message: { type: 'ping', nonce: 1, payload: 'byte-pressure' }
+    })
+
+    expect(pair.host.getMetrics().queuedMessages).toBe(0)
+    expect(pair.guest.getMetrics().droppedMessages).toBe(1)
+    expect(pair.guest.getMetrics().recentFrames).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ outcome: 'dropped', reason: 'queue-overflow', seq: 1 })
+      ])
+    )
+
+    nowMs += 50
+    expect(pair.flushAll()).toBe(0)
+
+    const metrics = pair.getAggregateMetrics()
+    expect(metrics.combinedDroppedMessages).toBe(1)
+    expect(metrics.combinedLostBytes).toBeGreaterThan(0)
+    expect(metrics.combinedByteLossRate).toBe(1)
+    expect(evaluateSimulatedPeerTransportBudget(metrics).failures).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ metric: 'combinedDroppedMessages' }),
+        expect.objectContaining({ metric: 'combinedByteLossRate' })
+      ])
+    )
   })
 })

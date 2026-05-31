@@ -33,6 +33,7 @@ describe('RuntimeAddMediaPanel URL handling', () => {
       expect(container.textContent).toContain('picks the lowest-loss lane first')
       expect(container.textContent).toContain('zero-loss, under-10ms mock round trip')
       expect(container.textContent).toContain('visible recovered retries')
+      expect(container.textContent).toContain('byte-pressure queue guards')
       expect(container.textContent).toContain('no skipped controls')
       expect(container.textContent).toContain('tiny control stream of typed commands')
     } finally {

@@ -124,8 +124,9 @@ export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
           site you can test together. The streaming connection lab feeds the optimizer, picks the
           lowest-loss lane first, prefers clean zero-retry lanes before faster repaired lanes,
           then latency-tunes it with a zero-loss, under-10ms mock round trip, visible recovered
-          retries for transient control drops, and no skipped controls. Honeystream keeps media
-          bytes local and syncs only the tiny control stream of typed commands.
+          retries for transient control drops, byte-pressure queue guards, and no skipped controls.
+          Honeystream keeps media bytes local and syncs only the tiny control stream of typed
+          commands.
         </span>
       </div>
       {sourceSuggestions.length > 0 ? (

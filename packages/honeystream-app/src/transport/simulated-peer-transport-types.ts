@@ -4,12 +4,14 @@ import { serializedByteLength } from './transport-byte-length'
 export type Clock = () => number
 
 export const MAX_SIMULATED_FRAMES = 256
+export const MAX_SIMULATED_QUEUED_BYTES = MAX_SIMULATED_FRAMES * 2048
 
 export interface SimulatedPeerNetworkProfile {
   readonly latencyMs?: number
   readonly jitterMs?: number
   readonly dropRate?: number
   readonly dropEveryNthMessage?: number
+  readonly maxQueuedBytes?: number
   readonly maxQueuedFrames?: number
   readonly retransmitDroppedFrames?: boolean
   readonly retransmitDelayMs?: number

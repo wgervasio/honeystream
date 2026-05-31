@@ -1,4 +1,8 @@
-import { MAX_SIMULATED_FRAMES, SimulatedPeerNetworkProfile } from './simulated-peer-transport-types'
+import {
+  MAX_SIMULATED_FRAMES,
+  MAX_SIMULATED_QUEUED_BYTES,
+  SimulatedPeerNetworkProfile
+} from './simulated-peer-transport-types'
 
 type RandomSource = () => number
 
@@ -78,4 +82,28 @@ export const resolveMaxQueuedFrames = (network: SimulatedPeerNetworkProfile): nu
   }
 
   return MAX_SIMULATED_FRAMES
+}
+
+/*
+Context: Mock transport tuning must catch fast links that only work by buffering too many bytes.
+Invariant: Queued control frames stay bounded by count and byte size before delivery.
+Options considered: Frame-only caps, global byte counters, or per-receiver byte caps.
+Decision: Resolve a receiver-owned maxQueuedBytes cap beside the existing frame cap.
+Performance impact: O(1) enqueue check using the serialized envelope byte length.
+Memory/lifecycle ownership: The frame queue owns queued byte accounting and clears it with frames.
+Failure mode: Over-cap frames fail as queue-overflow and count as dropped control bytes.
+Validation: Covered by simulated-peer-transport queue-pressure and tuning tests.
+*/
+export const resolveMaxQueuedBytes = (network: SimulatedPeerNetworkProfile): number => {
+  const maxQueuedBytes = network.maxQueuedBytes
+  if (
+    typeof maxQueuedBytes === 'number' &&
+    Number.isFinite(maxQueuedBytes) &&
+    Number.isInteger(maxQueuedBytes) &&
+    maxQueuedBytes > 0
+  ) {
+    return maxQueuedBytes
+  }
+
+  return MAX_SIMULATED_QUEUED_BYTES
 }
