@@ -42,6 +42,7 @@ export type {
   LeaveSessionIntent,
   PlaybackSessionIntent,
   SessionRuntimeIntentCallbacks,
+  SessionRuntimePlaybackAdapterKind,
   SessionRuntimeProjectionSnapshot,
   SessionRuntimeShellContainerProps,
   SessionRuntimeShellViewModel,

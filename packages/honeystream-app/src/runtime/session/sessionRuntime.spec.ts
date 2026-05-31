@@ -1,11 +1,12 @@
-import {
-  PlaybackEngineApplyResult,
-  PlaybackEngineDesiredState
-} from 'playback/engine/playbackEngineContract'
+import { PlaybackEngineDesiredState } from 'playback/engine/playbackEngineContract'
 import { ClientToHostEnvelope, MediaSnapshot, PROTOCOL_VERSION } from 'protocol/types'
 import { TransportMessageValidator } from 'transport/contracts'
 import { createInMemoryPeerTransportPair } from 'transport/in-memory-peer-transport-pair'
-import { SessionRuntimePlaybackEngine } from './contracts'
+import {
+  SessionRuntimePlaybackAdapterKind,
+  SessionRuntimePlaybackApplyResult,
+  SessionRuntimePlaybackEngine
+} from './contracts'
 import { createSessionRuntime } from './sessionRuntime'
 
 class FakePlaybackEngine implements SessionRuntimePlaybackEngine {
@@ -14,14 +15,15 @@ class FakePlaybackEngine implements SessionRuntimePlaybackEngine {
 
   async applyDesiredState(
     desiredState: PlaybackEngineDesiredState
-  ): Promise<PlaybackEngineApplyResult> {
+  ): Promise<SessionRuntimePlaybackApplyResult> {
     this.desiredStates.push(desiredState)
     return {
       adapterCreated: false,
       mediaChanged: false,
       adapterDisposed: false,
       seekToleranceMs: 250,
-      appliedPlayback: desiredState.playback
+      appliedPlayback: desiredState.playback,
+      adapterKind: getAdapterKindForDesiredState(desiredState)
     }
   }
 
@@ -32,17 +34,23 @@ class FakePlaybackEngine implements SessionRuntimePlaybackEngine {
 
 class FailingPlaybackEngine extends FakePlaybackEngine {
   private applyCount = 0
+  private currentAdapterKind: SessionRuntimePlaybackAdapterKind | undefined
 
   async applyDesiredState(
     desiredState: PlaybackEngineDesiredState
-  ): Promise<PlaybackEngineApplyResult> {
+  ): Promise<SessionRuntimePlaybackApplyResult> {
     this.applyCount += 1
     if (this.applyCount === 1) {
       return super.applyDesiredState(desiredState)
     }
 
+    this.currentAdapterKind = getAdapterKindForDesiredState(desiredState)
     this.desiredStates.push(desiredState)
     throw new Error('Playback target unavailable.')
+  }
+
+  getCurrentAdapterKind(): SessionRuntimePlaybackAdapterKind | undefined {
+    return this.currentAdapterKind
   }
 }
 
@@ -60,8 +68,17 @@ const createMedia = (mediaId: string): MediaSnapshot => ({
   durationMs: 120000
 })
 
+const getAdapterKindForDesiredState = (
+  desiredState: PlaybackEngineDesiredState
+): SessionRuntimePlaybackAdapterKind | undefined => {
+  if (!desiredState.media) return undefined
+  if (desiredState.media.source === 'local-file') return 'local-file'
+  if (desiredState.media.source === 'website') return 'popup'
+  return 'embed-extension'
+}
+
 const flushRuntime = async (): Promise<void> => {
-  for (let pass = 0; pass < 8; pass += 1) {
+  for (let pass = 0; pass < 16; pass += 1) {
     await Promise.resolve()
   }
 }
@@ -94,6 +111,7 @@ describe('runtime/session/SessionRuntime', () => {
     expect(projection.role).toBe('host')
     expect(projection.lifecycle).toBe('running')
     expect(projection.session && projection.session.currentMediaId).toBe('media-1')
+    expect(projection.playbackAdapterKind).toBe('embed-extension')
     expect(hostPlayback.desiredStates).toHaveLength(2)
     expect(hostPlayback.desiredStates[1].media).toEqual({
       mediaId: 'media-1',
@@ -155,6 +173,8 @@ describe('runtime/session/SessionRuntime', () => {
     expect(hostSession.currentMediaId).toBe('media-guest')
     expect(guestSession.currentMediaId).toBe('media-guest')
     expect(guestSession.current).toEqual(createMedia('media-guest'))
+    expect(hostRuntime.getSnapshot().playbackAdapterKind).toBe('embed-extension')
+    expect(guestRuntime.getSnapshot().playbackAdapterKind).toBe('embed-extension')
   })
 
   it('records heartbeat clock sync and reapplies playing guest playback at receive time', async () => {
@@ -364,6 +384,7 @@ describe('runtime/session/SessionRuntime', () => {
     expect(hostRuntime.getSnapshot().runtimeErrors).toEqual(
       expect.arrayContaining([expect.stringContaining('Playback target unavailable.')])
     )
+    expect(hostRuntime.getSnapshot().playbackAdapterKind).toBe('local-file')
     expect(guestRuntime.getSnapshot().runtimeErrors).toEqual(
       expect.arrayContaining([expect.stringContaining('playback-apply-failed')])
     )

@@ -1,4 +1,7 @@
-import { PlaybackEngineStateApplication } from 'playback/engine/playbackEngineContract'
+import {
+  PlaybackEngineApplyResult,
+  PlaybackEngineDesiredState
+} from 'playback/engine/playbackEngineContract'
 import {
   ClientCommand,
   MediaSnapshot,
@@ -12,8 +15,17 @@ import { ProjectionStore, ProjectionUnsubscribe } from 'ui/externalStoreProjecti
 
 export type SessionRuntimeRole = 'uninitialized' | 'host' | 'guest'
 export type SessionRuntimeLifecycle = 'idle' | 'starting' | 'running' | 'disposed'
+export type SessionRuntimePlaybackAdapterKind = 'local-file' | 'embed-extension' | 'popup'
 
-export interface SessionRuntimePlaybackEngine extends PlaybackEngineStateApplication {
+export interface SessionRuntimePlaybackApplyResult extends PlaybackEngineApplyResult {
+  readonly adapterKind?: SessionRuntimePlaybackAdapterKind
+}
+
+export interface SessionRuntimePlaybackEngine {
+  applyDesiredState(
+    desiredState: PlaybackEngineDesiredState
+  ): Promise<SessionRuntimePlaybackApplyResult>
+  getCurrentAdapterKind?(): SessionRuntimePlaybackAdapterKind | undefined
   dispose(): void
 }
 
@@ -30,6 +42,7 @@ export interface SessionRuntimeProjection {
   readonly transportState: PeerTransportConnectionState
   readonly session?: SessionSnapshot
   readonly clockSync?: SessionRuntimeClockSyncSnapshot
+  readonly playbackAdapterKind?: SessionRuntimePlaybackAdapterKind
   readonly diagnostics: readonly ProtocolError[]
   readonly runtimeErrors: readonly string[]
 }

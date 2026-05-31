@@ -1,5 +1,6 @@
 import { DEFAULT_QUEUE_CAP } from '../../domain/queue'
 import { createSessionState, SessionState } from '../../domain/session-state'
+import { PlaybackEngineDesiredState } from 'playback/engine/playbackEngineContract'
 import {
   DomainError,
   transitionAdvanceQueue,
@@ -40,6 +41,7 @@ import {
   SessionRuntime,
   SessionRuntimeClockSyncSnapshot,
   SessionRuntimeDependencies,
+  SessionRuntimePlaybackAdapterKind,
   SessionRuntimeProjection,
   StartGuestSessionInput,
   StartHostSessionInput
@@ -141,6 +143,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
 
   private diagnostics: readonly ProtocolError[] = []
   private runtimeErrors: readonly string[] = []
+  private playbackAdapterKind: SessionRuntimePlaybackAdapterKind | undefined
   private eventCursor = 0
   private sequence = 0
   private expectedInboundSeq: number | undefined
@@ -166,6 +169,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
       lifecycle: this.lifecycle,
       transportState: this.transport.getState(),
       clockSync: this.clockSync,
+      playbackAdapterKind: this.playbackAdapterKind,
       diagnostics: [],
       runtimeErrors: []
     }
@@ -212,7 +216,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
     })
 
     await this.transport.connect()
-    await this.playback.applyDesiredState(toPlaybackDesiredStateFromDomain(this.hostState))
+    await this.applyPlaybackDesiredState(toPlaybackDesiredStateFromDomain(this.hostState))
 
     this.lifecycle = 'running'
     this.updateProjection()
@@ -441,7 +445,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
       this.hostState = nextState
       this.eventCursor += 1
       try {
-        await this.playback.applyDesiredState(toPlaybackDesiredStateFromDomain(nextState))
+        await this.applyPlaybackDesiredState(toPlaybackDesiredStateFromDomain(nextState))
       } catch (error) {
         const message = toErrorMessage(error)
         this.recordRuntimeError(`[playback] ${message}`)
@@ -523,7 +527,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
 
     this.updateProjection({ session: nextSession })
     try {
-      await this.playback.applyDesiredState(
+      await this.applyPlaybackDesiredState(
         toPlaybackDesiredStateFromSnapshot(
           nextSession,
           this.knownGuestMedia,
@@ -533,6 +537,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
     } catch (error) {
       this.recordRuntimeError(`[playback] ${toErrorMessage(error)}`)
     }
+    this.updateProjection()
   }
 
   private async reapplyGuestPlaybackAfterClockSync(receivedAtMs: number): Promise<void> {
@@ -540,7 +545,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
     if (!session || session.playback.state !== 'playing') return
 
     try {
-      await this.playback.applyDesiredState(
+      await this.applyPlaybackDesiredState(
         toPlaybackDesiredStateFromSnapshot(
           session,
           this.knownGuestMedia,
@@ -549,6 +554,20 @@ export class DefaultSessionRuntime implements SessionRuntime {
       )
     } catch (error) {
       this.recordRuntimeError(`[playback] ${toErrorMessage(error)}`)
+    }
+  }
+
+  private async applyPlaybackDesiredState(
+    desiredState: PlaybackEngineDesiredState
+  ): Promise<void> {
+    try {
+      const result = await this.playback.applyDesiredState(desiredState)
+      this.playbackAdapterKind = result.adapterKind
+    } catch (error) {
+      if (this.playback.getCurrentAdapterKind) {
+        this.playbackAdapterKind = this.playback.getCurrentAdapterKind()
+      }
+      throw error
     }
   }
 
@@ -693,6 +712,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
       transportState: this.transport.getState(),
       session: this.projection.session,
       clockSync: this.clockSync,
+      playbackAdapterKind: this.playbackAdapterKind,
       diagnostics: this.diagnostics,
       runtimeErrors: this.runtimeErrors,
       ...overrides
