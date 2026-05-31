@@ -98,6 +98,13 @@ const createProviderQualityFailures = (
         `${label} provider recovered retry rate exceeded ${options.maxProviderRetransmissionRate}.`
       )
     }
+    if (quality.maxRetransmissionByteRate > options.maxProviderRetransmissionByteRate) {
+      failures.push(
+        `${label} provider recovered retry bytes exceeded ${
+          options.maxProviderRetransmissionByteRate
+        }.`
+      )
+    }
     if (
       quality.maxMissingDirectionalDeliveryCount >
       options.maxProviderMissingDirectionalDeliveryCount
@@ -188,6 +195,14 @@ export const createStreamingSiteConnectionMergeGateFailures = (
   if (profile && profile.maxFixtureRetransmissionRate > options.maxFixtureRetransmissionRate) {
     failures.push(
       `A site fixture recovered retry rate exceeded ${options.maxFixtureRetransmissionRate}.`
+    )
+  }
+  if (
+    profile &&
+    profile.maxFixtureRetransmissionByteRate > options.maxFixtureRetransmissionByteRate
+  ) {
+    failures.push(
+      `A site fixture recovered retry bytes exceeded ${options.maxFixtureRetransmissionByteRate}.`
     )
   }
   if (

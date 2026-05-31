@@ -75,6 +75,7 @@ describe('streaming site connection merge gate', () => {
         maxProviderLostBytes: 0,
         maxProviderMissingDirectionalDeliveryCount: 0,
         maxProviderOutOfOrderMessages: 0,
+        maxProviderRetransmissionByteRate: 0,
         maxProviderRetransmissionRate: 0,
         maxProviderRoundTripP95LatencyMs: STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS,
         maxProviderSequenceGapMessages: 0
@@ -120,12 +121,20 @@ describe('streaming site connection merge gate', () => {
     expect(mergeGate.maxCombinedRetransmissionByteRate).toBeGreaterThan(0)
     expect(mergeGate.maxFixtureRetransmissionRate).toBeGreaterThan(0)
     expect(mergeGate.maxFixtureRetransmissionByteRate).toBeGreaterThan(0)
-    expect(mergeGate.failures).toEqual([
-      'A site fixture recovered retry rate exceeded 0.',
-      'Recovered retry rate exceeded 0.',
-      'Recovered retry bytes exceeded 0.',
-      'Directional recovered retry bytes exceeded 0.'
-    ])
+    expect(mergeGate.maxProviderRetransmissionByteRate).toBeGreaterThan(0)
+    expect(mergeGate.failures).toEqual(
+      expect.arrayContaining([
+        'A site fixture recovered retry rate exceeded 0.',
+        'A site fixture recovered retry bytes exceeded 0.',
+        'YouTube provider recovered retry bytes exceeded 0.',
+        'AnimePahe provider recovered retry bytes exceeded 0.',
+        'Cineby provider recovered retry bytes exceeded 0.',
+        'Miruro provider recovered retry bytes exceeded 0.',
+        'Recovered retry rate exceeded 0.',
+        'Recovered retry bytes exceeded 0.',
+        'Directional recovered retry bytes exceeded 0.'
+      ])
+    )
   })
 
   it('fails when a selected lane hides a per-site latency regression', async () => {

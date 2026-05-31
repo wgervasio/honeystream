@@ -155,6 +155,10 @@ export const summarizeStreamingSiteConnectionMergeGate = (
       selectedProfile,
       quality => quality.maxOutOfOrderMessages
     ),
+    maxProviderRetransmissionByteRate: maxProviderQualityValue(
+      selectedProfile,
+      quality => quality.maxRetransmissionByteRate
+    ),
     maxProviderRetransmissionRate: maxProviderQualityValue(
       selectedProfile,
       quality => quality.maxRetransmissionRate

@@ -25,9 +25,11 @@ export interface StreamingSiteConnectionMergeGateOptions {
   readonly maxProviderMaxMessageBytes?: number
   readonly maxProviderMissingDirectionalDeliveryCount?: number
   readonly maxProviderOutOfOrderMessages?: number
+  readonly maxProviderRetransmissionByteRate?: number
   readonly maxProviderRetransmissionRate?: number
   readonly maxProviderRoundTripP95LatencyMs?: number
   readonly maxProviderSequenceGapMessages?: number
+  readonly maxFixtureRetransmissionByteRate?: number
   readonly maxFixtureRetransmissionRate?: number
   readonly maxRetransmissionByteRate?: number
   readonly maxRetransmissionRate?: number
@@ -64,6 +66,7 @@ export interface StreamingSiteConnectionMergeGateSummary {
   readonly maxProviderMaxMessageBytes: number
   readonly maxProviderMissingDirectionalDeliveryCount: number
   readonly maxProviderOutOfOrderMessages: number
+  readonly maxProviderRetransmissionByteRate: number
   readonly maxProviderRetransmissionRate: number
   readonly maxProviderRoundTripP95LatencyMs: number
   readonly maxProviderSequenceGapMessages: number
@@ -95,10 +98,7 @@ export const PROVIDER_LABELS: Record<MediaProvider, string> = {
 }
 
 const DEFAULT_REQUIRED_PROVIDERS: readonly MediaProvider[] = Object.freeze([
-  'youtube',
-  'animepahe',
-  'cineby',
-  'miruro'
+  'youtube', 'animepahe', 'cineby', 'miruro'
 ])
 const DEFAULT_MIN_REQUIRED_PROVIDER_FIXTURES = 2
 
@@ -208,6 +208,11 @@ export const resolveStreamingSiteConnectionMergeGateOptions = (
     typeof options.maxProviderOutOfOrderMessages === 'number'
       ? options.maxProviderOutOfOrderMessages
       : STREAMING_SITE_CONNECTION_BUDGET.maxOutOfOrderMessages,
+  maxProviderRetransmissionByteRate: resolveNumberOption(
+    options.maxProviderRetransmissionByteRate,
+    options.maxRetransmissionByteRate,
+    STREAMING_SITE_CONNECTION_BUDGET.maxRetransmissionByteRate
+  ),
   maxProviderRetransmissionRate: resolveNumberOption(
     options.maxProviderRetransmissionRate,
     options.maxRetransmissionRate,
@@ -226,6 +231,11 @@ export const resolveStreamingSiteConnectionMergeGateOptions = (
     options.maxFixtureRetransmissionRate,
     options.maxRetransmissionRate,
     STREAMING_SITE_CONNECTION_BUDGET.maxRetransmissionRate
+  ),
+  maxFixtureRetransmissionByteRate: resolveNumberOption(
+    options.maxFixtureRetransmissionByteRate,
+    options.maxRetransmissionByteRate,
+    STREAMING_SITE_CONNECTION_BUDGET.maxRetransmissionByteRate
   ),
   maxRetransmissionByteRate:
     typeof options.maxRetransmissionByteRate === 'number'
