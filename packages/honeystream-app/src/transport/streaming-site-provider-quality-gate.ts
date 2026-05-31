@@ -14,6 +14,7 @@ export interface StreamingSiteProviderQualityGateOptions {
   readonly maxProviderMissingDirectionalDeliveryCount?: number
   readonly maxProviderOutOfOrderMessages?: number
   readonly maxProviderRetransmissionByteRate?: number
+  readonly maxProviderRetransmissionRate?: number
   readonly maxProviderRoundTripP95LatencyMs?: number
   readonly maxProviderSequenceGapMessages?: number
   readonly requiredProviders?: readonly MediaProvider[]
@@ -28,6 +29,7 @@ export interface StreamingSiteProviderQualityGateSummary {
   readonly maxProviderMissingDirectionalDeliveryCount: number
   readonly maxProviderOutOfOrderMessages: number
   readonly maxProviderRetransmissionByteRate: number
+  readonly maxProviderRetransmissionRate: number
   readonly maxProviderRoundTripP95LatencyMs: number
   readonly maxProviderSequenceGapMessages: number
   readonly missingProviders: readonly MediaProvider[]
@@ -39,10 +41,7 @@ export interface StreamingSiteProviderQualityGateSummary {
 }
 
 const DEFAULT_REQUIRED_PROVIDERS: readonly MediaProvider[] = Object.freeze([
-  'youtube',
-  'animepahe',
-  'cineby',
-  'miruro'
+  'youtube', 'animepahe', 'cineby', 'miruro'
 ])
 
 const providerLabel = (provider: MediaProvider): string => {
@@ -132,6 +131,11 @@ const createFailureList = (
         }.`
       )
     }
+    if (quality.maxRetransmissionRate > options.maxProviderRetransmissionRate) {
+      failures.push(
+        `${label} provider recovered retry rate exceeded ${options.maxProviderRetransmissionRate}.`
+      )
+    }
     if (quality.maxEstimatedRoundTripP95LatencyMs > options.maxProviderRoundTripP95LatencyMs) {
       failures.push(
         `${label} provider P95 mock round trip exceeded ${
@@ -188,6 +192,10 @@ export const summarizeStreamingSiteProviderQualityGate = (
       typeof options.maxProviderRetransmissionByteRate === 'number'
         ? options.maxProviderRetransmissionByteRate
         : STREAMING_SITE_CONNECTION_BUDGET.maxRetransmissionByteRate,
+    maxProviderRetransmissionRate:
+      typeof options.maxProviderRetransmissionRate === 'number'
+        ? options.maxProviderRetransmissionRate
+        : STREAMING_SITE_CONNECTION_BUDGET.maxRetransmissionRate,
     maxProviderRoundTripP95LatencyMs:
       typeof options.maxProviderRoundTripP95LatencyMs === 'number'
         ? options.maxProviderRoundTripP95LatencyMs
@@ -227,6 +235,10 @@ export const summarizeStreamingSiteProviderQualityGate = (
     maxProviderRetransmissionByteRate: maxQualityValue(
       providerQuality,
       quality => quality.maxRetransmissionByteRate
+    ),
+    maxProviderRetransmissionRate: maxQualityValue(
+      providerQuality,
+      quality => quality.maxRetransmissionRate
     ),
     maxProviderRoundTripP95LatencyMs: maxQualityValue(
       providerQuality,

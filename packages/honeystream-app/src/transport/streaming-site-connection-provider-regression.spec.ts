@@ -6,7 +6,8 @@ import {
 } from './streaming-site-connection-optimizer'
 
 const createProviderRegressionResult = (
-  missingDirectionalDeliveryCount = 0
+  missingDirectionalDeliveryCount = 0,
+  retransmissionRate = 0
 ): StreamingSiteConnectionOptimizationResult => {
   const selectedProfile: StreamingSiteConnectionProfileOptimization = {
     allTrialsPassed: true,
@@ -18,12 +19,12 @@ const createProviderRegressionResult = (
     maxCombinedMaxMessageBytes: 700,
     maxCombinedRetransmissionByteRate: 0,
     maxCombinedPeakQueuedMessages: 1,
-    maxCombinedRetransmissionRate: 0,
+    maxCombinedRetransmissionRate: retransmissionRate,
     maxDirectionalAverageLatencyMs: 1,
     maxDirectionalLatencyJitterMs: 0,
     maxDirectionalLatencySkewMs: 0,
     maxDirectionalRetransmissionByteRate: 0,
-    maxDirectionalRetransmissionRate: 0,
+    maxDirectionalRetransmissionRate: retransmissionRate,
     maxEstimatedRoundTripMaxLatencyMs: STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS,
     maxEstimatedRoundTripP95LatencyMs: STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS,
     maxFixtureAverageMessageBytes: 512,
@@ -35,7 +36,7 @@ const createProviderRegressionResult = (
     maxFixtureMaxMessageBytes: 700,
     maxFixtureMissingDirectionalDeliveryCount: missingDirectionalDeliveryCount,
     maxFixtureRetransmissionByteRate: 0,
-    maxFixtureRetransmissionRate: 0,
+    maxFixtureRetransmissionRate: retransmissionRate,
     passedTrials: 1,
     profile: { id: 'provider-regression', label: 'Provider regression' },
     providerCoverage: [{ provider: 'youtube', siteCount: 1 }],
@@ -55,7 +56,7 @@ const createProviderRegressionResult = (
         maxMissingDirectionalDeliveryCount: missingDirectionalDeliveryCount,
         maxOutOfOrderMessages: 1,
         maxRetransmissionByteRate: 0,
-        maxRetransmissionRate: 0,
+        maxRetransmissionRate: retransmissionRate,
         maxSequenceGapMessages: 2
       }
     ],
@@ -123,6 +124,33 @@ describe('streaming site connection provider regression gate', () => {
       'YouTube coverage has fewer than 2 streaming-site fixtures.',
       'A site fixture missed more than 0 delivery directions.',
       'YouTube provider missed more than 0 delivery directions.'
+    ])
+  })
+
+  it('fails when a selected lane hides retry-count overhead without byte loss', () => {
+    const mergeGate = summarizeStreamingSiteConnectionMergeGate(
+      createProviderRegressionResult(0, 0.75),
+      {
+        maxFixtureRetransmissionRate: 0.5,
+        maxProviderOutOfOrderMessages: 1,
+        maxProviderRetransmissionRate: 0.5,
+        maxProviderRoundTripP95LatencyMs: STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS,
+        maxProviderSequenceGapMessages: 2,
+        maxRetransmissionRate: 0.5,
+        minFixturesPerRequiredProvider: 1,
+        requiredProviders: ['youtube']
+      }
+    )
+
+    expect(mergeGate.ok).toBe(false)
+    expect(mergeGate.maxCombinedByteLossRate).toBe(0)
+    expect(mergeGate.maxCombinedRetransmissionRate).toBe(0.75)
+    expect(mergeGate.maxFixtureRetransmissionRate).toBe(0.75)
+    expect(mergeGate.maxProviderRetransmissionRate).toBe(0.75)
+    expect(mergeGate.failures).toEqual([
+      'A site fixture recovered retry rate exceeded 0.5.',
+      'YouTube provider recovered retry rate exceeded 0.5.',
+      'Recovered retry rate exceeded 0.5.'
     ])
   })
 

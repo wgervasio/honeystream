@@ -127,6 +127,10 @@ export const summarizeStreamingSiteConnectionMergeGate = (
       selectedProfile,
       profile => profile.maxFixtureRetransmissionByteRate
     ),
+    maxFixtureRetransmissionRate: selectedMetric(
+      selectedProfile,
+      profile => profile.maxFixtureRetransmissionRate
+    ),
     maxProviderAverageMessageBytes: maxProviderQualityValue(
       selectedProfile,
       quality => quality.maxAverageMessageBytes
@@ -150,6 +154,10 @@ export const summarizeStreamingSiteConnectionMergeGate = (
     maxProviderOutOfOrderMessages: maxProviderQualityValue(
       selectedProfile,
       quality => quality.maxOutOfOrderMessages
+    ),
+    maxProviderRetransmissionRate: maxProviderQualityValue(
+      selectedProfile,
+      quality => quality.maxRetransmissionRate
     ),
     maxProviderRoundTripP95LatencyMs: maxProviderQualityValue(
       selectedProfile,

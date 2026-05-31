@@ -25,9 +25,12 @@ export interface StreamingSiteConnectionMergeGateOptions {
   readonly maxProviderMaxMessageBytes?: number
   readonly maxProviderMissingDirectionalDeliveryCount?: number
   readonly maxProviderOutOfOrderMessages?: number
+  readonly maxProviderRetransmissionRate?: number
   readonly maxProviderRoundTripP95LatencyMs?: number
   readonly maxProviderSequenceGapMessages?: number
+  readonly maxFixtureRetransmissionRate?: number
   readonly maxRetransmissionByteRate?: number
+  readonly maxRetransmissionRate?: number
   readonly maxRoundTripP95LatencyMs?: number
   readonly maxDirectionalRetransmissionByteRate?: number
   readonly requiredProviders?: readonly MediaProvider[]
@@ -54,12 +57,14 @@ export interface StreamingSiteConnectionMergeGateSummary {
   readonly maxFixtureMaxMessageBytes: number
   readonly maxFixtureMissingDirectionalDeliveryCount: number
   readonly maxFixtureRetransmissionByteRate: number
+  readonly maxFixtureRetransmissionRate: number
   readonly maxProviderAverageMessageBytes: number
   readonly maxProviderDirectionalLatencySkewMs: number
   readonly maxProviderLostBytes: number
   readonly maxProviderMaxMessageBytes: number
   readonly maxProviderMissingDirectionalDeliveryCount: number
   readonly maxProviderOutOfOrderMessages: number
+  readonly maxProviderRetransmissionRate: number
   readonly maxProviderRoundTripP95LatencyMs: number
   readonly maxProviderSequenceGapMessages: number
   readonly missingProviders: readonly MediaProvider[]
@@ -203,6 +208,11 @@ export const resolveStreamingSiteConnectionMergeGateOptions = (
     typeof options.maxProviderOutOfOrderMessages === 'number'
       ? options.maxProviderOutOfOrderMessages
       : STREAMING_SITE_CONNECTION_BUDGET.maxOutOfOrderMessages,
+  maxProviderRetransmissionRate: resolveNumberOption(
+    options.maxProviderRetransmissionRate,
+    options.maxRetransmissionRate,
+    STREAMING_SITE_CONNECTION_BUDGET.maxRetransmissionRate
+  ),
   maxProviderRoundTripP95LatencyMs: resolveNumberOption(
     options.maxProviderRoundTripP95LatencyMs,
     options.maxRoundTripP95LatencyMs,
@@ -212,10 +222,19 @@ export const resolveStreamingSiteConnectionMergeGateOptions = (
     typeof options.maxProviderSequenceGapMessages === 'number'
       ? options.maxProviderSequenceGapMessages
       : STREAMING_SITE_CONNECTION_BUDGET.maxSequenceGapMessages,
+  maxFixtureRetransmissionRate: resolveNumberOption(
+    options.maxFixtureRetransmissionRate,
+    options.maxRetransmissionRate,
+    STREAMING_SITE_CONNECTION_BUDGET.maxRetransmissionRate
+  ),
   maxRetransmissionByteRate:
     typeof options.maxRetransmissionByteRate === 'number'
       ? options.maxRetransmissionByteRate
       : STREAMING_SITE_CONNECTION_BUDGET.maxRetransmissionByteRate,
+  maxRetransmissionRate:
+    typeof options.maxRetransmissionRate === 'number'
+      ? options.maxRetransmissionRate
+      : STREAMING_SITE_CONNECTION_BUDGET.maxRetransmissionRate,
   maxRoundTripP95LatencyMs:
     typeof options.maxRoundTripP95LatencyMs === 'number'
       ? options.maxRoundTripP95LatencyMs
