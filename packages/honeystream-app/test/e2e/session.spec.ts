@@ -77,10 +77,25 @@ async function waitForPlaybackState(
   state: 'playing' | 'paused',
   timeout?: number
 ): Promise<void> {
-  await page.waitForFunction(expectedState => {
-    const controls = document.querySelector('#runtime_playback_controls')
-    return Boolean(controls && controls.getAttribute('data-playback-state') === expectedState)
-  }, state, typeof timeout === 'number' ? { timeout } : undefined)
+  await page.waitForFunction(
+    expectedState => {
+      const controls = document.querySelector('#runtime_playback_controls')
+      return Boolean(controls && controls.getAttribute('data-playback-state') === expectedState)
+    },
+    state,
+    typeof timeout === 'number' ? { timeout } : undefined
+  )
+}
+
+async function waitForCurrentQueueTitle(page: Page, title: string): Promise<void> {
+  await page.waitForFunction(expectedTitle => {
+    const currentTitle = document.querySelector('[data-queue-state="current"] strong')
+    return Boolean(
+      currentTitle &&
+        currentTitle.textContent &&
+        currentTitle.textContent.indexOf(expectedTitle) !== -1
+    )
+  }, title)
 }
 
 function isTimeoutError(error: unknown): boolean {
@@ -342,9 +357,7 @@ describe('session', () => {
         await waitForRuntimeText(page, 'Website loaded')
         await waitForRuntimeText(page, source.title)
         if (index === 0) {
-          await page.waitForSelector(
-            `[data-playback-adapter-kind="${source.adapterKind}"]`
-          )
+          await page.waitForSelector(`[data-playback-adapter-kind="${source.adapterKind}"]`)
         }
       }
     })
@@ -406,7 +419,7 @@ describe('session', () => {
       SESSION_E2E_TIMEOUT_MS
     )
 
-    it('should accept connecting client', async () => {
+    it('should mirror guest and host queued media and playback controls', async () => {
       await ms.visit(`/join/${hostId}`)
       const hostPage = page
       await hostPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
@@ -421,21 +434,6 @@ describe('session', () => {
       await waitForRuntimeText(clientPage, 'Synced')
       await hostPage.waitForSelector('[data-session-state-tone="synced"]')
       await clientPage.waitForSelector('[data-session-state-tone="synced"]')
-    })
-
-    it('should accept guest queued media and guest playback controls', async () => {
-      await ms.visit(`/join/${hostId}`)
-      const hostPage = page
-      await hostPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
-      const inviteSecret = await getRuntimeInviteSecret(hostPage)
-
-      await visitRuntimePath(
-        clientPage,
-        `/join/${hostId}?secret=${encodeURIComponent(inviteSecret)}`
-      )
-      await clientPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
-      await waitForRuntimeText(hostPage, 'Synced')
-      await waitForRuntimeText(clientPage, 'Synced')
 
       await clientPage.click('#runtime-add-media-url')
       await clientPage.type('#runtime-add-media-url', 'youtube.com/watch?v=guest-e2e')
@@ -447,6 +445,8 @@ describe('session', () => {
       await waitForRuntimeText(clientPage, 'Website loaded')
       await waitForRuntimeText(hostPage, 'YouTube watch page')
       await waitForRuntimeText(clientPage, 'YouTube watch page')
+      await waitForCurrentQueueTitle(hostPage, 'YouTube watch page')
+      await waitForCurrentQueueTitle(clientPage, 'YouTube watch page')
       await hostPage.waitForSelector(
         '#runtime_playback_controls [data-intent="playPause"]:not([disabled])'
       )
@@ -464,26 +464,11 @@ describe('session', () => {
       await waitForRuntimeText(hostPage, '1.25x')
       await waitForRuntimeText(clientPage, '1.25x')
 
-      const expectedSeekPositionMs =
+      const expectedGuestSeekPositionMs =
         (await getPlaybackPositionMs(clientPage)) + SEEK_FORWARD_STEP_MS
       await clientPage.click('#runtime_playback_controls [data-intent="seekForward"]')
-      await waitForPlaybackPositionAtLeast(hostPage, expectedSeekPositionMs)
-      await waitForPlaybackPositionAtLeast(clientPage, expectedSeekPositionMs)
-    })
-
-    it('should mirror host queued media and host playback controls to the guest', async () => {
-      await ms.visit(`/join/${hostId}`)
-      const hostPage = page
-      await hostPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
-      const inviteSecret = await getRuntimeInviteSecret(hostPage)
-
-      await visitRuntimePath(
-        clientPage,
-        `/join/${hostId}?secret=${encodeURIComponent(inviteSecret)}`
-      )
-      await clientPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
-      await waitForRuntimeText(hostPage, 'Synced')
-      await waitForRuntimeText(clientPage, 'Synced')
+      await waitForPlaybackPositionAtLeast(hostPage, expectedGuestSeekPositionMs)
+      await waitForPlaybackPositionAtLeast(clientPage, expectedGuestSeekPositionMs)
 
       await hostPage.click('#runtime-add-media-url')
       await hostPage.type('#runtime-add-media-url', 'youtube.com/watch?v=host-e2e')
@@ -491,9 +476,13 @@ describe('session', () => {
       await hostPage.press('#runtime-add-media-url', 'Enter')
 
       await waitForRuntimeText(hostPage, 'Media added with https:// filled in')
-      await waitForRuntimeText(hostPage, 'Website loaded')
+      await hostPage.waitForSelector('[data-queue-item-id]')
+      await hostPage.click('#runtime_playback_controls [data-intent="next"]')
+      await hostPage.waitForSelector('[data-queue-empty="true"]')
+      await clientPage.waitForSelector('[data-queue-empty="true"]')
+      await waitForCurrentQueueTitle(hostPage, 'YouTube watch page')
+      await waitForCurrentQueueTitle(clientPage, 'YouTube watch page')
       await waitForRuntimeText(clientPage, 'Website loaded')
-      await waitForRuntimeText(hostPage, 'YouTube watch page')
       await waitForRuntimeText(clientPage, 'YouTube watch page')
       await waitForPlaybackState(hostPage, 'playing')
       await waitForPlaybackState(clientPage, 'playing')
@@ -506,10 +495,11 @@ describe('session', () => {
       await waitForRuntimeText(hostPage, '1.25x')
       await waitForRuntimeText(clientPage, '1.25x')
 
-      const expectedSeekPositionMs = (await getPlaybackPositionMs(hostPage)) + SEEK_FORWARD_STEP_MS
+      const expectedHostSeekPositionMs =
+        (await getPlaybackPositionMs(hostPage)) + SEEK_FORWARD_STEP_MS
       await hostPage.click('#runtime_playback_controls [data-intent="seekForward"]')
-      await waitForPlaybackPositionAtLeast(hostPage, expectedSeekPositionMs)
-      await waitForPlaybackPositionAtLeast(clientPage, expectedSeekPositionMs)
+      await waitForPlaybackPositionAtLeast(hostPage, expectedHostSeekPositionMs)
+      await waitForPlaybackPositionAtLeast(clientPage, expectedHostSeekPositionMs)
     })
   })
 })
