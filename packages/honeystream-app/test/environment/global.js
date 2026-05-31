@@ -136,7 +136,9 @@ async function setup(jestConfig = {}) {
       {
         command: `cross-env HOST=${config.appHost} PUBLIC_HOST=${config.appHost} PORT=${
           config.appPort
-        } HONEYSTREAM_SIGNAL_SERVER=${config.signalServerUrl} yarn start`,
+        } HONEYSTREAM_SIGNAL_SERVER=${
+          config.signalServerUrl
+        } HONEYSTREAM_E2E_LOCAL_RTC=true yarn start`,
         launchTimeout: SERVER_LAUNCH_TIMEOUT_MS,
         port: Number(config.appPort),
         usedPortAction: 'error',

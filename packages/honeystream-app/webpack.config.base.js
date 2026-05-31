@@ -106,6 +106,9 @@ module.exports = {
       // Allow us to set this in CI
       ...(process.env.HONEYSTREAM_SIGNAL_SERVER
         ? { HONEYSTREAM_SIGNAL_SERVER: process.env.HONEYSTREAM_SIGNAL_SERVER }
+        : undefined),
+      ...(process.env.HONEYSTREAM_E2E_LOCAL_RTC
+        ? { HONEYSTREAM_E2E_LOCAL_RTC: process.env.HONEYSTREAM_E2E_LOCAL_RTC }
         : undefined)
     }),
     new Dotenv({ silent: true }),

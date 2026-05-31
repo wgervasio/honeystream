@@ -88,16 +88,27 @@ export class WebPlatform {
       waitEvent(this.server, 'error', NETWORK_TIMEOUT)
     ]
 
+    /*
+     * Context: Guest joins race connect and error waits through the legacy signal bridge.
+     * Invariant: A successful join must not retain timeout handles from losing wait branches.
+     * Options considered: Sleep in e2e, shorter global network timeouts, or cancel losing waits.
+     * Decision: Always cancel both wait handles after the race settles.
+     * Performance impact: Successful joins stop carrying stale timeout work.
+     * Memory/lifecycle ownership: WebPlatform owns these wait handles until joinP2PLobby returns.
+     * Failure mode: Connect/error races still propagate the original failure or connect result.
+     * Validation: Covered by live runtime host/client e2e.
+     */
     try {
       const [result] = await Promise.race(promises)
       if (result instanceof Error) throw result
     } catch (e) {
-      promises.forEach(p => p.cancel())
       if (this.server) {
         this.server.close()
         this.server = undefined
       }
       throw e
+    } finally {
+      promises.forEach(p => p.cancel())
     }
   }
 
