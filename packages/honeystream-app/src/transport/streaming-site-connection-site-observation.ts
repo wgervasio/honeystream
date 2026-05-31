@@ -48,18 +48,25 @@ const percentile = (samples: readonly number[], percentileValue: number): number
   return sortedSamples[index]
 }
 
-const maxRecordedAtMs = (metrics: AggregateSimulatedPeerTransportMetrics): number =>
-  metrics.recentFrames.reduce(
-    (maxRecordedAt, frame) => Math.max(maxRecordedAt, frame.recordedAtMs),
-    0
-  )
+const createPeerSampleWatermark = (
+  frames: readonly SimulatedPeerTransportFrameSample[]
+): { readonly [recordedByPeerId: string]: number } => {
+  const watermark: { [recordedByPeerId: string]: number } = {}
+  for (const frame of frames) {
+    const previousSampleId = watermark[frame.recordedByPeerId] || 0
+    watermark[frame.recordedByPeerId] = Math.max(previousSampleId, frame.sampleId)
+  }
+  return watermark
+}
 
 const getFixtureFrames = (
   before: AggregateSimulatedPeerTransportMetrics,
   after: AggregateSimulatedPeerTransportMetrics
 ): readonly SimulatedPeerTransportFrameSample[] => {
-  const baselineRecordedAtMs = maxRecordedAtMs(before)
-  return after.recentFrames.filter(frame => frame.recordedAtMs > baselineRecordedAtMs)
+  const beforeWatermark = createPeerSampleWatermark(before.recentFrames)
+  return after.recentFrames.filter(
+    frame => frame.sampleId > (beforeWatermark[frame.recordedByPeerId] || 0)
+  )
 }
 
 const getMaxMessageBytes = (frames: readonly SimulatedPeerTransportFrameSample[]): number =>
@@ -157,8 +164,8 @@ Context: Streaming-site tuning should prove each requested site shape, not just 
 Invariant: A fixture observation is derived from bounded recent frames and monotonic counters only,
 including both host-to-guest and guest-to-host latency so averages cannot hide skew.
 Options considered: Live third-party probes, full frame history, or per-fixture metric deltas.
-Decision: Capture compact deltas around each mocked site fixture, keep directional latency from
-recent frames, and require both command and event directions to be exercised.
+Decision: Capture compact per-peer sample deltas around each mocked site fixture, keep directional
+latency from recent frames, and require both command and event directions to be exercised.
 Performance impact: O(recent frame cap) per fixture; frame history remains bounded by transport metrics.
 Memory/lifecycle ownership: No resources are retained beyond the returned observation values.
 Failure mode: Missing direction samples are surfaced as missing directional deliveries.

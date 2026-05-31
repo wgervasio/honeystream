@@ -1,4 +1,6 @@
 import { STREAMING_SITE_TRANSPORT_BUDGET } from './simulated-peer-transport-performance'
+import { TransportMessageValidator } from './contracts'
+import { createSimulatedPeerTransportPair } from './simulated-peer-transport-pair'
 import {
   runStreamingSiteConnectionLab,
   StreamingSiteConnectionObservation
@@ -9,7 +11,26 @@ import {
   STREAMING_SITE_CONNECTION_FIXTURES,
   STREAMING_SITE_CONNECTION_PROFILES
 } from './streaming-site-connection-defaults'
-import { StreamingSiteFixtureObservation } from './streaming-site-connection-site-observation'
+import {
+  createStreamingSiteFixtureObservation,
+  StreamingSiteFixtureObservation
+} from './streaming-site-connection-site-observation'
+
+type MockControlMessage = {
+  readonly payload: string
+  readonly type: 'control'
+}
+
+type UnknownRecord = { readonly [key: string]: unknown }
+
+const isUnknownRecord = (value: unknown): value is UnknownRecord =>
+  typeof value === 'object' && value !== null
+
+const mockControlValidator: TransportMessageValidator<MockControlMessage> = {
+  validate: (value: unknown): value is MockControlMessage =>
+    isUnknownRecord(value) && value.type === 'control' && typeof value.payload === 'string',
+  describeInvalidMessage: () => 'Expected control message.'
+}
 
 const findObservation = (
   observations: readonly StreamingSiteConnectionObservation[],
@@ -30,6 +51,64 @@ const findFixtureObservation = (
 }
 
 describe('streaming site fixture observations', () => {
+  it('keeps slow-link fixture traces attributed by peer sample instead of wall-clock order', async () => {
+    let nowMs = 5000
+    const pair = createSimulatedPeerTransportPair<MockControlMessage, MockControlMessage>({
+      hostInboundValidator: mockControlValidator,
+      guestInboundValidator: mockControlValidator,
+      now: () => nowMs,
+      network: { latencyMs: 24, dropEveryNthMessage: 2, maxQueuedFrames: 128 }
+    })
+
+    await pair.host.connect()
+    pair.guest.send({
+      seq: 1,
+      sentAtMs: nowMs,
+      message: { type: 'control', payload: 'warmup' }
+    })
+    pair.flushAll()
+    nowMs += 16
+    const before = pair.getAggregateMetrics()
+
+    pair.guest.send({
+      seq: 2,
+      sentAtMs: nowMs,
+      message: { type: 'control', payload: 'x'.repeat(900) }
+    })
+    pair.guest.send({
+      seq: 3,
+      sentAtMs: nowMs,
+      message: { type: 'control', payload: 'seek' }
+    })
+    pair.host.send({
+      seq: 4,
+      sentAtMs: nowMs,
+      message: { type: 'control', payload: 'snapshot' }
+    })
+    pair.flushAll()
+    const after = pair.getAggregateMetrics()
+
+    const observation = createStreamingSiteFixtureObservation(
+      {
+        fixtureId: 'slow-provider-page',
+        provider: 'unknown',
+        source: 'https://streaming.example.test/watch/slow-provider-page'
+      },
+      before,
+      after
+    )
+
+    pair.host.dispose()
+    pair.guest.dispose()
+
+    expect(observation.maxMessageBytes).toBeGreaterThan(900)
+    expect(observation.droppedMessages).toBe(1)
+    expect(observation.lostBytes).toBeGreaterThan(900)
+    expect(observation.hostToGuestDeliveredMessages).toBe(1)
+    expect(observation.guestToHostDeliveredMessages).toBe(1)
+    expect(observation.estimatedRoundTripP95LatencyMs).toBe(48)
+  })
+
   it('records zero-loss telemetry for every requested site fixture on the selected lane', async () => {
     const result = await runStreamingSiteConnectionLab({
       budget: STREAMING_SITE_CONNECTION_BUDGET,

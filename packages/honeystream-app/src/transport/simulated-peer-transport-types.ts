@@ -27,7 +27,9 @@ export interface SimulatedPeerTransportFrameSample {
   readonly latencyMs?: number
   readonly outcome: SimulatedPeerTransportFrameOutcome
   readonly reason?: SimulatedPeerTransportDropReason
+  readonly recordedByPeerId: string
   readonly recordedAtMs: number
+  readonly sampleId: number
   readonly seq: number
 }
 

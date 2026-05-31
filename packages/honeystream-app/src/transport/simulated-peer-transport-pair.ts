@@ -88,7 +88,13 @@ const combineRecentFrames = (
   guest: SimulatedPeerTransportMetrics
 ): readonly SimulatedPeerTransportFrameSample[] =>
   [...host.recentFrames, ...guest.recentFrames]
-    .sort((left, right) => left.recordedAtMs - right.recordedAtMs || left.seq - right.seq)
+    .sort(
+      (left, right) =>
+        left.recordedAtMs - right.recordedAtMs ||
+        left.recordedByPeerId.localeCompare(right.recordedByPeerId) ||
+        left.sampleId - right.sampleId ||
+        left.seq - right.seq
+    )
     .slice(-MAX_AGGREGATE_RECENT_FRAMES)
 
 export const createSimulatedPeerTransportPair = <TClientToHostMessage, THostToClientMessage>(
