@@ -34,8 +34,10 @@ const createFrameSample = (
   outcome: SimulatedPeerTransportFrameOutcome,
   bytes: number,
   direction: string,
+  recordedByPeerId: string,
   seq: number,
   recordedAtMs: number,
+  sampleId: number,
   latencyMs?: number,
   reason?: SimulatedPeerTransportDropReason
 ): SimulatedPeerTransportFrameSample => ({
@@ -44,7 +46,9 @@ const createFrameSample = (
   latencyMs,
   outcome,
   reason,
+  recordedByPeerId,
   recordedAtMs,
+  sampleId,
   seq
 })
 
@@ -82,8 +86,32 @@ export const createSimulatedPeerTransportMetricsRecorder = (
   let lastLatencyMs: number | undefined
   let lastDeliveredSeq: number | undefined
   let peakQueuedMessages = 0
+  let nextSampleId = 0
   const latencySamples: number[] = []
   const recentFrames: SimulatedPeerTransportFrameSample[] = []
+
+  const createPeerFrameSample = (
+    outcome: SimulatedPeerTransportFrameOutcome,
+    bytes: number,
+    direction: string,
+    seq: number,
+    recordedAtMs: number,
+    latencyMs?: number,
+    reason?: SimulatedPeerTransportDropReason
+  ): SimulatedPeerTransportFrameSample => {
+    nextSampleId += 1
+    return createFrameSample(
+      outcome,
+      bytes,
+      direction,
+      localPeerId,
+      seq,
+      recordedAtMs,
+      nextSampleId,
+      latencyMs,
+      reason
+    )
+  }
 
   const recordFrameSample = (sample: SimulatedPeerTransportFrameSample): void => {
     recentFrames.push(sample)
@@ -99,7 +127,7 @@ export const createSimulatedPeerTransportMetricsRecorder = (
       sentMessages += 1
       sentBytes += bytes
       maxMessageBytes = Math.max(maxMessageBytes, bytes)
-      recordFrameSample(createFrameSample('sent', bytes, outboundDirection, seq, recordedAtMs))
+      recordFrameSample(createPeerFrameSample('sent', bytes, outboundDirection, seq, recordedAtMs))
       return sentMessages
     },
     recordQueuedDepth(queuedMessages: number): void {
@@ -114,7 +142,15 @@ export const createSimulatedPeerTransportMetricsRecorder = (
       droppedMessages += 1
       lostBytes += bytes
       recordFrameSample(
-        createFrameSample('dropped', bytes, outboundDirection, seq, recordedAtMs, undefined, reason)
+        createPeerFrameSample(
+          'dropped',
+          bytes,
+          outboundDirection,
+          seq,
+          recordedAtMs,
+          undefined,
+          reason
+        )
       )
     },
     recordRetransmitted(
@@ -126,7 +162,13 @@ export const createSimulatedPeerTransportMetricsRecorder = (
       retransmittedMessages += 1
       retransmittedBytes += bytes
       recordFrameSample(
-        createFrameSample('retransmitted', bytes, inboundDirection(fromPeerId), seq, recordedAtMs)
+        createPeerFrameSample(
+          'retransmitted',
+          bytes,
+          inboundDirection(fromPeerId),
+          seq,
+          recordedAtMs
+        )
       )
     },
     recordDelivered(
@@ -163,7 +205,7 @@ export const createSimulatedPeerTransportMetricsRecorder = (
         latencySamples.shift()
       }
       recordFrameSample(
-        createFrameSample(
+        createPeerFrameSample(
           'delivered',
           bytes,
           inboundDirection(fromPeerId),

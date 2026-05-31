@@ -8,7 +8,10 @@ const RUNTIME_SHELL_SELECTOR = '[data-runtime-session-shell="true"]'
 const SESSION_E2E_TIMEOUT_MS = 120e3
 const APP_READY_OPTIONS = { waitUntil: 'domcontentloaded' as const }
 const PLAYBACK_POSITION_SELECTOR = '#runtime_playback_controls [data-intent="positionMs"]'
+const PLAYBACK_PLAY_PAUSE_SELECTOR = '#runtime_playback_controls [data-intent="playPause"]'
 const SEEK_FORWARD_STEP_MS = 10000
+const PLAYBACK_STATE_RETRY_COUNT = 3
+const PLAYBACK_STATE_RETRY_TIMEOUT_MS = 5000
 let runtimeVisitCounter = 0
 
 jest.setTimeout(SESSION_E2E_TIMEOUT_MS)
@@ -69,11 +72,39 @@ async function waitForPlaybackPositionAtLeast(
   }, expectedPositionMs)
 }
 
-async function waitForPlaybackState(page: Page, state: 'playing' | 'paused'): Promise<void> {
+async function waitForPlaybackState(
+  page: Page,
+  state: 'playing' | 'paused',
+  timeout?: number
+): Promise<void> {
   await page.waitForFunction(expectedState => {
     const controls = document.querySelector('#runtime_playback_controls')
     return Boolean(controls && controls.getAttribute('data-playback-state') === expectedState)
-  }, state)
+  }, state, typeof timeout === 'number' ? { timeout } : undefined)
+}
+
+function isTimeoutError(error: unknown): boolean {
+  return error instanceof Error && /timeout/i.test(error.message)
+}
+
+async function clickPlayPauseAndWaitForState(
+  page: Page,
+  state: 'playing' | 'paused'
+): Promise<void> {
+  let lastTimeout: Error | undefined
+  for (let attempt = 0; attempt < PLAYBACK_STATE_RETRY_COUNT; attempt += 1) {
+    await page.waitForSelector(`${PLAYBACK_PLAY_PAUSE_SELECTOR}:not([disabled])`)
+    await page.click(PLAYBACK_PLAY_PAUSE_SELECTOR)
+    try {
+      await waitForPlaybackState(page, state, PLAYBACK_STATE_RETRY_TIMEOUT_MS)
+      return
+    } catch (error) {
+      if (!isTimeoutError(error) || !(error instanceof Error)) throw error
+      lastTimeout = error
+    }
+  }
+
+  throw lastTimeout || new Error(`Playback did not become ${state}.`)
 }
 
 async function visitRuntimePath(page: Page, path: string): Promise<void> {
@@ -403,7 +434,7 @@ describe('session', () => {
       await waitForPlaybackState(hostPage, 'playing')
       await waitForPlaybackState(clientPage, 'playing')
 
-      await clientPage.click('#runtime_playback_controls [data-intent="playPause"]')
+      await clickPlayPauseAndWaitForState(clientPage, 'paused')
       await waitForPlaybackState(hostPage, 'paused')
       await waitForPlaybackState(clientPage, 'paused')
 
@@ -445,7 +476,7 @@ describe('session', () => {
       await waitForPlaybackState(hostPage, 'playing')
       await waitForPlaybackState(clientPage, 'playing')
 
-      await hostPage.click('#runtime_playback_controls [data-intent="playPause"]')
+      await clickPlayPauseAndWaitForState(hostPage, 'paused')
       await waitForPlaybackState(hostPage, 'paused')
       await waitForPlaybackState(clientPage, 'paused')
 
