@@ -152,7 +152,7 @@ describe('session', () => {
         '#runtime_connection_lab_proof[data-site-count="58"][data-trial-count="3"]'
       )
       await page.waitForSelector(
-        '#runtime_merge_gate[data-zero-loss-required="true"][data-provider-count="4"][data-trace-cap="64"]'
+        '#runtime_merge_gate[data-zero-loss-required="true"][data-provider-count="4"][data-queue-byte-cap="262144"][data-trace-cap="64"]'
       )
       await page.waitForSelector('[data-merge-gate-metric="byte-loss"][data-merge-gate-value="0%"]')
       await page.waitForSelector('#runtime_launchpad')
@@ -207,6 +207,9 @@ describe('session', () => {
       await waitForRuntimeText(page, '<=4ms skew')
       await waitForRuntimeText(page, 'Payload gate')
       await waitForRuntimeText(page, '<=2048B')
+      await waitForRuntimeText(page, 'Queue byte gate')
+      await waitForRuntimeText(page, '<=262144B')
+      await waitForRuntimeText(page, 'fast paths cannot hide byte-pressure buffering')
       await waitForRuntimeText(page, 'Retry byte gate')
       await waitForRuntimeText(page, 'Coverage gate')
       await waitForRuntimeText(page, '58 sites')
@@ -240,6 +243,7 @@ describe('session', () => {
       await waitForRuntimeText(page, 'Popup fallback ready')
       await waitForRuntimeText(page, 'Only controls sync')
       await waitForRuntimeText(page, 'Jitter-guarded frames')
+      await waitForRuntimeText(page, '262144B queue cap')
       await waitForRuntimeText(page, 'Reliable retry guard')
       await waitForRuntimeText(page, 'Observable trace cap')
       await waitForRuntimeText(page, '2ms best mock RT')

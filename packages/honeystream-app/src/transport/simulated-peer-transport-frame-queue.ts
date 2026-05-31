@@ -34,6 +34,10 @@ export class SimulatedPeerTransportFrameQueue<TMessage> {
     return this.frames.length
   }
 
+  get bytes(): number {
+    return this.queuedBytes
+  }
+
   clear(): void {
     this.frames.splice(0, this.frames.length)
     this.queuedBytes = 0
@@ -65,7 +69,7 @@ export class SimulatedPeerTransportFrameQueue<TMessage> {
     const dueAtMs = sentAtMs + resolveFrameLatencyMs(this.network, this.random) + retryDelayMs
     this.frames.push({ dueAtMs, sentAtMs, bytes, fromPeerId, envelope })
     this.queuedBytes += bytes
-    this.metrics.recordQueuedDepth(this.frames.length)
+    this.metrics.recordQueuedDepth(this.frames.length, this.queuedBytes)
     return { ok: true }
   }
 

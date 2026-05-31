@@ -30,6 +30,7 @@ import {
   STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS,
   STREAMING_SITE_CONNECTION_FIXTURES,
   STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS,
+  STREAMING_SITE_CONNECTION_PROFILE_MAX_QUEUED_BYTES,
   STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE,
   STREAMING_SITE_CONNECTION_PROFILES,
   STREAMING_SITE_CONNECTION_TRIAL_COUNT
@@ -261,6 +262,7 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('No skipped controls')
     expect(html).toContain(`${STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS}ms best mock RT`)
     expect(html).toContain(`${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms lab round trip`)
+    expect(html).toContain(`${STREAMING_SITE_CONNECTION_PROFILE_MAX_QUEUED_BYTES}B queue cap`)
     expect(html).toContain('Jitter-guarded frames')
     expect(html).toContain('Reliable retry guard')
     expect(html).toContain('Observable trace cap')
@@ -289,6 +291,9 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain(`data-trial-count="${STREAMING_SITE_CONNECTION_TRIAL_COUNT}"`)
     expect(html).toContain('data-connection-lab-proof="site-matrix"')
     expect(html).toContain('data-provider-count="4"')
+    expect(html).toContain(
+      `data-queue-byte-cap="${STREAMING_SITE_CONNECTION_PROFILE_MAX_QUEUED_BYTES}"`
+    )
     expect(html).toContain('data-trace-cap="64"')
     expect(html).toContain('data-zero-loss-required="true"')
     expect(html).toContain('data-merge-gate-metric="byte-loss"')
@@ -298,6 +303,8 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('data-merge-gate-metric="two-way-delivery"')
     expect(html).toContain('data-merge-gate-value="both ways"')
     expect(html).toContain('Every site fixture must deliver guest commands and host events')
+    expect(html).toContain('data-merge-gate-metric="queue-byte-pressure"')
+    expect(html).toContain('fast paths cannot hide byte-pressure buffering')
     expect(html).toContain('data-merge-gate-metric="trace-cap"')
     expect(html).toContain('Paste source')
     expect(html).toContain('href="#runtime-add-media-url"')

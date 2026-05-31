@@ -69,6 +69,8 @@ describe('streaming site connection optimizer', () => {
     expect(result.rankedProfiles[0].maxCombinedByteLossRate).toBe(0)
     expect(result.rankedProfiles[0].maxCombinedDroppedMessages).toBe(0)
     expect(result.rankedProfiles[0].maxCombinedRetransmissionRate).toBe(0)
+    expect(result.rankedProfiles[0].maxCombinedPeakQueuedBytes).toBeGreaterThan(0)
+    expect(result.rankedProfiles[0].maxDirectionalPeakQueuedBytes).toBeGreaterThan(0)
     expect(result.rankedProfiles[0].maxDirectionalRetransmissionRate).toBe(0)
     expect(result.rankedProfiles[0].maxDirectionalLatencySkewMs).toBe(0)
     expect(result.rankedProfiles[0].maxEstimatedRoundTripP95LatencyMs).toBeLessThanOrEqual(

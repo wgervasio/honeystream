@@ -58,7 +58,9 @@ describe('simulated peer transport queue pressure', () => {
     pair.guest.send({ seq: 3, sentAtMs: nowMs, message: { type: 'ping', nonce: 3 } })
 
     expect(pair.host.getMetrics().queuedMessages).toBe(2)
+    expect(pair.host.getMetrics().queuedBytes).toBeGreaterThan(0)
     expect(pair.host.getMetrics().peakQueuedMessages).toBe(2)
+    expect(pair.host.getMetrics().peakQueuedBytes).toBe(pair.host.getMetrics().queuedBytes)
     expect(pair.guest.getMetrics().recentFrames).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ outcome: 'dropped', reason: 'queue-overflow', seq: 3 })
@@ -70,8 +72,11 @@ describe('simulated peer transport queue pressure', () => {
 
     const metrics = pair.getAggregateMetrics()
     expect(metrics.combinedQueuedMessages).toBe(0)
+    expect(metrics.combinedQueuedBytes).toBe(0)
     expect(metrics.combinedPeakQueuedMessages).toBe(2)
+    expect(metrics.combinedPeakQueuedBytes).toBeGreaterThan(0)
     expect(metrics.maxDirectionalPeakQueuedMessages).toBe(2)
+    expect(metrics.maxDirectionalPeakQueuedBytes).toBe(metrics.combinedPeakQueuedBytes)
 
     const budgetResult = evaluateSimulatedPeerTransportBudget(metrics, {
       ...STREAMING_SITE_TRANSPORT_BUDGET,
@@ -145,6 +150,7 @@ describe('simulated peer transport queue pressure', () => {
     })
 
     expect(pair.host.getMetrics().queuedMessages).toBe(0)
+    expect(pair.host.getMetrics().queuedBytes).toBe(0)
     expect(pair.guest.getMetrics().droppedMessages).toBe(1)
     expect(pair.guest.getMetrics().recentFrames).toEqual(
       expect.arrayContaining([

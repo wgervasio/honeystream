@@ -17,12 +17,14 @@ export interface StreamingSiteConnectionProfileOptimization {
   readonly maxCombinedByteLossRate: number
   readonly maxCombinedDroppedMessages: number
   readonly maxCombinedMaxMessageBytes: number
+  readonly maxCombinedPeakQueuedBytes: number
   readonly maxCombinedRetransmissionByteRate: number
   readonly maxCombinedPeakQueuedMessages: number
   readonly maxCombinedRetransmissionRate: number
   readonly maxDirectionalAverageLatencyMs: number
   readonly maxDirectionalLatencyJitterMs: number
   readonly maxDirectionalLatencySkewMs: number
+  readonly maxDirectionalPeakQueuedBytes: number
   readonly maxDirectionalRetransmissionByteRate: number
   readonly maxDirectionalRetransmissionRate: number
   readonly maxEstimatedRoundTripMaxLatencyMs: number
@@ -71,12 +73,14 @@ export const createStreamingSiteConnectionProfileOptimization = (
   let maxCombinedByteLossRate = 0
   let maxCombinedDroppedMessages = 0
   let maxCombinedMaxMessageBytes = 0
+  let maxCombinedPeakQueuedBytes = 0
   let maxCombinedRetransmissionByteRate = 0
   let maxCombinedPeakQueuedMessages = 0
   let maxCombinedRetransmissionRate = 0
   let maxDirectionalAverageLatencyMs = 0
   let maxDirectionalLatencyJitterMs = 0
   let maxDirectionalLatencySkewMs = 0
+  let maxDirectionalPeakQueuedBytes = 0
   let maxDirectionalRetransmissionByteRate = 0
   let maxDirectionalRetransmissionRate = 0
   let maxEstimatedRoundTripMaxLatencyMs = 0
@@ -109,6 +113,10 @@ export const createStreamingSiteConnectionProfileOptimization = (
       maxCombinedMaxMessageBytes,
       metrics.combinedMaxMessageBytes
     )
+    maxCombinedPeakQueuedBytes = Math.max(
+      maxCombinedPeakQueuedBytes,
+      metrics.combinedPeakQueuedBytes
+    )
     maxCombinedRetransmissionRate = Math.max(
       maxCombinedRetransmissionRate,
       metrics.combinedRetransmissionRate
@@ -132,6 +140,10 @@ export const createStreamingSiteConnectionProfileOptimization = (
     maxDirectionalLatencySkewMs = Math.max(
       maxDirectionalLatencySkewMs,
       metrics.directionalAverageLatencySkewMs
+    )
+    maxDirectionalPeakQueuedBytes = Math.max(
+      maxDirectionalPeakQueuedBytes,
+      metrics.maxDirectionalPeakQueuedBytes
     )
     maxDirectionalRetransmissionRate = Math.max(
       maxDirectionalRetransmissionRate,
@@ -197,12 +209,14 @@ export const createStreamingSiteConnectionProfileOptimization = (
     maxCombinedByteLossRate,
     maxCombinedDroppedMessages,
     maxCombinedMaxMessageBytes,
+    maxCombinedPeakQueuedBytes,
     maxCombinedRetransmissionByteRate,
     maxCombinedPeakQueuedMessages,
     maxCombinedRetransmissionRate,
     maxDirectionalAverageLatencyMs,
     maxDirectionalLatencyJitterMs,
     maxDirectionalLatencySkewMs,
+    maxDirectionalPeakQueuedBytes,
     maxDirectionalRetransmissionByteRate,
     maxDirectionalRetransmissionRate,
     maxEstimatedRoundTripMaxLatencyMs,

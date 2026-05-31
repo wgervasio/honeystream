@@ -53,14 +53,18 @@ export interface AggregateSimulatedPeerTransportMetrics {
   readonly combinedMaxLatencyMs: number
   readonly maxDirectionalLatencyJitterMs: number
   readonly combinedQueuedMessages: number
+  readonly combinedQueuedBytes: number
   readonly combinedPeakQueuedMessages: number
+  readonly combinedPeakQueuedBytes: number
   readonly maxDirectionalAverageLatencyMs: number
   readonly directionalAverageLatencySkewMs: number
   readonly maxDirectionalByteLossRate: number
   readonly maxDirectionalRetransmissionRate: number
   readonly maxDirectionalRetransmissionByteRate: number
   readonly maxDirectionalQueuedMessages: number
+  readonly maxDirectionalQueuedBytes: number
   readonly maxDirectionalPeakQueuedMessages: number
+  readonly maxDirectionalPeakQueuedBytes: number
   readonly estimatedRoundTripP95LatencyMs: number
   readonly estimatedRoundTripMaxLatencyMs: number
   readonly recentFrames: readonly SimulatedPeerTransportFrameSample[]
@@ -151,6 +155,7 @@ export const createSimulatedPeerTransportPair = <TClientToHostMessage, THostToCl
         hostMetrics.sequenceGapMessages + guestMetrics.sequenceGapMessages
       const combinedPeakQueuedMessages =
         hostMetrics.peakQueuedMessages + guestMetrics.peakQueuedMessages
+      const combinedPeakQueuedBytes = hostMetrics.peakQueuedBytes + guestMetrics.peakQueuedBytes
       const maxDirectionalAverageLatencyMs = Math.max(
         hostMetrics.averageLatencyMs,
         guestMetrics.averageLatencyMs
@@ -196,7 +201,9 @@ export const createSimulatedPeerTransportPair = <TClientToHostMessage, THostToCl
           guestMetrics.maxLatencyJitterMs
         ),
         combinedQueuedMessages: hostMetrics.queuedMessages + guestMetrics.queuedMessages,
+        combinedQueuedBytes: hostMetrics.queuedBytes + guestMetrics.queuedBytes,
         combinedPeakQueuedMessages,
+        combinedPeakQueuedBytes,
         maxDirectionalAverageLatencyMs,
         directionalAverageLatencySkewMs: Math.abs(
           hostMetrics.averageLatencyMs - guestMetrics.averageLatencyMs
@@ -214,9 +221,14 @@ export const createSimulatedPeerTransportPair = <TClientToHostMessage, THostToCl
           hostMetrics.queuedMessages,
           guestMetrics.queuedMessages
         ),
+        maxDirectionalQueuedBytes: Math.max(hostMetrics.queuedBytes, guestMetrics.queuedBytes),
         maxDirectionalPeakQueuedMessages: Math.max(
           hostMetrics.peakQueuedMessages,
           guestMetrics.peakQueuedMessages
+        ),
+        maxDirectionalPeakQueuedBytes: Math.max(
+          hostMetrics.peakQueuedBytes,
+          guestMetrics.peakQueuedBytes
         ),
         estimatedRoundTripP95LatencyMs: hostMetrics.p95LatencyMs + guestMetrics.p95LatencyMs,
         estimatedRoundTripMaxLatencyMs: hostMetrics.maxLatencyMs + guestMetrics.maxLatencyMs,
