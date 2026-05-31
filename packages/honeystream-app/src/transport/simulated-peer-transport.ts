@@ -92,7 +92,7 @@ export class SimulatedPeerTransport<TInboundMessage, TOutboundMessage>
   }
 
   getMetrics(): SimulatedPeerTransportMetrics {
-    return this.metrics.snapshot(this.queue.length)
+    return this.metrics.snapshot(this.queue.length, this.queue.bytes)
   }
 
   send(envelope: PeerTransportEnvelope<TOutboundMessage>): void {

@@ -9,6 +9,15 @@ import { countStreamingSiteProviders } from './streaming-site-provider-coverage'
 
 export { STREAMING_SITE_CONNECTION_FIXTURES } from './streaming-site-connection-fixtures'
 
+export const STREAMING_SITE_CONNECTION_PROFILE_MAX_QUEUED_FRAMES = 128
+export const STREAMING_SITE_CONNECTION_PROFILE_MAX_QUEUED_BYTES =
+  STREAMING_SITE_CONNECTION_PROFILE_MAX_QUEUED_FRAMES *
+  STREAMING_SITE_TRANSPORT_BUDGET.maxMessageBytes
+const CLEAN_PROFILE_QUEUE_CAP = Object.freeze({
+  maxQueuedBytes: STREAMING_SITE_CONNECTION_PROFILE_MAX_QUEUED_BYTES,
+  maxQueuedFrames: STREAMING_SITE_CONNECTION_PROFILE_MAX_QUEUED_FRAMES
+})
+
 export const STREAMING_SITE_CONNECTION_PROFILES: readonly StreamingSiteConnectionProfile[] = Object.freeze(
   [
     /*
@@ -25,12 +34,12 @@ export const STREAMING_SITE_CONNECTION_PROFILES: readonly StreamingSiteConnectio
     {
       id: 'lossy-fast',
       label: 'Lossy fast lane',
-      network: { latencyMs: 3, dropEveryNthMessage: 7, maxQueuedFrames: 128 }
+      network: { ...CLEAN_PROFILE_QUEUE_CAP, latencyMs: 3, dropEveryNthMessage: 7 }
     },
     {
       id: 'slow-safe',
       label: 'Slow reliable lane',
-      network: { latencyMs: 24, maxQueuedFrames: 128 }
+      network: { ...CLEAN_PROFILE_QUEUE_CAP, latencyMs: 24 }
     },
     {
       id: 'retry-guarded',
@@ -38,7 +47,7 @@ export const STREAMING_SITE_CONNECTION_PROFILES: readonly StreamingSiteConnectio
       network: {
         latencyMs: 3,
         dropEveryNthMessage: 5,
-        maxQueuedFrames: 128,
+        ...CLEAN_PROFILE_QUEUE_CAP,
         retransmitDroppedFrames: true,
         retransmitDelayMs: 2
       }
@@ -46,22 +55,22 @@ export const STREAMING_SITE_CONNECTION_PROFILES: readonly StreamingSiteConnectio
     {
       id: 'clean-ultra-low-latency',
       label: 'Clean ultra-low latency lane',
-      network: { latencyMs: 1, maxQueuedFrames: 128 }
+      network: { ...CLEAN_PROFILE_QUEUE_CAP, latencyMs: 1 }
     },
     {
       id: 'clean-realtime',
       label: 'Clean realtime lane',
-      network: { latencyMs: 2, maxQueuedFrames: 128 }
+      network: { ...CLEAN_PROFILE_QUEUE_CAP, latencyMs: 2 }
     },
     {
       id: 'clean-fast',
       label: 'Clean fast lane',
-      network: { latencyMs: 4, jitterMs: 1, maxQueuedFrames: 128 }
+      network: { ...CLEAN_PROFILE_QUEUE_CAP, latencyMs: 4, jitterMs: 1 }
     },
     {
       id: 'balanced-low-latency',
       label: 'Balanced low-latency lane',
-      network: { latencyMs: 8, jitterMs: 2, maxQueuedFrames: 128 }
+      network: { ...CLEAN_PROFILE_QUEUE_CAP, latencyMs: 8, jitterMs: 2 }
     }
   ]
 )

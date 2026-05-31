@@ -43,6 +43,7 @@ import {
   STREAMING_SITE_CONNECTION_FIXTURES,
   STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS,
   STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS,
+  STREAMING_SITE_CONNECTION_PROFILE_MAX_QUEUED_BYTES,
   STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE,
   STREAMING_SITE_CONNECTION_TRIAL_COUNT
 } from '../transport/streaming-site-connection-defaults'
@@ -373,6 +374,13 @@ const MERGE_GATE_METRICS = [
     detail: 'Typed play, pause, seek, rate, and next frames stay compact.'
   },
   {
+    id: 'queue-byte-pressure',
+    label: 'Queue byte gate',
+    value: `<=${STREAMING_SITE_CONNECTION_PROFILE_MAX_QUEUED_BYTES}B`,
+    detail:
+      'Mock lanes expose peak queued control bytes, so fast paths cannot hide byte-pressure buffering.'
+  },
+  {
     id: 'retry-count-overhead',
     label: 'Retry count gate',
     value: `<=${STREAMING_SITE_CONNECTION_BUDGET.maxRetransmissionRate * 100}%`,
@@ -443,6 +451,7 @@ const ROOM_MOOD_CHIPS = [
   'Website-ready queue',
   'Zero-byte-loss controls',
   'No skipped controls',
+  `${STREAMING_SITE_CONNECTION_PROFILE_MAX_QUEUED_BYTES}B queue cap`,
   `${STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS}ms best mock RT`,
   `${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms lab round trip`,
   'Jitter-guarded frames',
@@ -1602,6 +1611,7 @@ const RuntimeSessionRouteSurface = ({
           aria-label="Streaming merge gate"
           data-byte-loss-rate="0"
           data-provider-count={STREAMING_SITE_NAMED_PROVIDER_COUNT}
+          data-queue-byte-cap={STREAMING_SITE_CONNECTION_PROFILE_MAX_QUEUED_BYTES}
           data-site-count={STREAMING_SITE_CONNECTION_FIXTURE_COUNT}
           data-trace-cap="64"
           data-zero-loss-required="true"

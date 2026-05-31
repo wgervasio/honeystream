@@ -8,6 +8,8 @@ import {
   STREAMING_SITE_CONNECTION_BUDGET,
   STREAMING_SITE_CONNECTION_FIXTURES,
   STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS,
+  STREAMING_SITE_CONNECTION_PROFILE_MAX_QUEUED_BYTES,
+  STREAMING_SITE_CONNECTION_PROFILE_MAX_QUEUED_FRAMES,
   STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE,
   STREAMING_SITE_CONNECTION_PROFILES
 } from './streaming-site-connection-defaults'
@@ -141,6 +143,14 @@ describe('streaming site connection lab', () => {
     expect(
       STREAMING_SITE_CONNECTION_FIXTURES.some(
         fixture => typeof fixture.durationMs === 'number' && fixture.durationMs > 3600000
+      )
+    ).toBe(true)
+    expect(
+      STREAMING_SITE_CONNECTION_PROFILES.every(
+        profile =>
+          profile.network &&
+          profile.network.maxQueuedBytes === STREAMING_SITE_CONNECTION_PROFILE_MAX_QUEUED_BYTES &&
+          profile.network.maxQueuedFrames === STREAMING_SITE_CONNECTION_PROFILE_MAX_QUEUED_FRAMES
       )
     ).toBe(true)
   })

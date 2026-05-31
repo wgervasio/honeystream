@@ -10,7 +10,7 @@ const MAX_RECORDED_FRAME_SAMPLES = 64
 
 export interface SimulatedPeerTransportMetricsRecorder {
   recordSent(bytes: number, seq: number, recordedAtMs: number): number
-  recordQueuedDepth(queuedMessages: number): void
+  recordQueuedDepth(queuedMessages: number, queuedBytes: number): void
   recordDropped(
     bytes: number,
     seq: number,
@@ -25,7 +25,7 @@ export interface SimulatedPeerTransportMetricsRecorder {
     recordedAtMs: number,
     fromPeerId: string
   ): void
-  snapshot(queuedMessages: number): SimulatedPeerTransportMetrics
+  snapshot(queuedMessages: number, queuedBytes: number): SimulatedPeerTransportMetrics
 }
 
 const ratio = (part: number, whole: number): number => (whole === 0 ? 0 : part / whole)
@@ -85,6 +85,7 @@ export const createSimulatedPeerTransportMetricsRecorder = (
   let latencyJitterSamples = 0
   let lastLatencyMs: number | undefined
   let lastDeliveredSeq: number | undefined
+  let peakQueuedBytes = 0
   let peakQueuedMessages = 0
   let nextSampleId = 0
   const latencySamples: number[] = []
@@ -130,7 +131,8 @@ export const createSimulatedPeerTransportMetricsRecorder = (
       recordFrameSample(createPeerFrameSample('sent', bytes, outboundDirection, seq, recordedAtMs))
       return sentMessages
     },
-    recordQueuedDepth(queuedMessages: number): void {
+    recordQueuedDepth(queuedMessages: number, queuedBytes: number): void {
+      peakQueuedBytes = Math.max(peakQueuedBytes, queuedBytes)
       peakQueuedMessages = Math.max(peakQueuedMessages, queuedMessages)
     },
     recordDropped(
@@ -215,7 +217,7 @@ export const createSimulatedPeerTransportMetricsRecorder = (
         )
       )
     },
-    snapshot(queuedMessages: number): SimulatedPeerTransportMetrics {
+    snapshot(queuedMessages: number, queuedBytes: number): SimulatedPeerTransportMetrics {
       return {
         sentMessages,
         deliveredMessages,
@@ -239,7 +241,9 @@ export const createSimulatedPeerTransportMetricsRecorder = (
         p95LatencyMs: percentile(latencySamples, 0.95),
         maxLatencyMs,
         maxLatencyJitterMs,
+        queuedBytes,
         queuedMessages,
+        peakQueuedBytes: Math.max(peakQueuedBytes, queuedBytes),
         peakQueuedMessages: Math.max(peakQueuedMessages, queuedMessages),
         recentFrames: recentFrames.slice()
       }
