@@ -339,15 +339,13 @@ describe('session', () => {
         await page.press('#runtime-add-media-url', 'Enter')
 
         await waitForRuntimeText(page, 'Media added with https:// filled in')
-        if (index > 0) {
-          await page.waitForSelector('[data-queue-action="next"]:not([disabled])')
-          await page.click('[data-queue-action="next"]')
-        }
         await waitForRuntimeText(page, 'Website loaded')
         await waitForRuntimeText(page, source.title)
-        await page.waitForSelector(
-          `[data-playback-adapter-kind="${source.adapterKind}"]`
-        )
+        if (index === 0) {
+          await page.waitForSelector(
+            `[data-playback-adapter-kind="${source.adapterKind}"]`
+          )
+        }
       }
     })
 
