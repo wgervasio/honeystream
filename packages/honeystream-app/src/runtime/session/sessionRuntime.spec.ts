@@ -78,7 +78,7 @@ const getAdapterKindForDesiredState = (
 }
 
 const flushRuntime = async (): Promise<void> => {
-  for (let pass = 0; pass < 8; pass += 1) {
+  for (let pass = 0; pass < 16; pass += 1) {
     await Promise.resolve()
   }
 }
