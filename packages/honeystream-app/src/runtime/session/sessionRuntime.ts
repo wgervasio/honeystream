@@ -525,6 +525,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
       this.knownGuestMedia = upsertKnownMedia(this.knownGuestMedia, media, this.mediaCacheCap)
     }
 
+    this.updateProjection({ session: nextSession })
     try {
       await this.applyPlaybackDesiredState(
         toPlaybackDesiredStateFromSnapshot(
@@ -536,7 +537,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
     } catch (error) {
       this.recordRuntimeError(`[playback] ${toErrorMessage(error)}`)
     }
-    this.updateProjection({ session: nextSession })
+    this.updateProjection()
   }
 
   private async reapplyGuestPlaybackAfterClockSync(receivedAtMs: number): Promise<void> {
