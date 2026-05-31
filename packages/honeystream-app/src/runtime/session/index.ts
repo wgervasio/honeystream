@@ -5,6 +5,8 @@ export type {
   SessionRuntimeClockSyncSnapshot,
   SessionRuntimeDependencies,
   SessionRuntimeLifecycle,
+  SessionRuntimePlaybackAdapterKind,
+  SessionRuntimePlaybackApplyResult,
   SessionRuntimePlaybackEngine,
   SessionRuntimeProjection,
   SessionRuntimeProjectionSource,

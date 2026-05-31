@@ -844,6 +844,7 @@ const mapProjectionToShellSnapshot = (
     role: projection.role,
     session,
     clockSync: projection.clockSync,
+    playbackAdapterKind: projection.playbackAdapterKind,
     systemErrors: [
       ...(includeLocalWarning ? [LOCAL_ONLY_WARNING] : []),
       ...projection.diagnostics.map(mapProtocolErrorToSystemError),
@@ -978,6 +979,21 @@ const getClockSyncLabel = (
       )}ms host offset`
     : 'Heartbeat clock check warms up after rabbit joins'
 
+const getPlaybackAdapterKindLabel = (
+  adapterKind: SessionRuntimeProjectionSnapshot['playbackAdapterKind'] | undefined
+): string => {
+  switch (adapterKind) {
+    case 'local-file':
+      return 'Local file adapter'
+    case 'popup':
+      return 'Popup fallback adapter'
+    case 'embed-extension':
+      return 'Embed adapter'
+    default:
+      return 'Adapter warming'
+  }
+}
+
 const formatQueuedCountLabel = (count: number): string =>
   count === 1 ? '1 pick queued' : `${count} picks queued`
 
@@ -1085,6 +1101,8 @@ const RuntimeSessionRouteSurface = ({
     const stageKindLabel = getStageKindLabel(currentMedia)
     const playbackStateLabel = getPlaybackStateLabel(viewModel.snapshot.session.playback.state)
     const clockSyncLabel = getClockSyncLabel(viewModel.snapshot.clockSync)
+    const playbackAdapterKind = viewModel.snapshot.playbackAdapterKind || 'warming'
+    const playbackAdapterLabel = getPlaybackAdapterKindLabel(viewModel.snapshot.playbackAdapterKind)
     const launchSteps = createLaunchSteps(
       currentMedia,
       guest ? guest.username : undefined,
@@ -1332,7 +1350,10 @@ const RuntimeSessionRouteSurface = ({
           title="Invite your watch buddy"
         />
 
-        <section className={`${styles.card} ${styles.stageCard}`}>
+        <section
+          className={`${styles.card} ${styles.stageCard}`}
+          data-playback-adapter-kind={playbackAdapterKind}
+        >
           <div className={styles.cardHeader}>
             <p className={styles.kicker}>Playback stage</p>
             <span>Website + file preview</span>
@@ -1359,6 +1380,7 @@ const RuntimeSessionRouteSurface = ({
             <span>Zero video-byte sharing</span>
             <span>Low-latency control lane</span>
             <span>Reliable retry guard</span>
+            <span data-playback-adapter-kind={playbackAdapterKind}>{playbackAdapterLabel}</span>
             <span data-clock-sync-state={viewModel.snapshot.clockSync ? 'synced' : 'warming'}>
               {clockSyncLabel}
             </span>

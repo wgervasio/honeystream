@@ -1,6 +1,7 @@
 import { ClientCommand, SessionSnapshot } from 'protocol'
 
 type SessionRuntimeProjectionRole = 'uninitialized' | 'host' | 'guest'
+export type SessionRuntimePlaybackAdapterKind = 'local-file' | 'embed-extension' | 'popup'
 
 export interface SessionRuntimeSystemErrorSnapshot {
   readonly id: string
@@ -19,6 +20,7 @@ export interface SessionRuntimeProjectionSnapshot {
   readonly role: SessionRuntimeProjectionRole
   readonly session: SessionSnapshot
   readonly clockSync?: SessionRuntimeClockSyncSnapshot
+  readonly playbackAdapterKind?: SessionRuntimePlaybackAdapterKind
   readonly systemErrors: readonly SessionRuntimeSystemErrorSnapshot[]
 }
 

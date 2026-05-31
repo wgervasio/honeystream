@@ -347,6 +347,8 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('Guest follows clearly')
     expect(html).toContain('Zero video-byte sharing')
     expect(html).toContain('Low-latency control lane')
+    expect(html).toContain('Adapter warming')
+    expect(html).toContain('data-playback-adapter-kind="warming"')
     expect(html).toContain('Heartbeat clock check warms up after rabbit joins')
     expect(html).toContain('data-clock-sync-state="warming"')
     expect(html).toContain('id="runtime_site_handoff"')

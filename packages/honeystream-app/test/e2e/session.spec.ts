@@ -310,10 +310,26 @@ describe('session', () => {
       await page.waitForSelector(RUNTIME_SHELL_SELECTOR)
 
       const sources = [
-        { url: 'youtube.com/watch?v=honeystream-demo', title: 'YouTube watch page' },
-        { url: 'animepahe.ru/play/honeystream-demo', title: 'AnimePahe watch page' },
-        { url: 'cineby.app/movie/honeystream-demo', title: 'Cineby watch page' },
-        { url: 'miruro.to/watch/honeystream-demo', title: 'Miruro watch page' }
+        {
+          url: 'youtube.com/watch?v=honeystream-demo',
+          title: 'YouTube watch page',
+          adapterKind: 'embed-extension'
+        },
+        {
+          url: 'animepahe.ru/play/honeystream-demo',
+          title: 'AnimePahe watch page',
+          adapterKind: 'popup'
+        },
+        {
+          url: 'cineby.app/movie/honeystream-demo',
+          title: 'Cineby watch page',
+          adapterKind: 'popup'
+        },
+        {
+          url: 'miruro.to/watch/honeystream-demo',
+          title: 'Miruro watch page',
+          adapterKind: 'popup'
+        }
       ]
 
       for (const source of sources) {
@@ -324,6 +340,9 @@ describe('session', () => {
         await waitForRuntimeText(page, 'Media added with https:// filled in')
         await waitForRuntimeText(page, 'Website loaded')
         await waitForRuntimeText(page, source.title)
+        await page.waitForSelector(
+          `[data-playback-adapter-kind="${source.adapterKind}"]`
+        )
       }
     })
 

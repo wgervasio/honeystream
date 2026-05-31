@@ -11,6 +11,7 @@ export type {
   LeaveSessionIntent,
   PlaybackSessionIntent,
   SessionRuntimeIntentCallbacks,
+  SessionRuntimePlaybackAdapterKind,
   SessionRuntimeProjectionSnapshot,
   SessionRuntimeSystemErrorSnapshot
 } from './types'
