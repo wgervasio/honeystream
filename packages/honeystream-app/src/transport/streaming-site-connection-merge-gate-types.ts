@@ -6,17 +6,23 @@ import {
 
 export interface StreamingSiteConnectionMergeGateOptions {
   readonly maxByteLossRate?: number
+  readonly maxCombinedAverageMessageBytes?: number
+  readonly maxCombinedMaxMessageBytes?: number
   readonly maxDroppedMessages?: number
+  readonly maxFixtureAverageMessageBytes?: number
   readonly maxDirectionalLatencySkewMs?: number
   readonly maxFixtureDirectionalLatencySkewMs?: number
   readonly maxFixtureByteLossRate?: number
   readonly maxFixtureDroppedMessages?: number
   readonly maxFixtureLostBytes?: number
+  readonly maxFixtureMaxMessageBytes?: number
   readonly maxFixtureMissingDirectionalDeliveryCount?: number
   readonly maxFixtureRoundTripP95LatencyMs?: number
   readonly minFixturesPerRequiredProvider?: number
   readonly maxProviderDirectionalLatencySkewMs?: number
   readonly maxProviderLostBytes?: number
+  readonly maxProviderAverageMessageBytes?: number
+  readonly maxProviderMaxMessageBytes?: number
   readonly maxProviderMissingDirectionalDeliveryCount?: number
   readonly maxProviderOutOfOrderMessages?: number
   readonly maxProviderRoundTripP95LatencyMs?: number
@@ -33,20 +39,25 @@ export interface StreamingSiteConnectionMergeGateSummary {
   readonly maxCombinedAverageMessageBytes: number
   readonly maxCombinedByteLossRate: number
   readonly maxCombinedDroppedMessages: number
+  readonly maxCombinedMaxMessageBytes: number
   readonly maxCombinedRetransmissionByteRate: number
   readonly maxCombinedRetransmissionRate: number
   readonly maxDirectionalLatencySkewMs: number
   readonly maxDirectionalRetransmissionByteRate: number
   readonly maxEstimatedRoundTripP95LatencyMs: number
   readonly maxFixtureByteLossRate: number
+  readonly maxFixtureAverageMessageBytes: number
   readonly maxFixtureDirectionalLatencySkewMs: number
   readonly maxFixtureDroppedMessages: number
   readonly maxFixtureEstimatedRoundTripP95LatencyMs: number
   readonly maxFixtureLostBytes: number
+  readonly maxFixtureMaxMessageBytes: number
   readonly maxFixtureMissingDirectionalDeliveryCount: number
   readonly maxFixtureRetransmissionByteRate: number
+  readonly maxProviderAverageMessageBytes: number
   readonly maxProviderDirectionalLatencySkewMs: number
   readonly maxProviderLostBytes: number
+  readonly maxProviderMaxMessageBytes: number
   readonly maxProviderMissingDirectionalDeliveryCount: number
   readonly maxProviderOutOfOrderMessages: number
   readonly maxProviderRoundTripP95LatencyMs: number
@@ -110,6 +121,16 @@ export const resolveStreamingSiteConnectionMergeGateOptions = (
     typeof options.maxByteLossRate === 'number'
       ? options.maxByteLossRate
       : STREAMING_SITE_CONNECTION_BUDGET.maxByteLossRate,
+  maxCombinedAverageMessageBytes: resolveNumberOption(
+    options.maxCombinedAverageMessageBytes,
+    undefined,
+    STREAMING_SITE_CONNECTION_BUDGET.maxAverageMessageBytes
+  ),
+  maxCombinedMaxMessageBytes: resolveNumberOption(
+    options.maxCombinedMaxMessageBytes,
+    undefined,
+    STREAMING_SITE_CONNECTION_BUDGET.maxMessageBytes
+  ),
   maxDroppedMessages:
     typeof options.maxDroppedMessages === 'number'
       ? options.maxDroppedMessages
@@ -118,6 +139,11 @@ export const resolveStreamingSiteConnectionMergeGateOptions = (
     typeof options.maxDirectionalLatencySkewMs === 'number'
       ? options.maxDirectionalLatencySkewMs
       : STREAMING_SITE_CONNECTION_BUDGET.maxDirectionalLatencySkewMs,
+  maxFixtureAverageMessageBytes: resolveNumberOption(
+    options.maxFixtureAverageMessageBytes,
+    options.maxCombinedAverageMessageBytes,
+    STREAMING_SITE_CONNECTION_BUDGET.maxAverageMessageBytes
+  ),
   maxFixtureDirectionalLatencySkewMs: resolveNumberOption(
     options.maxFixtureDirectionalLatencySkewMs,
     options.maxDirectionalLatencySkewMs,
@@ -134,6 +160,11 @@ export const resolveStreamingSiteConnectionMergeGateOptions = (
     STREAMING_SITE_CONNECTION_BUDGET.maxDroppedMessages
   ),
   maxFixtureLostBytes: resolveNumberOption(options.maxFixtureLostBytes, undefined, 0),
+  maxFixtureMaxMessageBytes: resolveNumberOption(
+    options.maxFixtureMaxMessageBytes,
+    options.maxCombinedMaxMessageBytes,
+    STREAMING_SITE_CONNECTION_BUDGET.maxMessageBytes
+  ),
   maxFixtureMissingDirectionalDeliveryCount: resolveNumberOption(
     options.maxFixtureMissingDirectionalDeliveryCount,
     undefined,
@@ -153,6 +184,16 @@ export const resolveStreamingSiteConnectionMergeGateOptions = (
     STREAMING_SITE_CONNECTION_BUDGET.maxDirectionalLatencySkewMs
   ),
   maxProviderLostBytes: resolveNumberOption(options.maxProviderLostBytes, undefined, 0),
+  maxProviderAverageMessageBytes: resolveNumberOption(
+    options.maxProviderAverageMessageBytes,
+    options.maxCombinedAverageMessageBytes,
+    STREAMING_SITE_CONNECTION_BUDGET.maxAverageMessageBytes
+  ),
+  maxProviderMaxMessageBytes: resolveNumberOption(
+    options.maxProviderMaxMessageBytes,
+    options.maxCombinedMaxMessageBytes,
+    STREAMING_SITE_CONNECTION_BUDGET.maxMessageBytes
+  ),
   maxProviderMissingDirectionalDeliveryCount: resolveNumberOption(
     options.maxProviderMissingDirectionalDeliveryCount,
     undefined,

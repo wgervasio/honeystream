@@ -18,7 +18,7 @@ describe('RuntimeAddMediaPanel', () => {
     expect(html).toContain('Media URL')
     expect(html).toContain('Add URL')
     expect(html).toContain('Paste a supported website')
-    expect(html).toContain('Source confidence')
+    expect(html).toContain('Is it a match?')
     expect(html).toContain('Paste watch link')
     expect(html).toContain('Buddy check')
     expect(html).toContain('Sync check')
@@ -175,6 +175,30 @@ describe('RuntimeAddMediaPanel', () => {
       expect(container.querySelector('[data-add-media-source-preview="invalid"]')).not.toBeNull()
       expect(container.querySelector('[data-source-confidence-state="warning"]')).not.toBeNull()
       expect(container.textContent).toContain('Needs a watch link')
+    } finally {
+      ReactDOM.unmountComponentAtNode(container)
+      container.remove()
+    }
+  })
+
+  it('queues shorthand URLs with friendly success copy', () => {
+    const onAddUrl = jest.fn()
+    const container = document.createElement('div')
+    document.body.appendChild(container)
+
+    try {
+      ReactDOM.render(<RuntimeAddMediaPanel onAddUrl={onAddUrl} />, container)
+
+      const input = container.querySelector('#runtime-add-media-url') as HTMLInputElement
+      input.value = 'youtube.com/watch?v=honeystream-demo'
+      Simulate.change(input)
+
+      const form = container.querySelector('form') as HTMLFormElement
+      Simulate.submit(form)
+
+      expect(onAddUrl).toHaveBeenCalledWith('https://youtube.com/watch?v=honeystream-demo')
+      expect(container.textContent).toContain('Media added with https:// filled in')
+      expect(container.textContent).toContain('Copy the invite or press play')
     } finally {
       ReactDOM.unmountComponentAtNode(container)
       container.remove()

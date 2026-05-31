@@ -15,7 +15,7 @@ export const QueueQueuedItems = memo(function QueueQueuedItems(props: QueueQueue
   if (props.items.length === 0) {
     return (
       <p className={props.className} data-queue-empty="true">
-        {props.emptyLabel || 'Queue is empty'}
+        {props.emptyLabel || 'Queue is cozy and clear'}
       </p>
     )
   }

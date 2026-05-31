@@ -14,31 +14,11 @@ import {
 import { summarizeStreamingSiteConnectionMergeGate } from './streaming-site-connection-merge-gate'
 import { optimizeStreamingSiteConnectionProfiles } from './streaming-site-connection-optimizer'
 const STREAMING_FIXTURES: readonly StreamingSiteConnectionFixture[] = [
-  {
-    id: 'youtube-watch',
-    source: 'https://www.youtube.com/watch?v=honeystream-sync',
-    title: 'YouTube watch page'
-  },
-  {
-    id: 'animepahe-play',
-    source: 'https://animepahe.ru/play/honeystream-test',
-    title: 'AnimePahe episode'
-  },
-  {
-    id: 'cineby-movie',
-    source: 'https://cineby.app/movie/honeystream-test',
-    title: 'Cineby movie'
-  },
-  {
-    id: 'miruro-watch',
-    source: 'https://miruro.to/watch/honeystream-test',
-    title: 'Miruro watch page'
-  },
-  {
-    id: 'generic-site',
-    source: 'https://watch.example.test/honeystream-night',
-    title: 'Generic watch page'
-  }
+  { id: 'youtube-watch', source: 'https://www.youtube.com/watch?v=honeystream-sync' },
+  { id: 'animepahe-play', source: 'https://animepahe.ru/play/honeystream-test' },
+  { id: 'cineby-movie', source: 'https://cineby.app/movie/honeystream-test' },
+  { id: 'miruro-watch', source: 'https://miruro.to/watch/honeystream-test' },
+  { id: 'generic-site', source: 'https://watch.example.test/honeystream-night' }
 ]
 
 const CONNECTION_PROFILES: readonly StreamingSiteConnectionProfile[] = [
@@ -107,6 +87,7 @@ describe('streaming site connection optimizer', () => {
         trialCount: STREAMING_SITE_CONNECTION_TRIAL_COUNT,
         maxCombinedByteLossRate: 0,
         maxCombinedDroppedMessages: 0,
+        maxCombinedMaxMessageBytes: result.rankedProfiles[0].maxCombinedMaxMessageBytes,
         maxCombinedRetransmissionRate: 0,
         maxCombinedRetransmissionByteRate: 0,
         maxDirectionalLatencySkewMs: 0,
@@ -125,6 +106,15 @@ describe('streaming site connection optimizer', () => {
     expect(mergeGate.requiredProviders).toEqual(['youtube', 'animepahe', 'cineby', 'miruro'])
     expect(mergeGate.maxCombinedAverageMessageBytes).toBeLessThanOrEqual(
       STREAMING_SITE_CONNECTION_BUDGET.maxAverageMessageBytes
+    )
+    expect(mergeGate.maxCombinedMaxMessageBytes).toBeLessThanOrEqual(
+      STREAMING_SITE_CONNECTION_BUDGET.maxMessageBytes
+    )
+    expect(mergeGate.maxFixtureMaxMessageBytes).toBeLessThanOrEqual(
+      STREAMING_SITE_CONNECTION_BUDGET.maxMessageBytes
+    )
+    expect(mergeGate.maxProviderMaxMessageBytes).toBeLessThanOrEqual(
+      STREAMING_SITE_CONNECTION_BUDGET.maxMessageBytes
     )
 
     const retryRank = result.rankedProfiles.find(rank => rank.profile.id === 'retry-guarded')

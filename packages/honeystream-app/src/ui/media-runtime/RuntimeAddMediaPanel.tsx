@@ -32,7 +32,7 @@ export interface RuntimeAddMediaPanelProps {
 const DEFAULT_MISSING_URL_LABEL = 'Paste a website or direct media URL first.'
 const DEFAULT_INVALID_URL_LABEL =
   'Paste a website link like youtube.com/watch or a full http:// or https:// URL.'
-const SOURCE_CONFIDENCE_TITLE = 'Source confidence'
+const SOURCE_CONFIDENCE_TITLE = 'Is it a match?'
 const URL_SAFETY_TITLE = 'URL Safety Results'
 
 export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
@@ -88,8 +88,8 @@ export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
     setSelectedSuggestionId(undefined)
     setStatusMessage(
       queuedWithHttpsAdded
-        ? 'Source queued with https:// added. Copy the invite or press play when your buddy lands.'
-        : 'Source queued. Copy the invite or press play when your buddy lands.'
+        ? 'Media added with https:// filled in. Copy the invite or press play when your buddy lands.'
+        : 'Media added. Copy the invite or press play when your buddy lands.'
     )
   }
 
@@ -125,7 +125,7 @@ export const RuntimeAddMediaPanel = memo(function RuntimeAddMediaPanel(
           lowest-loss lane first, prefers clean zero-retry lanes before faster repaired lanes,
           then latency-tunes it with a zero-loss, under-10ms mock round trip, visible recovered
           retries for transient control drops, and no skipped controls. Honeystream keeps media
-          bytes local and syncs only the typed control stream.
+          bytes local and syncs only the tiny control stream of typed commands.
         </span>
       </div>
       {sourceSuggestions.length > 0 ? (

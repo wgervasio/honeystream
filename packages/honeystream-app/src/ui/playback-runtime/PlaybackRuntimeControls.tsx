@@ -10,8 +10,8 @@ const SECONDS_PER_MINUTE = 60
 const DEFAULT_LABELS: Readonly<PlaybackRuntimeControlLabels> = Object.freeze({
   play: 'Play',
   pause: 'Pause',
-  seekBackward: 'Seek -10s',
-  seekForward: 'Seek +10s',
+  seekBackward: 'Rewind 10s',
+  seekForward: 'Fast forward 10s',
   rateDown: 'Rate -',
   rateUp: 'Rate +',
   next: 'Next'
@@ -40,6 +40,13 @@ const formatPlaybackPosition = (positionMs: number): string => {
   const seconds = totalSeconds % SECONDS_PER_MINUTE
 
   return `${minutes}:${seconds.toString().padStart(2, '0')}`
+}
+
+const formatPlaybackTimeline = (positionMs: number, durationMs: number | undefined): string => {
+  const positionLabel = formatPlaybackPosition(positionMs)
+  return typeof durationMs === 'number' && Number.isFinite(durationMs) && durationMs > 0
+    ? `${positionLabel} / ${formatPlaybackPosition(durationMs)}`
+    : positionLabel
 }
 
 interface PlaybackRuntimeIntentButton {
@@ -133,13 +140,11 @@ export function createPlaybackRuntimeControlViewModel(
     },
     rateLabel: `${playbackRate.toFixed(2)}x`,
     positionMs: playbackPositionMs,
-    positionLabel: formatPlaybackPosition(playbackPositionMs)
+    positionLabel: formatPlaybackTimeline(playbackPositionMs, props.playback.durationMs)
   }
 }
 
-export const PlaybackRuntimeControls = memo(function PlaybackRuntimeControls(
-  props: PlaybackRuntimeControlsProps
-) {
+export const PlaybackRuntimeControls = memo(function PlaybackRuntimeControls(props: PlaybackRuntimeControlsProps) {
   const controls = createPlaybackRuntimeControlViewModel(props)
 
   return (
@@ -205,7 +210,7 @@ export const PlaybackRuntimeControls = memo(function PlaybackRuntimeControls(
       <output
         data-intent="positionMs"
         data-position-ms={controls.positionMs}
-        aria-label="Playback position"
+        aria-label="Playback timeline"
       >
         {controls.positionLabel}
       </output>

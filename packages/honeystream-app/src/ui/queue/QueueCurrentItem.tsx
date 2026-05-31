@@ -13,7 +13,7 @@ export const QueueCurrentItem = memo(function QueueCurrentItem(props: QueueCurre
   if (!props.item) {
     return (
       <p className={props.className} data-queue-current-empty="true" data-queue-state="empty">
-        {props.emptyLabel || 'No current item'}
+        {props.emptyLabel || 'No stream on stage yet'}
       </p>
     )
   }

@@ -25,7 +25,7 @@ describe('RuntimeAddMediaPanel URL handling', () => {
       expect(input.value).toBe('')
       expect(container.querySelector('[data-add-media-error="true"]')).toBeNull()
       expect(container.querySelector('[data-add-media-status="true"]')).not.toBeNull()
-      expect(container.textContent).toContain('Source queued')
+      expect(container.textContent).toContain('Media added')
       expect(container.textContent).toContain('URL Safety Results')
       expect(container.textContent).toContain('YouTube, AnimePahe, Cineby, Miruro')
       expect(container.textContent).toContain('any site you can test together')
@@ -34,7 +34,7 @@ describe('RuntimeAddMediaPanel URL handling', () => {
       expect(container.textContent).toContain('zero-loss, under-10ms mock round trip')
       expect(container.textContent).toContain('visible recovered retries')
       expect(container.textContent).toContain('no skipped controls')
-      expect(container.textContent).toContain('typed control stream')
+      expect(container.textContent).toContain('tiny control stream of typed commands')
     } finally {
       ReactDOM.unmountComponentAtNode(container)
       container.remove()
@@ -64,7 +64,7 @@ describe('RuntimeAddMediaPanel URL handling', () => {
       expect(input.value).toBe('')
       expect(container.querySelector('[data-add-media-error="true"]')).toBeNull()
       expect(container.querySelector('[data-add-media-status="true"]')).not.toBeNull()
-      expect(container.textContent).toContain('Source queued with https:// added')
+      expect(container.textContent).toContain('Media added with https:// filled in')
     } finally {
       ReactDOM.unmountComponentAtNode(container)
       container.remove()
@@ -92,7 +92,7 @@ describe('RuntimeAddMediaPanel URL handling', () => {
 
       expect(onAddUrl).toHaveBeenCalledWith('https://youtube.com/watch?v=honeystream-demo')
       expect(container.querySelector('[data-add-media-error="true"]')).toBeNull()
-      expect(container.textContent).toContain('Source queued with https:// added')
+      expect(container.textContent).toContain('Media added with https:// filled in')
     } finally {
       ReactDOM.unmountComponentAtNode(container)
       container.remove()

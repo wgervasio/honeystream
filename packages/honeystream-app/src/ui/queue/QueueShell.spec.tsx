@@ -16,7 +16,7 @@ describe('QueueCurrentItem', () => {
   it('renders empty text when no current item is provided', () => {
     const html = renderToStaticMarkup(<QueueCurrentItem />)
 
-    expect(html).toContain('No current item')
+    expect(html).toContain('No stream on stage yet')
     expect(html).toContain('data-queue-current-empty="true"')
   })
 
@@ -37,7 +37,7 @@ describe('QueueQueuedItems', () => {
   it('renders empty text when queue is empty', () => {
     const html = renderToStaticMarkup(<QueueQueuedItems items={[]} onRemove={() => undefined} />)
 
-    expect(html).toContain('Queue is empty')
+    expect(html).toContain('Queue is cozy and clear')
     expect(html).toContain('data-queue-empty="true"')
   })
 
@@ -95,8 +95,8 @@ describe('QueueShell', () => {
       <QueueShell onNext={() => undefined} onRemove={() => undefined} />
     )
 
-    expect(html).toContain('No current item')
-    expect(html).toContain('Queue is empty')
+    expect(html).toContain('No stream on stage yet')
+    expect(html).toContain('Queue is cozy and clear')
     expect(html).toContain('disabled=""')
   })
 })

@@ -36,6 +36,7 @@ describe('SystemEventFeed', () => {
     )
 
     expect(html).toContain('Error: Connection timed out')
+    expect(html).toContain('data-system-event-icon="error"')
     expect(html).toContain('data-system-event-type="error"')
     expect(html).toContain('data-system-event-tone="alert"')
   })
@@ -51,8 +52,10 @@ describe('SystemEventFeed', () => {
     )
 
     expect(html).toContain('data-system-event-type="participantJoined"')
+    expect(html).toContain('data-system-event-icon="participantJoined"')
     expect(html).toContain('data-system-event-tone="positive"')
     expect(html).toContain('data-system-event-type="participantLeft"')
+    expect(html).toContain('data-system-event-icon="participantLeft"')
     expect(html).toContain('data-system-event-tone="neutral"')
   })
 })

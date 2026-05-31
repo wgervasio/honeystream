@@ -8,6 +8,7 @@ import { StreamingSiteFixtureObservation } from './streaming-site-connection-sit
 export interface StreamingSiteProviderQuality {
   readonly provider: MediaProvider
   readonly siteCount: number
+  readonly maxAverageMessageBytes: number
   readonly maxByteLossRate: number
   readonly maxDirectionalLatencySkewMs: number
   readonly maxDroppedMessages: number
@@ -15,6 +16,7 @@ export interface StreamingSiteProviderQuality {
   readonly maxGuestToHostP95LatencyMs: number
   readonly maxHostToGuestP95LatencyMs: number
   readonly maxLostBytes: number
+  readonly maxMessageBytes: number
   readonly maxMissingDirectionalDeliveryCount: number
   readonly maxOutOfOrderMessages: number
   readonly maxRetransmissionByteRate: number
@@ -25,6 +27,7 @@ export interface StreamingSiteProviderQuality {
 interface StreamingSiteProviderQualityDraft {
   provider: MediaProvider
   fixtureIds: string[]
+  maxAverageMessageBytes: number
   maxByteLossRate: number
   maxDirectionalLatencySkewMs: number
   maxDroppedMessages: number
@@ -32,6 +35,7 @@ interface StreamingSiteProviderQualityDraft {
   maxGuestToHostP95LatencyMs: number
   maxHostToGuestP95LatencyMs: number
   maxLostBytes: number
+  maxMessageBytes: number
   maxMissingDirectionalDeliveryCount: number
   maxOutOfOrderMessages: number
   maxRetransmissionByteRate: number
@@ -50,6 +54,7 @@ const PROVIDER_ORDER: readonly MediaProvider[] = Object.freeze([
 const createDraft = (provider: MediaProvider): StreamingSiteProviderQualityDraft => ({
   provider,
   fixtureIds: [],
+  maxAverageMessageBytes: 0,
   maxByteLossRate: 0,
   maxDirectionalLatencySkewMs: 0,
   maxDroppedMessages: 0,
@@ -57,6 +62,7 @@ const createDraft = (provider: MediaProvider): StreamingSiteProviderQualityDraft
   maxGuestToHostP95LatencyMs: 0,
   maxHostToGuestP95LatencyMs: 0,
   maxLostBytes: 0,
+  maxMessageBytes: 0,
   maxMissingDirectionalDeliveryCount: 0,
   maxOutOfOrderMessages: 0,
   maxRetransmissionByteRate: 0,
@@ -96,6 +102,10 @@ const recordFixture = (
   if (draft.fixtureIds.indexOf(fixture.fixtureId) === -1) {
     draft.fixtureIds.push(fixture.fixtureId)
   }
+  draft.maxAverageMessageBytes = Math.max(
+    draft.maxAverageMessageBytes,
+    fixture.averageMessageBytes
+  )
   draft.maxByteLossRate = Math.max(draft.maxByteLossRate, fixture.byteLossRate)
   draft.maxDirectionalLatencySkewMs = Math.max(
     draft.maxDirectionalLatencySkewMs,
@@ -115,6 +125,7 @@ const recordFixture = (
     fixture.hostToGuestP95LatencyMs
   )
   draft.maxLostBytes = Math.max(draft.maxLostBytes, fixture.lostBytes)
+  draft.maxMessageBytes = Math.max(draft.maxMessageBytes, fixture.maxMessageBytes)
   draft.maxMissingDirectionalDeliveryCount = Math.max(
     draft.maxMissingDirectionalDeliveryCount,
     fixture.missingDirectionalDeliveryCount
@@ -142,6 +153,7 @@ const finalizeDraft = (
 ): StreamingSiteProviderQuality => ({
   provider: draft.provider,
   siteCount: draft.fixtureIds.length,
+  maxAverageMessageBytes: draft.maxAverageMessageBytes,
   maxByteLossRate: draft.maxByteLossRate,
   maxDirectionalLatencySkewMs: draft.maxDirectionalLatencySkewMs,
   maxDroppedMessages: draft.maxDroppedMessages,
@@ -149,6 +161,7 @@ const finalizeDraft = (
   maxGuestToHostP95LatencyMs: draft.maxGuestToHostP95LatencyMs,
   maxHostToGuestP95LatencyMs: draft.maxHostToGuestP95LatencyMs,
   maxLostBytes: draft.maxLostBytes,
+  maxMessageBytes: draft.maxMessageBytes,
   maxMissingDirectionalDeliveryCount: draft.maxMissingDirectionalDeliveryCount,
   maxOutOfOrderMessages: draft.maxOutOfOrderMessages,
   maxRetransmissionByteRate: draft.maxRetransmissionByteRate,

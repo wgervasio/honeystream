@@ -72,6 +72,17 @@ const createProviderQualityFailures = (
   const failures: string[] = []
   for (const quality of profile.providerQuality) {
     const label = PROVIDER_LABELS[quality.provider]
+    if (quality.maxAverageMessageBytes > options.maxProviderAverageMessageBytes) {
+      failures.push(
+        `${label} provider average control frame exceeded ` +
+          `${options.maxProviderAverageMessageBytes} bytes.`
+      )
+    }
+    if (quality.maxMessageBytes > options.maxProviderMaxMessageBytes) {
+      failures.push(
+        `${label} provider control frame exceeded ${options.maxProviderMaxMessageBytes} bytes.`
+      )
+    }
     if (quality.maxOutOfOrderMessages > options.maxProviderOutOfOrderMessages) {
       failures.push(
         `${label} provider reordered more than ${options.maxProviderOutOfOrderMessages} controls.`
@@ -132,8 +143,28 @@ export const createStreamingSiteConnectionMergeGateFailures = (
   if (profile && profile.maxCombinedByteLossRate > options.maxByteLossRate) {
     failures.push(`Byte loss exceeded ${options.maxByteLossRate}.`)
   }
+  if (
+    profile &&
+    profile.maxCombinedAverageMessageBytes > options.maxCombinedAverageMessageBytes
+  ) {
+    failures.push(
+      `Average control frame exceeded ${options.maxCombinedAverageMessageBytes} bytes.`
+    )
+  }
+  if (profile && profile.maxCombinedMaxMessageBytes > options.maxCombinedMaxMessageBytes) {
+    failures.push(`A control frame exceeded ${options.maxCombinedMaxMessageBytes} bytes.`)
+  }
   if (profile && profile.maxCombinedDroppedMessages > options.maxDroppedMessages) {
     failures.push(`Dropped controls exceeded ${options.maxDroppedMessages}.`)
+  }
+  if (
+    profile &&
+    profile.maxFixtureAverageMessageBytes > options.maxFixtureAverageMessageBytes
+  ) {
+    failures.push(
+      `A site fixture average control frame exceeded ` +
+        `${options.maxFixtureAverageMessageBytes} bytes.`
+    )
   }
   if (profile && profile.maxFixtureByteLossRate > options.maxFixtureByteLossRate) {
     failures.push(`A site fixture byte-loss rate exceeded ${options.maxFixtureByteLossRate}.`)
@@ -143,6 +174,11 @@ export const createStreamingSiteConnectionMergeGateFailures = (
   }
   if (profile && profile.maxFixtureLostBytes > options.maxFixtureLostBytes) {
     failures.push(`A site fixture lost more than ${options.maxFixtureLostBytes} control bytes.`)
+  }
+  if (profile && profile.maxFixtureMaxMessageBytes > options.maxFixtureMaxMessageBytes) {
+    failures.push(
+      `A site fixture control frame exceeded ${options.maxFixtureMaxMessageBytes} bytes.`
+    )
   }
   if (
     profile &&

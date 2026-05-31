@@ -17,7 +17,7 @@ function getGuestUsername(
     return guestUsername
   }
 
-  return waitingForGuestLabel || 'Waiting for guest'
+  return waitingForGuestLabel || 'Waiting for your person...'
 }
 
 export const SessionParticipantUsernames = memo(function SessionParticipantUsernames(

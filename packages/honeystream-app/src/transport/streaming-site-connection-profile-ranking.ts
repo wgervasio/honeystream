@@ -36,6 +36,8 @@ const RANKING_METRICS: readonly RankMetric[] = Object.freeze([
   profile => profile.maxEstimatedRoundTripP95LatencyMs,
   profile => profile.maxDirectionalAverageLatencyMs,
   profile => profile.maxDirectionalLatencySkewMs,
+  profile => profile.maxFixtureMaxMessageBytes,
+  profile => profile.maxCombinedMaxMessageBytes,
   profile => profile.maxCombinedAverageMessageBytes
 ])
 
