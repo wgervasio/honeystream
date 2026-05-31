@@ -332,12 +332,17 @@ describe('session', () => {
         }
       ]
 
-      for (const source of sources) {
+      for (let index = 0; index < sources.length; index += 1) {
+        const source = sources[index]
         await page.fill('#runtime-add-media-url', source.url)
         await waitForRuntimeText(page, 'Honeystream will add https:// automatically')
         await page.press('#runtime-add-media-url', 'Enter')
 
         await waitForRuntimeText(page, 'Media added with https:// filled in')
+        if (index > 0) {
+          await page.waitForSelector('[data-queue-action="next"]:not([disabled])')
+          await page.click('[data-queue-action="next"]')
+        }
         await waitForRuntimeText(page, 'Website loaded')
         await waitForRuntimeText(page, source.title)
         await page.waitForSelector(
