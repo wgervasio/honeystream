@@ -83,6 +83,10 @@ describe('simulated peer transport tuning', () => {
     }
 
     const candidates = [
+      await observeCandidate('byte-starved-fast', 'Byte-starved fast lane', {
+        latencyMs: 1,
+        maxQueuedBytes: 1
+      }),
       await observeCandidate('lossy-fast', 'Lossy fast lane', {
         latencyMs: 4,
         dropEveryNthMessage: 5
@@ -99,6 +103,7 @@ describe('simulated peer transport tuning', () => {
     if (!bestCandidate) throw new Error('Expected a streaming-safe transport candidate.')
 
     const lossyCandidate = findCandidateRank(rankedCandidates, 'lossy-fast')
+    const byteStarvedCandidate = findCandidateRank(rankedCandidates, 'byte-starved-fast')
     const slowCandidate = findCandidateRank(rankedCandidates, 'slow-reliable')
 
     expect(bestCandidate.candidate.id).toBe('balanced-reliable')
@@ -108,6 +113,10 @@ describe('simulated peer transport tuning', () => {
     expect(rankedCandidates[0].budgetResult.failures).toEqual([])
     expect(lossyCandidate.budgetResult.ok).toBe(false)
     expect(lossyCandidate.budgetResult.failures).toEqual(
+      expect.arrayContaining([expect.objectContaining({ metric: 'combinedByteLossRate' })])
+    )
+    expect(byteStarvedCandidate.budgetResult.ok).toBe(false)
+    expect(byteStarvedCandidate.budgetResult.failures).toEqual(
       expect.arrayContaining([expect.objectContaining({ metric: 'combinedByteLossRate' })])
     )
     expect(slowCandidate.budgetResult.ok).toBe(false)
