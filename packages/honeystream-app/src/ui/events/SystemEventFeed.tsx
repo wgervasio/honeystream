@@ -35,6 +35,17 @@ const toEventMessage = (event: SystemEvent, errorLabel: string): string => {
   }
 }
 
+const getSystemEventIcon = (event: SystemEvent): string => {
+  switch (event.type) {
+    case 'participantJoined':
+      return '+'
+    case 'participantLeft':
+      return '-'
+    case 'error':
+      return '!'
+  }
+}
+
 export const getSystemEventTone = (event: SystemEvent): SystemEventTone => {
   switch (event.type) {
     case 'participantJoined':
@@ -76,7 +87,10 @@ export const SystemEventFeed = memo(function SystemEventFeed(props: SystemEventF
               data-system-event-type={event.type}
               data-system-event-tone={getSystemEventTone(event)}
             >
-              {toEventMessage(event, errorLabel)}
+              <span aria-hidden="true" data-system-event-icon={event.type}>
+                {getSystemEventIcon(event)}
+              </span>{' '}
+              <span>{toEventMessage(event, errorLabel)}</span>
             </li>
           ))}
         </ol>

@@ -217,7 +217,7 @@ describe('session', () => {
       await waitForRuntimeText(page, 'visible recovered retries')
       await waitForRuntimeText(page, 'no skipped controls')
       await waitForRuntimeText(page, 'syncs only the tiny control stream')
-      await waitForRuntimeText(page, 'typed control stream')
+      await waitForRuntimeText(page, 'typed commands')
       await waitForRuntimeText(page, 'Low-latency control lane')
       await waitForRuntimeText(page, 'Heartbeat clock check warms up after rabbit joins')
       await waitForRuntimeText(page, 'Zero video-byte sharing')
@@ -321,7 +321,7 @@ describe('session', () => {
         await waitForRuntimeText(page, 'Honeystream will add https:// automatically')
         await page.press('#runtime-add-media-url', 'Enter')
 
-        await waitForRuntimeText(page, 'Source queued with https:// added')
+        await waitForRuntimeText(page, 'Media added with https:// filled in')
         await waitForRuntimeText(page, 'Website loaded')
         await waitForRuntimeText(page, source.title)
       }
@@ -342,7 +342,7 @@ describe('session', () => {
 
       try {
         await ms.setProfile('default', guestPage)
-        await visitRuntimePath(guestPage, '/join/deadbeafdeadbeafdeadbeafdeadbeaf')
+        await visitRuntimePath(guestPage, '/join/deadbeafdeadbeafdeadbeafdeadbeaf?secret=bad')
         await guestPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
         await waitForRuntimeText(guestPage, 'Network error')
       } finally {
@@ -420,7 +420,7 @@ describe('session', () => {
       await waitForRuntimeText(clientPage, 'Honeystream will add https:// automatically')
       await clientPage.press('#runtime-add-media-url', 'Enter')
 
-      await waitForRuntimeText(clientPage, 'Source queued with https:// added')
+      await waitForRuntimeText(clientPage, 'Media added with https:// filled in')
       await waitForRuntimeText(hostPage, 'Website loaded')
       await waitForRuntimeText(clientPage, 'Website loaded')
       await waitForRuntimeText(hostPage, 'YouTube watch page')
@@ -468,7 +468,7 @@ describe('session', () => {
       await waitForRuntimeText(hostPage, 'Honeystream will add https:// automatically')
       await hostPage.press('#runtime-add-media-url', 'Enter')
 
-      await waitForRuntimeText(hostPage, 'Source queued with https:// added')
+      await waitForRuntimeText(hostPage, 'Media added with https:// filled in')
       await waitForRuntimeText(hostPage, 'Website loaded')
       await waitForRuntimeText(clientPage, 'Website loaded')
       await waitForRuntimeText(hostPage, 'YouTube watch page')

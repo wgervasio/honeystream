@@ -92,7 +92,7 @@ describe('PlaybackRuntimeControls', () => {
     expectIntentDisabled(html, 'rateDown')
     expectIntentDisabled(html, 'rateUp')
     expectIntentDisabled(html, 'next')
-    expect(html).toContain('0:15')
+    expect(html).toContain('0:15 / 1:00')
   })
 
   it('renders optional cozy control title and guidance', () => {
@@ -110,6 +110,17 @@ describe('PlaybackRuntimeControls', () => {
     expect(html).toContain('Sync controls')
     expect(html).toContain('Queue a source first')
     expect(html).toContain('host-led')
+  })
+
+  it('renders friendly seek labels and playback duration when known', () => {
+    const { props } = createHarness()
+
+    const html = renderToStaticMarkup(<PlaybackRuntimeControls {...props} />)
+
+    expect(html).toContain('Rewind 10s')
+    expect(html).toContain('Fast forward 10s')
+    expect(html).toContain('aria-label="Playback timeline"')
+    expect(html).toContain('0:15 / 1:00')
   })
 
   it('keeps next enabled when a following media item exists without a current media item', () => {

@@ -118,6 +118,7 @@ interface RuntimeRouteRuntimeHandleInput {
   readonly createPlaybackEngine: () => SessionRuntimePlaybackEngine
   readonly createRuntime: (dependencies: SessionRuntimeDependencies) => RuntimeSession
   readonly createTransportPair?: (now: () => number) => RuntimeRouteTransportPair
+  readonly inviteSecretProvided: boolean
   readonly now: () => number
   readonly roomId: string
 }
@@ -656,6 +657,21 @@ const createLiveRuntimeHandle = async (
   await platform.ready
   const localPeerId = platform.getLocalId().toString()
   const role = input.roomId === localPeerId ? 'host' : 'guest'
+
+  /*
+  Context: A guest route without an invite secret is an authorization failure, not a transport probe.
+  Invariant: Guests must prove invite ownership before opening live WebRTC/signaling resources.
+  Options considered: Join then reject in SessionRuntime, retry failed joins, or fail before transport.
+  Decision: Reject missing-secret guests before platform.joinLobby so E2E and runtime do not create
+  throwaway peer connections that can destabilize the host browser.
+  Performance impact: Invalid joins avoid signal-server/WebRTC startup work.
+  Memory/lifecycle ownership: No transport resources are allocated on this failure path.
+  Failure mode: UI records the same explicit "Invite secret is required" boundary error.
+  Validation: Covered by session e2e missing-secret flow and runtime boundary tests.
+  */
+  if (role === 'guest' && !input.inviteSecretProvided) {
+    throw new Error('Invite secret is required to join a runtime session.')
+  }
 
   try {
     if (role === 'host') {
@@ -1264,7 +1280,7 @@ const RuntimeSessionRouteSurface = ({
             errorTitle="Session issues"
             hostLabel="Cat-side"
             guestLabel="Rabbit-side"
-            waitingForGuestLabel="Waiting for rabbit-side guest"
+            waitingForGuestLabel="Waiting for rabbit-side guest..."
             stateLabels={{
               idle: 'Warming up',
               hosting: 'Hosting room',
@@ -1404,8 +1420,8 @@ const RuntimeSessionRouteSurface = ({
           labels={{
             play: "Let's go",
             pause: 'Pause here',
-            seekBackward: 'Back 10s',
-            seekForward: 'Forward 10s',
+            seekBackward: 'Rewind 10s',
+            seekForward: 'Fast forward 10s',
             rateDown: 'Slower',
             rateUp: 'Faster',
             next: 'Next pick'
@@ -1855,6 +1871,7 @@ export const createRuntimeSessionShellRouteBoundary = (
             createPlaybackEngine: playbackEngineFactory,
             createRuntime: runtimeFactory,
             createTransportPair: dependencies.createTransportPair,
+            inviteSecretProvided,
             now,
             roomId
           })
@@ -1874,10 +1891,6 @@ export const createRuntimeSessionShellRouteBoundary = (
               inviteSecret: invite.secret
             })
           } else {
-            if (!inviteSecretProvided) {
-              throw new Error('Invite secret is required to join a runtime session.')
-            }
-
             await runtimeHandle.runtime.startGuestSession({
               roomId,
               username: settingsStore.getSnapshot().username,

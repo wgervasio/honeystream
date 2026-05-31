@@ -67,6 +67,10 @@ export const summarizeStreamingSiteConnectionMergeGate = (
       selectedProfile,
       profile => profile.maxCombinedDroppedMessages
     ),
+    maxCombinedMaxMessageBytes: selectedMetric(
+      selectedProfile,
+      profile => profile.maxCombinedMaxMessageBytes
+    ),
     maxCombinedRetransmissionByteRate: selectedMetric(
       selectedProfile,
       profile => profile.maxCombinedRetransmissionByteRate
@@ -91,6 +95,10 @@ export const summarizeStreamingSiteConnectionMergeGate = (
       selectedProfile,
       profile => profile.maxFixtureByteLossRate
     ),
+    maxFixtureAverageMessageBytes: selectedMetric(
+      selectedProfile,
+      profile => profile.maxFixtureAverageMessageBytes
+    ),
     maxFixtureDirectionalLatencySkewMs: selectedMetric(
       selectedProfile,
       profile => profile.maxFixtureDirectionalLatencySkewMs
@@ -107,6 +115,10 @@ export const summarizeStreamingSiteConnectionMergeGate = (
       selectedProfile,
       profile => profile.maxFixtureLostBytes
     ),
+    maxFixtureMaxMessageBytes: selectedMetric(
+      selectedProfile,
+      profile => profile.maxFixtureMaxMessageBytes
+    ),
     maxFixtureMissingDirectionalDeliveryCount: selectedMetric(
       selectedProfile,
       profile => profile.maxFixtureMissingDirectionalDeliveryCount
@@ -115,6 +127,10 @@ export const summarizeStreamingSiteConnectionMergeGate = (
       selectedProfile,
       profile => profile.maxFixtureRetransmissionByteRate
     ),
+    maxProviderAverageMessageBytes: maxProviderQualityValue(
+      selectedProfile,
+      quality => quality.maxAverageMessageBytes
+    ),
     maxProviderDirectionalLatencySkewMs: maxProviderQualityValue(
       selectedProfile,
       quality => quality.maxDirectionalLatencySkewMs
@@ -122,6 +138,10 @@ export const summarizeStreamingSiteConnectionMergeGate = (
     maxProviderLostBytes: maxProviderQualityValue(
       selectedProfile,
       quality => quality.maxLostBytes
+    ),
+    maxProviderMaxMessageBytes: maxProviderQualityValue(
+      selectedProfile,
+      quality => quality.maxMessageBytes
     ),
     maxProviderMissingDirectionalDeliveryCount: maxProviderQualityValue(
       selectedProfile,
