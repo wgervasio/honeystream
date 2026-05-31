@@ -33,6 +33,7 @@ describe('streaming site provider quality gate', () => {
         maxProviderMissingDirectionalDeliveryCount: 0,
         maxProviderOutOfOrderMessages: 0,
         maxProviderRetransmissionByteRate: 0,
+        maxProviderRetransmissionRate: 0,
         maxProviderSequenceGapMessages: 0,
         maxProviderRoundTripP95LatencyMs: STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS,
         missingProviders: [],
@@ -60,19 +61,25 @@ describe('streaming site provider quality gate', () => {
     })
 
     const providerGate = summarizeStreamingSiteProviderQualityGate(result, {
-      maxProviderRetransmissionByteRate: 0
+      maxProviderRetransmissionByteRate: 0,
+      maxProviderRetransmissionRate: 0
     })
 
     expect(result.bestProfile && result.bestProfile.profile.id).toBe('retry-guarded')
     expect(providerGate.ok).toBe(false)
     expect(providerGate.maxProviderByteLossRate).toBe(0)
     expect(providerGate.maxProviderRetransmissionByteRate).toBeGreaterThan(0)
+    expect(providerGate.maxProviderRetransmissionRate).toBeGreaterThan(0)
     expect(providerGate.failures).toEqual(
       expect.arrayContaining([
         'YouTube provider recovered retry bytes exceeded 0.',
+        'YouTube provider recovered retry rate exceeded 0.',
         'AnimePahe provider recovered retry bytes exceeded 0.',
+        'AnimePahe provider recovered retry rate exceeded 0.',
         'Cineby provider recovered retry bytes exceeded 0.',
-        'Miruro provider recovered retry bytes exceeded 0.'
+        'Cineby provider recovered retry rate exceeded 0.',
+        'Miruro provider recovered retry bytes exceeded 0.',
+        'Miruro provider recovered retry rate exceeded 0.'
       ])
     )
   })

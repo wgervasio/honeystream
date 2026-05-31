@@ -93,6 +93,11 @@ const createProviderQualityFailures = (
         `${label} provider lost more than ${options.maxProviderLostBytes} control bytes.`
       )
     }
+    if (quality.maxRetransmissionRate > options.maxProviderRetransmissionRate) {
+      failures.push(
+        `${label} provider recovered retry rate exceeded ${options.maxProviderRetransmissionRate}.`
+      )
+    }
     if (
       quality.maxMissingDirectionalDeliveryCount >
       options.maxProviderMissingDirectionalDeliveryCount
@@ -180,6 +185,11 @@ export const createStreamingSiteConnectionMergeGateFailures = (
       `A site fixture control frame exceeded ${options.maxFixtureMaxMessageBytes} bytes.`
     )
   }
+  if (profile && profile.maxFixtureRetransmissionRate > options.maxFixtureRetransmissionRate) {
+    failures.push(
+      `A site fixture recovered retry rate exceeded ${options.maxFixtureRetransmissionRate}.`
+    )
+  }
   if (
     profile &&
     profile.maxFixtureMissingDirectionalDeliveryCount >
@@ -200,6 +210,9 @@ export const createStreamingSiteConnectionMergeGateFailures = (
     )
   }
   failures.push(...createProviderQualityFailures(profile, options))
+  if (profile && profile.maxCombinedRetransmissionRate > options.maxRetransmissionRate) {
+    failures.push(`Recovered retry rate exceeded ${options.maxRetransmissionRate}.`)
+  }
   if (profile && profile.maxCombinedRetransmissionByteRate > options.maxRetransmissionByteRate) {
     failures.push(`Recovered retry bytes exceeded ${options.maxRetransmissionByteRate}.`)
   }

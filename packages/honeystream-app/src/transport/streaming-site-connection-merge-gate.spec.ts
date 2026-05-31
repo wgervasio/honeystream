@@ -70,10 +70,12 @@ describe('streaming site connection merge gate', () => {
         maxFixtureEstimatedRoundTripP95LatencyMs: STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS,
         maxFixtureLostBytes: 0,
         maxFixtureMissingDirectionalDeliveryCount: 0,
+        maxFixtureRetransmissionRate: 0,
         maxProviderDirectionalLatencySkewMs: 0,
         maxProviderLostBytes: 0,
         maxProviderMissingDirectionalDeliveryCount: 0,
         maxProviderOutOfOrderMessages: 0,
+        maxProviderRetransmissionRate: 0,
         maxProviderRoundTripP95LatencyMs: STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS,
         maxProviderSequenceGapMessages: 0
       })
@@ -105,15 +107,22 @@ describe('streaming site connection merge gate', () => {
       trialCount: 1
     })
     const mergeGate = summarizeStreamingSiteConnectionMergeGate(result, {
+      maxFixtureRetransmissionRate: 0,
+      maxProviderRetransmissionRate: STREAMING_SITE_CONNECTION_BUDGET.maxRetransmissionRate,
+      maxRetransmissionRate: 0,
       maxRetransmissionByteRate: 0,
       maxDirectionalRetransmissionByteRate: 0
     })
 
     expect(result.bestProfile && result.bestProfile.profile.id).toBe('retry-guarded')
     expect(mergeGate.ok).toBe(false)
+    expect(mergeGate.maxCombinedRetransmissionRate).toBeGreaterThan(0)
     expect(mergeGate.maxCombinedRetransmissionByteRate).toBeGreaterThan(0)
+    expect(mergeGate.maxFixtureRetransmissionRate).toBeGreaterThan(0)
     expect(mergeGate.maxFixtureRetransmissionByteRate).toBeGreaterThan(0)
     expect(mergeGate.failures).toEqual([
+      'A site fixture recovered retry rate exceeded 0.',
+      'Recovered retry rate exceeded 0.',
       'Recovered retry bytes exceeded 0.',
       'Directional recovered retry bytes exceeded 0.'
     ])

@@ -373,6 +373,13 @@ const MERGE_GATE_METRICS = [
     detail: 'Typed play, pause, seek, rate, and next frames stay compact.'
   },
   {
+    id: 'retry-count-overhead',
+    label: 'Retry count gate',
+    value: `<=${STREAMING_SITE_CONNECTION_BUDGET.maxRetransmissionRate * 100}%`,
+    detail:
+      'Recovered retry count stays budgeted so repair overhead cannot masquerade as perfect sync.'
+  },
+  {
     id: 'retry-byte-overhead',
     label: 'Retry byte gate',
     value: `<=${STREAMING_SITE_CONNECTION_BUDGET.maxRetransmissionByteRate * 100}%`,

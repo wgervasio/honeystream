@@ -232,6 +232,8 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('Payload gate')
     expect(html).toContain(`&lt;=${STREAMING_SITE_CONNECTION_BUDGET.maxMessageBytes}B`)
     expect(html).toContain('Typed play, pause, seek, rate, and next frames stay compact')
+    expect(html).toContain('Retry count gate')
+    expect(html).toContain('Recovered retry count stays budgeted')
     expect(html).toContain('Retry byte gate')
     expect(html).toContain(
       `&lt;=${STREAMING_SITE_CONNECTION_BUDGET.maxRetransmissionByteRate * 100}%`
