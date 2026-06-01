@@ -16,6 +16,11 @@ const PLAYBACK_STATE_RETRY_TIMEOUT_MS = 15000
 const QUEUE_STATE_TIMEOUT_MS = 60000
 const RUNTIME_TEXT_TIMEOUT_MS = 30000
 const USE_BROADCAST_RTC_E2E = process.env.HONEYSTREAM_E2E_BROADCAST_RTC !== 'false'
+const CONNECTION_CONFIDENCE_SELECTOR =
+  '#runtime_connection_confidence[data-byte-loss-rate="0"]' +
+  '[data-tail-latency-ms-budget="10"][data-best-round-trip-ms="2"]' +
+  '[data-provider-count="4"][data-site-count="58"]' +
+  '[data-test-modes="broadcast+isolated-live"]'
 let runtimeVisitCounter = 0
 
 const STREAMING_SITE_E2E_SOURCES = [
@@ -202,6 +207,7 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
   await page.waitForSelector(
     '[data-merge-gate-metric="merge-command"][data-merge-gate-value="unit + dual e2e"]'
   )
+  await page.waitForSelector(CONNECTION_CONFIDENCE_SELECTOR)
   await waitForRuntimeText(
     page,
     'Live e2e mode runs cat-side and rabbit-side in separate browser contexts through the real connection flow'
@@ -210,6 +216,55 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
     page,
     'The default test command runs unit checks, broadcast e2e, and isolated live e2e before merge'
   )
+  await waitForRuntimeText(page, 'Connection confidence')
+  await waitForRuntimeText(page, 'Secret handshake')
+  await waitForRuntimeText(
+    page,
+    'Missing-secret guests fail before live WebRTC starts; valid invite links move both seats to Synced'
+  )
+  await waitForRuntimeText(page, 'Two isolated browsers')
+  await waitForRuntimeText(
+    page,
+    'Broadcast e2e and isolated live e2e both drive the same private invite flow'
+  )
+  await waitForRuntimeText(page, 'Zero-loss controls')
+  await waitForRuntimeText(
+    page,
+    'Every supported site lane requires 0B lost, 0 skipped controls, and both-way delivery'
+  )
+  await waitForRuntimeText(page, 'Under-10ms tail')
+  await waitForRuntimeText(page, 'Selected lanes stay under 10ms P95 with 2ms best mock round trips')
+  await waitForRuntimeText(page, 'Local website load')
+  await waitForRuntimeText(
+    page,
+    'YouTube, AnimePahe, Cineby, Miruro, and generic pages load locally'
+  )
+}
+
+function isConnectionAlert(message: string): boolean {
+  return /connection|invite secret|join|lobby|network|peer|protocol|sync|transport|webrtc/i.test(
+    message
+  )
+}
+
+async function expectNoRuntimeConnectionAlerts(page: Page): Promise<void> {
+  const alertMessages = await page.$$eval('[data-system-event-tone="alert"]', nodes =>
+    nodes.map(node => node.textContent || '')
+  )
+  const connectionAlerts = alertMessages.filter(isConnectionAlert)
+  expect(connectionAlerts).toEqual([])
+}
+
+async function expectHealthyTwoBrowserConnection(input: {
+  readonly clientPage: Page
+  readonly hostPage: Page
+}): Promise<void> {
+  await input.hostPage.waitForSelector('[data-session-state-tone="synced"]')
+  await input.clientPage.waitForSelector('[data-session-state-tone="synced"]')
+  await waitForStreamingMergeProof(input.hostPage)
+  await waitForStreamingMergeProof(input.clientPage)
+  await expectNoRuntimeConnectionAlerts(input.hostPage)
+  await expectNoRuntimeConnectionAlerts(input.clientPage)
 }
 
 function isTimeoutError(error: unknown): boolean {
@@ -310,6 +365,7 @@ describe('session', () => {
       await page.waitForSelector(
         '#runtime_merge_gate[data-zero-loss-required="true"][data-provider-count="4"][data-queue-byte-cap="262144"][data-trace-cap="64"]'
       )
+      await page.waitForSelector(CONNECTION_CONFIDENCE_SELECTOR)
       await page.waitForSelector('[data-merge-gate-metric="byte-loss"][data-merge-gate-value="0%"]')
       await page.waitForSelector('#runtime_launchpad')
       await page.waitForSelector('#runtime_concierge_strip')
@@ -377,6 +433,12 @@ describe('session', () => {
         page,
         'Two browser pages queue, pause, resume, seek, advance, and sync YouTube, AnimePahe, Cineby, and Miruro before merge'
       )
+      await waitForRuntimeText(page, 'Connection confidence')
+      await waitForRuntimeText(page, 'Secret handshake')
+      await waitForRuntimeText(page, 'Two isolated browsers')
+      await waitForRuntimeText(page, 'Zero-loss controls')
+      await waitForRuntimeText(page, 'Under-10ms tail')
+      await waitForRuntimeText(page, 'Local website load')
       await waitForRuntimeText(page, 'Two-browser gate')
       await waitForRuntimeText(page, 'isolated live mode')
       await waitForRuntimeText(
@@ -618,10 +680,7 @@ describe('session', () => {
       if (!USE_BROADCAST_RTC_E2E) {
         expect(clientPage.context()).not.toBe(hostPage.context())
       }
-      await hostPage.waitForSelector('[data-session-state-tone="synced"]')
-      await clientPage.waitForSelector('[data-session-state-tone="synced"]')
-      await waitForStreamingMergeProof(hostPage)
-      await waitForStreamingMergeProof(clientPage)
+      await expectHealthyTwoBrowserConnection({ clientPage, hostPage })
 
       await clientPage.fill('#runtime-add-media-url', 'youtube.com/watch?v=guest-e2e')
       await waitForRuntimeText(clientPage, 'Honeystream will add https:// automatically')
@@ -707,8 +766,7 @@ describe('session', () => {
         if (!USE_BROADCAST_RTC_E2E) {
           expect(clientPage.context()).not.toBe(hostPage.context())
         }
-        await waitForStreamingMergeProof(hostPage)
-        await waitForStreamingMergeProof(clientPage)
+        await expectHealthyTwoBrowserConnection({ clientPage, hostPage })
 
         for (let index = 0; index < STREAMING_SITE_E2E_SOURCES.length; index += 1) {
           const source = STREAMING_SITE_E2E_SOURCES[index]
@@ -739,8 +797,7 @@ describe('session', () => {
             controlPage: index % 2 === 0 ? hostPage : clientPage,
             hostPage
           })
-          await waitForStreamingMergeProof(hostPage)
-          await waitForStreamingMergeProof(clientPage)
+          await expectHealthyTwoBrowserConnection({ clientPage, hostPage })
         }
       },
       STREAMING_SITE_SESSION_E2E_TIMEOUT_MS
