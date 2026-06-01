@@ -471,7 +471,8 @@ const ROOM_MOOD_CHIPS = [
   `${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms lab round trip`,
   'Jitter-guarded frames',
   'Reliable retry guard',
-  'Observable trace cap'
+  'Observable trace cap',
+  'Happy sync glow'
 ] as const
 const PAIR_GUIDE_CARDS = [
   {

@@ -21,6 +21,7 @@
     "pretest:e2e": "yarn run build:signal-server",
     "test:e2e": "npm run test:clean && jest --runInBand --detectOpenHandles --verbose -c jest-e2e.config.js",
     "test:e2e:live": "cross-env HONEYSTREAM_E2E_BROADCAST_RTC=false npm run test:e2e",
+    "test:e2e:sync": "npm run test:e2e && npm run test:e2e:live",
     "test:watch": "jest --watch --runInBand --verbose"
   },
   "browserslist": "Chrome >= 73, Firefox >= 66",

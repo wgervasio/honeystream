@@ -272,6 +272,7 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('Jitter-guarded frames')
     expect(html).toContain('Reliable retry guard')
     expect(html).toContain('Observable trace cap')
+    expect(html).toContain('Happy sync glow')
     expect(html).toContain('Cozy command bar')
     expect(html).toContain('Best next tap')
     expect(html).toContain('id="runtime_readiness_meter"')

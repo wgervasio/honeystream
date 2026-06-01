@@ -160,10 +160,38 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
   )
   await page.waitForSelector('[data-merge-gate-metric="byte-loss"][data-merge-gate-value="0%"]')
   await page.waitForSelector(
+    '[data-merge-gate-metric="provider-lost-bytes"][data-merge-gate-value="0B"]'
+  )
+  await page.waitForSelector(
+    '[data-merge-gate-metric="two-way-delivery"][data-merge-gate-value="both ways"]'
+  )
+  await page.waitForSelector(
+    '[data-merge-gate-metric="tail-latency"][data-merge-gate-value="<=10ms P95"]'
+  )
+  await page.waitForSelector(
+    '[data-merge-gate-metric="directional-skew"][data-merge-gate-value="<=4ms skew"]'
+  )
+  await page.waitForSelector(
+    '[data-merge-gate-metric="payload-cap"][data-merge-gate-value="<=2048B"]'
+  )
+  await page.waitForSelector(
+    '[data-merge-gate-metric="queue-byte-pressure"][data-merge-gate-value="<=262144B"]'
+  )
+  await page.waitForSelector(
+    '[data-merge-gate-metric="retry-byte-overhead"][data-merge-gate-value="<=50%"]'
+  )
+  await page.waitForSelector(
+    '[data-merge-gate-metric="per-site-observation"][data-merge-gate-value="58 observed"]'
+  )
+  await page.waitForSelector(
     '[data-merge-gate-metric="browser-pair-matrix"][data-merge-gate-value="4 site lanes"]'
   )
   await page.waitForSelector(
     '[data-merge-gate-metric="browser-isolation"][data-merge-gate-value="isolated live mode"]'
+  )
+  await waitForRuntimeText(
+    page,
+    'Live e2e mode runs cat-side and rabbit-side in separate browser contexts through the real connection flow'
   )
 }
 
@@ -342,6 +370,7 @@ describe('session', () => {
       await waitForRuntimeText(page, '262144B queue cap')
       await waitForRuntimeText(page, 'Reliable retry guard')
       await waitForRuntimeText(page, 'Observable trace cap')
+      await waitForRuntimeText(page, 'Happy sync glow')
       await waitForRuntimeText(page, '2ms best mock RT')
       await waitForRuntimeText(page, '10ms lab round trip')
       await waitForRuntimeText(page, 'No skipped controls')
