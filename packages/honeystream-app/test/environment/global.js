@@ -1,4 +1,5 @@
 const { promises: fs } = require('fs')
+const childProcess = require('child_process')
 const net = require('net')
 const path = require('path')
 const { getServers, setup: setupServer, teardown: teardownServer } = require('jest-dev-server')
@@ -7,7 +8,7 @@ const { removeServerConfig, writeServerConfig } = require('./server-config')
 const DEFAULT_APP_PORT = '8080'
 const DEFAULT_SIGNAL_SERVER_PORT = '27064'
 const MAX_PORT_SEARCH_ATTEMPTS = 100
-const SERVER_LAUNCH_TIMEOUT_MS = 300e3
+const SERVER_LAUNCH_TIMEOUT_MS = Number(process.env.HONEYSTREAM_E2E_SERVER_TIMEOUT_MS || 600e3)
 const useExternalServers = process.env.HONEYSTREAM_E2E_EXTERNAL_SERVER === 'true'
 
 function parsePort(value, label) {
@@ -124,6 +125,21 @@ function destroyChildStream(stream) {
   }
 }
 
+function buildAppBundle() {
+  const result = childProcess.spawnSync(process.execPath, ['scripts/e2e-app-server.js', '--build-only'], {
+    cwd: path.join(__dirname, '../..'),
+    env: process.env,
+    stdio: 'inherit'
+  })
+
+  if (result.error) {
+    throw result.error
+  }
+  if (result.status !== 0) {
+    throw new Error(`E2E app bundle build failed with exit code ${result.status}.`)
+  }
+}
+
 async function setup(jestConfig = {}) {
   await fs.mkdir(path.join(__dirname, '../artifacts'), { recursive: true })
   removeServerConfig()
@@ -131,6 +147,11 @@ async function setup(jestConfig = {}) {
   if (!useExternalServers) {
     const config = await resolveServerConfig()
     writeServerConfig(config)
+    process.env.HOST = config.appHost
+    process.env.PUBLIC_HOST = config.appHost
+    process.env.PORT = config.appPort
+    process.env.HONEYSTREAM_E2E_LOCAL_RTC = 'true'
+    buildAppBundle()
 
     await setupServer([
       {
@@ -138,7 +159,7 @@ async function setup(jestConfig = {}) {
           config.appPort
         } HONEYSTREAM_SIGNAL_SERVER=${
           config.signalServerUrl
-        } HONEYSTREAM_E2E_LOCAL_RTC=true yarn start`,
+        } HONEYSTREAM_E2E_LOCAL_RTC=true HONEYSTREAM_E2E_SKIP_BUILD=true node scripts/e2e-app-server.js`,
         launchTimeout: SERVER_LAUNCH_TIMEOUT_MS,
         port: Number(config.appPort),
         usedPortAction: 'error',

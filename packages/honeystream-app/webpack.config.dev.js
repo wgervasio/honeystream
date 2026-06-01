@@ -12,14 +12,19 @@ const protocol = process.env.USE_HTTPS ? 'https' : 'http'
 const host = process.env.HOST || 'localhost'
 const publicHost = process.env.PUBLIC_HOST || host
 const publicPath = `${protocol}://${publicHost}:${port}/`
+const isE2ELocalRtcBuild = process.env.HONEYSTREAM_E2E_LOCAL_RTC === 'true'
 
 module.exports = merge.smart(baseConfig, {
-  devtool: 'inline-source-map',
+  devtool: isE2ELocalRtcBuild ? false : 'inline-source-map',
 
   entry: [
-    'react-hot-loader/patch',
-    `webpack-dev-server/client?${publicPath}`,
-    'webpack/hot/only-dev-server',
+    ...(isE2ELocalRtcBuild
+      ? []
+      : [
+          'react-hot-loader/patch',
+          `webpack-dev-server/client?${publicPath}`,
+          'webpack/hot/only-dev-server'
+        ]),
     path.join(__dirname, 'src/index.tsx')
   ],
 
@@ -64,10 +69,14 @@ module.exports = merge.smart(baseConfig, {
   },
 
   plugins: [
-    /**
-     * https://webpack.js.org/concepts/hot-module-replacement/
-     */
-    new webpack.HotModuleReplacementPlugin(),
+    ...(!isE2ELocalRtcBuild
+      ? [
+          /**
+           * https://webpack.js.org/concepts/hot-module-replacement/
+           */
+          new webpack.HotModuleReplacementPlugin()
+        ]
+      : []),
 
     new webpack.NoEmitOnErrorsPlugin(),
 
@@ -97,6 +106,8 @@ module.exports = merge.smart(baseConfig, {
     host,
     port,
     publicPath,
+    hot: !isE2ELocalRtcBuild,
+    inline: !isE2ELocalRtcBuild,
     // compress: true,
     // noInfo: true,
     // stats: 'errors-only',

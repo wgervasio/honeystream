@@ -1,4 +1,4 @@
-import { Page, Browser, BrowserContext } from 'playwright-chromium'
+import { Page, Browser, BrowserContext } from 'playwright-core'
 
 interface HoneystreamTestUtils {
   screenshot: (filename: string, page?: Page) => Promise<void>
@@ -8,5 +8,8 @@ interface HoneystreamTestUtils {
 }
 
 declare global {
+  const browser: Browser
+  const context: BrowserContext
   const ms: HoneystreamTestUtils
+  const page: Page
 }

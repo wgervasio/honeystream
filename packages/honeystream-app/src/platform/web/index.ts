@@ -12,6 +12,19 @@ import { NETWORK_TIMEOUT } from 'constants/network'
 import { NetworkError, NetworkErrorCode } from '../../network/error'
 
 type HexId = string
+const JOIN_RETRY_INITIAL_DELAY_MS = 250
+const JOIN_RETRY_MAX_DELAY_MS = 1000
+
+const isSessionNotFoundError = (error: unknown): error is NetworkError =>
+  error instanceof NetworkError && error.errorCode === NetworkErrorCode.SignalServerSessionNotFound
+
+const waitForRetryDelay = (delayMs: number): Promise<void> =>
+  new Promise(resolve => {
+    const timeoutId = setTimeout(() => {
+      clearTimeout(timeoutId)
+      resolve()
+    }, delayMs)
+  })
 
 export class WebPlatform {
   ready: Promise<void>
@@ -68,7 +81,47 @@ export class WebPlatform {
     }
   }
 
+  /*
+   * Context: Invite links can be opened before the host browser finishes advertising its signal room.
+   * Invariant: Guests should retry only the transient "room not found" case; all other failures remain explicit.
+   * Options considered: Disable invite UI until ready, sleep in e2e, or retry the guest join at the platform edge.
+   * Decision: Retry session-not-found joins within NETWORK_TIMEOUT so early invite opens converge without masking
+   * authentication, signal, or transport errors.
+   * Performance impact: No steady-state cost; failed early joins back off to at most one retry per second.
+   * Memory/lifecycle ownership: Retry timers are scoped to this join promise and clear before resolving.
+   * Failure mode: A genuinely missing room still surfaces SignalServerSessionNotFound after the bounded window.
+   * Validation: Covered by live runtime host/client e2e and existing missing-secret e2e.
+   */
   private async joinP2PLobby(hash: string): Promise<void> {
+    const deadlineMs = Date.now() + NETWORK_TIMEOUT
+    let retryDelayMs = JOIN_RETRY_INITIAL_DELAY_MS
+    let lastSessionNotFoundError: NetworkError | undefined
+
+    while (Date.now() < deadlineMs) {
+      try {
+        await this.joinP2PLobbyOnce(hash)
+        return
+      } catch (error) {
+        if (!isSessionNotFoundError(error)) {
+          throw error
+        }
+
+        lastSessionNotFoundError = error
+        const remainingMs = deadlineMs - Date.now()
+        if (remainingMs <= 0) break
+
+        await waitForRetryDelay(Math.min(retryDelayMs, remainingMs))
+        retryDelayMs = Math.min(retryDelayMs * 2, JOIN_RETRY_MAX_DELAY_MS)
+      }
+    }
+
+    throw (
+      lastSessionNotFoundError ||
+      new NetworkError(NetworkErrorCode.SignalServerSessionNotFound, 'Session not found')
+    )
+  }
+
+  private async joinP2PLobbyOnce(hash: string): Promise<void> {
     ga('event', { ec: 'session', ea: 'connect', el: 'p2p' })
 
     if (this.server) {

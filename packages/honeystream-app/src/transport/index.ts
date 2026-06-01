@@ -14,6 +14,7 @@ export type {
 } from './webrtc'
 export * from './legacy-net'
 export * from './connection-state'
+export * from './broadcast-channel-peer-transport'
 export * from './contracts'
 export * from './in-memory-peer-transport'
 export * from './in-memory-peer-transport-metrics'
