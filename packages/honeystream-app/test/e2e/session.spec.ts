@@ -637,7 +637,6 @@ describe('session', () => {
       for (let index = 0; index < STREAMING_SITE_E2E_SOURCES.length; index += 1) {
         const source = STREAMING_SITE_E2E_SOURCES[index]
         const addingPage = index % 2 === 0 ? clientPage : hostPage
-        const advancingPage = index % 2 === 0 ? hostPage : clientPage
 
         await addingPage.fill('#runtime-add-media-url', source.url)
         await waitForRuntimeText(addingPage, 'Honeystream will add https:// automatically')
@@ -649,10 +648,10 @@ describe('session', () => {
         if (index > 0) {
           await waitForQueuedItemTitle(hostPage, source.title)
           await waitForQueuedItemTitle(clientPage, source.title)
-          await advancingPage.waitForSelector(
+          await hostPage.waitForSelector(
             '#runtime_playback_controls [data-intent="next"]:not([disabled])'
           )
-          await advancingPage.click('#runtime_playback_controls [data-intent="next"]')
+          await hostPage.click('#runtime_playback_controls [data-intent="next"]')
         }
 
         await waitForCurrentQueueTitle(hostPage, source.title)
