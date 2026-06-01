@@ -437,7 +437,7 @@ const MERGE_GATE_METRICS = [
     label: 'Two-browser gate',
     value: 'isolated live mode',
     detail:
-      'Live e2e mode runs cat-side and rabbit-side in separate browser contexts through the real connection flow.'
+      'Live e2e mode runs cat-side and rabbit-side in separate browser processes through the real connection flow.'
   },
   {
     id: 'merge-command',

@@ -1,7 +1,11 @@
-import { Page, BrowserContext } from 'playwright-core'
+import { Browser, Page, BrowserContext, chromium } from 'playwright-core'
 
 const { getAppBaseUrl } = require('../environment/server-config') as {
   getAppBaseUrl(): string
+}
+const playwrightConfig = require('../../jest-playwright.config') as {
+  readonly context?: Parameters<Browser['newContext']>[0]
+  readonly launchBrowserApp?: Parameters<typeof chromium.launch>[0]
 }
 
 const RUNTIME_SHELL_SELECTOR = '[data-runtime-session-shell="true"]'
@@ -11,6 +15,8 @@ const APP_READY_OPTIONS = { waitUntil: 'domcontentloaded' as const }
 const PLAYBACK_POSITION_SELECTOR = '#runtime_playback_controls [data-intent="positionMs"]'
 const PLAYBACK_PLAY_PAUSE_SELECTOR = '#runtime_playback_controls [data-intent="playPause"]'
 const SEEK_FORWARD_STEP_MS = 10000
+const PLAYBACK_SYNC_TOLERANCE_MS = 750
+const PLAYBACK_SYNC_ASSERTION_TIMEOUT_MS = 15000
 const PLAYBACK_STATE_RETRY_COUNT = 3
 const PLAYBACK_STATE_RETRY_TIMEOUT_MS = 15000
 const QUEUE_STATE_TIMEOUT_MS = 60000
@@ -103,6 +109,35 @@ async function getPlaybackPositionMs(page: Page): Promise<number> {
   }
 
   return positionMs
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+async function expectPlaybackPositionsSynced(input: {
+  readonly clientPage: Page
+  readonly hostPage: Page
+  readonly label: string
+}): Promise<void> {
+  const startedAtMs = Date.now()
+  let lastClientPositionMs = 0
+  let lastHostPositionMs = 0
+
+  while (Date.now() - startedAtMs < PLAYBACK_SYNC_ASSERTION_TIMEOUT_MS) {
+    lastHostPositionMs = await getPlaybackPositionMs(input.hostPage)
+    lastClientPositionMs = await getPlaybackPositionMs(input.clientPage)
+    if (Math.abs(lastHostPositionMs - lastClientPositionMs) <= PLAYBACK_SYNC_TOLERANCE_MS) {
+      return
+    }
+    await delay(250)
+  }
+
+  throw new Error(
+    `Expected playback positions to stay within ${PLAYBACK_SYNC_TOLERANCE_MS}ms for ${
+      input.label
+    }. Last host=${lastHostPositionMs}ms client=${lastClientPositionMs}ms.`
+  )
 }
 
 async function getRuntimePlaybackState(
@@ -219,7 +254,7 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
   await page.waitForSelector(CONNECTION_CONFIDENCE_SELECTOR)
   await waitForRuntimeText(
     page,
-    'Live e2e mode runs cat-side and rabbit-side in separate browser contexts through the real connection flow'
+    'Live e2e mode runs cat-side and rabbit-side in separate browser processes through the real connection flow'
   )
   await waitForRuntimeText(
     page,
@@ -306,6 +341,18 @@ async function expectHealthyTwoBrowserConnection(input: {
   await expectNoRuntimeConnectionAlerts(input.clientPage)
 }
 
+function expectLiveBrowserIsolation(input: {
+  readonly clientBrowser: Browser | undefined
+  readonly clientPage: Page
+  readonly hostPage: Page
+}): void {
+  if (USE_BROADCAST_RTC_E2E) return
+
+  expect(input.clientBrowser).toBeDefined()
+  expect(input.clientBrowser).not.toBe(browser)
+  expect(input.clientPage.context()).not.toBe(input.hostPage.context())
+}
+
 function isTimeoutError(error: unknown): boolean {
   if (error instanceof Error) {
     return /timeout/i.test(error.message)
@@ -363,16 +410,31 @@ async function exerciseTwoBrowserPlaybackControls(input: {
   await clickPlayPauseAndWaitForState(input.controlPage, 'paused')
   await waitForPlaybackState(input.hostPage, 'paused')
   await waitForPlaybackState(input.clientPage, 'paused')
+  await expectPlaybackPositionsSynced({
+    clientPage: input.clientPage,
+    hostPage: input.hostPage,
+    label: 'two-browser pause control'
+  })
 
   await clickPlayPauseAndWaitForState(input.controlPage, 'playing')
   await waitForPlaybackState(input.hostPage, 'playing')
   await waitForPlaybackState(input.clientPage, 'playing')
+  await expectPlaybackPositionsSynced({
+    clientPage: input.clientPage,
+    hostPage: input.hostPage,
+    label: 'two-browser resume control'
+  })
 
   const expectedSeekPositionMs =
     (await getPlaybackPositionMs(input.controlPage)) + SEEK_FORWARD_STEP_MS
   await input.controlPage.click('#runtime_playback_controls [data-intent="seekForward"]')
   await waitForPlaybackPositionAtLeast(input.hostPage, expectedSeekPositionMs)
   await waitForPlaybackPositionAtLeast(input.clientPage, expectedSeekPositionMs)
+  await expectPlaybackPositionsSynced({
+    clientPage: input.clientPage,
+    hostPage: input.hostPage,
+    label: 'two-browser seek control'
+  })
 }
 
 async function visitRuntimePath(page: Page, path: string): Promise<void> {
@@ -491,7 +553,7 @@ describe('session', () => {
       await waitForRuntimeText(page, 'isolated live mode')
       await waitForRuntimeText(
         page,
-        'Live e2e mode runs cat-side and rabbit-side in separate browser contexts through the real connection flow'
+        'Live e2e mode runs cat-side and rabbit-side in separate browser processes through the real connection flow'
       )
       await waitForRuntimeText(page, 'Browser sync receipt')
       await waitForRuntimeText(page, 'Waiting for two seats')
@@ -702,20 +764,36 @@ describe('session', () => {
   })
 
   describe('p2p: host + client', () => {
+    let clientBrowser: Browser | undefined
     let clientContext: BrowserContext | undefined
     let clientPage: Page
     let shouldCloseClientContext = false
 
     beforeEach(async () => {
+      clientBrowser = undefined
       shouldCloseClientContext = !USE_BROADCAST_RTC_E2E
-      clientContext = shouldCloseClientContext ? await browser.newContext() : context
+      if (shouldCloseClientContext) {
+        clientBrowser = await chromium.launch(playwrightConfig.launchBrowserApp || {})
+        clientContext = await clientBrowser.newContext(playwrightConfig.context || {})
+      } else {
+        clientContext = context
+      }
       clientPage = await clientContext.newPage()
     })
 
     afterEach(async () => {
-      await clientPage.close()
-      if (clientContext && shouldCloseClientContext) {
-        await clientContext.close()
+      try {
+        await clientPage.close()
+      } finally {
+        try {
+          if (clientContext && shouldCloseClientContext) {
+            await clientContext.close()
+          }
+        } finally {
+          if (clientBrowser) {
+            await clientBrowser.close()
+          }
+        }
       }
     })
 
@@ -750,9 +828,7 @@ describe('session', () => {
       await clientPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
       await waitForRuntimeText(hostPage, 'Synced')
       await waitForRuntimeText(clientPage, 'Synced')
-      if (!USE_BROADCAST_RTC_E2E) {
-        expect(clientPage.context()).not.toBe(hostPage.context())
-      }
+      expectLiveBrowserIsolation({ clientBrowser, clientPage, hostPage })
       await expectHealthyTwoBrowserConnection({ clientPage, hostPage })
 
       await clientPage.fill('#runtime-add-media-url', 'youtube.com/watch?v=guest-e2e')
@@ -774,10 +850,20 @@ describe('session', () => {
       )
       await waitForPlaybackState(hostPage, 'playing')
       await waitForPlaybackState(clientPage, 'playing')
+      await expectPlaybackPositionsSynced({
+        clientPage,
+        hostPage,
+        label: 'guest queued YouTube playback'
+      })
 
       await clickPlayPauseAndWaitForState(clientPage, 'paused')
       await waitForPlaybackState(hostPage, 'paused')
       await waitForPlaybackState(clientPage, 'paused')
+      await expectPlaybackPositionsSynced({
+        clientPage,
+        hostPage,
+        label: 'guest pause'
+      })
 
       await clientPage.click('#runtime_playback_controls [data-intent="rateUp"]')
       await waitForRuntimeText(hostPage, '1.25x')
@@ -788,6 +874,11 @@ describe('session', () => {
       await clientPage.click('#runtime_playback_controls [data-intent="seekForward"]')
       await waitForPlaybackPositionAtLeast(hostPage, expectedGuestSeekPositionMs)
       await waitForPlaybackPositionAtLeast(clientPage, expectedGuestSeekPositionMs)
+      await expectPlaybackPositionsSynced({
+        clientPage,
+        hostPage,
+        label: 'guest seek'
+      })
 
       await hostPage.fill('#runtime-add-media-url', 'youtube.com/watch?v=host-e2e')
       await waitForRuntimeText(hostPage, 'Honeystream will add https:// automatically')
@@ -804,10 +895,20 @@ describe('session', () => {
       await waitForRuntimeText(clientPage, 'YouTube watch page')
       await waitForPlaybackState(hostPage, 'playing')
       await waitForPlaybackState(clientPage, 'playing')
+      await expectPlaybackPositionsSynced({
+        clientPage,
+        hostPage,
+        label: 'host advanced YouTube playback'
+      })
 
       await clickPlayPauseAndWaitForState(hostPage, 'paused')
       await waitForPlaybackState(hostPage, 'paused')
       await waitForPlaybackState(clientPage, 'paused')
+      await expectPlaybackPositionsSynced({
+        clientPage,
+        hostPage,
+        label: 'host pause'
+      })
 
       await hostPage.click('#runtime_playback_controls [data-intent="rateUp"]')
       await waitForRuntimeText(hostPage, '1.25x')
@@ -818,6 +919,11 @@ describe('session', () => {
       await hostPage.click('#runtime_playback_controls [data-intent="seekForward"]')
       await waitForPlaybackPositionAtLeast(hostPage, expectedHostSeekPositionMs)
       await waitForPlaybackPositionAtLeast(clientPage, expectedHostSeekPositionMs)
+      await expectPlaybackPositionsSynced({
+        clientPage,
+        hostPage,
+        label: 'host seek'
+      })
     })
 
     it(
@@ -836,9 +942,7 @@ describe('session', () => {
         await clientPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
         await waitForRuntimeText(hostPage, 'Synced')
         await waitForRuntimeText(clientPage, 'Synced')
-        if (!USE_BROADCAST_RTC_E2E) {
-          expect(clientPage.context()).not.toBe(hostPage.context())
-        }
+        expectLiveBrowserIsolation({ clientBrowser, clientPage, hostPage })
         await expectHealthyTwoBrowserConnection({ clientPage, hostPage })
 
         for (let index = 0; index < STREAMING_SITE_E2E_SOURCES.length; index += 1) {
@@ -865,6 +969,11 @@ describe('session', () => {
           await waitForCurrentQueueTitle(clientPage, source.title)
           await waitForPlaybackState(hostPage, 'playing')
           await waitForPlaybackState(clientPage, 'playing')
+          await expectPlaybackPositionsSynced({
+            clientPage,
+            hostPage,
+            label: `${source.title} playing`
+          })
           await exerciseTwoBrowserPlaybackControls({
             clientPage,
             controlPage: index % 2 === 0 ? hostPage : clientPage,
