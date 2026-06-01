@@ -417,6 +417,13 @@ const MERGE_GATE_METRICS = [
       'skipped-control, directional-skew, and latency proof.'
   },
   {
+    id: 'browser-pair-matrix',
+    label: 'Buddy e2e gate',
+    value: `${STREAMING_SITE_NAMED_PROVIDER_COUNT} site lanes`,
+    detail:
+      'Two browser pages queue, advance, and sync YouTube, AnimePahe, Cineby, and Miruro before merge.'
+  },
+  {
     id: 'trace-cap',
     label: 'Trace gate',
     value: '64 recent frames',

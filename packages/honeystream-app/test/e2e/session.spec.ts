@@ -15,6 +15,29 @@ const PLAYBACK_STATE_RETRY_TIMEOUT_MS = 5000
 const RUNTIME_TEXT_TIMEOUT_MS = 30000
 let runtimeVisitCounter = 0
 
+const STREAMING_SITE_E2E_SOURCES = [
+  {
+    url: 'youtube.com/watch?v=two-browser-youtube',
+    title: 'YouTube watch page',
+    provider: 'YouTube'
+  },
+  {
+    url: 'animepahe.ru/play/two-browser-animepahe',
+    title: 'AnimePahe watch page',
+    provider: 'AnimePahe'
+  },
+  {
+    url: 'cineby.app/movie/two-browser-cineby',
+    title: 'Cineby watch page',
+    provider: 'Cineby'
+  },
+  {
+    url: 'miruro.to/watch/two-browser-miruro',
+    title: 'Miruro watch page',
+    provider: 'Miruro'
+  }
+] as const
+
 jest.setTimeout(SESSION_E2E_TIMEOUT_MS)
 
 async function getRuntimeInviteSecret(page: Page): Promise<string> {
@@ -106,6 +129,20 @@ async function waitForCurrentQueueTitle(page: Page, title: string): Promise<void
         currentTitle.textContent.indexOf(expectedTitle) !== -1
     )
   }, title)
+}
+
+async function waitForStreamingMergeProof(page: Page): Promise<void> {
+  await page.waitForSelector('[data-streaming-proof="byte-loss"][data-byte-loss-rate="0"]')
+  await page.waitForSelector(
+    '#runtime_connection_lab_proof[data-site-count="58"][data-trial-count="3"]'
+  )
+  await page.waitForSelector(
+    '#runtime_merge_gate[data-zero-loss-required="true"][data-provider-count="4"][data-queue-byte-cap="262144"][data-trace-cap="64"]'
+  )
+  await page.waitForSelector('[data-merge-gate-metric="byte-loss"][data-merge-gate-value="0%"]')
+  await page.waitForSelector(
+    '[data-merge-gate-metric="browser-pair-matrix"][data-merge-gate-value="4 site lanes"]'
+  )
 }
 
 function isTimeoutError(error: unknown): boolean {
@@ -240,6 +277,12 @@ describe('session', () => {
       await waitForRuntimeText(page, '58 sites')
       await waitForRuntimeText(page, 'Provider gate')
       await waitForRuntimeText(page, '4 providers')
+      await waitForRuntimeText(page, 'Buddy e2e gate')
+      await waitForRuntimeText(page, '4 site lanes')
+      await waitForRuntimeText(
+        page,
+        'Two browser pages queue, advance, and sync YouTube, AnimePahe, Cineby, and Miruro before merge'
+      )
       await waitForRuntimeText(page, 'Trace gate')
       await waitForRuntimeText(page, '64 recent frames')
       await waitForRuntimeText(page, 'bounded sent, received, state, and error observations')
@@ -467,6 +510,8 @@ describe('session', () => {
       await waitForRuntimeText(clientPage, 'Synced')
       await hostPage.waitForSelector('[data-session-state-tone="synced"]')
       await clientPage.waitForSelector('[data-session-state-tone="synced"]')
+      await waitForStreamingMergeProof(hostPage)
+      await waitForStreamingMergeProof(clientPage)
 
       await clientPage.fill('#runtime-add-media-url', 'youtube.com/watch?v=guest-e2e')
       await waitForRuntimeText(clientPage, 'Honeystream will add https:// automatically')
@@ -531,6 +576,51 @@ describe('session', () => {
       await hostPage.click('#runtime_playback_controls [data-intent="seekForward"]')
       await waitForPlaybackPositionAtLeast(hostPage, expectedHostSeekPositionMs)
       await waitForPlaybackPositionAtLeast(clientPage, expectedHostSeekPositionMs)
+    })
+
+    it('should sync host and guest browser pages across supported streaming-site lanes', async () => {
+      await ms.visit(`/join/${hostId}`)
+      const hostPage = page
+      await hostPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
+      const inviteSecret = await getRuntimeInviteSecret(hostPage)
+
+      await ms.setProfile('clientA', clientPage)
+      await visitRuntimePath(
+        clientPage,
+        `/join/${hostId}?secret=${encodeURIComponent(inviteSecret)}`
+      )
+      await clientPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
+      await waitForRuntimeText(hostPage, 'Synced')
+      await waitForRuntimeText(clientPage, 'Synced')
+      await waitForStreamingMergeProof(hostPage)
+      await waitForStreamingMergeProof(clientPage)
+
+      for (let index = 0; index < STREAMING_SITE_E2E_SOURCES.length; index += 1) {
+        const source = STREAMING_SITE_E2E_SOURCES[index]
+        const addingPage = index % 2 === 0 ? clientPage : hostPage
+        const advancingPage = index % 2 === 0 ? hostPage : clientPage
+
+        await addingPage.fill('#runtime-add-media-url', source.url)
+        await waitForRuntimeText(addingPage, 'Honeystream will add https:// automatically')
+        await addingPage.press('#runtime-add-media-url', 'Enter')
+        await waitForRuntimeText(addingPage, 'Media added with https:// filled in')
+        await waitForRuntimeText(hostPage, `${source.provider} watch page`)
+        await waitForRuntimeText(clientPage, `${source.provider} watch page`)
+
+        if (index > 0) {
+          await advancingPage.waitForSelector(
+            '#runtime_playback_controls [data-intent="next"]:not([disabled])'
+          )
+          await advancingPage.click('#runtime_playback_controls [data-intent="next"]')
+        }
+
+        await waitForCurrentQueueTitle(hostPage, source.title)
+        await waitForCurrentQueueTitle(clientPage, source.title)
+        await waitForPlaybackState(hostPage, 'playing')
+        await waitForPlaybackState(clientPage, 'playing')
+        await waitForStreamingMergeProof(hostPage)
+        await waitForStreamingMergeProof(clientPage)
+      }
     })
   })
 })

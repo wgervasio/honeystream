@@ -253,6 +253,12 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain(
       'YouTube, AnimePahe, Cineby, and Miruro each keep their own multi-fixture loss, retry, skipped-control, directional-skew, and latency proof'
     )
+    expect(html).toContain('Buddy e2e gate')
+    expect(html).toContain('4 site lanes')
+    expect(html).toContain(
+      'Two browser pages queue, advance, and sync YouTube, AnimePahe, Cineby, and Miruro before merge'
+    )
+    expect(html).toContain('data-merge-gate-metric="browser-pair-matrix"')
     expect(html).toContain('Trace gate')
     expect(html).toContain('64 recent frames')
     expect(html).toContain('bounded sent, received, state, and error observations')
