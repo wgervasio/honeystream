@@ -36,11 +36,6 @@ const STREAMING_SITE_E2E_SOURCES = [
     url: 'miruro.to/watch/two-browser-miruro',
     title: 'Miruro watch page',
     provider: 'Miruro'
-  },
-  {
-    url: 'youtu.be/two-browser-short-hop',
-    title: 'YouTube watch page',
-    provider: 'YouTube'
   }
 ] as const
 
@@ -371,6 +366,11 @@ describe('session', () => {
         { url: 'youtube.com', label: 'YouTube', provider: 'youtube' },
         {
           url: 'youtube.com/watch?v=honeystream-e2e',
+          label: 'YouTube',
+          provider: 'youtube'
+        },
+        {
+          url: 'youtu.be/honeystream-e2e',
           label: 'YouTube',
           provider: 'youtube'
         },
