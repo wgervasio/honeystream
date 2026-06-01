@@ -431,6 +431,13 @@ const MERGE_GATE_METRICS = [
       'Live e2e mode runs cat-side and rabbit-side in separate browser contexts through the real connection flow.'
   },
   {
+    id: 'merge-command',
+    label: 'Merge command',
+    value: 'unit + dual e2e',
+    detail:
+      'The default test command runs unit checks, broadcast e2e, and isolated live e2e before merge.'
+  },
+  {
     id: 'trace-cap',
     label: 'Trace gate',
     value: '64 recent frames',
@@ -472,6 +479,7 @@ const ROOM_MOOD_CHIPS = [
   'Jitter-guarded frames',
   'Reliable retry guard',
   'Observable trace cap',
+  'Merge-ready e2e',
   'Happy sync glow'
 ] as const
 const PAIR_GUIDE_CARDS = [

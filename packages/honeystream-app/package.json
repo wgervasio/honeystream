@@ -14,7 +14,7 @@
     "start:https": "node scripts/with-legacy-openssl.js cross-env NODE_ENV=development USE_HTTPS=1 webpack-dev-server --config webpack.config.dev.js",
     "start:firefox": "node scripts/with-legacy-openssl.js cross-env PORT=80 NODE_ENV=development webpack-dev-server --config webpack.config.dev.js",
     "start:signal-server": "node scripts/signal-server.js",
-    "test": "npm run test:unit && npm run test:e2e",
+    "test": "npm run test:unit && npm run test:e2e:sync",
     "test:clean": "del-cli \"./test/artifacts/*\"",
     "pretest:unit": "yarn run build:signal-server",
     "test:unit": "jest --runInBand --verbose",

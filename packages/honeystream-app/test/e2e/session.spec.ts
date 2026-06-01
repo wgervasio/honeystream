@@ -199,9 +199,16 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
   await page.waitForSelector(
     '[data-merge-gate-metric="browser-isolation"][data-merge-gate-value="isolated live mode"]'
   )
+  await page.waitForSelector(
+    '[data-merge-gate-metric="merge-command"][data-merge-gate-value="unit + dual e2e"]'
+  )
   await waitForRuntimeText(
     page,
     'Live e2e mode runs cat-side and rabbit-side in separate browser contexts through the real connection flow'
+  )
+  await waitForRuntimeText(
+    page,
+    'The default test command runs unit checks, broadcast e2e, and isolated live e2e before merge'
   )
 }
 
@@ -407,6 +414,7 @@ describe('session', () => {
       await waitForRuntimeText(page, '262144B queue cap')
       await waitForRuntimeText(page, 'Reliable retry guard')
       await waitForRuntimeText(page, 'Observable trace cap')
+      await waitForRuntimeText(page, 'Merge-ready e2e')
       await waitForRuntimeText(page, 'Happy sync glow')
       await waitForRuntimeText(page, '2ms best mock RT')
       await waitForRuntimeText(page, '10ms lab round trip')
