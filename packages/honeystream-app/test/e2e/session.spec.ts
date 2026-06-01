@@ -6,12 +6,13 @@ const { getAppBaseUrl } = require('../environment/server-config') as {
 
 const RUNTIME_SHELL_SELECTOR = '[data-runtime-session-shell="true"]'
 const SESSION_E2E_TIMEOUT_MS = 180e3
+const STREAMING_SITE_SESSION_E2E_TIMEOUT_MS = 360e3
 const APP_READY_OPTIONS = { waitUntil: 'domcontentloaded' as const }
 const PLAYBACK_POSITION_SELECTOR = '#runtime_playback_controls [data-intent="positionMs"]'
 const PLAYBACK_PLAY_PAUSE_SELECTOR = '#runtime_playback_controls [data-intent="playPause"]'
 const SEEK_FORWARD_STEP_MS = 10000
 const PLAYBACK_STATE_RETRY_COUNT = 3
-const PLAYBACK_STATE_RETRY_TIMEOUT_MS = 5000
+const PLAYBACK_STATE_RETRY_TIMEOUT_MS = 15000
 const QUEUE_STATE_TIMEOUT_MS = 60000
 const RUNTIME_TEXT_TIMEOUT_MS = 30000
 const USE_BROADCAST_RTC_E2E = process.env.HONEYSTREAM_E2E_BROADCAST_RTC !== 'false'
@@ -88,6 +89,15 @@ async function getPlaybackPositionMs(page: Page): Promise<number> {
   }
 
   return positionMs
+}
+
+async function getRuntimePlaybackState(
+  page: Page
+): Promise<'idle' | 'playing' | 'paused' | undefined> {
+  const state = await page.$eval('#runtime_playback_controls', element =>
+    element.getAttribute('data-playback-state')
+  )
+  return state === 'idle' || state === 'playing' || state === 'paused' ? state : undefined
 }
 
 async function waitForPlaybackPositionAtLeast(
@@ -220,6 +230,10 @@ async function clickPlayPauseAndWaitForState(
 ): Promise<void> {
   let lastTimeout: Error | undefined
   for (let attempt = 0; attempt < PLAYBACK_STATE_RETRY_COUNT; attempt += 1) {
+    if ((await getRuntimePlaybackState(page)) === state) {
+      return
+    }
+
     await page.waitForSelector(`${PLAYBACK_PLAY_PAUSE_SELECTOR}:not([disabled])`)
     await page.click(PLAYBACK_PLAY_PAUSE_SELECTOR)
     try {
@@ -227,11 +241,34 @@ async function clickPlayPauseAndWaitForState(
       return
     } catch (error) {
       if (!isTimeoutError(error) || !(error instanceof Error)) throw error
+      if ((await getRuntimePlaybackState(page)) === state) {
+        return
+      }
       lastTimeout = error
     }
   }
 
   throw lastTimeout || new Error(`Playback did not become ${state}.`)
+}
+
+async function exerciseTwoBrowserPlaybackControls(input: {
+  readonly clientPage: Page
+  readonly controlPage: Page
+  readonly hostPage: Page
+}): Promise<void> {
+  await clickPlayPauseAndWaitForState(input.controlPage, 'paused')
+  await waitForPlaybackState(input.hostPage, 'paused')
+  await waitForPlaybackState(input.clientPage, 'paused')
+
+  await clickPlayPauseAndWaitForState(input.controlPage, 'playing')
+  await waitForPlaybackState(input.hostPage, 'playing')
+  await waitForPlaybackState(input.clientPage, 'playing')
+
+  const expectedSeekPositionMs =
+    (await getPlaybackPositionMs(input.controlPage)) + SEEK_FORWARD_STEP_MS
+  await input.controlPage.click('#runtime_playback_controls [data-intent="seekForward"]')
+  await waitForPlaybackPositionAtLeast(input.hostPage, expectedSeekPositionMs)
+  await waitForPlaybackPositionAtLeast(input.clientPage, expectedSeekPositionMs)
 }
 
 async function visitRuntimePath(page: Page, path: string): Promise<void> {
@@ -331,7 +368,7 @@ describe('session', () => {
       await waitForRuntimeText(page, '4 site lanes')
       await waitForRuntimeText(
         page,
-        'Two browser pages queue, advance, and sync YouTube, AnimePahe, Cineby, and Miruro before merge'
+        'Two browser pages queue, pause, resume, seek, advance, and sync YouTube, AnimePahe, Cineby, and Miruro before merge'
       )
       await waitForRuntimeText(page, 'Two-browser gate')
       await waitForRuntimeText(page, 'isolated live mode')
@@ -643,53 +680,62 @@ describe('session', () => {
       await waitForPlaybackPositionAtLeast(clientPage, expectedHostSeekPositionMs)
     })
 
-    it('should sync host and guest browser pages across supported streaming-site lanes', async () => {
-      await ms.visit(`/join/${hostId}`)
-      const hostPage = page
-      await hostPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
-      const inviteSecret = await getRuntimeInviteSecret(hostPage)
+    it(
+      'should sync host and guest browser pages across supported streaming-site lanes',
+      async () => {
+        await ms.visit(`/join/${hostId}`)
+        const hostPage = page
+        await hostPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
+        const inviteSecret = await getRuntimeInviteSecret(hostPage)
 
-      await ms.setProfile('clientA', clientPage)
-      await visitRuntimePath(
-        clientPage,
-        `/join/${hostId}?secret=${encodeURIComponent(inviteSecret)}`
-      )
-      await clientPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
-      await waitForRuntimeText(hostPage, 'Synced')
-      await waitForRuntimeText(clientPage, 'Synced')
-      if (!USE_BROADCAST_RTC_E2E) {
-        expect(clientPage.context()).not.toBe(hostPage.context())
-      }
-      await waitForStreamingMergeProof(hostPage)
-      await waitForStreamingMergeProof(clientPage)
-
-      for (let index = 0; index < STREAMING_SITE_E2E_SOURCES.length; index += 1) {
-        const source = STREAMING_SITE_E2E_SOURCES[index]
-        const addingPage = index % 2 === 0 ? clientPage : hostPage
-
-        await addingPage.fill('#runtime-add-media-url', source.url)
-        await waitForRuntimeText(addingPage, 'Honeystream will add https:// automatically')
-        await addingPage.press('#runtime-add-media-url', 'Enter')
-        await waitForRuntimeText(addingPage, 'Media added with https:// filled in')
-        await waitForRuntimeText(hostPage, `${source.provider} watch page`)
-        await waitForRuntimeText(clientPage, `${source.provider} watch page`)
-
-        if (index > 0) {
-          await waitForQueuedItemTitle(hostPage, source.title)
-          await waitForQueuedItemTitle(clientPage, source.title)
-          await hostPage.waitForSelector(
-            '#runtime_playback_controls [data-intent="next"]:not([disabled])'
-          )
-          await hostPage.click('#runtime_playback_controls [data-intent="next"]')
+        await ms.setProfile('clientA', clientPage)
+        await visitRuntimePath(
+          clientPage,
+          `/join/${hostId}?secret=${encodeURIComponent(inviteSecret)}`
+        )
+        await clientPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
+        await waitForRuntimeText(hostPage, 'Synced')
+        await waitForRuntimeText(clientPage, 'Synced')
+        if (!USE_BROADCAST_RTC_E2E) {
+          expect(clientPage.context()).not.toBe(hostPage.context())
         }
-
-        await waitForCurrentQueueTitle(hostPage, source.title)
-        await waitForCurrentQueueTitle(clientPage, source.title)
-        await waitForPlaybackState(hostPage, 'playing')
-        await waitForPlaybackState(clientPage, 'playing')
         await waitForStreamingMergeProof(hostPage)
         await waitForStreamingMergeProof(clientPage)
-      }
-    })
+
+        for (let index = 0; index < STREAMING_SITE_E2E_SOURCES.length; index += 1) {
+          const source = STREAMING_SITE_E2E_SOURCES[index]
+          const addingPage = index % 2 === 0 ? clientPage : hostPage
+
+          await addingPage.fill('#runtime-add-media-url', source.url)
+          await waitForRuntimeText(addingPage, 'Honeystream will add https:// automatically')
+          await addingPage.press('#runtime-add-media-url', 'Enter')
+          await waitForRuntimeText(addingPage, 'Media added with https:// filled in')
+          await waitForRuntimeText(hostPage, `${source.provider} watch page`)
+          await waitForRuntimeText(clientPage, `${source.provider} watch page`)
+
+          if (index > 0) {
+            await waitForQueuedItemTitle(hostPage, source.title)
+            await waitForQueuedItemTitle(clientPage, source.title)
+            await hostPage.waitForSelector(
+              '#runtime_playback_controls [data-intent="next"]:not([disabled])'
+            )
+            await hostPage.click('#runtime_playback_controls [data-intent="next"]')
+          }
+
+          await waitForCurrentQueueTitle(hostPage, source.title)
+          await waitForCurrentQueueTitle(clientPage, source.title)
+          await waitForPlaybackState(hostPage, 'playing')
+          await waitForPlaybackState(clientPage, 'playing')
+          await exerciseTwoBrowserPlaybackControls({
+            clientPage,
+            controlPage: index % 2 === 0 ? hostPage : clientPage,
+            hostPage
+          })
+          await waitForStreamingMergeProof(hostPage)
+          await waitForStreamingMergeProof(clientPage)
+        }
+      },
+      STREAMING_SITE_SESSION_E2E_TIMEOUT_MS
+    )
   })
 })

@@ -421,7 +421,7 @@ const MERGE_GATE_METRICS = [
     label: 'Buddy e2e gate',
     value: `${STREAMING_SITE_NAMED_PROVIDER_COUNT} site lanes`,
     detail:
-      'Two browser pages queue, advance, and sync YouTube, AnimePahe, Cineby, and Miruro before merge.'
+      'Two browser pages queue, pause, resume, seek, advance, and sync YouTube, AnimePahe, Cineby, and Miruro before merge.'
   },
   {
     id: 'browser-isolation',
