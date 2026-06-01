@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "analyze": "node scripts/analyze-architecture.js",
-    "analyze:architecture": "node scripts/analyze-architecture.js"
+    "analyze:architecture": "node scripts/analyze-architecture.js",
+    "test": "npm run analyze:architecture && yarn --cwd packages/honeystream-app test"
   },
   "workspaces": [
     "packages/honeystream-app",

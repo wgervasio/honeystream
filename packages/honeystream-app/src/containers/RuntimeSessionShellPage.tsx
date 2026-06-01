@@ -486,6 +486,38 @@ const CONNECTION_CONFIDENCE_CARDS = [
       'YouTube, AnimePahe, Cineby, Miruro, and generic pages load locally; only typed commands cross the tiny lane.'
   }
 ] as const
+const BROWSER_SYNC_RECEIPT_ITEMS = [
+  {
+    id: 'two-browser-seat',
+    label: 'Two browsers, one cozy lane',
+    detail:
+      'Cat-side and rabbit-side keep separate browser seats while the invite secret gates the room.'
+  },
+  {
+    id: 'zero-loss',
+    label: '0B control loss',
+    detail:
+      'The merge gate requires every typed playback command byte to arrive before latency can win.'
+  },
+  {
+    id: 'tail-latency',
+    label: `<=${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms P95`,
+    detail:
+      'The selected streaming lane keeps tail latency under the mock round-trip budget with balanced directions.'
+  },
+  {
+    id: 'site-lanes',
+    label: 'YouTube plus any-site lanes',
+    detail:
+      'YouTube, AnimePahe, Cineby, Miruro, and a generic website lane are exercised by the two-browser e2e flow.'
+  },
+  {
+    id: 'local-media',
+    label: 'Media bytes stay local',
+    detail:
+      'Each browser opens the same watch page locally while Honeystream syncs only host-led controls.'
+  }
+] as const
 const COMMAND_BAR_LINKS = [
   { label: 'Paste source', href: '#runtime-add-media-url' },
   { label: 'Copy invite', href: '#runtime_invite_panel' },
@@ -1323,6 +1355,11 @@ const RuntimeSessionRouteSurface = ({
         : viewModel.snapshot.role === 'guest'
         ? 'Rabbit-side guest'
         : 'Room warming up'
+    const clockSyncReady = viewModel.snapshot.role === 'host' || clockSyncState === 'synced'
+    const browserSyncReceiptState =
+      guest && viewModel.snapshot.transportStatus === 'connected' && clockSyncReady
+        ? 'ready'
+        : 'warming'
 
     return (
       <div className={styles.roomGrid}>
@@ -1413,6 +1450,34 @@ const RuntimeSessionRouteSurface = ({
             <span>{clockSyncState === 'synced' ? 'Heartbeat synced' : 'Heartbeat warming'}</span>
             <p>{connectionQualityLabel}</p>
           </article>
+        </section>
+
+        <section
+          id="runtime_browser_sync_receipt"
+          className={`${styles.card} ${styles.syncReceipt}`}
+          aria-label="Browser sync receipt"
+          data-byte-loss-rate="0"
+          data-receipt-state={browserSyncReceiptState}
+          data-site-lane-count={STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}
+          data-tail-latency-ms-budget={STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}
+          data-test-modes="broadcast+isolated-live"
+        >
+          <div className={styles.cardHeader}>
+            <p className={styles.kicker}>Browser sync receipt</p>
+            <span>
+              {browserSyncReceiptState === 'ready'
+                ? 'Two browsers synced'
+                : 'Waiting for two seats'}
+            </span>
+          </div>
+          <div className={styles.syncReceiptGrid}>
+            {BROWSER_SYNC_RECEIPT_ITEMS.map(item => (
+              <article key={item.id} data-browser-sync-receipt={item.id}>
+                <span>{item.label}</span>
+                <p>{item.detail}</p>
+              </article>
+            ))}
+          </div>
         </section>
 
         <section

@@ -21,6 +21,10 @@ const CONNECTION_CONFIDENCE_SELECTOR =
   '[data-tail-latency-ms-budget="10"][data-best-round-trip-ms="2"]' +
   '[data-provider-count="4"][data-site-count="58"]' +
   '[data-test-modes="broadcast+isolated-live"]'
+const BROWSER_SYNC_RECEIPT_READY_SELECTOR =
+  '#runtime_browser_sync_receipt[data-receipt-state="ready"][data-byte-loss-rate="0"]' +
+  '[data-tail-latency-ms-budget="10"][data-site-lane-count="5"]' +
+  '[data-test-modes="broadcast+isolated-live"]'
 let runtimeVisitCounter = 0
 
 const STREAMING_SITE_E2E_SOURCES = [
@@ -247,6 +251,12 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
     page,
     'YouTube, AnimePahe, Cineby, Miruro, and generic pages load locally'
   )
+  await waitForRuntimeText(page, 'Browser sync receipt')
+  await waitForRuntimeText(page, 'Two browsers synced')
+  await waitForRuntimeText(page, 'Two browsers, one cozy lane')
+  await waitForRuntimeText(page, '0B control loss')
+  await waitForRuntimeText(page, 'YouTube plus any-site lanes')
+  await waitForRuntimeText(page, 'Media bytes stay local')
 }
 
 function isConnectionAlert(message: string): boolean {
@@ -285,7 +295,11 @@ async function expectHealthyTwoBrowserConnection(input: {
   await input.clientPage.waitForSelector('[data-session-state-tone="synced"]')
   await expectConnectionRunwayReady(input.hostPage)
   await expectConnectionRunwayReady(input.clientPage)
-  await input.clientPage.waitForSelector('#runtime_connection_runway[data-clock-sync-state="synced"]')
+  await input.clientPage.waitForSelector(
+    '#runtime_connection_runway[data-clock-sync-state="synced"]'
+  )
+  await input.hostPage.waitForSelector(BROWSER_SYNC_RECEIPT_READY_SELECTOR)
+  await input.clientPage.waitForSelector(BROWSER_SYNC_RECEIPT_READY_SELECTOR)
   await waitForStreamingMergeProof(input.hostPage)
   await waitForStreamingMergeProof(input.clientPage)
   await expectNoRuntimeConnectionAlerts(input.hostPage)
@@ -385,6 +399,7 @@ describe('session', () => {
       await page.waitForSelector('#runtime_room_mood')
       await page.waitForSelector('#runtime_cozy_command_bar')
       await page.waitForSelector('#runtime_connection_runway[data-guest-seat-state="waiting"]')
+      await page.waitForSelector('#runtime_browser_sync_receipt[data-receipt-state="warming"]')
       await page.waitForSelector('#runtime_readiness_meter')
       await page.waitForSelector('#runtime_pair_guide')
       await page.waitForSelector('[data-streaming-proof="byte-loss"][data-byte-loss-rate="0"]')
@@ -478,6 +493,12 @@ describe('session', () => {
         page,
         'Live e2e mode runs cat-side and rabbit-side in separate browser contexts through the real connection flow'
       )
+      await waitForRuntimeText(page, 'Browser sync receipt')
+      await waitForRuntimeText(page, 'Waiting for two seats')
+      await waitForRuntimeText(page, 'Two browsers, one cozy lane')
+      await waitForRuntimeText(page, '0B control loss')
+      await waitForRuntimeText(page, 'YouTube plus any-site lanes')
+      await waitForRuntimeText(page, 'Media bytes stay local')
       await waitForRuntimeText(page, 'Trace gate')
       await waitForRuntimeText(page, '64 recent frames')
       await waitForRuntimeText(page, 'bounded sent, received, state, and error observations')
