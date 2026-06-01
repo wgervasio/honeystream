@@ -332,6 +332,9 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain(
       'Broadcast e2e and isolated live e2e both drive the same private invite flow across named and generic website lanes'
     )
+    expect(html).toContain(
+      'Live e2e mode runs cat-side and rabbit-side in separate browser processes through the real connection flow'
+    )
     expect(html).toContain('Zero-loss controls')
     expect(html).toContain('0B lost, 0 skipped controls, and both-way delivery')
     expect(html).toContain('Under-10ms tail')
