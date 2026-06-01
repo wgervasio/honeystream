@@ -344,6 +344,23 @@ describe('RuntimeSessionShellPage', () => {
       `data-tail-latency-ms-budget="${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}"`
     )
     expect(html).toContain('data-test-modes="broadcast+isolated-live"')
+    expect(html).toContain('id="runtime_connection_runway"')
+    expect(html).toContain('Buddy connection runway')
+    expect(html).toContain('Invite secret sealed')
+    expect(html).toContain('One private room secret gates the rabbit-side seat')
+    expect(html).toContain('Control lane warming')
+    expect(html).toContain('Paste a source and let the private invite start the tiny control lane')
+    expect(html).toContain('Rabbit seat waiting')
+    expect(html).toContain('Heartbeat warming')
+    expect(html).toContain('zero control bytes lost')
+    expect(html).toContain(`${STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS}ms best mock RT`)
+    expect(html).toContain(
+      `under-${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms tail gates`
+    )
+    expect(html).toContain('data-transport-status="idle"')
+    expect(html).toContain('data-guest-seat-state="waiting"')
+    expect(html).toContain('data-invite-secret-state="present"')
+    expect(html).toContain('data-clock-sync-state="warming"')
     expect(html).toContain('Paste source')
     expect(html).toContain('href="#runtime-add-media-url"')
     expect(html).toContain('href="#runtime_invite_panel"')

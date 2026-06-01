@@ -121,4 +121,104 @@ describe('BroadcastChannelPeerTransport', () => {
 
     expect(FakeBroadcastChannel.activeCount()).toBe(0)
   })
+
+  it('reuses the in-flight guest handshake instead of orphaning connection promises', async () => {
+    const host = new BroadcastChannelPeerTransport<TestMessage, TestMessage>({
+      roomId: 'room-retry',
+      role: 'host',
+      localPeerId: 'host',
+      remotePeerIdHint: 'guest',
+      inboundValidator: testMessageValidator
+    })
+    const guest = new BroadcastChannelPeerTransport<TestMessage, TestMessage>({
+      roomId: 'room-retry',
+      role: 'guest',
+      localPeerId: 'guest',
+      remotePeerIdHint: 'host',
+      inboundValidator: testMessageValidator
+    })
+
+    try {
+      const firstConnect = guest.connect()
+      const secondConnect = guest.connect()
+      let firstConnectResolved = false
+      firstConnect.then(() => {
+        firstConnectResolved = true
+      })
+
+      expect(secondConnect).toBe(firstConnect)
+      expect(FakeBroadcastChannel.activeCount()).toBe(1)
+
+      await host.connect()
+      await secondConnect
+      await flushBroadcast()
+
+      expect(firstConnectResolved).toBe(true)
+      expect(host.getState().status).toBe('connected')
+      expect(guest.getState().status).toBe('connected')
+      expect(FakeBroadcastChannel.activeCount()).toBe(2)
+    } finally {
+      guest.dispose()
+      host.dispose()
+    }
+
+    expect(FakeBroadcastChannel.activeCount()).toBe(0)
+  })
+
+  it('closes the broadcast channel when disconnecting without disposing subscribers', async () => {
+    const host = new BroadcastChannelPeerTransport<TestMessage, TestMessage>({
+      roomId: 'room-disconnect',
+      role: 'host',
+      localPeerId: 'host',
+      remotePeerIdHint: 'guest',
+      inboundValidator: testMessageValidator
+    })
+    const guest = new BroadcastChannelPeerTransport<TestMessage, TestMessage>({
+      roomId: 'room-disconnect',
+      role: 'guest',
+      localPeerId: 'guest',
+      remotePeerIdHint: 'host',
+      inboundValidator: testMessageValidator
+    })
+    const guestStates: string[] = []
+    guest.subscribe(event => {
+      if (event.type === 'state') guestStates.push(event.state.status)
+    })
+
+    try {
+      await host.connect()
+      await guest.connect()
+      expect(FakeBroadcastChannel.activeCount()).toBe(2)
+
+      guest.disconnect('manual')
+
+      expect(guest.getState().status).toBe('disconnected')
+      expect(guestStates).toEqual(expect.arrayContaining(['connected', 'disconnected']))
+      expect(FakeBroadcastChannel.activeCount()).toBe(1)
+    } finally {
+      guest.dispose()
+      host.dispose()
+    }
+
+    expect(FakeBroadcastChannel.activeCount()).toBe(0)
+  })
+
+  it('rejects an in-flight guest handshake when disposed', async () => {
+    const guest = new BroadcastChannelPeerTransport<TestMessage, TestMessage>({
+      roomId: 'room-dispose',
+      role: 'guest',
+      localPeerId: 'guest',
+      remotePeerIdHint: 'host',
+      inboundValidator: testMessageValidator
+    })
+
+    const connecting = guest.connect()
+    expect(FakeBroadcastChannel.activeCount()).toBe(1)
+
+    guest.dispose()
+
+    await expect(connecting).rejects.toThrow('disposed before the browser handshake completed')
+    expect(guest.getState().status).toBe('disposed')
+    expect(FakeBroadcastChannel.activeCount()).toBe(0)
+  })
 })

@@ -477,6 +477,11 @@
   grid-template-columns: auto repeat(4, minmax(0, 1fr));
 }
 
+.connectionRunway {
+  grid-column: 1 / -1;
+  grid-template-columns: auto repeat(4, minmax(0, 1fr));
+}
+
 .signalDock > strong,
 .signalDock article {
   min-height: 5.6rem;
