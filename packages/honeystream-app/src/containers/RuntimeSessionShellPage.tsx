@@ -20,10 +20,7 @@ import {
 } from '../playback/engine/playbackEngineContract'
 import { createPlaybackRuntime, PlaybackRuntimeAdapterContext } from '../playback/runtime'
 import { MediaElementPlaybackAdapter } from '../playback/adapters/media-element'
-import {
-  createPopupAdapterFactory,
-  PopupAdapterOpenPopup
-} from '../playback/adapters/popup'
+import { createPopupAdapterFactory, PopupAdapterOpenPopup } from '../playback/adapters/popup'
 import { LocalFileMetadata, localFileToMediaUrl } from '../playback/adapters/local-file'
 import {
   HostSessionCommand,
@@ -174,6 +171,7 @@ const STREAMING_SITE_PROVIDER_COVERAGE_LABEL = STREAMING_SITE_CONNECTION_PROVIDE
 const STREAMING_SITE_NAMED_PROVIDER_COUNT = STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE.filter(
   coverage => coverage.provider !== 'unknown'
 ).length
+const STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT = STREAMING_SITE_NAMED_PROVIDER_COUNT + 1
 const HAPPY_PATH_STEPS = [
   {
     id: 'paste',
@@ -265,6 +263,14 @@ const ADD_MEDIA_SUGGESTIONS = [
     placeholder: 'Paste the exact Miruro watch page...',
     guidance:
       'Miruro is covered by the low-latency streaming-site mock tests; use the real watch page you want rabbit-side to load.'
+  },
+  {
+    id: 'website',
+    label: 'Any website',
+    detail: 'Generic watch page',
+    placeholder: 'Paste any exact watch page both browsers can open...',
+    guidance:
+      'Generic website lanes are covered by the mock matrix too; use the exact page both seats can test together.'
   },
   {
     id: 'direct',
@@ -422,9 +428,9 @@ const MERGE_GATE_METRICS = [
   {
     id: 'browser-pair-matrix',
     label: 'Buddy e2e gate',
-    value: `${STREAMING_SITE_NAMED_PROVIDER_COUNT} site lanes`,
+    value: `${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT} site lanes`,
     detail:
-      'Two browser pages queue, pause, resume, seek, advance, and sync YouTube, AnimePahe, Cineby, and Miruro before merge.'
+      'Two browser pages queue, pause, resume, seek, advance, and sync YouTube, AnimePahe, Cineby, Miruro, and a generic website before merge.'
   },
   {
     id: 'browser-isolation',
@@ -458,7 +464,8 @@ const CONNECTION_CONFIDENCE_CARDS = [
   {
     id: 'isolated-browsers',
     label: 'Two isolated browsers',
-    detail: 'Broadcast e2e and isolated live e2e both drive the same private invite flow.'
+    detail:
+      'Broadcast e2e and isolated live e2e both drive the same private invite flow across named and generic website lanes.'
   },
   {
     id: 'zero-loss-controls',
@@ -1080,6 +1087,10 @@ const getMediaTitleFromUrl = (mediaUrl: URL): string => {
       return 'Miruro watch page'
     case 'unknown':
       break
+  }
+
+  if (classifyMediaUrl(mediaUrl.toString()) === 'website') {
+    return `${mediaUrl.hostname} page`
   }
 
   const pathName = mediaUrl.pathname.replace(/\/+$/, '')

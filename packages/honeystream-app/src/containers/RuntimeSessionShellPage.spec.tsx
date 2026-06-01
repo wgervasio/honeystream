@@ -181,8 +181,10 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('Paste a supported website')
     expect(html).toContain('Website lane')
     expect(html).toContain('Direct MP4')
+    expect(html).toContain('Any website')
     expect(html).toContain('Miruro')
     expect(html).toContain('data-source-suggestion="youtube"')
+    expect(html).toContain('data-source-suggestion="website"')
     expect(html).toContain('Room feels ready when')
     expect(html).toContain('Source picked')
     expect(html).toContain('Controls obvious')
@@ -254,9 +256,9 @@ describe('RuntimeSessionShellPage', () => {
       'YouTube, AnimePahe, Cineby, and Miruro each keep their own multi-fixture loss, retry, skipped-control, directional-skew, and latency proof'
     )
     expect(html).toContain('Buddy e2e gate')
-    expect(html).toContain('4 site lanes')
+    expect(html).toContain('5 site lanes')
     expect(html).toContain(
-      'Two browser pages queue, pause, resume, seek, advance, and sync YouTube, AnimePahe, Cineby, and Miruro before merge'
+      'Two browser pages queue, pause, resume, seek, advance, and sync YouTube, AnimePahe, Cineby, Miruro, and a generic website before merge'
     )
     expect(html).toContain('data-merge-gate-metric="browser-pair-matrix"')
     expect(html).toContain('Merge command')
@@ -328,7 +330,7 @@ describe('RuntimeSessionShellPage', () => {
     )
     expect(html).toContain('Two isolated browsers')
     expect(html).toContain(
-      'Broadcast e2e and isolated live e2e both drive the same private invite flow'
+      'Broadcast e2e and isolated live e2e both drive the same private invite flow across named and generic website lanes'
     )
     expect(html).toContain('Zero-loss controls')
     expect(html).toContain('0B lost, 0 skipped controls, and both-way delivery')
@@ -592,6 +594,7 @@ describe('createRuntimeSessionShellRouteBoundary', () => {
       boundary.addMediaUrl('https://animepahe.ru/play/honeystream-demo')
       boundary.addMediaUrl('https://cineby.app/movie/honeystream-demo')
       boundary.addMediaUrl('https://miruro.to/watch/honeystream-demo')
+      boundary.addMediaUrl('https://streaming.example.test/watch/honeystream-demo')
 
       expect(dispatchHostCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -622,6 +625,14 @@ describe('createRuntimeSessionShellRouteBoundary', () => {
           media: expect.objectContaining({
             kind: 'website',
             title: 'Miruro watch page'
+          })
+        })
+      )
+      expect(dispatchHostCommandSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          media: expect.objectContaining({
+            kind: 'website',
+            title: 'streaming.example.test page'
           })
         })
       )
