@@ -259,6 +259,12 @@ describe('RuntimeSessionShellPage', () => {
       'Two browser pages queue, pause, resume, seek, advance, and sync YouTube, AnimePahe, Cineby, and Miruro before merge'
     )
     expect(html).toContain('data-merge-gate-metric="browser-pair-matrix"')
+    expect(html).toContain('Merge command')
+    expect(html).toContain('unit + dual e2e')
+    expect(html).toContain(
+      'The default test command runs unit checks, broadcast e2e, and isolated live e2e before merge'
+    )
+    expect(html).toContain('data-merge-gate-metric="merge-command"')
     expect(html).toContain('Trace gate')
     expect(html).toContain('64 recent frames')
     expect(html).toContain('bounded sent, received, state, and error observations')
@@ -272,6 +278,7 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('Jitter-guarded frames')
     expect(html).toContain('Reliable retry guard')
     expect(html).toContain('Observable trace cap')
+    expect(html).toContain('Merge-ready e2e')
     expect(html).toContain('Happy sync glow')
     expect(html).toContain('Cozy command bar')
     expect(html).toContain('Best next tap')
