@@ -150,7 +150,9 @@ async function setup(jestConfig = {}) {
     process.env.HOST = config.appHost
     process.env.PUBLIC_HOST = config.appHost
     process.env.PORT = config.appPort
-    process.env.HONEYSTREAM_E2E_LOCAL_RTC = 'true'
+    process.env.HONEYSTREAM_E2E_LOCAL_RTC = process.env.HONEYSTREAM_E2E_LOCAL_RTC || 'true'
+    process.env.HONEYSTREAM_E2E_BROADCAST_RTC =
+      process.env.HONEYSTREAM_E2E_BROADCAST_RTC || 'true'
     buildAppBundle()
 
     await setupServer([
@@ -159,7 +161,11 @@ async function setup(jestConfig = {}) {
           config.appPort
         } HONEYSTREAM_SIGNAL_SERVER=${
           config.signalServerUrl
-        } HONEYSTREAM_E2E_LOCAL_RTC=true HONEYSTREAM_E2E_SKIP_BUILD=true node scripts/e2e-app-server.js`,
+        } HONEYSTREAM_E2E_LOCAL_RTC=${
+          process.env.HONEYSTREAM_E2E_LOCAL_RTC
+        } HONEYSTREAM_E2E_BROADCAST_RTC=${
+          process.env.HONEYSTREAM_E2E_BROADCAST_RTC
+        } HONEYSTREAM_E2E_SKIP_BUILD=true node scripts/e2e-app-server.js`,
         launchTimeout: SERVER_LAUNCH_TIMEOUT_MS,
         port: Number(config.appPort),
         usedPortAction: 'error',

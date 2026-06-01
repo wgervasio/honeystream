@@ -111,6 +111,9 @@ module.exports = {
         : undefined),
       ...(process.env.HONEYSTREAM_E2E_LOCAL_RTC
         ? { HONEYSTREAM_E2E_LOCAL_RTC: process.env.HONEYSTREAM_E2E_LOCAL_RTC }
+        : undefined),
+      ...(process.env.HONEYSTREAM_E2E_BROADCAST_RTC
+        ? { HONEYSTREAM_E2E_BROADCAST_RTC: process.env.HONEYSTREAM_E2E_BROADCAST_RTC }
         : undefined)
     }),
     new Dotenv({ silent: true }),

@@ -12,7 +12,9 @@ const PLAYBACK_PLAY_PAUSE_SELECTOR = '#runtime_playback_controls [data-intent="p
 const SEEK_FORWARD_STEP_MS = 10000
 const PLAYBACK_STATE_RETRY_COUNT = 3
 const PLAYBACK_STATE_RETRY_TIMEOUT_MS = 5000
+const QUEUE_STATE_TIMEOUT_MS = 60000
 const RUNTIME_TEXT_TIMEOUT_MS = 30000
+const USE_BROADCAST_RTC_E2E = process.env.HONEYSTREAM_E2E_BROADCAST_RTC !== 'false'
 let runtimeVisitCounter = 0
 
 const STREAMING_SITE_E2E_SOURCES = [
@@ -121,14 +123,31 @@ async function waitForPlaybackState(
 }
 
 async function waitForCurrentQueueTitle(page: Page, title: string): Promise<void> {
-  await page.waitForFunction(expectedTitle => {
-    const currentTitle = document.querySelector('[data-queue-state="current"] strong')
-    return Boolean(
-      currentTitle &&
-        currentTitle.textContent &&
-        currentTitle.textContent.indexOf(expectedTitle) !== -1
-    )
-  }, title)
+  await page.waitForFunction(
+    expectedTitle => {
+      const currentTitle = document.querySelector('[data-queue-state="current"] strong')
+      return Boolean(
+        currentTitle &&
+          currentTitle.textContent &&
+          currentTitle.textContent.indexOf(expectedTitle) !== -1
+      )
+    },
+    title,
+    { timeout: QUEUE_STATE_TIMEOUT_MS }
+  )
+}
+
+async function waitForQueuedItemTitle(page: Page, title: string): Promise<void> {
+  await page.waitForFunction(
+    expectedTitle =>
+      Array.prototype.some.call(
+        document.querySelectorAll('[data-queue-item-id] span:first-child'),
+        (element: Element) =>
+          Boolean(element.textContent && element.textContent.indexOf(expectedTitle) !== -1)
+      ),
+    title,
+    { timeout: QUEUE_STATE_TIMEOUT_MS }
+  )
 }
 
 async function waitForStreamingMergeProof(page: Page): Promise<void> {
@@ -142,6 +161,9 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
   await page.waitForSelector('[data-merge-gate-metric="byte-loss"][data-merge-gate-value="0%"]')
   await page.waitForSelector(
     '[data-merge-gate-metric="browser-pair-matrix"][data-merge-gate-value="4 site lanes"]'
+  )
+  await page.waitForSelector(
+    '[data-merge-gate-metric="browser-isolation"][data-merge-gate-value="isolated live mode"]'
   )
 }
 
@@ -283,6 +305,12 @@ describe('session', () => {
         page,
         'Two browser pages queue, advance, and sync YouTube, AnimePahe, Cineby, and Miruro before merge'
       )
+      await waitForRuntimeText(page, 'Two-browser gate')
+      await waitForRuntimeText(page, 'isolated live mode')
+      await waitForRuntimeText(
+        page,
+        'Live e2e mode runs cat-side and rabbit-side in separate browser contexts through the real connection flow'
+      )
       await waitForRuntimeText(page, 'Trace gate')
       await waitForRuntimeText(page, '64 recent frames')
       await waitForRuntimeText(page, 'bounded sent, received, state, and error observations')
@@ -356,6 +384,11 @@ describe('session', () => {
         { url: 'youtube.com', label: 'YouTube', provider: 'youtube' },
         {
           url: 'youtube.com/watch?v=honeystream-e2e',
+          label: 'YouTube',
+          provider: 'youtube'
+        },
+        {
+          url: 'youtu.be/honeystream-e2e',
           label: 'YouTube',
           provider: 'youtube'
         },
@@ -465,7 +498,7 @@ describe('session', () => {
     let shouldCloseClientContext = false
 
     beforeEach(async () => {
-      shouldCloseClientContext = process.env.HONEYSTREAM_E2E_LOCAL_RTC !== 'true'
+      shouldCloseClientContext = !USE_BROADCAST_RTC_E2E
       clientContext = shouldCloseClientContext ? await browser.newContext() : context
       clientPage = await clientContext.newPage()
     })
@@ -508,6 +541,9 @@ describe('session', () => {
       await clientPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
       await waitForRuntimeText(hostPage, 'Synced')
       await waitForRuntimeText(clientPage, 'Synced')
+      if (!USE_BROADCAST_RTC_E2E) {
+        expect(clientPage.context()).not.toBe(hostPage.context())
+      }
       await hostPage.waitForSelector('[data-session-state-tone="synced"]')
       await clientPage.waitForSelector('[data-session-state-tone="synced"]')
       await waitForStreamingMergeProof(hostPage)
@@ -592,13 +628,15 @@ describe('session', () => {
       await clientPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
       await waitForRuntimeText(hostPage, 'Synced')
       await waitForRuntimeText(clientPage, 'Synced')
+      if (!USE_BROADCAST_RTC_E2E) {
+        expect(clientPage.context()).not.toBe(hostPage.context())
+      }
       await waitForStreamingMergeProof(hostPage)
       await waitForStreamingMergeProof(clientPage)
 
       for (let index = 0; index < STREAMING_SITE_E2E_SOURCES.length; index += 1) {
         const source = STREAMING_SITE_E2E_SOURCES[index]
         const addingPage = index % 2 === 0 ? clientPage : hostPage
-        const advancingPage = index % 2 === 0 ? hostPage : clientPage
 
         await addingPage.fill('#runtime-add-media-url', source.url)
         await waitForRuntimeText(addingPage, 'Honeystream will add https:// automatically')
@@ -608,10 +646,12 @@ describe('session', () => {
         await waitForRuntimeText(clientPage, `${source.provider} watch page`)
 
         if (index > 0) {
-          await advancingPage.waitForSelector(
+          await waitForQueuedItemTitle(hostPage, source.title)
+          await waitForQueuedItemTitle(clientPage, source.title)
+          await hostPage.waitForSelector(
             '#runtime_playback_controls [data-intent="next"]:not([disabled])'
           )
-          await advancingPage.click('#runtime_playback_controls [data-intent="next"]')
+          await hostPage.click('#runtime_playback_controls [data-intent="next"]')
         }
 
         await waitForCurrentQueueTitle(hostPage, source.title)

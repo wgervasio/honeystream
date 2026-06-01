@@ -424,6 +424,13 @@ const MERGE_GATE_METRICS = [
       'Two browser pages queue, advance, and sync YouTube, AnimePahe, Cineby, and Miruro before merge.'
   },
   {
+    id: 'browser-isolation',
+    label: 'Two-browser gate',
+    value: 'isolated live mode',
+    detail:
+      'Live e2e mode runs cat-side and rabbit-side in separate browser contexts through the real connection flow.'
+  },
+  {
     id: 'trace-cap',
     label: 'Trace gate',
     value: '64 recent frames',
@@ -596,7 +603,10 @@ const getRuntimeRoutePlatform = (): RuntimeRoutePlatform => {
   return platformModule.PlatformService.get()
 }
 
-const isLocalRtcE2ERuntime = (): boolean => process.env.HONEYSTREAM_E2E_LOCAL_RTC === 'true'
+const isBroadcastRtcE2ERuntime = (): boolean =>
+  process.env.HONEYSTREAM_E2E_BROADCAST_RTC === 'true' ||
+  (process.env.HONEYSTREAM_E2E_LOCAL_RTC === 'true' &&
+    process.env.HONEYSTREAM_E2E_BROADCAST_RTC !== 'false')
 
 const createRuntimeFromTransport = (
   input: RuntimeRouteRuntimeHandleInput,
@@ -725,7 +735,7 @@ const createLiveRuntimeHandle = async (
     throw new Error('Invite secret is required to join a runtime session.')
   }
 
-  if (isLocalRtcE2ERuntime()) {
+  if (isBroadcastRtcE2ERuntime()) {
     return createBroadcastRuntimeHandle(input, role, localPeerId)
   }
 
