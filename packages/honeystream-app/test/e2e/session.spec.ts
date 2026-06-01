@@ -27,22 +27,27 @@ const STREAMING_SITE_E2E_SOURCES = [
   {
     url: 'youtube.com/watch?v=two-browser-youtube',
     title: 'YouTube watch page',
-    provider: 'YouTube'
+    expectedText: 'YouTube watch page'
   },
   {
     url: 'animepahe.ru/play/two-browser-animepahe',
     title: 'AnimePahe watch page',
-    provider: 'AnimePahe'
+    expectedText: 'AnimePahe watch page'
   },
   {
     url: 'cineby.app/movie/two-browser-cineby',
     title: 'Cineby watch page',
-    provider: 'Cineby'
+    expectedText: 'Cineby watch page'
   },
   {
     url: 'miruro.to/watch/two-browser-miruro',
     title: 'Miruro watch page',
-    provider: 'Miruro'
+    expectedText: 'Miruro watch page'
+  },
+  {
+    url: 'streaming.example.test/watch/two-browser-generic',
+    title: 'streaming.example.test page',
+    expectedText: 'streaming.example.test page'
   }
 ] as const
 
@@ -199,7 +204,7 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
     '[data-merge-gate-metric="per-site-observation"][data-merge-gate-value="58 observed"]'
   )
   await page.waitForSelector(
-    '[data-merge-gate-metric="browser-pair-matrix"][data-merge-gate-value="4 site lanes"]'
+    '[data-merge-gate-metric="browser-pair-matrix"][data-merge-gate-value="5 site lanes"]'
   )
   await page.waitForSelector(
     '[data-merge-gate-metric="browser-isolation"][data-merge-gate-value="isolated live mode"]'
@@ -225,7 +230,7 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
   await waitForRuntimeText(page, 'Two isolated browsers')
   await waitForRuntimeText(
     page,
-    'Broadcast e2e and isolated live e2e both drive the same private invite flow'
+    'Broadcast e2e and isolated live e2e both drive the same private invite flow across named and generic website lanes'
   )
   await waitForRuntimeText(page, 'Zero-loss controls')
   await waitForRuntimeText(
@@ -233,7 +238,10 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
     'Every supported site lane requires 0B lost, 0 skipped controls, and both-way delivery'
   )
   await waitForRuntimeText(page, 'Under-10ms tail')
-  await waitForRuntimeText(page, 'Selected lanes stay under 10ms P95 with 2ms best mock round trips')
+  await waitForRuntimeText(
+    page,
+    'Selected lanes stay under 10ms P95 with 2ms best mock round trips'
+  )
   await waitForRuntimeText(page, 'Local website load')
   await waitForRuntimeText(
     page,
@@ -283,7 +291,10 @@ async function getBodyTextExcerpt(page: Page): Promise<string> {
     document.body && document.body.textContent ? document.body.textContent : ''
   )
 
-  return bodyText.replace(/\s+/g, ' ').trim().slice(0, 800)
+  return bodyText
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 800)
 }
 
 async function clickPlayPauseAndWaitForState(
@@ -428,10 +439,10 @@ describe('session', () => {
       await waitForRuntimeText(page, 'Provider gate')
       await waitForRuntimeText(page, '4 providers')
       await waitForRuntimeText(page, 'Buddy e2e gate')
-      await waitForRuntimeText(page, '4 site lanes')
+      await waitForRuntimeText(page, '5 site lanes')
       await waitForRuntimeText(
         page,
-        'Two browser pages queue, pause, resume, seek, advance, and sync YouTube, AnimePahe, Cineby, and Miruro before merge'
+        'Two browser pages queue, pause, resume, seek, advance, and sync YouTube, AnimePahe, Cineby, Miruro, and a generic website before merge'
       )
       await waitForRuntimeText(page, 'Connection confidence')
       await waitForRuntimeText(page, 'Secret handshake')
@@ -495,19 +506,38 @@ describe('session', () => {
       await page.waitForSelector(RUNTIME_SHELL_SELECTOR)
 
       const suggestions = [
-        { id: 'youtube', label: 'YouTube' },
-        { id: 'animepahe', label: 'AnimePahe' },
-        { id: 'cineby', label: 'Cineby' },
-        { id: 'miruro', label: 'Miruro' }
+        {
+          id: 'youtube',
+          label: 'YouTube',
+          guidance: 'YouTube is covered by the low-latency streaming-site mock tests'
+        },
+        {
+          id: 'animepahe',
+          label: 'AnimePahe',
+          guidance: 'AnimePahe is covered by the low-latency streaming-site mock tests'
+        },
+        {
+          id: 'cineby',
+          label: 'Cineby',
+          guidance: 'Cineby is covered by the low-latency streaming-site mock tests'
+        },
+        {
+          id: 'miruro',
+          label: 'Miruro',
+          guidance: 'Miruro is covered by the low-latency streaming-site mock tests'
+        },
+        {
+          id: 'website',
+          label: 'Any website',
+          guidance:
+            'Generic website lanes are covered by the mock matrix too; use the exact page both seats can test together.'
+        }
       ]
 
       for (const suggestion of suggestions) {
         await page.click(`[data-source-suggestion="${suggestion.id}"]`)
         await waitForRuntimeText(page, `${suggestion.label} lane`)
-        await waitForRuntimeText(
-          page,
-          `${suggestion.label} is covered by the low-latency streaming-site mock tests`
-        )
+        await waitForRuntimeText(page, suggestion.guidance)
       }
     })
 
@@ -776,8 +806,8 @@ describe('session', () => {
           await waitForRuntimeText(addingPage, 'Honeystream will add https:// automatically')
           await addingPage.press('#runtime-add-media-url', 'Enter')
           await waitForRuntimeText(addingPage, 'Media added with https:// filled in')
-          await waitForRuntimeText(hostPage, `${source.provider} watch page`)
-          await waitForRuntimeText(clientPage, `${source.provider} watch page`)
+          await waitForRuntimeText(hostPage, source.expectedText)
+          await waitForRuntimeText(clientPage, source.expectedText)
 
           if (index > 0) {
             await waitForQueuedItemTitle(hostPage, source.title)
