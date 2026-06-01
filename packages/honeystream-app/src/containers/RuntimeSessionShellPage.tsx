@@ -20,7 +20,10 @@ import {
 } from '../playback/engine/playbackEngineContract'
 import { createPlaybackRuntime, PlaybackRuntimeAdapterContext } from '../playback/runtime'
 import { MediaElementPlaybackAdapter } from '../playback/adapters/media-element'
-import { createPopupAdapterFactory } from '../playback/adapters/popup'
+import {
+  createPopupAdapterFactory,
+  PopupAdapterOpenPopup
+} from '../playback/adapters/popup'
 import { LocalFileMetadata, localFileToMediaUrl } from '../playback/adapters/local-file'
 import {
   HostSessionCommand,
@@ -445,6 +448,37 @@ const MERGE_GATE_METRICS = [
       'Mock and live transport wrappers keep bounded sent, received, state, and error observations for debugging without unbounded logs.'
   }
 ] as const
+const CONNECTION_CONFIDENCE_CARDS = [
+  {
+    id: 'secret-handshake',
+    label: 'Secret handshake',
+    detail:
+      'Missing-secret guests fail before live WebRTC starts; valid invite links move both seats to Synced.'
+  },
+  {
+    id: 'isolated-browsers',
+    label: 'Two isolated browsers',
+    detail: 'Broadcast e2e and isolated live e2e both drive the same private invite flow.'
+  },
+  {
+    id: 'zero-loss-controls',
+    label: 'Zero-loss controls',
+    detail: 'Every supported site lane requires 0B lost, 0 skipped controls, and both-way delivery.'
+  },
+  {
+    id: 'tail-latency',
+    label: 'Under-10ms tail',
+    detail:
+      `Selected lanes stay under ${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms P95 ` +
+      `with ${STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS}ms best mock round trips.`
+  },
+  {
+    id: 'local-site-load',
+    label: 'Local website load',
+    detail:
+      'YouTube, AnimePahe, Cineby, Miruro, and generic pages load locally; only typed commands cross the tiny lane.'
+  }
+] as const
 const COMMAND_BAR_LINKS = [
   { label: 'Paste source', href: '#runtime-add-media-url' },
   { label: 'Copy invite', href: '#runtime_invite_panel' },
@@ -617,6 +651,50 @@ const isBroadcastRtcE2ERuntime = (): boolean =>
   (process.env.HONEYSTREAM_E2E_LOCAL_RTC === 'true' &&
     process.env.HONEYSTREAM_E2E_BROADCAST_RTC !== 'false')
 
+const isE2ERuntime = (): boolean =>
+  process.env.HONEYSTREAM_E2E_BROADCAST_RTC === 'true' ||
+  process.env.HONEYSTREAM_E2E_BROADCAST_RTC === 'false' ||
+  process.env.HONEYSTREAM_E2E_LOCAL_RTC === 'true'
+
+/*
+Context: E2E verifies streaming-site control sync without making live third-party navigations.
+Invariant: Popup adapter ownership and cleanup still run, but tests keep all browser targets local.
+Options considered: Let e2e open remote sites, disable popup providers, or inject a deterministic popup.
+Decision: In e2e builds only, inject an owned in-memory popup window that exercises the adapter lifecycle.
+Performance impact: No extra network or browser target work during the already-bounded dual e2e suite.
+Memory/lifecycle ownership: PopupAdapter owns and closes the fake popup via its normal dispose path.
+Failure mode: Production popup behavior is unchanged; e2e still fails if adapter ownership regresses.
+Validation: Covered by RuntimeSessionShellPage tests plus broadcast and isolated live e2e.
+*/
+const createE2EPopupOpenStrategy = (): PopupAdapterOpenPopup => () => {
+  let closed = false
+  const listeners: { [eventType: string]: Array<() => void> | undefined } = {}
+
+  return {
+    owned: true,
+    popup: {
+      get closed() {
+        return closed
+      },
+      addEventListener(type, listener) {
+        listeners[type] = [...(listeners[type] || []), listener]
+      },
+      removeEventListener(type, listener) {
+        listeners[type] = (listeners[type] || []).filter(item => item !== listener)
+      },
+      close() {
+        if (closed) return
+        closed = true
+        Object.keys(listeners).forEach(type => {
+          const activeListeners = listeners[type] || []
+          activeListeners.forEach(listener => listener())
+          listeners[type] = []
+        })
+      }
+    }
+  }
+}
+
 const createRuntimeFromTransport = (
   input: RuntimeRouteRuntimeHandleInput,
   transport: SessionRuntimeDependencies['transport']
@@ -659,7 +737,9 @@ const createMediaElementAdapter = (
 const createBrowserPlaybackRuntime = (
   getMediaElement: () => HTMLMediaElement | null
 ): SessionRuntimePlaybackEngine => {
-  const popupFactory = createPopupAdapterFactory()
+  const popupFactory = createPopupAdapterFactory(
+    isE2ERuntime() ? { openPopup: createE2EPopupOpenStrategy() } : {}
+  )
 
   return createPlaybackRuntime({
     adapters: {
@@ -1692,6 +1772,26 @@ const RuntimeSessionRouteSurface = ({
               </article>
             ))}
           </div>
+        </section>
+
+        <section
+          id="runtime_connection_confidence"
+          className={`${styles.card} ${styles.signalDock}`}
+          aria-label="Connection confidence"
+          data-best-round-trip-ms={STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS}
+          data-byte-loss-rate="0"
+          data-provider-count={STREAMING_SITE_NAMED_PROVIDER_COUNT}
+          data-site-count={STREAMING_SITE_CONNECTION_FIXTURE_COUNT}
+          data-tail-latency-ms-budget={STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}
+          data-test-modes="broadcast+isolated-live"
+        >
+          <strong>Connection confidence</strong>
+          {CONNECTION_CONFIDENCE_CARDS.map(card => (
+            <article key={card.id} data-connection-confidence={card.id}>
+              <span>{card.label}</span>
+              <p>{card.detail}</p>
+            </article>
+          ))}
         </section>
 
         <SessionRuntimeShellContainer

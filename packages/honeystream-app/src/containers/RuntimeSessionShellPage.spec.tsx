@@ -320,6 +320,28 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('data-merge-gate-metric="queue-byte-pressure"')
     expect(html).toContain('fast paths cannot hide byte-pressure buffering')
     expect(html).toContain('data-merge-gate-metric="trace-cap"')
+    expect(html).toContain('id="runtime_connection_confidence"')
+    expect(html).toContain('Connection confidence')
+    expect(html).toContain('Secret handshake')
+    expect(html).toContain(
+      'Missing-secret guests fail before live WebRTC starts; valid invite links move both seats to Synced'
+    )
+    expect(html).toContain('Two isolated browsers')
+    expect(html).toContain(
+      'Broadcast e2e and isolated live e2e both drive the same private invite flow'
+    )
+    expect(html).toContain('Zero-loss controls')
+    expect(html).toContain('0B lost, 0 skipped controls, and both-way delivery')
+    expect(html).toContain('Under-10ms tail')
+    expect(html).toContain(
+      `Selected lanes stay under ${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms P95 with ${STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS}ms best mock round trips`
+    )
+    expect(html).toContain('Local website load')
+    expect(html).toContain('YouTube, AnimePahe, Cineby, Miruro, and generic pages load locally')
+    expect(html).toContain(
+      `data-tail-latency-ms-budget="${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}"`
+    )
+    expect(html).toContain('data-test-modes="broadcast+isolated-live"')
     expect(html).toContain('Paste source')
     expect(html).toContain('href="#runtime-add-media-url"')
     expect(html).toContain('href="#runtime_invite_panel"')
