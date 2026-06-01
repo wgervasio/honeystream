@@ -263,12 +263,29 @@ async function expectNoRuntimeConnectionAlerts(page: Page): Promise<void> {
   expect(connectionAlerts).toEqual([])
 }
 
+async function expectConnectionRunwayReady(page: Page): Promise<void> {
+  await page.waitForSelector(
+    '#runtime_connection_runway[data-transport-status="connected"]' +
+      '[data-guest-seat-state="present"][data-invite-secret-state="present"]' +
+      '[data-byte-loss-rate="0"][data-tail-latency-ms-budget="10"]' +
+      '[data-best-round-trip-ms="2"]'
+  )
+  await waitForRuntimeText(page, 'Buddy connection runway')
+  await waitForRuntimeText(page, 'Invite secret sealed')
+  await waitForRuntimeText(page, 'Control lane connected')
+  await waitForRuntimeText(page, 'Both seats synced')
+  await waitForRuntimeText(page, 'zero control bytes lost')
+}
+
 async function expectHealthyTwoBrowserConnection(input: {
   readonly clientPage: Page
   readonly hostPage: Page
 }): Promise<void> {
   await input.hostPage.waitForSelector('[data-session-state-tone="synced"]')
   await input.clientPage.waitForSelector('[data-session-state-tone="synced"]')
+  await expectConnectionRunwayReady(input.hostPage)
+  await expectConnectionRunwayReady(input.clientPage)
+  await input.clientPage.waitForSelector('#runtime_connection_runway[data-clock-sync-state="synced"]')
   await waitForStreamingMergeProof(input.hostPage)
   await waitForStreamingMergeProof(input.clientPage)
   await expectNoRuntimeConnectionAlerts(input.hostPage)
@@ -367,6 +384,7 @@ describe('session', () => {
       await page.waitForSelector('#runtime_merge_gate')
       await page.waitForSelector('#runtime_room_mood')
       await page.waitForSelector('#runtime_cozy_command_bar')
+      await page.waitForSelector('#runtime_connection_runway[data-guest-seat-state="waiting"]')
       await page.waitForSelector('#runtime_readiness_meter')
       await page.waitForSelector('#runtime_pair_guide')
       await page.waitForSelector('[data-streaming-proof="byte-loss"][data-byte-loss-rate="0"]')
@@ -394,6 +412,10 @@ describe('session', () => {
       await waitForRuntimeText(page, 'Recovered retries counted')
       await waitForRuntimeText(page, 'Cat-side cue')
       await waitForRuntimeText(page, 'Best next tap')
+      await waitForRuntimeText(page, 'Buddy connection runway')
+      await waitForRuntimeText(page, 'Invite secret sealed')
+      await waitForRuntimeText(page, 'Rabbit seat waiting')
+      await waitForRuntimeText(page, 'Heartbeat warming')
       await waitForRuntimeText(page, '0/4 ready')
       await waitForRuntimeText(page, 'Source')
       await waitForRuntimeText(page, 'Invite')

@@ -1,7 +1,7 @@
 import { PeerTransport, PeerTransportEnvelope, PeerTransportEvent, PeerTransportListener, TransportMessageValidator, TransportUnsubscribe, validatePeerTransportEnvelope } from './contracts'
 import { PeerTransportConnectionState, PeerTransportDisconnectReason, PeerTransportError, PeerTransportErrorCode } from './connection-state'
+import { BroadcastControlMessage, BroadcastRole, isBroadcastMessage } from './broadcast-channel-message'
 type Clock = () => number
-type BroadcastRole = 'guest' | 'host'
 export interface BroadcastChannelPeerTransportOptions<TInboundMessage> {
   readonly roomId: string
   readonly role: BroadcastRole
@@ -11,37 +11,8 @@ export interface BroadcastChannelPeerTransportOptions<TInboundMessage> {
   readonly now?: Clock
   readonly connectTimeoutMs?: number
 }
-type BroadcastControlMessage = {
-  readonly kind: 'hello' | 'leave'
-  readonly roomId: string
-  readonly role: BroadcastRole
-  readonly fromPeerId: string
-}
-type BroadcastDataMessage = {
-  readonly kind: 'data'
-  readonly roomId: string
-  readonly fromPeerId: string
-  readonly toPeerId: string
-  readonly envelope: unknown
-}
-type BroadcastMessage = BroadcastControlMessage | BroadcastDataMessage
 const DEFAULT_CONNECT_TIMEOUT_MS = 5000
 const HELLO_INTERVAL_MS = 250
-const isObjectRecord = (value: unknown): value is { readonly [key: string]: unknown } =>
-  typeof value === 'object' && value !== null
-const isBroadcastRole = (value: unknown): value is BroadcastRole =>
-  value === 'guest' || value === 'host'
-const isBroadcastMessage = (value: unknown): value is BroadcastMessage => {
-  if (!isObjectRecord(value)) return false
-  if (value.kind !== 'hello' && value.kind !== 'leave' && value.kind !== 'data') return false
-  if (typeof value.roomId !== 'string') return false
-  if (typeof value.fromPeerId !== 'string') return false
-  if (value.kind === 'data') {
-    return typeof value.toPeerId === 'string' && 'envelope' in value
-  }
-
-  return isBroadcastRole(value.role)
-}
 
 export class BroadcastChannelPeerTransport<TInboundMessage, TOutboundMessage>
   implements PeerTransport<TInboundMessage, TOutboundMessage> {
@@ -60,6 +31,7 @@ export class BroadcastChannelPeerTransport<TInboundMessage, TOutboundMessage>
   private channel?: BroadcastChannel
   private helloTimer?: ReturnType<typeof setInterval>
   private connectTimer?: ReturnType<typeof setTimeout>
+  private connectingPromise?: Promise<void>
   private connectResolve?: () => void
   private connectReject?: (error: Error) => void
 
@@ -81,29 +53,37 @@ export class BroadcastChannelPeerTransport<TInboundMessage, TOutboundMessage>
   connect(): Promise<void> {
     this.ensureNotDisposed('connect')
     if (this.state.status === 'connected') return Promise.resolve()
+    if (this.state.status === 'connecting' && this.connectingPromise) {
+      return this.connectingPromise
+    }
     this.connectAttempt += 1
     this.updateState({ status: 'connecting', changedAtMs: this.now(), attempt: this.connectAttempt })
     this.openChannel()
-    let guestConnected: Promise<void> | undefined
-    if (this.role === 'guest') {
-      guestConnected = new Promise((resolve, reject) => {
-        this.connectResolve = resolve
-        this.connectReject = reject
-        this.connectTimer = setTimeout(() => {
-          this.fail('peer-unavailable', 'Network error: session host was not found.')
-        }, this.connectTimeoutMs)
-      })
-    }
+    this.connectingPromise =
+      this.role === 'guest'
+        ? new Promise((resolve, reject) => {
+            this.connectResolve = resolve
+            this.connectReject = reject
+            this.connectTimer = setTimeout(() => {
+              this.fail('peer-unavailable', 'Network error: session host was not found.')
+            }, this.connectTimeoutMs)
+          })
+        : Promise.resolve()
     this.startHelloLoop()
     this.postControl('hello')
 
-    return guestConnected || Promise.resolve()
+    return this.connectingPromise
   }
 
   disconnect(reason: PeerTransportDisconnectReason = 'manual'): void {
     if (this.state.status === 'disposed') return
     this.postControl('leave')
-    this.stopConnectTimers()
+    this.stopConnectTimers(
+      this.state.status === 'connecting'
+        ? new Error('Connection disconnected before the browser handshake completed.')
+        : undefined
+    )
+    this.closeChannel()
     this.updateState({
       status: 'disconnected',
       changedAtMs: this.now(),
@@ -140,12 +120,12 @@ export class BroadcastChannelPeerTransport<TInboundMessage, TOutboundMessage>
   dispose(): void {
     if (this.state.status === 'disposed') return
     this.postControl('leave')
-    this.stopConnectTimers()
-    if (this.channel) {
-      this.channel.onmessage = null
-      this.channel.close()
-      this.channel = undefined
-    }
+    this.stopConnectTimers(
+      this.state.status === 'connecting'
+        ? new Error('Connection disposed before the browser handshake completed.')
+        : undefined
+    )
+    this.closeChannel()
     this.listeners.clear()
     this.updateState({ status: 'disposed', changedAtMs: this.now() })
   }
@@ -170,14 +150,24 @@ export class BroadcastChannelPeerTransport<TInboundMessage, TOutboundMessage>
     this.helloTimer = undefined
   }
 
-  private stopConnectTimers(): void {
+  private stopConnectTimers(rejection?: Error): void {
+    const reject = this.connectReject
     this.stopHelloLoop()
     if (this.connectTimer) {
       clearTimeout(this.connectTimer)
       this.connectTimer = undefined
     }
+    this.connectingPromise = undefined
     this.connectResolve = undefined
     this.connectReject = undefined
+    if (rejection && reject) reject(rejection)
+  }
+
+  private closeChannel(): void {
+    if (!this.channel) return
+    this.channel.onmessage = null
+    this.channel.close()
+    this.channel = undefined
   }
 
   private postControl(kind: BroadcastControlMessage['kind']): void {
@@ -235,6 +225,7 @@ export class BroadcastChannelPeerTransport<TInboundMessage, TOutboundMessage>
     this.stopConnectTimers()
     this.updateState({ status: 'failed', changedAtMs: this.now(), peerId: this.remotePeerIdValue, reason: 'transport-error', error })
     this.emit({ type: 'error', error })
+    this.closeChannel()
     if (reject) reject(new Error(message))
   }
 

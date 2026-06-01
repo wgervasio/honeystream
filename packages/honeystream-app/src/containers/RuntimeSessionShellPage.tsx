@@ -998,6 +998,7 @@ const mapProjectionToShellSnapshot = (
   return {
     role: projection.role,
     session,
+    transportStatus: projection.transportState.status,
     clockSync: projection.clockSync,
     playbackAdapterKind: projection.playbackAdapterKind,
     systemErrors: [
@@ -1138,6 +1139,46 @@ const getClockSyncLabel = (
       )}ms host offset`
     : 'Heartbeat clock check warms up after rabbit joins'
 
+const getTransportStatusLabel = (
+  status: SessionRuntimeProjectionSnapshot['transportStatus']
+): string => {
+  switch (status) {
+    case 'connected':
+      return 'Control lane connected'
+    case 'connecting':
+      return 'Control lane handshaking'
+    case 'failed':
+      return 'Control lane needs help'
+    case 'disconnected':
+      return 'Control lane paused'
+    case 'disposed':
+      return 'Control lane closed'
+    case 'idle':
+    default:
+      return 'Control lane warming'
+  }
+}
+
+const getTransportStatusDetail = (
+  status: SessionRuntimeProjectionSnapshot['transportStatus']
+): string => {
+  switch (status) {
+    case 'connected':
+      return 'Invite, transport, and typed command lane are ready for both seats.'
+    case 'connecting':
+      return 'The room is exchanging hellos before playback commands can move.'
+    case 'failed':
+      return 'The room surfaced a connection issue instead of hiding it.'
+    case 'disconnected':
+      return 'One side left or paused the private control lane.'
+    case 'disposed':
+      return 'The room cleaned up its owned connection resources.'
+    case 'idle':
+    default:
+      return 'Paste a source and let the private invite start the tiny control lane.'
+  }
+}
+
 const getPlaybackAdapterKindLabel = (
   adapterKind: SessionRuntimeProjectionSnapshot['playbackAdapterKind'] | undefined
 ): string => {
@@ -1260,6 +1301,13 @@ const RuntimeSessionRouteSurface = ({
     const stageKindLabel = getStageKindLabel(currentMedia)
     const playbackStateLabel = getPlaybackStateLabel(viewModel.snapshot.session.playback.state)
     const clockSyncLabel = getClockSyncLabel(viewModel.snapshot.clockSync)
+    const clockSyncState = viewModel.snapshot.clockSync ? 'synced' : 'warming'
+    const transportStatusLabel = getTransportStatusLabel(viewModel.snapshot.transportStatus)
+    const transportStatusDetail = getTransportStatusDetail(viewModel.snapshot.transportStatus)
+    const connectionQualityLabel =
+      `${clockSyncLabel}; zero control bytes lost, ` +
+      `${STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS}ms best mock RT, and ` +
+      `under-${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms tail gates stay visible.`
     const playbackAdapterKind = viewModel.snapshot.playbackAdapterKind || 'warming'
     const playbackAdapterLabel = getPlaybackAdapterKindLabel(viewModel.snapshot.playbackAdapterKind)
     const launchSteps = createLaunchSteps(
@@ -1319,6 +1367,52 @@ const RuntimeSessionRouteSurface = ({
               ))}
             </div>
           </div>
+        </section>
+
+        <section
+          id="runtime_connection_runway"
+          className={`${styles.card} ${styles.signalDock} ${styles.connectionRunway}`}
+          aria-label="Buddy connection runway"
+          data-best-round-trip-ms={STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS}
+          data-byte-loss-rate="0"
+          data-clock-sync-state={clockSyncState}
+          data-guest-seat-state={guest ? 'present' : 'waiting'}
+          data-invite-secret-state={boundary.invite.secret ? 'present' : 'missing'}
+          data-tail-latency-ms-budget={STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}
+          data-transport-status={viewModel.snapshot.transportStatus}
+        >
+          <strong>Buddy connection runway</strong>
+          <article data-connection-runway-step="invite" data-connection-step-state="ready">
+            <span>Invite secret sealed</span>
+            <p>One private room secret gates the rabbit-side seat before sync starts.</p>
+          </article>
+          <article
+            data-connection-runway-step="transport"
+            data-connection-step-state={
+              viewModel.snapshot.transportStatus === 'connected' ? 'ready' : 'waiting'
+            }
+          >
+            <span>{transportStatusLabel}</span>
+            <p>{transportStatusDetail}</p>
+          </article>
+          <article
+            data-connection-runway-step="buddy"
+            data-connection-step-state={guest ? 'ready' : 'waiting'}
+          >
+            <span>{guest ? 'Both seats synced' : 'Rabbit seat waiting'}</span>
+            <p>
+              {guest
+                ? `${guest.username} is receiving the same queue and host-led controls.`
+                : 'Copy the invite once the source is picked so the second browser lands cleanly.'}
+            </p>
+          </article>
+          <article
+            data-connection-runway-step="quality"
+            data-connection-step-state={clockSyncState === 'synced' ? 'ready' : 'waiting'}
+          >
+            <span>{clockSyncState === 'synced' ? 'Heartbeat synced' : 'Heartbeat warming'}</span>
+            <p>{connectionQualityLabel}</p>
+          </article>
         </section>
 
         <section

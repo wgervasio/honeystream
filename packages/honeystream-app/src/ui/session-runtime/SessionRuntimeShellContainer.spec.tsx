@@ -44,6 +44,7 @@ const buildProjectionSnapshot = (
     },
     eventCursor: 4
   },
+  transportStatus: 'connected',
   systemErrors
 })
 
