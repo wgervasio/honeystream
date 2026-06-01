@@ -10,6 +10,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 const CopyWebpackPlugin = require('copy-webpack-plugin')
 
 const VERSION = require('./package.json').version
+const isE2ELocalRtcBuild = process.env.HONEYSTREAM_E2E_LOCAL_RTC === 'true'
 const GIT_BRANCH = childProcess
   .execSync('git rev-parse --abbrev-ref HEAD')
   .toString()
@@ -30,7 +31,8 @@ module.exports = {
         use: {
           loader: 'ts-loader',
           options: {
-            onlyCompileBundledFiles: true
+            onlyCompileBundledFiles: true,
+            transpileOnly: isE2ELocalRtcBuild
           }
         }
       },

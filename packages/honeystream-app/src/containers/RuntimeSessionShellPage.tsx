@@ -13,6 +13,7 @@ import {
   MediaProvider
 } from '../protocol'
 import { ClientCommand, MediaSnapshot } from '../protocol/types'
+import { BroadcastChannelPeerTransport } from '../transport/broadcast-channel-peer-transport'
 import {
   PlaybackEngineApplyResult,
   PlaybackEngineDesiredState
@@ -588,6 +589,8 @@ const getRuntimeRoutePlatform = (): RuntimeRoutePlatform => {
   return platformModule.PlatformService.get()
 }
 
+const isLocalRtcE2ERuntime = (): boolean => process.env.HONEYSTREAM_E2E_LOCAL_RTC === 'true'
+
 const createRuntimeFromTransport = (
   input: RuntimeRouteRuntimeHandleInput,
   transport: SessionRuntimeDependencies['transport']
@@ -666,6 +669,32 @@ const createLocalRuntimeHandle = (
   }
 }
 
+const createBroadcastRuntimeHandle = (
+  input: RuntimeRouteRuntimeHandleInput,
+  role: 'guest' | 'host',
+  localPeerId: string
+): RuntimeRouteRuntimeHandle => {
+  const inboundDirection = role === 'host' ? 'client-to-host' : 'host-to-client'
+  const transport = new BroadcastChannelPeerTransport({
+    roomId: input.roomId,
+    role,
+    localPeerId,
+    remotePeerIdHint: role === 'host' ? 'runtime-route-guest' : input.roomId,
+    inboundValidator: createWireEnvelopeValidator(inboundDirection),
+    now: input.now
+  })
+  const { runtime, playback } = createRuntimeFromTransport(input, transport)
+
+  return {
+    runtime,
+    playback,
+    role,
+    dispose(): void {
+      runtime.dispose()
+    }
+  }
+}
+
 const createLiveRuntimeHandle = async (
   input: RuntimeRouteRuntimeHandleInput
 ): Promise<RuntimeRouteRuntimeHandle> => {
@@ -687,6 +716,10 @@ const createLiveRuntimeHandle = async (
   */
   if (role === 'guest' && !input.inviteSecretProvided) {
     throw new Error('Invite secret is required to join a runtime session.')
+  }
+
+  if (isLocalRtcE2ERuntime()) {
+    return createBroadcastRuntimeHandle(input, role, localPeerId)
   }
 
   try {

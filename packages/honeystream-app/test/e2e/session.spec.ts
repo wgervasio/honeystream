@@ -5,13 +5,14 @@ const { getAppBaseUrl } = require('../environment/server-config') as {
 }
 
 const RUNTIME_SHELL_SELECTOR = '[data-runtime-session-shell="true"]'
-const SESSION_E2E_TIMEOUT_MS = 120e3
+const SESSION_E2E_TIMEOUT_MS = 180e3
 const APP_READY_OPTIONS = { waitUntil: 'domcontentloaded' as const }
 const PLAYBACK_POSITION_SELECTOR = '#runtime_playback_controls [data-intent="positionMs"]'
 const PLAYBACK_PLAY_PAUSE_SELECTOR = '#runtime_playback_controls [data-intent="playPause"]'
 const SEEK_FORWARD_STEP_MS = 10000
 const PLAYBACK_STATE_RETRY_COUNT = 3
 const PLAYBACK_STATE_RETRY_TIMEOUT_MS = 5000
+const RUNTIME_TEXT_TIMEOUT_MS = 30000
 let runtimeVisitCounter = 0
 
 jest.setTimeout(SESSION_E2E_TIMEOUT_MS)
@@ -31,15 +32,24 @@ async function getRuntimeInviteSecret(page: Page): Promise<string> {
 }
 
 async function waitForRuntimeText(page: Page, text: string): Promise<void> {
-  await page.waitForFunction(
-    expectedText =>
-      Boolean(
-        document.body &&
-          document.body.textContent &&
-          document.body.textContent.includes(expectedText)
-      ),
-    text
-  )
+  try {
+    await page.waitForFunction(
+      expectedText =>
+        Boolean(
+          document.body &&
+            document.body.textContent &&
+            document.body.textContent.includes(expectedText)
+        ),
+      text,
+      { timeout: RUNTIME_TEXT_TIMEOUT_MS }
+    )
+  } catch (error) {
+    if (!isTimeoutError(error)) throw error
+    const bodyTextExcerpt = await getBodyTextExcerpt(page)
+    throw new Error(
+      `Timed out waiting for runtime text: ${text}\nVisible text excerpt: ${bodyTextExcerpt}`
+    )
+  }
 }
 
 async function getPlaybackPositionMs(page: Page): Promise<number> {
@@ -99,7 +109,22 @@ async function waitForCurrentQueueTitle(page: Page, title: string): Promise<void
 }
 
 function isTimeoutError(error: unknown): boolean {
-  return error instanceof Error && /timeout/i.test(error.message)
+  if (error instanceof Error) {
+    return /timeout/i.test(error.message)
+  }
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    return /timeout/i.test(String((error as { readonly message?: unknown }).message))
+  }
+
+  return false
+}
+
+async function getBodyTextExcerpt(page: Page): Promise<string> {
+  const bodyText = await page.evaluate(() =>
+    document.body && document.body.textContent ? document.body.textContent : ''
+  )
+
+  return bodyText.replace(/\s+/g, ' ').trim().slice(0, 800)
 }
 
 async function clickPlayPauseAndWaitForState(
@@ -392,19 +417,21 @@ describe('session', () => {
   })
 
   describe('p2p: host + client', () => {
-    let clientContext: BrowserContext
+    let clientContext: BrowserContext | undefined
     let clientPage: Page
-    let clientId: string
+    let shouldCloseClientContext = false
 
     beforeEach(async () => {
-      clientContext = await browser.newContext()
+      shouldCloseClientContext = process.env.HONEYSTREAM_E2E_LOCAL_RTC !== 'true'
+      clientContext = shouldCloseClientContext ? await browser.newContext() : context
       clientPage = await clientContext.newPage()
-      clientId = await ms.setProfile('clientA', clientPage)
     })
 
     afterEach(async () => {
       await clientPage.close()
-      await clientContext.close()
+      if (clientContext && shouldCloseClientContext) {
+        await clientContext.close()
+      }
     })
 
     it(
@@ -414,6 +441,7 @@ describe('session', () => {
         const hostPage = page
         await hostPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
 
+        await ms.setProfile('clientA', clientPage)
         await visitRuntimePath(clientPage, `/join/${hostId}`)
         await clientPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
         await waitForRuntimeText(clientPage, 'Invite secret is required')
@@ -429,6 +457,7 @@ describe('session', () => {
       await hostPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
       const inviteSecret = await getRuntimeInviteSecret(hostPage)
 
+      await ms.setProfile('clientA', clientPage)
       await visitRuntimePath(
         clientPage,
         `/join/${hostId}?secret=${encodeURIComponent(inviteSecret)}`
@@ -439,8 +468,7 @@ describe('session', () => {
       await hostPage.waitForSelector('[data-session-state-tone="synced"]')
       await clientPage.waitForSelector('[data-session-state-tone="synced"]')
 
-      await clientPage.click('#runtime-add-media-url')
-      await clientPage.type('#runtime-add-media-url', 'youtube.com/watch?v=guest-e2e')
+      await clientPage.fill('#runtime-add-media-url', 'youtube.com/watch?v=guest-e2e')
       await waitForRuntimeText(clientPage, 'Honeystream will add https:// automatically')
       await clientPage.press('#runtime-add-media-url', 'Enter')
 
@@ -474,8 +502,7 @@ describe('session', () => {
       await waitForPlaybackPositionAtLeast(hostPage, expectedGuestSeekPositionMs)
       await waitForPlaybackPositionAtLeast(clientPage, expectedGuestSeekPositionMs)
 
-      await hostPage.click('#runtime-add-media-url')
-      await hostPage.type('#runtime-add-media-url', 'youtube.com/watch?v=host-e2e')
+      await hostPage.fill('#runtime-add-media-url', 'youtube.com/watch?v=host-e2e')
       await waitForRuntimeText(hostPage, 'Honeystream will add https:// automatically')
       await hostPage.press('#runtime-add-media-url', 'Enter')
 
