@@ -7,6 +7,7 @@ const webpack = require('webpack')
 
 const distPath = path.join(__dirname, '../dist')
 const bundleFiles = ['index.html', 'app.dev.js']
+const buildSignaturePath = path.join(distPath, 'e2e-build-signature.json')
 const contentTypes = {
   '.css': 'text/css; charset=utf-8',
   '.html': 'text/html; charset=utf-8',
@@ -43,9 +44,41 @@ function getLatestMtimeMs(targetPath) {
   }, stat.mtimeMs)
 }
 
+function getBuildSignature() {
+  return {
+    HONEYSTREAM_E2E_BROADCAST_RTC: process.env.HONEYSTREAM_E2E_BROADCAST_RTC || '',
+    HONEYSTREAM_E2E_LOCAL_RTC: process.env.HONEYSTREAM_E2E_LOCAL_RTC || '',
+    HONEYSTREAM_SIGNAL_SERVER: process.env.HONEYSTREAM_SIGNAL_SERVER || '',
+    NODE_ENV: process.env.NODE_ENV || ''
+  }
+}
+
+function hasMatchingBuildSignature() {
+  if (!fs.existsSync(buildSignaturePath)) {
+    return false
+  }
+
+  const expectedSignature = getBuildSignature()
+  let actualSignature
+  try {
+    actualSignature = JSON.parse(fs.readFileSync(buildSignaturePath, 'utf8'))
+  } catch (error) {
+    console.warn(`Ignoring unreadable E2E build signature: ${error.message}`)
+    return false
+  }
+  return Object.keys(expectedSignature).every(key => actualSignature[key] === expectedSignature[key])
+}
+
+function writeBuildSignature() {
+  fs.writeFileSync(buildSignaturePath, JSON.stringify(getBuildSignature()), 'utf8')
+}
+
 function hasFreshBundle() {
   const bundlePaths = bundleFiles.map(filename => path.join(distPath, filename))
   if (!bundlePaths.every(filepath => fs.existsSync(filepath))) {
+    return false
+  }
+  if (!hasMatchingBuildSignature()) {
     return false
   }
 
@@ -102,6 +135,7 @@ function buildApp() {
 
         const info = stats.toJson({ all: false, timings: true, warnings: true })
         const warningCount = info.warnings ? info.warnings.length : 0
+        writeBuildSignature()
         console.log(`E2E app bundle ready in ${info.time || 0}ms with ${warningCount} warnings.`)
         resolve()
       }

@@ -11,24 +11,26 @@ export const HONEYSTREAM_NETWORK_VERSION = 6
 export const HONEYSTREAM_SIGNAL_SERVER =
   process.env.HONEYSTREAM_SIGNAL_SERVER || 'wss://signal.rtc.gethoneystream.com'
 
+const HONEYSTREAM_E2E_USES_BROADCAST_RTC =
+  process.env.HONEYSTREAM_E2E_BROADCAST_RTC === 'true' ||
+  (process.env.HONEYSTREAM_E2E_LOCAL_RTC === 'true' &&
+    process.env.HONEYSTREAM_E2E_BROADCAST_RTC !== 'false')
 /*
- * Local e2e runs keep both peers on loopback. Skipping public STUN there removes an external
- * dependency and avoids measuring third-party ICE latency instead of Honeystream control sync.
+ * Local broadcast e2e runs do not create RTCPeerConnections. Live e2e keeps the optimized local
+ * build but must use normal ICE discovery so isolated browser contexts can complete WebRTC setup.
  */
-const HONEYSTREAM_STUN_SERVERS =
-  process.env.HONEYSTREAM_E2E_LOCAL_RTC === 'true'
-    ? []
-    : [{ url: 'stun:stun1.l.google.com:19302' }, { url: 'stun:stun2.l.google.com:19302' }]
-const HONEYSTREAM_TURN_SERVER =
-  process.env.HONEYSTREAM_E2E_LOCAL_RTC === 'true'
-    ? undefined
-    : process.env.HONEYSTREAM_TURN_CREDENTIAL && {
-        url:
-          process.env.HONEYSTREAM_TURN_SERVER ||
-          'turn:turn.rtc.gethoneystream.com:5349?transport=tcp',
-        username: process.env.HONEYSTREAM_TURN_USERNAME || 'honeystream',
-        credential: process.env.HONEYSTREAM_TURN_CREDENTIAL
-      }
+const HONEYSTREAM_STUN_SERVERS = HONEYSTREAM_E2E_USES_BROADCAST_RTC
+  ? []
+  : [{ url: 'stun:stun1.l.google.com:19302' }, { url: 'stun:stun2.l.google.com:19302' }]
+const HONEYSTREAM_TURN_SERVER = HONEYSTREAM_E2E_USES_BROADCAST_RTC
+  ? undefined
+  : process.env.HONEYSTREAM_TURN_CREDENTIAL && {
+      url:
+        process.env.HONEYSTREAM_TURN_SERVER ||
+        'turn:turn.rtc.gethoneystream.com:5349?transport=tcp',
+      username: process.env.HONEYSTREAM_TURN_USERNAME || 'honeystream',
+      credential: process.env.HONEYSTREAM_TURN_CREDENTIAL
+    }
 
 // prettier-ignore
 export const HONEYSTREAM_ICE_SERVERS = [
