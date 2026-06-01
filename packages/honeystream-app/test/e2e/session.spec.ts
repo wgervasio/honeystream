@@ -12,6 +12,7 @@ const PLAYBACK_PLAY_PAUSE_SELECTOR = '#runtime_playback_controls [data-intent="p
 const SEEK_FORWARD_STEP_MS = 10000
 const PLAYBACK_STATE_RETRY_COUNT = 3
 const PLAYBACK_STATE_RETRY_TIMEOUT_MS = 5000
+const QUEUE_STATE_TIMEOUT_MS = 60000
 const RUNTIME_TEXT_TIMEOUT_MS = 30000
 const USE_BROADCAST_RTC_E2E = process.env.HONEYSTREAM_E2E_BROADCAST_RTC !== 'false'
 let runtimeVisitCounter = 0
@@ -122,14 +123,31 @@ async function waitForPlaybackState(
 }
 
 async function waitForCurrentQueueTitle(page: Page, title: string): Promise<void> {
-  await page.waitForFunction(expectedTitle => {
-    const currentTitle = document.querySelector('[data-queue-state="current"] strong')
-    return Boolean(
-      currentTitle &&
-        currentTitle.textContent &&
-        currentTitle.textContent.indexOf(expectedTitle) !== -1
-    )
-  }, title)
+  await page.waitForFunction(
+    expectedTitle => {
+      const currentTitle = document.querySelector('[data-queue-state="current"] strong')
+      return Boolean(
+        currentTitle &&
+          currentTitle.textContent &&
+          currentTitle.textContent.indexOf(expectedTitle) !== -1
+      )
+    },
+    title,
+    { timeout: QUEUE_STATE_TIMEOUT_MS }
+  )
+}
+
+async function waitForQueuedItemTitle(page: Page, title: string): Promise<void> {
+  await page.waitForFunction(
+    expectedTitle =>
+      Array.prototype.some.call(
+        document.querySelectorAll('[data-queue-item-id] span:first-child'),
+        (element: Element) =>
+          Boolean(element.textContent && element.textContent.indexOf(expectedTitle) !== -1)
+      ),
+    title,
+    { timeout: QUEUE_STATE_TIMEOUT_MS }
+  )
 }
 
 async function waitForStreamingMergeProof(page: Page): Promise<void> {
@@ -629,6 +647,8 @@ describe('session', () => {
         await waitForRuntimeText(clientPage, `${source.provider} watch page`)
 
         if (index > 0) {
+          await waitForQueuedItemTitle(hostPage, source.title)
+          await waitForQueuedItemTitle(clientPage, source.title)
           await advancingPage.waitForSelector(
             '#runtime_playback_controls [data-intent="next"]:not([disabled])'
           )
