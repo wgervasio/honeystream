@@ -9,6 +9,7 @@ const playwrightConfig = require('../../jest-playwright.config') as {
 }
 
 const RUNTIME_SHELL_SELECTOR = '[data-runtime-session-shell="true"]'
+const INVITE_LINK_SELECTOR = '[data-invite-field="invite-link"] code'
 const SESSION_E2E_TIMEOUT_MS = 180e3
 const STREAMING_SITE_SESSION_E2E_TIMEOUT_MS = 360e3
 const APP_READY_OPTIONS = { waitUntil: 'domcontentloaded' as const }
@@ -29,6 +30,10 @@ const CONNECTION_CONFIDENCE_SELECTOR =
   '[data-test-modes="broadcast+isolated-live"]'
 const BROWSER_SYNC_RECEIPT_READY_SELECTOR =
   '#runtime_browser_sync_receipt[data-receipt-state="ready"][data-byte-loss-rate="0"]' +
+  '[data-tail-latency-ms-budget="10"][data-site-lane-count="5"]' +
+  '[data-test-modes="broadcast+isolated-live"]'
+const HAPPY_SYNC_SEAL_READY_SELECTOR =
+  '#runtime_happy_sync_seal[data-seal-state="ready"][data-byte-loss-rate="0"]' +
   '[data-tail-latency-ms-budget="10"][data-site-lane-count="5"]' +
   '[data-test-modes="broadcast+isolated-live"]'
 let runtimeVisitCounter = 0
@@ -64,10 +69,8 @@ const STREAMING_SITE_E2E_SOURCES = [
 jest.setTimeout(SESSION_E2E_TIMEOUT_MS)
 
 async function getRuntimeInviteSecret(page: Page): Promise<string> {
-  const inviteLink = await page.$eval(
-    '[data-invite-field="invite-link"] code',
-    e => e.textContent || ''
-  )
+  await page.waitForSelector(INVITE_LINK_SELECTOR, { timeout: RUNTIME_TEXT_TIMEOUT_MS })
+  const inviteLink = await page.$eval(INVITE_LINK_SELECTOR, e => e.textContent || '')
   const inviteUrl = new URL(inviteLink)
   const secret = inviteUrl.searchParams.get('secret')
   if (!secret) {
@@ -287,6 +290,7 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
     'YouTube, AnimePahe, Cineby, Miruro, and generic pages load locally'
   )
   await waitForRuntimeText(page, 'Browser sync receipt')
+  await waitForRuntimeText(page, 'Happy sync sealed')
   await waitForRuntimeText(page, 'Two browsers synced')
   await waitForRuntimeText(page, 'Two browsers, one cozy lane')
   await waitForRuntimeText(page, '0B control loss')
@@ -335,6 +339,8 @@ async function expectHealthyTwoBrowserConnection(input: {
   )
   await input.hostPage.waitForSelector(BROWSER_SYNC_RECEIPT_READY_SELECTOR)
   await input.clientPage.waitForSelector(BROWSER_SYNC_RECEIPT_READY_SELECTOR)
+  await input.hostPage.waitForSelector(HAPPY_SYNC_SEAL_READY_SELECTOR)
+  await input.clientPage.waitForSelector(HAPPY_SYNC_SEAL_READY_SELECTOR)
   await waitForStreamingMergeProof(input.hostPage)
   await waitForStreamingMergeProof(input.clientPage)
   await expectNoRuntimeConnectionAlerts(input.hostPage)
@@ -556,6 +562,7 @@ describe('session', () => {
         'Live e2e mode runs cat-side and rabbit-side in separate browser processes through the real connection flow'
       )
       await waitForRuntimeText(page, 'Browser sync receipt')
+      await waitForRuntimeText(page, 'Happy sync warming')
       await waitForRuntimeText(page, 'Waiting for two seats')
       await waitForRuntimeText(page, 'Two browsers, one cozy lane')
       await waitForRuntimeText(page, '0B control loss')
