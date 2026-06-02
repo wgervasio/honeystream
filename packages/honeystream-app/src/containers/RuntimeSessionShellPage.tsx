@@ -1470,6 +1470,25 @@ const RuntimeSessionRouteSurface = ({
                 : 'Waiting for two seats'}
             </span>
           </div>
+          <div
+            id="runtime_happy_sync_seal"
+            className={styles.happySyncSeal}
+            aria-label="Happy sync seal"
+            data-byte-loss-rate="0"
+            data-seal-state={browserSyncReceiptState}
+            data-site-lane-count={STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}
+            data-tail-latency-ms-budget={STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}
+            data-test-modes="broadcast+isolated-live"
+          >
+            <strong>
+              {browserSyncReceiptState === 'ready' ? 'Happy sync sealed' : 'Happy sync warming'}
+            </strong>
+            <span>
+              {browserSyncReceiptState === 'ready'
+                ? 'Two browser seats, one tiny control lane, zero lost bytes, and local website playback are ready.'
+                : 'Waiting for the rabbit-side seat, connected transport, and heartbeat clock sync.'}
+            </span>
+          </div>
           <div className={styles.syncReceiptGrid}>
             {BROWSER_SYNC_RECEIPT_ITEMS.map(item => (
               <article key={item.id} data-browser-sync-receipt={item.id}>
