@@ -1,4 +1,9 @@
 import { Browser, Page, BrowserContext, chromium } from 'playwright-core'
+import {
+  STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT,
+  STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT,
+  STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES
+} from '../../src/transport/streaming-site-browser-pair-e2e-matrix'
 
 const { getAppBaseUrl } = require('../environment/server-config') as {
   getAppBaseUrl(): string
@@ -27,44 +32,25 @@ const CONNECTION_CONFIDENCE_SELECTOR =
   '#runtime_connection_confidence[data-byte-loss-rate="0"]' +
   '[data-tail-latency-ms-budget="10"][data-best-round-trip-ms="2"]' +
   '[data-provider-count="4"][data-site-count="58"]' +
+  `[data-site-lane-count="${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}"]` +
+  `[data-site-path-count="${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}"]` +
   '[data-test-modes="broadcast+isolated-live"]'
 const BROWSER_SYNC_RECEIPT_READY_SELECTOR =
   '#runtime_browser_sync_receipt[data-receipt-state="ready"][data-byte-loss-rate="0"]' +
-  '[data-tail-latency-ms-budget="10"][data-site-lane-count="5"]' +
+  '[data-tail-latency-ms-budget="10"]' +
+  `[data-site-lane-count="${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}"]` +
+  `[data-site-path-count="${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}"]` +
   '[data-test-modes="broadcast+isolated-live"]'
 const HAPPY_SYNC_SEAL_READY_SELECTOR =
   '#runtime_happy_sync_seal[data-seal-state="ready"][data-byte-loss-rate="0"]' +
-  '[data-tail-latency-ms-budget="10"][data-site-lane-count="5"]' +
+  '[data-tail-latency-ms-budget="10"]' +
+  `[data-site-lane-count="${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}"]` +
+  `[data-site-path-count="${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}"]` +
   '[data-test-modes="broadcast+isolated-live"]'
+const BROWSER_PAIR_MATRIX_SELECTOR =
+  '[data-merge-gate-metric="browser-pair-matrix"]' +
+  `[data-merge-gate-value="${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} browser paths"]`
 let runtimeVisitCounter = 0
-
-const STREAMING_SITE_E2E_SOURCES = [
-  {
-    url: 'youtube.com/watch?v=two-browser-youtube',
-    title: 'YouTube watch page',
-    expectedText: 'YouTube watch page'
-  },
-  {
-    url: 'animepahe.ru/play/two-browser-animepahe',
-    title: 'AnimePahe watch page',
-    expectedText: 'AnimePahe watch page'
-  },
-  {
-    url: 'cineby.app/movie/two-browser-cineby',
-    title: 'Cineby watch page',
-    expectedText: 'Cineby watch page'
-  },
-  {
-    url: 'miruro.to/watch/two-browser-miruro',
-    title: 'Miruro watch page',
-    expectedText: 'Miruro watch page'
-  },
-  {
-    url: 'streaming.example.test/watch/two-browser-generic',
-    title: 'streaming.example.test page',
-    expectedText: 'streaming.example.test page'
-  }
-] as const
 
 jest.setTimeout(SESSION_E2E_TIMEOUT_MS)
 
@@ -220,6 +206,10 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
   await page.waitForSelector(
     '#runtime_merge_gate[data-zero-loss-required="true"][data-provider-count="4"][data-queue-byte-cap="262144"][data-trace-cap="64"]'
   )
+  await page.waitForSelector(
+    `#runtime_merge_gate[data-site-lane-count="${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}"]` +
+      `[data-site-path-count="${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}"]`
+  )
   await page.waitForSelector('[data-merge-gate-metric="byte-loss"][data-merge-gate-value="0%"]')
   await page.waitForSelector(
     '[data-merge-gate-metric="provider-lost-bytes"][data-merge-gate-value="0B"]'
@@ -245,9 +235,7 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
   await page.waitForSelector(
     '[data-merge-gate-metric="per-site-observation"][data-merge-gate-value="58 observed"]'
   )
-  await page.waitForSelector(
-    '[data-merge-gate-metric="browser-pair-matrix"][data-merge-gate-value="5 site lanes"]'
-  )
+  await page.waitForSelector(BROWSER_PAIR_MATRIX_SELECTOR)
   await page.waitForSelector(
     '[data-merge-gate-metric="browser-isolation"][data-merge-gate-value="isolated live mode"]'
   )
@@ -272,7 +260,7 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
   await waitForRuntimeText(page, 'Two isolated browsers')
   await waitForRuntimeText(
     page,
-    'Broadcast e2e and isolated live e2e both drive the same private invite flow across named and generic website lanes'
+    `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} named and generic website paths`
   )
   await waitForRuntimeText(page, 'Zero-loss controls')
   await waitForRuntimeText(
@@ -294,7 +282,8 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
   await waitForRuntimeText(page, 'Two browsers synced')
   await waitForRuntimeText(page, 'Two browsers, one cozy lane')
   await waitForRuntimeText(page, '0B control loss')
-  await waitForRuntimeText(page, 'YouTube plus any-site lanes')
+  await waitForRuntimeText(page, 'YouTube plus any-site matrix')
+  await waitForRuntimeText(page, `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} two-browser paths`)
   await waitForRuntimeText(page, 'Media bytes stay local')
 }
 
@@ -550,10 +539,11 @@ describe('session', () => {
       await waitForRuntimeText(page, 'Provider gate')
       await waitForRuntimeText(page, '4 providers')
       await waitForRuntimeText(page, 'Buddy e2e gate')
-      await waitForRuntimeText(page, '5 site lanes')
+      await waitForRuntimeText(page, `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} browser paths`)
       await waitForRuntimeText(
         page,
-        'Two browser pages queue, pause, resume, seek, advance, and sync YouTube, AnimePahe, Cineby, Miruro, and a generic website before merge'
+        `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} paths across ` +
+          `${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT} site lanes before merge`
       )
       await waitForRuntimeText(page, 'Connection confidence')
       await waitForRuntimeText(page, 'Secret handshake')
@@ -572,7 +562,11 @@ describe('session', () => {
       await waitForRuntimeText(page, 'Waiting for two seats')
       await waitForRuntimeText(page, 'Two browsers, one cozy lane')
       await waitForRuntimeText(page, '0B control loss')
-      await waitForRuntimeText(page, 'YouTube plus any-site lanes')
+      await waitForRuntimeText(page, 'YouTube plus any-site matrix')
+      await waitForRuntimeText(
+        page,
+        `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} two-browser paths`
+      )
       await waitForRuntimeText(page, 'Media bytes stay local')
       await waitForRuntimeText(page, 'Trace gate')
       await waitForRuntimeText(page, '64 recent frames')
@@ -958,8 +952,8 @@ describe('session', () => {
         expectLiveBrowserIsolation({ clientBrowser, clientPage, hostPage })
         await expectHealthyTwoBrowserConnection({ clientPage, hostPage })
 
-        for (let index = 0; index < STREAMING_SITE_E2E_SOURCES.length; index += 1) {
-          const source = STREAMING_SITE_E2E_SOURCES[index]
+        for (let index = 0; index < STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES.length; index += 1) {
+          const source = STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES[index]
           const addingPage = index % 2 === 0 ? clientPage : hostPage
 
           await addingPage.fill('#runtime-add-media-url', source.url)
@@ -987,11 +981,13 @@ describe('session', () => {
             hostPage,
             label: `${source.title} playing`
           })
-          await exerciseTwoBrowserPlaybackControls({
-            clientPage,
-            controlPage: index % 2 === 0 ? hostPage : clientPage,
-            hostPage
-          })
+          if (source.exerciseControls) {
+            await exerciseTwoBrowserPlaybackControls({
+              clientPage,
+              controlPage: index % 2 === 0 ? hostPage : clientPage,
+              hostPage
+            })
+          }
           await expectHealthyTwoBrowserConnection({ clientPage, hostPage })
         }
       },

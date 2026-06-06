@@ -50,6 +50,10 @@ import {
   STREAMING_SITE_CONNECTION_TRIAL_COUNT
 } from '../transport/streaming-site-connection-defaults'
 import {
+  STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT,
+  STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT
+} from '../transport/streaming-site-browser-pair-e2e-matrix'
+import {
   Disposable,
   InviteLinkPanel,
   PlaybackRuntimeControlIntents,
@@ -172,7 +176,6 @@ const STREAMING_SITE_PROVIDER_COVERAGE_LABEL = STREAMING_SITE_CONNECTION_PROVIDE
 const STREAMING_SITE_NAMED_PROVIDER_COUNT = STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE.filter(
   coverage => coverage.provider !== 'unknown'
 ).length
-const STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT = STREAMING_SITE_NAMED_PROVIDER_COUNT + 1
 const HAPPY_PATH_STEPS = [
   {
     id: 'paste',
@@ -429,9 +432,11 @@ const MERGE_GATE_METRICS = [
   {
     id: 'browser-pair-matrix',
     label: 'Buddy e2e gate',
-    value: `${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT} site lanes`,
+    value: `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} browser paths`,
     detail:
-      'Two browser pages queue, pause, resume, seek, advance, and sync YouTube, AnimePahe, Cineby, Miruro, and a generic website before merge.'
+      `Two browser pages queue, pause, resume, seek, advance, and sync ` +
+      `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} paths across ` +
+      `${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT} site lanes before merge.`
   },
   {
     id: 'browser-isolation',
@@ -466,7 +471,8 @@ const CONNECTION_CONFIDENCE_CARDS = [
     id: 'isolated-browsers',
     label: 'Two isolated browsers',
     detail:
-      'Broadcast e2e and isolated live e2e both drive the same private invite flow across named and generic website lanes.'
+      `Broadcast e2e and isolated live e2e both drive the same private invite flow across ` +
+      `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} named and generic website paths.`
   },
   {
     id: 'zero-loss-controls',
@@ -508,9 +514,10 @@ const BROWSER_SYNC_RECEIPT_ITEMS = [
   },
   {
     id: 'site-lanes',
-    label: 'YouTube plus any-site lanes',
+    label: 'YouTube plus any-site matrix',
     detail:
-      'YouTube, AnimePahe, Cineby, Miruro, and a generic website lane are exercised by the two-browser e2e flow.'
+      `YouTube, AnimePahe, Cineby, Miruro, and generic lanes cover ` +
+      `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} two-browser paths before merge.`
   },
   {
     id: 'local-media',
@@ -1493,6 +1500,7 @@ const RuntimeSessionRouteSurface = ({
           data-byte-loss-rate="0"
           data-receipt-state={browserSyncReceiptState}
           data-site-lane-count={STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}
+          data-site-path-count={STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}
           data-tail-latency-ms-budget={STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}
           data-test-modes="broadcast+isolated-live"
         >
@@ -1511,6 +1519,7 @@ const RuntimeSessionRouteSurface = ({
             data-byte-loss-rate="0"
             data-seal-state={browserSyncReceiptState}
             data-site-lane-count={STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}
+            data-site-path-count={STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}
             data-tail-latency-ms-budget={STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}
             data-test-modes="broadcast+isolated-live"
           >
@@ -1974,7 +1983,9 @@ const RuntimeSessionRouteSurface = ({
           aria-label="Streaming merge gate"
           data-byte-loss-rate="0"
           data-provider-count={STREAMING_SITE_NAMED_PROVIDER_COUNT}
+          data-site-lane-count={STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}
           data-queue-byte-cap={STREAMING_SITE_CONNECTION_PROFILE_MAX_QUEUED_BYTES}
+          data-site-path-count={STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}
           data-site-count={STREAMING_SITE_CONNECTION_FIXTURE_COUNT}
           data-trace-cap="64"
           data-zero-loss-required="true"
@@ -2005,6 +2016,8 @@ const RuntimeSessionRouteSurface = ({
           data-best-round-trip-ms={STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS}
           data-byte-loss-rate="0"
           data-provider-count={STREAMING_SITE_NAMED_PROVIDER_COUNT}
+          data-site-lane-count={STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}
+          data-site-path-count={STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}
           data-site-count={STREAMING_SITE_CONNECTION_FIXTURE_COUNT}
           data-tail-latency-ms-budget={STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}
           data-test-modes="broadcast+isolated-live"
