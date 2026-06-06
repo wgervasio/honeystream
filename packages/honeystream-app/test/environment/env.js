@@ -7,8 +7,10 @@ const playwrightConfig = require('../../jest-playwright.config')
 
 const ARTIFACTS_PATH = path.join(__dirname, '../artifacts')
 const APP_READY_OPTIONS = Object.freeze({ waitUntil: 'domcontentloaded' })
+const PROFILE_SEED_PATH = '/__honeystream_e2e_profile_seed__'
 const CAPTURE_SCREENSHOTS = process.env.HONEYSTREAM_E2E_SCREENSHOTS === 'true'
 const BROWSER_CLOSE_TIMEOUT_MS = 5000
+const PERSISTED_STATE_KEY = 'persist:honeystream-state'
 
 const PROFILES = {
   default: {
@@ -48,12 +50,12 @@ function withE2EVisitParam(pathname) {
 }
 
 async function setProfile(profileName = 'default', page = this.global.page) {
-  const global = this.global
-
   const profile = PROFILES[profileName]
-  const initialStateParam = encodeURIComponent(JSON.stringify(profile.initialState))
+  if (!profile) {
+    throw new Error(`Unknown e2e profile "${profileName}".`)
+  }
 
-  await page.goto(`${getAppBaseUrl()}/?initialState=${initialStateParam}`, APP_READY_OPTIONS)
+  await page.goto(`${getAppBaseUrl()}${PROFILE_SEED_PATH}`, APP_READY_OPTIONS)
   await page.evaluate(
     data => {
       Object.keys(data).forEach(key => {
@@ -68,6 +70,10 @@ async function setProfile(profileName = 'default', page = this.global.page) {
     {
       identity: profile.identity.secret,
       'identity.pub': profile.identity.public,
+      [PERSISTED_STATE_KEY]: JSON.stringify({
+        settings: JSON.stringify(profile.initialState.settings),
+        _persist: JSON.stringify({ version: 3, rehydrated: true })
+      }),
       ...profile.localStorage
     }
   )

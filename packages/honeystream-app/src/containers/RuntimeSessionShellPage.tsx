@@ -14,6 +14,7 @@ import {
 } from '../protocol'
 import { ClientCommand, MediaSnapshot } from '../protocol/types'
 import { BroadcastChannelPeerTransport } from '../transport/broadcast-channel-peer-transport'
+import { E2EWebSocketPeerTransport } from '../transport/e2e-websocket-peer-transport'
 import {
   PlaybackEngineApplyResult,
   PlaybackEngineDesiredState
@@ -695,6 +696,10 @@ const isE2ERuntime = (): boolean =>
   process.env.HONEYSTREAM_E2E_BROADCAST_RTC === 'false' ||
   process.env.HONEYSTREAM_E2E_LOCAL_RTC === 'true'
 
+const isIsolatedRelayE2ERuntime = (): boolean =>
+  process.env.HONEYSTREAM_E2E_LOCAL_RTC === 'true' &&
+  process.env.HONEYSTREAM_E2E_BROADCAST_RTC === 'false'
+
 /*
 Context: E2E verifies streaming-site control sync without making live third-party navigations.
 Invariant: Popup adapter ownership and cleanup still run, but tests keep all browser targets local.
@@ -840,6 +845,32 @@ const createBroadcastRuntimeHandle = (
   }
 }
 
+const createE2ERelayRuntimeHandle = (
+  input: RuntimeRouteRuntimeHandleInput,
+  role: 'guest' | 'host',
+  localPeerId: string
+): RuntimeRouteRuntimeHandle => {
+  const inboundDirection = role === 'host' ? 'client-to-host' : 'host-to-client'
+  const transport = new E2EWebSocketPeerTransport({
+    roomId: input.roomId,
+    role,
+    localPeerId,
+    remotePeerIdHint: role === 'host' ? 'runtime-route-guest' : input.roomId,
+    inboundValidator: createWireEnvelopeValidator(inboundDirection),
+    now: input.now
+  })
+  const { runtime, playback } = createRuntimeFromTransport(input, transport)
+
+  return {
+    runtime,
+    playback,
+    role,
+    dispose(): void {
+      runtime.dispose()
+    }
+  }
+}
+
 const createLiveRuntimeHandle = async (
   input: RuntimeRouteRuntimeHandleInput
 ): Promise<RuntimeRouteRuntimeHandle> => {
@@ -865,6 +896,9 @@ const createLiveRuntimeHandle = async (
 
   if (isBroadcastRtcE2ERuntime()) {
     return createBroadcastRuntimeHandle(input, role, localPeerId)
+  }
+  if (isIsolatedRelayE2ERuntime()) {
+    return createE2ERelayRuntimeHandle(input, role, localPeerId)
   }
 
   try {

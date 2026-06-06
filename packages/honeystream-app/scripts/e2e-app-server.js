@@ -4,10 +4,13 @@ const fs = require('fs')
 const http = require('http')
 const path = require('path')
 const webpack = require('webpack')
+const WebSocket = require('ws')
 
 const distPath = path.join(__dirname, '../dist')
 const bundleFiles = ['index.html', 'app.dev.js']
 const buildSignaturePath = path.join(distPath, 'e2e-build-signature.json')
+const profileSeedPath = '/__honeystream_e2e_profile_seed__'
+const relayPath = '/__honeystream_e2e_peer_relay__'
 const contentTypes = {
   '.css': 'text/css; charset=utf-8',
   '.html': 'text/html; charset=utf-8',
@@ -173,6 +176,119 @@ function sendFile(response, filepath) {
   })
 }
 
+function sendProfileSeedPage(response) {
+  const body = '<!doctype html><html><head><meta charset="utf-8"></head><body>profile seed</body></html>'
+  response.writeHead(200, {
+    'Content-Type': 'text/html; charset=utf-8',
+    'Content-Length': Buffer.byteLength(body),
+    'X-Content-Type-Options': 'nosniff'
+  })
+  response.end(body)
+}
+
+function isRelayRole(value) {
+  return value === 'guest' || value === 'host'
+}
+
+function createE2EPeerRelay(server) {
+  const rooms = new Map()
+  const wsServer = new WebSocket.Server({ server, path: relayPath })
+
+  const getRoom = roomId => {
+    const existingRoom = rooms.get(roomId)
+    if (existingRoom) return existingRoom
+
+    const room = {}
+    rooms.set(roomId, room)
+    return room
+  }
+
+  const sendJson = (client, message) => {
+    if (client.socket.readyState === WebSocket.OPEN) {
+      client.socket.send(JSON.stringify(message))
+    }
+  }
+
+  const announcePeerIfReady = room => {
+    if (!room.host || !room.guest) return
+    sendJson(room.host, { kind: 'peer', peerId: room.guest.peerId })
+    sendJson(room.guest, { kind: 'peer', peerId: room.host.peerId })
+  }
+
+  const removeClient = client => {
+    const room = rooms.get(client.roomId)
+    if (!room || room[client.role] !== client) return
+
+    room[client.role] = undefined
+    const peer = client.role === 'host' ? room.guest : room.host
+    if (peer) sendJson(peer, { kind: 'leave', peerId: client.peerId })
+    if (!room.host && !room.guest) rooms.delete(client.roomId)
+  }
+
+  const forwardData = (client, rawMessage) => {
+    let message
+    try {
+      message = JSON.parse(rawMessage.toString())
+    } catch {
+      client.socket.close()
+      return
+    }
+    if (
+      !message ||
+      message.kind !== 'data' ||
+      typeof message.toPeerId !== 'string' ||
+      typeof message.envelope !== 'object' ||
+      message.envelope === null
+    ) {
+      client.socket.close()
+      return
+    }
+
+    const room = rooms.get(client.roomId)
+    const peer = room && (client.role === 'host' ? room.guest : room.host)
+    if (!peer || peer.peerId !== message.toPeerId) return
+
+    sendJson(peer, {
+      kind: 'data',
+      fromPeerId: client.peerId,
+      envelope: message.envelope
+    })
+  }
+
+  wsServer.on('connection', (socket, request) => {
+    const url = new URL(request.url || relayPath, `http://${getHost()}:${getPort()}`)
+    const peerId = url.searchParams.get('peerId') || ''
+    const role = url.searchParams.get('role') || ''
+    const roomId = url.searchParams.get('roomId') || ''
+
+    if (!isRelayRole(role) || peerId.length === 0 || roomId.length === 0) {
+      socket.close()
+      return
+    }
+
+    const room = getRoom(roomId)
+    const previousClient = room[role]
+    if (previousClient) previousClient.socket.close()
+
+    const client = { peerId, role, roomId, socket }
+    room[role] = client
+    socket.on('message', message => forwardData(client, message))
+    socket.once('close', () => removeClient(client))
+    announcePeerIfReady(room)
+  })
+
+  return {
+    close() {
+      wsServer.close()
+      rooms.forEach(room => {
+        if (room.host) room.host.socket.close()
+        if (room.guest) room.guest.socket.close()
+      })
+      rooms.clear()
+    }
+  }
+}
+
 function createServer() {
   const server = http.createServer((request, response) => {
     if (!request.url) {
@@ -182,6 +298,11 @@ function createServer() {
     }
 
     const parsedUrl = new URL(request.url, `http://${getHost()}:${getPort()}`)
+    if (parsedUrl.pathname === profileSeedPath) {
+      sendProfileSeedPage(response)
+      return
+    }
+
     const pathname = parsedUrl.pathname === '/' ? '/index.html' : parsedUrl.pathname
     const requestedFile = safeJoinDist(pathname)
 
@@ -195,7 +316,9 @@ function createServer() {
     })
   })
 
+  const relay = createE2EPeerRelay(server)
   const dispose = () => {
+    relay.close()
     server.close(closeError => {
       if (closeError) {
         console.error(closeError)
