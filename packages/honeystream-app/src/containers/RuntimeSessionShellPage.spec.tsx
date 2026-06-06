@@ -35,6 +35,10 @@ import {
   STREAMING_SITE_CONNECTION_PROFILES,
   STREAMING_SITE_CONNECTION_TRIAL_COUNT
 } from '../transport/streaming-site-connection-defaults'
+import {
+  STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT,
+  STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT
+} from '../transport/streaming-site-browser-pair-e2e-matrix'
 import { createProjectionStore } from '../ui'
 
 interface RouteParams {
@@ -256,9 +260,10 @@ describe('RuntimeSessionShellPage', () => {
       'YouTube, AnimePahe, Cineby, and Miruro each keep their own multi-fixture loss, retry, skipped-control, directional-skew, and latency proof'
     )
     expect(html).toContain('Buddy e2e gate')
-    expect(html).toContain('5 site lanes')
+    expect(html).toContain(`${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} browser paths`)
     expect(html).toContain(
-      'Two browser pages queue, pause, resume, seek, advance, and sync YouTube, AnimePahe, Cineby, Miruro, and a generic website before merge'
+      `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} paths across ` +
+        `${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT} site lanes before merge`
     )
     expect(html).toContain('data-merge-gate-metric="browser-pair-matrix"')
     expect(html).toContain('Merge command')
@@ -330,7 +335,7 @@ describe('RuntimeSessionShellPage', () => {
     )
     expect(html).toContain('Two isolated browsers')
     expect(html).toContain(
-      'Broadcast e2e and isolated live e2e both drive the same private invite flow across named and generic website lanes'
+      `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} named and generic website paths`
     )
     expect(html).toContain(
       'Live e2e mode runs cat-side and rabbit-side in separate browser processes through the real connection flow'
@@ -376,11 +381,13 @@ describe('RuntimeSessionShellPage', () => {
     )
     expect(html).toContain('Two browsers, one cozy lane')
     expect(html).toContain('0B control loss')
-    expect(html).toContain('YouTube plus any-site lanes')
+    expect(html).toContain('YouTube plus any-site matrix')
+    expect(html).toContain(`${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} two-browser paths`)
     expect(html).toContain('Media bytes stay local')
     expect(html).toContain('data-browser-sync-receipt="two-browser-seat"')
     expect(html).toContain('data-browser-sync-receipt="site-lanes"')
-    expect(html).toContain('data-site-lane-count="5"')
+    expect(html).toContain(`data-site-lane-count="${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}"`)
+    expect(html).toContain(`data-site-path-count="${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}"`)
     expect(html).toContain('Paste source')
     expect(html).toContain('href="#runtime-add-media-url"')
     expect(html).toContain('href="#runtime_invite_panel"')

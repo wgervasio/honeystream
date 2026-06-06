@@ -1,3 +1,8 @@
+import {
+  STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT,
+  STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT
+} from '../../src/transport/streaming-site-browser-pair-e2e-matrix'
+
 jest.setTimeout(120e3)
 
 const SESSION_HASH = 'a'.repeat(64)
@@ -109,6 +114,9 @@ describe('onboarding', () => {
     expect(connectionLab).toContain('0 bytes')
     expect(connectionLab).toContain('58 paths')
     expect(connectionLab).toContain('4 providers')
+    expect(connectionLab).toContain(`${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} e2e paths`)
+    expect(connectionLab).toContain(`${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT} lanes`)
+    expect(connectionLab).toContain('two separate browser seats')
     expect(connectionLab).toContain('provider gates')
     expect(connectionLab).toContain('Mocked sites stay quick')
     expect(siteExamples).toContain('YouTube')

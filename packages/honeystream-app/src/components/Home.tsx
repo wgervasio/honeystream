@@ -18,6 +18,10 @@ import {
   STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS,
   STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE
 } from '../transport/streaming-site-connection-defaults'
+import {
+  STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT,
+  STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT
+} from '../transport/streaming-site-browser-pair-e2e-matrix'
 
 interface IProps extends WithNamespaces {
   installable: boolean
@@ -203,8 +207,7 @@ class Home extends Component<IProps, IState> {
         id: 'latency',
         value: `<=${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms`,
         label: 'mock P95 budget',
-        detail:
-          'Join, resync, and playback trials keep the ultra-low lane under the drift gate.'
+        detail: 'Join, resync, and playback trials keep the ultra-low lane under the drift gate.'
       },
       {
         id: 'loss',
@@ -223,6 +226,14 @@ class Home extends Component<IProps, IState> {
         value: `${STREAMING_SITE_NAMED_PROVIDER_COUNT} providers`,
         label: 'provider gates',
         detail: 'Named sites keep their own loss, retry, and latency proof before the room opens.'
+      },
+      {
+        id: 'browser-e2e',
+        value: `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} e2e paths`,
+        label: 'dual-browser proof',
+        detail:
+          `Broadcast and isolated live runs cover ${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT} lanes ` +
+          'with two separate browser seats.'
       }
     ]
     const dateNightRail = [
