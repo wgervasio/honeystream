@@ -11,11 +11,11 @@ import {
   PeerTransportConnectionState,
   PeerTransportDisconnectReason,
   PeerTransportError,
-  PeerTransportErrorCode
+  PeerTransportErrorCode,
+  toPeerTransportDisconnectReason
 } from './connection-state'
 import {
   E2EWebSocketPeerTransportOptions,
-  E2EWebSocketRole,
   isRecord,
   parseRelayMessage,
   toRelayUrl
@@ -23,23 +23,14 @@ import {
 
 const DEFAULT_CONNECT_TIMEOUT_MS = 5000
 
-/*
-Context: Isolated browser e2e needs a deterministic cross-process control lane.
-Invariant: Only typed PeerTransport envelopes cross this relay; website/media bytes remain local.
-Options considered: System-Chrome WebRTC in CI, BroadcastChannel, or an e2e-only WebSocket relay.
-Decision: Use the e2e app server as a private two-seat relay when isolated e2e disables broadcast.
-Performance impact: One WebSocket per seat and compact JSON control frames only.
-Memory/lifecycle ownership: This transport owns the WebSocket plus one connect timeout and closes both.
-Failure mode: Invalid relay frames fail the transport explicitly instead of being ignored.
-Validation: Covered by the isolated two-browser streaming-site e2e gate.
-*/
-export class E2EWebSocketPeerTransport<TInboundMessage, TOutboundMessage> implements PeerTransport<TInboundMessage, TOutboundMessage> {
+export class E2EWebSocketPeerTransport<TInboundMessage, TOutboundMessage>
+  implements PeerTransport<TInboundMessage, TOutboundMessage> {
   readonly localPeerId: string
 
   private readonly inboundValidator: TransportMessageValidator<TInboundMessage>
   private readonly now: () => number
   private readonly relayUrl: string
-  private readonly role: E2EWebSocketRole
+  private readonly role: E2EWebSocketPeerTransportOptions<TInboundMessage>['role']
   private readonly listeners = new Set<PeerTransportListener<TInboundMessage>>()
   private readonly connectTimeoutMs: number
 
@@ -72,18 +63,23 @@ export class E2EWebSocketPeerTransport<TInboundMessage, TOutboundMessage> implem
     if (this.state.status === 'connecting' && this.connectingPromise) return this.connectingPromise
 
     this.connectAttempt += 1
-    this.updateState({ status: 'connecting', changedAtMs: this.now(), attempt: this.connectAttempt })
-    this.openSocket()
-    if (this.role === 'host') return Promise.resolve()
-    this.connectingPromise = new Promise((resolve, reject) => {
-      this.connectResolve = resolve
-      this.connectReject = reject
-      this.connectTimer = setTimeout(() => {
-        this.fail('peer-unavailable', 'Network error: e2e relay peer was not found.')
-      }, this.connectTimeoutMs)
+    this.updateState({
+      status: 'connecting',
+      changedAtMs: this.now(),
+      attempt: this.connectAttempt
     })
+    if (this.role === 'guest') {
+      this.connectingPromise = new Promise((resolve, reject) => {
+        this.connectResolve = resolve
+        this.connectReject = reject
+        this.connectTimer = setTimeout(() => {
+          this.fail('peer-unavailable', 'Network error: e2e relay peer was not found.')
+        }, this.connectTimeoutMs)
+      })
+    }
 
-    return this.connectingPromise!
+    this.openSocket()
+    return this.connectingPromise || Promise.resolve()
   }
 
   disconnect(reason: PeerTransportDisconnectReason = 'manual'): void {
@@ -108,7 +104,11 @@ export class E2EWebSocketPeerTransport<TInboundMessage, TOutboundMessage> implem
 
   send(envelope: PeerTransportEnvelope<TOutboundMessage>): void {
     this.ensureNotDisposed('send')
-    if (this.state.status !== 'connected' || !this.socket || this.socket.readyState !== WebSocket.OPEN) {
+    if (
+      this.state.status !== 'connected' ||
+      !this.socket ||
+      this.socket.readyState !== WebSocket.OPEN
+    ) {
       this.raiseUsageError('not-connected', `cannot send while ${this.state.status}`)
     }
     this.socket.send(
@@ -155,7 +155,10 @@ export class E2EWebSocketPeerTransport<TInboundMessage, TOutboundMessage> implem
     this.socket.onmessage = null
     this.socket.onerror = null
     this.socket.onclose = null
-    if (this.socket.readyState === WebSocket.OPEN || this.socket.readyState === WebSocket.CONNECTING) {
+    if (
+      this.socket.readyState === WebSocket.OPEN ||
+      this.socket.readyState === WebSocket.CONNECTING
+    ) {
       this.socket.close()
     }
     this.socket = undefined
@@ -222,11 +225,12 @@ export class E2EWebSocketPeerTransport<TInboundMessage, TOutboundMessage> implem
     const error: PeerTransportError = { code, message }
     const reject = this.connectReject
     this.stopConnectTimer()
+    const reason = toPeerTransportDisconnectReason(code)
     this.updateState({
       status: 'failed',
       changedAtMs: this.now(),
       peerId: this.remotePeerIdValue,
-      reason: 'transport-error',
+      reason,
       error
     })
     this.emit({ type: 'error', error })
@@ -235,7 +239,8 @@ export class E2EWebSocketPeerTransport<TInboundMessage, TOutboundMessage> implem
   }
 
   private ensureNotDisposed(action: string): void {
-    if (this.state.status === 'disposed') this.raiseUsageError('disposed', `${action} called after dispose`)
+    if (this.state.status === 'disposed')
+      this.raiseUsageError('disposed', `${action} called after dispose`)
   }
 
   private raiseUsageError(code: PeerTransportErrorCode, message: string): never {

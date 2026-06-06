@@ -113,6 +113,7 @@ describe('InviteLinkPanel', () => {
     expect(html).toContain('data-invite-field="room-id"')
     expect(html).toContain('data-invite-field="secret"')
     expect(html).toContain('data-copy-state="idle"')
+    expect(html).toContain('data-copy-confirmation="no"')
     expect((html.match(/>Copy</g) || []).length).toBe(3)
   })
 

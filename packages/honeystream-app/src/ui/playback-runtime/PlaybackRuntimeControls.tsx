@@ -131,7 +131,7 @@ export function createPlaybackRuntimeControlViewModel(
     positionLabel: formatPlaybackTimeline(playbackPositionMs, props.playback.durationMs)
   }
 }
-export const PlaybackRuntimeControls = memo(function PlaybackRuntimeControls(props: PlaybackRuntimeControlsProps) {
+export const PlaybackRuntimeControls = memo((props: PlaybackRuntimeControlsProps) => {
   const controls = createPlaybackRuntimeControlViewModel(props)
 
   return (
@@ -148,6 +148,7 @@ export const PlaybackRuntimeControls = memo(function PlaybackRuntimeControls(pro
       <button
         type="button"
         data-intent="playPause"
+        data-playback-intent-icon={props.playback.state === 'playing' ? 'pause' : 'play'}
         data-playback-intent-state={controls.playPause.disabled ? 'disabled' : 'enabled'}
         disabled={controls.playPause.disabled}
         onClick={controls.playPause.onClick}
@@ -157,6 +158,7 @@ export const PlaybackRuntimeControls = memo(function PlaybackRuntimeControls(pro
       <button
         type="button"
         data-intent="seekBackward"
+        data-playback-intent-icon="seekBackward"
         data-playback-intent-state={controls.seekBackward.disabled ? 'disabled' : 'enabled'}
         disabled={controls.seekBackward.disabled}
         onClick={controls.seekBackward.onClick}
@@ -166,6 +168,7 @@ export const PlaybackRuntimeControls = memo(function PlaybackRuntimeControls(pro
       <button
         type="button"
         data-intent="seekForward"
+        data-playback-intent-icon="seekForward"
         data-playback-intent-state={controls.seekForward.disabled ? 'disabled' : 'enabled'}
         disabled={controls.seekForward.disabled}
         onClick={controls.seekForward.onClick}
@@ -175,6 +178,7 @@ export const PlaybackRuntimeControls = memo(function PlaybackRuntimeControls(pro
       <button
         type="button"
         data-intent="rateDown"
+        data-playback-intent-icon="rateDown"
         data-playback-intent-state={controls.rateDown.disabled ? 'disabled' : 'enabled'}
         disabled={controls.rateDown.disabled}
         onClick={controls.rateDown.onClick}
@@ -185,6 +189,7 @@ export const PlaybackRuntimeControls = memo(function PlaybackRuntimeControls(pro
       <button
         type="button"
         data-intent="rateUp"
+        data-playback-intent-icon="rateUp"
         data-playback-intent-state={controls.rateUp.disabled ? 'disabled' : 'enabled'}
         disabled={controls.rateUp.disabled}
         onClick={controls.rateUp.onClick}
@@ -194,6 +199,7 @@ export const PlaybackRuntimeControls = memo(function PlaybackRuntimeControls(pro
       <button
         type="button"
         data-intent="next"
+        data-playback-intent-icon="next"
         data-playback-intent-state={controls.next.disabled ? 'disabled' : 'enabled'}
         disabled={controls.next.disabled}
         onClick={controls.next.onClick}

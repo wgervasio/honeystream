@@ -52,3 +52,10 @@ export type PeerTransportConnectionState =
 
 export const isPeerTransportTerminalState = (state: PeerTransportConnectionState): boolean =>
   state.status === 'failed' || state.status === 'disposed'
+
+export const toPeerTransportDisconnectReason = (
+  code: PeerTransportErrorCode
+): PeerTransportDisconnectReason =>
+  code === 'validation-failed' || code === 'invalid-envelope'
+    ? 'validation-failed'
+    : 'transport-error'

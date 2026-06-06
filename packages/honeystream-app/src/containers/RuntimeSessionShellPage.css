@@ -520,8 +520,7 @@
       rgba(247, 215, 232, 0.24)
     ),
     rgba(255, 255, 255, 0.1);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    0 18px 36px rgba(255, 127, 150, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 18px 36px rgba(255, 127, 150, 0.14);
 }
 
 .happySyncSeal strong {
@@ -1534,9 +1533,42 @@
 }
 
 .invitePanel button[data-copy-state='copied'] {
-  background: linear-gradient(135deg, rgba(158, 215, 255, 0.92), rgba(247, 215, 232, 0.92));
+  background: linear-gradient(135deg, rgba(255, 216, 138, 0.96), rgba(247, 215, 232, 0.92));
   color: var(--color-ink);
+  box-shadow: 0 0 0 1px rgba(255, 216, 138, 0.32), 0 0 24px rgba(255, 216, 138, 0.42);
   animation: copySuccessPop 640ms ease-out;
+}
+
+.playbackPanel button[data-playback-intent-icon]::before {
+  margin-right: 0.35rem;
+}
+
+.playbackPanel button[data-playback-intent-icon='play']::before {
+  content: '▶️';
+}
+
+.playbackPanel button[data-playback-intent-icon='pause']::before {
+  content: '⏸️';
+}
+
+.playbackPanel button[data-playback-intent-icon='seekBackward']::before {
+  content: '⏪';
+}
+
+.playbackPanel button[data-playback-intent-icon='seekForward']::before {
+  content: '⏩';
+}
+
+.playbackPanel button[data-playback-intent-icon='rateDown']::before {
+  content: '🐢';
+}
+
+.playbackPanel button[data-playback-intent-icon='rateUp']::before {
+  content: '🐇';
+}
+
+.playbackPanel button[data-playback-intent-icon='next']::before {
+  content: '🍯';
 }
 
 .queuePanel button:disabled,
