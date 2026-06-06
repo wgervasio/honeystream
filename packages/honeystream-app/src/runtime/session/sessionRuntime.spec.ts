@@ -177,7 +177,7 @@ describe('runtime/session/SessionRuntime', () => {
     expect(guestRuntime.getSnapshot().playbackAdapterKind).toBe('embed-extension')
   })
 
-  it('records heartbeat clock sync and reapplies playing guest playback at receive time', async () => {
+  it('records heartbeat clock sync and only reapplies playing guest playback on meaningful offset changes', async () => {
     let nowMs = 10000
     const pair = createInMemoryPeerTransportPair({
       hostInboundValidator: acceptsUnknownMessage,
@@ -222,6 +222,7 @@ describe('runtime/session/SessionRuntime', () => {
 
     const clockSync = guestRuntime.getSnapshot().clockSync
     const lastDesiredState = guestPlayback.desiredStates[guestPlayback.desiredStates.length - 1]
+    const desiredStateCountAfterFirstHeartbeat = guestPlayback.desiredStates.length
     expect(clockSync).toEqual({
       estimatedHostOffsetMs: 0,
       lastRoundTripMs: 0,
@@ -231,6 +232,21 @@ describe('runtime/session/SessionRuntime', () => {
     expect(lastDesiredState.playback.state).toBe('playing')
     expect(lastDesiredState.playback.positionMs).toBe(125)
     expect(lastDesiredState.playback.updatedAtHostMs).toBe(nowMs)
+
+    nowMs += 125
+    await guestRuntime.dispatchGuestCommand({
+      type: 'heartbeat',
+      clientSentAtMs: nowMs
+    })
+    await flushRuntime()
+
+    expect(guestPlayback.desiredStates).toHaveLength(desiredStateCountAfterFirstHeartbeat)
+    expect(guestRuntime.getSnapshot().clockSync).toEqual({
+      estimatedHostOffsetMs: 0,
+      lastRoundTripMs: 0,
+      lastSyncedAtMs: nowMs,
+      sampleCount: 2
+    })
   })
 
   it('records protocol diagnostics for malformed inbound envelopes', async () => {
@@ -336,7 +352,10 @@ describe('runtime/session/SessionRuntime', () => {
     await flushRuntime()
 
     hostProjection = hostRuntime.getSnapshot()
-    expect(hostProjection.session && hostProjection.session.currentMediaId).toBe('recovered-media')
+    expect(hostProjection.session && hostProjection.session.currentMediaId).toBeUndefined()
+    expect(hostProjection.diagnostics.filter(error => error.code === 'invalidSequence')).toHaveLength(
+      2
+    )
   })
 
   it('keeps host snapshots moving when playback application fails', async () => {

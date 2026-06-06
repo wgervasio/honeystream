@@ -6,10 +6,16 @@ import { QueueQueuedItems } from './QueueQueuedItems'
 import { QueueShell } from './QueueShell'
 import { QueueMediaItemViewModel } from './types'
 
-const makeMedia = (id: string, title: string, requestedBy: string): QueueMediaItemViewModel => ({
+const makeMedia = (
+  id: string,
+  title: string,
+  requestedBy: string,
+  durationMs?: number
+): QueueMediaItemViewModel => ({
   id,
   title,
-  requestedBy
+  requestedBy,
+  durationMs
 })
 
 describe('QueueCurrentItem', () => {
@@ -22,11 +28,13 @@ describe('QueueCurrentItem', () => {
 
   it('renders current item details', () => {
     const html = renderToStaticMarkup(
-      <QueueCurrentItem item={makeMedia('current-1', 'Current title', 'HostUser')} />
+      <QueueCurrentItem item={makeMedia('current-1', 'Current title', 'HostUser', 125000)} />
     )
 
     expect(html).toContain('Current item')
     expect(html).toContain('Current title')
+    expect(html).toContain('2:05')
+    expect(html).toContain('data-queue-duration="true"')
     expect(html).toContain('Requested by: HostUser')
     expect(html).toContain('data-queue-current-id="current-1"')
     expect(html).toContain('data-queue-state="current"')

@@ -59,8 +59,16 @@ const DEFAULT_DIAGNOSTICS_CAP = 64
 const DEFAULT_RUNTIME_ERROR_CAP = 32
 const DEFAULT_MEDIA_CACHE_CAP = 32
 const DEFAULT_SNAPSHOT_REQUEST_COOLDOWN_MS = 500
-const DEFAULT_CLOCK_SYNC_SAMPLE_CAP = 5
+const DEFAULT_CLOCK_SYNC_SAMPLE_CAP = 12
+const CLOCK_SYNC_BEST_SAMPLE_COUNT = 5
+const CLOCK_SYNC_MAX_OFFSET_STEP_MS = 100
+const CLOCK_SYNC_REAPPLY_THRESHOLD_MS = 50
 const PLAYBACK_APPLY_FAILED_ERROR_CODE = 'playback-apply-failed'
+
+type ClockSyncSample = {
+  readonly estimatedHostOffsetMs: number
+  readonly roundTripMs: number
+}
 
 const normalizeCap = (value: number | undefined, fallback: number): number => {
   if (
@@ -119,6 +127,18 @@ const median = (samples: readonly number[]): number => {
   return sortedSamples[Math.floor(sortedSamples.length / 2)]
 }
 
+const clampToRange = (value: number, min: number, max: number): number =>
+  Math.min(max, Math.max(min, value))
+
+const selectStableClockOffset = (samples: readonly ClockSyncSample[]): number => {
+  const bestSamples = samples
+    .slice()
+    .sort((left, right) => left.roundTripMs - right.roundTripMs)
+    .slice(0, Math.min(CLOCK_SYNC_BEST_SAMPLE_COUNT, samples.length))
+
+  return median(bestSamples.map(sample => sample.estimatedHostOffsetMs))
+}
+
 export class DefaultSessionRuntime implements SessionRuntime {
   private readonly transport: SessionRuntimeDependencies['transport']
   private readonly playback: SessionRuntimeDependencies['playback']
@@ -152,7 +172,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
   private inboundQueue: Promise<void> = Promise.resolve()
   private heartbeatTimer: ReturnType<typeof setInterval> | undefined
   private clockSync?: SessionRuntimeClockSyncSnapshot
-  private clockSyncOffsetSamples: readonly number[] = []
+  private clockSyncOffsetSamples: readonly ClockSyncSample[] = []
 
   constructor(dependencies: SessionRuntimeDependencies) {
     this.transport = dependencies.transport
@@ -297,11 +317,13 @@ export class DefaultSessionRuntime implements SessionRuntime {
     this.inboundQueue = this.inboundQueue
       .then(() => {
         if (this.disposed) return undefined
+        if (this.transport.getState().status !== 'connected') return undefined
         return this.handleInboundDelivery(delivery)
       })
       .catch(error => {
         if (this.disposed) return
         this.recordRuntimeError(`[inbound] ${toErrorMessage(error)}`)
+        this.tryRequestGuestSnapshot('resync')
       })
   }
 
@@ -309,6 +331,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
     delivery: PeerTransportMessageDelivery<unknown>
   ): Promise<void> {
     if (this.disposed) return
+    if (this.transport.getState().status !== 'connected') return
 
     const parsed = parseWireEnvelope(delivery.envelope.message)
     if (!parsed.ok) {
@@ -354,6 +377,11 @@ export class DefaultSessionRuntime implements SessionRuntime {
       }
       const sequenceError = this.validateInboundDeliverySequence(parsed.value.seq)
       if (sequenceError) {
+        if (parsed.value.event.type === 'snapshot') {
+          this.expectedInboundSeq = parsed.value.seq + 1
+          await this.applyGuestHostEvent(parsed.value.event, delivery.receivedAtMs)
+          return
+        }
         this.tryRequestGuestSnapshot('resync', delivery.receivedAtMs)
         return
       }
@@ -486,8 +514,10 @@ export class DefaultSessionRuntime implements SessionRuntime {
 
   private async applyGuestHostEvent(event: HostEvent, receivedAtMs: number): Promise<void> {
     if (event.type === 'heartbeat') {
-      this.recordClockSync(event, receivedAtMs)
-      await this.reapplyGuestPlaybackAfterClockSync(receivedAtMs)
+      const shouldReapplyPlayback = this.recordClockSync(event, receivedAtMs)
+      if (shouldReapplyPlayback) {
+        await this.reapplyGuestPlaybackAfterClockSync()
+      }
       return
     }
 
@@ -531,7 +561,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
         toPlaybackDesiredStateFromSnapshot(
           nextSession,
           this.knownGuestMedia,
-          this.toEstimatedHostTime(receivedAtMs)
+          this.toEstimatedHostTime(this.runtimeTimeAtOrAfter(receivedAtMs))
         )
       )
     } catch (error) {
@@ -540,7 +570,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
     this.updateProjection()
   }
 
-  private async reapplyGuestPlaybackAfterClockSync(receivedAtMs: number): Promise<void> {
+  private async reapplyGuestPlaybackAfterClockSync(): Promise<void> {
     const session = this.projection.session
     if (!session || session.playback.state !== 'playing') return
 
@@ -549,7 +579,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
         toPlaybackDesiredStateFromSnapshot(
           session,
           this.knownGuestMedia,
-          this.toEstimatedHostTime(receivedAtMs)
+          this.toEstimatedHostTime(this.now())
         )
       )
     } catch (error) {
@@ -653,22 +683,39 @@ export class DefaultSessionRuntime implements SessionRuntime {
   private recordClockSync(
     event: Extract<HostEvent, { readonly type: 'heartbeat' }>,
     receivedAtMs: number
-  ): void {
+  ): boolean {
+    const previousOffsetMs = this.clockSync && this.clockSync.estimatedHostOffsetMs
     const hostProcessingMs = Math.max(0, event.hostSentAtMs - event.hostReceivedAtMs)
     const roundTripMs = Math.max(0, receivedAtMs - event.clientSentAtMs - hostProcessingMs)
     const estimatedHostOffsetMs =
       (event.hostReceivedAtMs - event.clientSentAtMs + event.hostSentAtMs - receivedAtMs) / 2
     this.clockSyncOffsetSamples = [
       ...this.clockSyncOffsetSamples,
-      estimatedHostOffsetMs
+      {
+        estimatedHostOffsetMs,
+        roundTripMs
+      }
     ].slice(-DEFAULT_CLOCK_SYNC_SAMPLE_CAP)
+    const selectedOffsetMs = selectStableClockOffset(this.clockSyncOffsetSamples)
+    const nextOffsetMs =
+      typeof previousOffsetMs === 'number'
+        ? clampToRange(
+            selectedOffsetMs,
+            previousOffsetMs - CLOCK_SYNC_MAX_OFFSET_STEP_MS,
+            previousOffsetMs + CLOCK_SYNC_MAX_OFFSET_STEP_MS
+          )
+        : selectedOffsetMs
     this.clockSync = {
-      estimatedHostOffsetMs: median(this.clockSyncOffsetSamples),
+      estimatedHostOffsetMs: nextOffsetMs,
       lastRoundTripMs: roundTripMs,
       lastSyncedAtMs: receivedAtMs,
       sampleCount: this.clockSyncOffsetSamples.length
     }
     this.updateProjection({ clockSync: this.clockSync })
+    return (
+      typeof previousOffsetMs !== 'number' ||
+      Math.abs(nextOffsetMs - previousOffsetMs) >= CLOCK_SYNC_REAPPLY_THRESHOLD_MS
+    )
   }
 
   private toEstimatedHostTime(clientNowMs: number): number {

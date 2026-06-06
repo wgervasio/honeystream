@@ -32,6 +32,7 @@ export interface PlaybackRuntimeControlsProps {
   readonly intents: PlaybackRuntimeControlIntents
   readonly labels?: Partial<PlaybackRuntimeControlLabels>
   readonly playback: PlaybackClockModel
+  readonly clockSyncConfident?: boolean
   readonly rateStep?: number
   readonly seekStepMs?: number
   readonly session: PlaybackRuntimeSessionModel

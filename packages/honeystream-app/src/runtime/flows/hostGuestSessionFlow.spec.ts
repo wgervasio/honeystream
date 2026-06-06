@@ -311,7 +311,7 @@ describe('runtime/flows/hostGuestSessionFlow', () => {
     }
   })
 
-  it('rejects lost guest commands, resyncs, and accepts the next contiguous sequence', async () => {
+  it('rejects lost guest commands and holds sequence state until a safe reconnect', async () => {
     const clock = createFakeClock(3000)
     const peerIds = createFixedIdGenerator(['host-peer', 'guest-peer'])
     const flowIds = createFixedIdGenerator(['room-1', 'invite-1'])
@@ -394,8 +394,15 @@ describe('runtime/flows/hostGuestSessionFlow', () => {
       })
       pair.flushAll()
 
-      expect(flow.hostProjection.getSnapshot().currentMediaId).toBe('recovered-media')
-      expect(flow.guestProjection.getSnapshot().currentMediaId).toBe('recovered-media')
+      expect(flow.hostProjection.getSnapshot().currentMediaId).toBeUndefined()
+      expect(flow.guestProjection.getSnapshot().currentMediaId).toBeUndefined()
+      expect(flow.getHostEvents()).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            type: 'protocolRejected'
+          })
+        ])
+      )
       expect(pair.getAggregateMetrics().combinedDroppedMessages).toBeGreaterThan(0)
     } finally {
       flow.dispose()

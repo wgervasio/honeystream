@@ -5,6 +5,8 @@ import { PlaybackMediaSource } from 'playback/adapters/shared/playbackAdapter'
 import { HostEvent, MediaSnapshot, SessionSnapshot } from 'protocol/types'
 import { classifyMediaUrl } from 'protocol/url-classifier'
 
+const WEBSITE_PLAYBACK_SEEK_TOLERANCE_MS = 1000
+
 const toSessionMediaKind = (
   kind: MediaSnapshot['kind'] | SessionMediaKind | undefined
 ): SessionMediaKind => (kind === 'localFile' || kind === 'website' ? kind : 'url')
@@ -77,28 +79,34 @@ const toPlaybackDesiredState = (
   playback: SessionSnapshot['playback'],
   media: MediaSnapshot | undefined,
   nowAdjustedToHostMs?: number
-): PlaybackEngineDesiredState => ({
-  media: media
-    ? {
-        mediaId: media.mediaId,
-        source: toPlaybackMediaSource(media.kind),
-        url: media.source
-      }
-    : undefined,
-  playback: {
-    state: playback.state,
-    positionMs:
-      playback.state === 'playing' && typeof nowAdjustedToHostMs === 'number'
-        ? derivePlaybackPosition(playback, nowAdjustedToHostMs)
-        : playback.positionMs,
-    updatedAtHostMs:
-      playback.state === 'playing' && typeof nowAdjustedToHostMs === 'number'
-        ? nowAdjustedToHostMs
-        : playback.updatedAtHostMs,
-    rate: playback.rate,
-    durationMs: playback.durationMs
+): PlaybackEngineDesiredState => {
+  const mediaSource = media ? toPlaybackMediaSource(media.kind) : undefined
+
+  return {
+    media: media
+      ? {
+          mediaId: media.mediaId,
+          source: mediaSource || 'direct-media',
+          url: media.source
+        }
+      : undefined,
+    playback: {
+      state: playback.state,
+      positionMs:
+        playback.state === 'playing' && typeof nowAdjustedToHostMs === 'number'
+          ? derivePlaybackPosition(playback, nowAdjustedToHostMs)
+          : playback.positionMs,
+      updatedAtHostMs:
+        playback.state === 'playing' && typeof nowAdjustedToHostMs === 'number'
+          ? nowAdjustedToHostMs
+          : playback.updatedAtHostMs,
+      rate: playback.rate,
+      durationMs: playback.durationMs
+    },
+    seekToleranceMs:
+      mediaSource === 'website' ? WEBSITE_PLAYBACK_SEEK_TOLERANCE_MS : undefined
   }
-})
+}
 
 export const toPlaybackDesiredStateFromDomain = (state: SessionState): PlaybackEngineDesiredState =>
   toPlaybackDesiredState(

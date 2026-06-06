@@ -92,6 +92,8 @@ describe('PlaybackRuntimeControls', () => {
     expectIntentDisabled(html, 'rateDown')
     expectIntentDisabled(html, 'rateUp')
     expectIntentDisabled(html, 'next')
+    expect(html).toContain('data-playback-intent-state="disabled"')
+    expect(html).toContain('data-sync-confident="warming"')
     expect(html).toContain('0:15 / 1:00')
   })
 
@@ -115,11 +117,13 @@ describe('PlaybackRuntimeControls', () => {
   it('renders friendly seek labels and playback duration when known', () => {
     const { props } = createHarness()
 
-    const html = renderToStaticMarkup(<PlaybackRuntimeControls {...props} />)
+    const html = renderToStaticMarkup(<PlaybackRuntimeControls {...props} clockSyncConfident={true} />)
 
     expect(html).toContain('Rewind 10s')
     expect(html).toContain('Fast forward 10s')
     expect(html).toContain('aria-label="Playback timeline"')
+    expect(html).toContain('data-playback-intent-state="enabled"')
+    expect(html).toContain('data-sync-confident="yes"')
     expect(html).toContain('0:15 / 1:00')
   })
 

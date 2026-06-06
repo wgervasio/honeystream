@@ -33,11 +33,15 @@ export const SessionParticipantUsernames = memo(function SessionParticipantUsern
 
   return (
     <div className={props.className} aria-live="polite">
-      <span data-participant-role="host" data-participant-status="connected">
+      <span data-participant-role="host" data-participant-status="connected" data-seat-mood="cat">
         {`${hostLabel}: ${props.participants.hostUsername}`}
       </span>
       <span aria-hidden="true">{' \u00b7 '}</span>
-      <span data-participant-role="guest" data-participant-status={guestStatus}>
+      <span
+        data-participant-role="guest"
+        data-participant-status={guestStatus}
+        data-seat-mood={guestStatus === 'connected' ? 'rabbit-hopped-in' : 'rabbit-warming'}
+      >
         {`${guestLabel}: ${guestUsername}`}
       </span>
     </div>

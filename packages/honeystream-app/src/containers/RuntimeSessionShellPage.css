@@ -1536,12 +1536,56 @@
 .invitePanel button[data-copy-state='copied'] {
   background: linear-gradient(135deg, rgba(158, 215, 255, 0.92), rgba(247, 215, 232, 0.92));
   color: var(--color-ink);
+  animation: copySuccessPop 640ms ease-out;
 }
 
 .queuePanel button:disabled,
 .playbackPanel button:disabled {
   opacity: 0.45;
   pointer-events: none;
+}
+
+.playbackPanel button[data-playback-intent-state='enabled']:hover {
+  transform: translateY(-1px) scale(1.03);
+}
+
+.playbackPanel button[data-playback-intent-state='disabled'] {
+  cursor: not-allowed;
+  filter: saturate(0.72);
+}
+
+.playbackPanel output[data-sync-confident='yes'] {
+  color: #fff;
+  font-weight: bold;
+  text-shadow: 0 0 18px rgba(158, 215, 255, 0.28);
+}
+
+.playbackPanel output[data-sync-confident='warming'] {
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.queueCurrent [data-queue-duration] {
+  display: inline-flex;
+  margin-left: 0.5rem;
+  padding: 0.08rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 0.78rem;
+  font-weight: bold;
+  letter-spacing: 0.04em;
+}
+
+@keyframes copySuccessPop {
+  0% {
+    transform: scale(1);
+  }
+  42% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .videoStage {

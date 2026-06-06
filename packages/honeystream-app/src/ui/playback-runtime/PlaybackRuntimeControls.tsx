@@ -1,12 +1,10 @@
 import React, { memo } from 'react'
 import { clampPlaybackPosition, clampPlaybackRate } from '../../domain/playback-clock'
 import { PlaybackRuntimeControlLabels, PlaybackRuntimeControlsProps } from './types'
-
 const DEFAULT_SEEK_STEP_MS = 10_000
 const DEFAULT_RATE_STEP = 0.25
 const MS_PER_SECOND = 1_000
 const SECONDS_PER_MINUTE = 60
-
 const DEFAULT_LABELS: Readonly<PlaybackRuntimeControlLabels> = Object.freeze({
   play: 'Play',
   pause: 'Pause',
@@ -16,45 +14,36 @@ const DEFAULT_LABELS: Readonly<PlaybackRuntimeControlLabels> = Object.freeze({
   rateUp: 'Rate +',
   next: 'Next'
 })
-
 const normalizePositiveStep = (value: number | undefined, fallback: number): number => {
   if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
     return fallback
   }
-
   return value
 }
-
 const createIntentHandler = (disabled: boolean, callback: () => void): (() => void) => () => {
   if (disabled) {
     return
   }
-
   callback()
 }
-
 const formatPlaybackPosition = (positionMs: number): string => {
   const safePositionMs = Number.isFinite(positionMs) && positionMs > 0 ? positionMs : 0
   const totalSeconds = Math.floor(safePositionMs / MS_PER_SECOND)
   const minutes = Math.floor(totalSeconds / SECONDS_PER_MINUTE)
   const seconds = totalSeconds % SECONDS_PER_MINUTE
-
   return `${minutes}:${seconds.toString().padStart(2, '0')}`
 }
-
 const formatPlaybackTimeline = (positionMs: number, durationMs: number | undefined): string => {
   const positionLabel = formatPlaybackPosition(positionMs)
   return typeof durationMs === 'number' && Number.isFinite(durationMs) && durationMs > 0
     ? `${positionLabel} / ${formatPlaybackPosition(durationMs)}`
     : positionLabel
 }
-
 interface PlaybackRuntimeIntentButton {
   readonly disabled: boolean
   readonly label: string
   readonly onClick: () => void
 }
-
 export interface PlaybackRuntimeControlViewModel {
   readonly next: PlaybackRuntimeIntentButton
   readonly playPause: PlaybackRuntimeIntentButton
@@ -66,7 +55,6 @@ export interface PlaybackRuntimeControlViewModel {
   readonly seekBackward: PlaybackRuntimeIntentButton
   readonly seekForward: PlaybackRuntimeIntentButton
 }
-
 export function createPlaybackRuntimeControlViewModel(
   props: PlaybackRuntimeControlsProps
 ): PlaybackRuntimeControlViewModel {
@@ -143,7 +131,6 @@ export function createPlaybackRuntimeControlViewModel(
     positionLabel: formatPlaybackTimeline(playbackPositionMs, props.playback.durationMs)
   }
 }
-
 export const PlaybackRuntimeControls = memo(function PlaybackRuntimeControls(props: PlaybackRuntimeControlsProps) {
   const controls = createPlaybackRuntimeControlViewModel(props)
 
@@ -161,6 +148,7 @@ export const PlaybackRuntimeControls = memo(function PlaybackRuntimeControls(pro
       <button
         type="button"
         data-intent="playPause"
+        data-playback-intent-state={controls.playPause.disabled ? 'disabled' : 'enabled'}
         disabled={controls.playPause.disabled}
         onClick={controls.playPause.onClick}
       >
@@ -169,6 +157,7 @@ export const PlaybackRuntimeControls = memo(function PlaybackRuntimeControls(pro
       <button
         type="button"
         data-intent="seekBackward"
+        data-playback-intent-state={controls.seekBackward.disabled ? 'disabled' : 'enabled'}
         disabled={controls.seekBackward.disabled}
         onClick={controls.seekBackward.onClick}
       >
@@ -177,6 +166,7 @@ export const PlaybackRuntimeControls = memo(function PlaybackRuntimeControls(pro
       <button
         type="button"
         data-intent="seekForward"
+        data-playback-intent-state={controls.seekForward.disabled ? 'disabled' : 'enabled'}
         disabled={controls.seekForward.disabled}
         onClick={controls.seekForward.onClick}
       >
@@ -185,6 +175,7 @@ export const PlaybackRuntimeControls = memo(function PlaybackRuntimeControls(pro
       <button
         type="button"
         data-intent="rateDown"
+        data-playback-intent-state={controls.rateDown.disabled ? 'disabled' : 'enabled'}
         disabled={controls.rateDown.disabled}
         onClick={controls.rateDown.onClick}
       >
@@ -194,6 +185,7 @@ export const PlaybackRuntimeControls = memo(function PlaybackRuntimeControls(pro
       <button
         type="button"
         data-intent="rateUp"
+        data-playback-intent-state={controls.rateUp.disabled ? 'disabled' : 'enabled'}
         disabled={controls.rateUp.disabled}
         onClick={controls.rateUp.onClick}
       >
@@ -202,6 +194,7 @@ export const PlaybackRuntimeControls = memo(function PlaybackRuntimeControls(pro
       <button
         type="button"
         data-intent="next"
+        data-playback-intent-state={controls.next.disabled ? 'disabled' : 'enabled'}
         disabled={controls.next.disabled}
         onClick={controls.next.onClick}
       >
@@ -210,6 +203,7 @@ export const PlaybackRuntimeControls = memo(function PlaybackRuntimeControls(pro
       <output
         data-intent="positionMs"
         data-position-ms={controls.positionMs}
+        data-sync-confident={props.clockSyncConfident ? 'yes' : 'warming'}
         aria-label="Playback timeline"
       >
         {controls.positionLabel}

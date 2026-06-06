@@ -136,6 +136,32 @@ describe('runtime/session resync and protocol recovery', () => {
       expect(guestRuntime.getSnapshot().diagnostics).toEqual(
         expect.arrayContaining([expect.objectContaining({ code: 'invalidSequence' })])
       )
+
+      const hostSnapshot = hostRuntime.getSnapshot().session
+      if (!hostSnapshot) {
+        throw new Error('Expected host snapshot for resync repair.')
+      }
+      const repairSnapshot: HostToClientEnvelope = {
+        version: PROTOCOL_VERSION,
+        direction: 'host-to-client',
+        seq: 10,
+        sentAtMs: nowMs,
+        event: {
+          type: 'snapshot',
+          snapshot: hostSnapshot
+        }
+      }
+      pair.host.send({
+        seq: repairSnapshot.seq,
+        sentAtMs: repairSnapshot.sentAtMs,
+        message: repairSnapshot
+      })
+      await flushRuntime()
+
+      expect(guestRuntime.getSnapshot().session).toMatchObject({
+        roomId: 'resync-room',
+        status: 'connected'
+      })
     } finally {
       unsubscribeHostProbe()
       hostRuntime.dispose()
