@@ -117,10 +117,18 @@ describe('PlaybackRuntimeControls', () => {
   it('renders friendly seek labels and playback duration when known', () => {
     const { props } = createHarness()
 
-    const html = renderToStaticMarkup(<PlaybackRuntimeControls {...props} clockSyncConfident={true} />)
+    const html = renderToStaticMarkup(
+      <PlaybackRuntimeControls {...props} clockSyncConfident={true} />
+    )
 
     expect(html).toContain('Rewind 10s')
     expect(html).toContain('Fast forward 10s')
+    expect(html).toContain('data-playback-intent-icon="play"')
+    expect(html).toContain('data-playback-intent-icon="seekBackward"')
+    expect(html).toContain('data-playback-intent-icon="seekForward"')
+    expect(html).toContain('data-playback-intent-icon="rateDown"')
+    expect(html).toContain('data-playback-intent-icon="rateUp"')
+    expect(html).toContain('data-playback-intent-icon="next"')
     expect(html).toContain('aria-label="Playback timeline"')
     expect(html).toContain('data-playback-intent-state="enabled"')
     expect(html).toContain('data-sync-confident="yes"')

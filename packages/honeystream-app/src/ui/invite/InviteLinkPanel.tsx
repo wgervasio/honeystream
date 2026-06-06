@@ -2,6 +2,8 @@ import React, { memo, useEffect, useRef, useState } from 'react'
 import { formatPrivateInviteLink } from './inviteLink'
 import { PrivateInviteCredentials } from './types'
 
+const COPY_CONFIRMATION_TIMEOUT_MS = 2000
+
 interface InviteFieldProps {
   readonly copiedLabel: string
   readonly copyLabel: string
@@ -22,6 +24,7 @@ const InviteField = memo(function InviteField(props: InviteFieldProps) {
           {' '}
           <button
             type="button"
+            data-copy-confirmation={props.isCopied ? 'yes' : 'no'}
             data-copy-state={props.isCopied ? 'copied' : 'idle'}
             onClick={() => props.onCopy && props.onCopy(props.fieldId, props.value)}
           >
@@ -62,7 +65,7 @@ export const InviteLinkPanel = memo(function InviteLinkPanel(props: InviteLinkPa
   })
 
   const copyLabel = props.copyLabel || 'Copy'
-  const copiedLabel = props.copiedLabel || 'Copied'
+  const copiedLabel = props.copiedLabel || '✓ Copied!'
 
   useEffect(
     () => () => {
@@ -88,7 +91,7 @@ export const InviteLinkPanel = memo(function InviteLinkPanel(props: InviteLinkPa
     copyTimerRef.current = setTimeout(() => {
       setCopiedField(undefined)
       copyTimerRef.current = undefined
-    }, 1600)
+    }, COPY_CONFIRMATION_TIMEOUT_MS)
   }
 
   return (

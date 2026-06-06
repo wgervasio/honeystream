@@ -16,7 +16,9 @@ describe('SystemEventFeed', () => {
 
     const html = renderToStaticMarkup(<SystemEventFeed events={events} />)
 
-    expect(html).toContain(`Showing latest ${DEFAULT_EVENT_LOG_CAP} of ${DEFAULT_EVENT_LOG_CAP + 2} events.`)
+    expect(html).toContain(
+      `Showing latest ${DEFAULT_EVENT_LOG_CAP} of ${DEFAULT_EVENT_LOG_CAP + 2} events.`
+    )
     expect(html).not.toContain('user-0 joined')
     expect(html).not.toContain('user-1 joined')
     expect(html).toContain('user-2 joined')
@@ -39,6 +41,7 @@ describe('SystemEventFeed', () => {
     expect(html).toContain('data-system-event-icon="error"')
     expect(html).toContain('data-system-event-type="error"')
     expect(html).toContain('data-system-event-tone="alert"')
+    expect(html).toContain('⚠️')
   })
 
   it('marks join and leave events with readable tones', () => {
@@ -54,8 +57,10 @@ describe('SystemEventFeed', () => {
     expect(html).toContain('data-system-event-type="participantJoined"')
     expect(html).toContain('data-system-event-icon="participantJoined"')
     expect(html).toContain('data-system-event-tone="positive"')
+    expect(html).toContain('🐰')
     expect(html).toContain('data-system-event-type="participantLeft"')
     expect(html).toContain('data-system-event-icon="participantLeft"')
     expect(html).toContain('data-system-event-tone="neutral"')
+    expect(html).toContain('👋')
   })
 })

@@ -4,6 +4,11 @@ import { DEFAULT_EVENT_LOG_CAP, SystemEvent } from '../../domain/event-log'
 const DEFAULT_EMPTY_LABEL = 'No system events yet.'
 const DEFAULT_ERROR_LABEL = 'Error'
 const DEFAULT_TITLE = 'System events'
+const EVENT_ICONS = Object.freeze({
+  participantJoined: '🐰',
+  participantLeft: '👋',
+  error: '⚠️'
+})
 
 export type SystemEventTone = 'positive' | 'neutral' | 'alert'
 
@@ -38,11 +43,11 @@ const toEventMessage = (event: SystemEvent, errorLabel: string): string => {
 const getSystemEventIcon = (event: SystemEvent): string => {
   switch (event.type) {
     case 'participantJoined':
-      return '+'
+      return EVENT_ICONS.participantJoined
     case 'participantLeft':
-      return '-'
+      return EVENT_ICONS.participantLeft
     case 'error':
-      return '!'
+      return EVENT_ICONS.error
   }
 }
 
