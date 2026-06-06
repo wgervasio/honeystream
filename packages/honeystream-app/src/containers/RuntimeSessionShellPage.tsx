@@ -1815,6 +1815,7 @@ const RuntimeSessionRouteSurface = ({
               : 'Queue a source first; then play, pause, seek, speed, and next stay host-led.'
           }
           playback={viewModel.snapshot.session.playback}
+          clockSyncConfident={clockSyncReady}
           session={mapSessionSnapshotToPlaybackModel(viewModel.snapshot.session)}
           intents={boundary.playbackIntents}
           labels={{

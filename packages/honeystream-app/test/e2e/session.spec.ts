@@ -337,6 +337,12 @@ async function expectHealthyTwoBrowserConnection(input: {
   await input.clientPage.waitForSelector(
     '#runtime_connection_runway[data-clock-sync-state="synced"]'
   )
+  await input.hostPage.waitForSelector(
+    '#runtime_playback_controls [data-intent="positionMs"][data-sync-confident="yes"]'
+  )
+  await input.clientPage.waitForSelector(
+    '#runtime_playback_controls [data-intent="positionMs"][data-sync-confident="yes"]'
+  )
   await input.hostPage.waitForSelector(BROWSER_SYNC_RECEIPT_READY_SELECTOR)
   await input.clientPage.waitForSelector(BROWSER_SYNC_RECEIPT_READY_SELECTOR)
   await input.hostPage.waitForSelector(HAPPY_SYNC_SEAL_READY_SELECTOR)

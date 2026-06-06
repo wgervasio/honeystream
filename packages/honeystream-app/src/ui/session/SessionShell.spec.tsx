@@ -32,6 +32,8 @@ describe('SessionParticipantUsernames', () => {
     expect(html).toContain('Guest: GuestUser')
     expect(html).toContain('data-participant-role="host"')
     expect(html).toContain('data-participant-status="connected"')
+    expect(html).toContain('data-seat-mood="cat"')
+    expect(html).toContain('data-seat-mood="rabbit-hopped-in"')
   })
 
   it('renders waiting text when guest username is not provided', () => {
@@ -44,6 +46,7 @@ describe('SessionParticipantUsernames', () => {
 
     expect(html).toContain('Guest: Awaiting guest')
     expect(html).toContain('data-participant-status="waiting"')
+    expect(html).toContain('data-seat-mood="rabbit-warming"')
   })
 
   it('keeps cozy Cat-side and Rabbit-side labels visible for runtime rooms', () => {
@@ -83,6 +86,8 @@ describe('SessionSystemErrors', () => {
     expect(html).toContain('Connection timed out.')
     expect(html).toContain('protocol-rejected')
     expect(html).toContain('Host rejected command.')
+    expect(html).toContain('data-error-guidance="true"')
+    expect(html).toContain('Refresh both browsers')
   })
 })
 

@@ -199,6 +199,13 @@ describe('runtime/session streaming-site simulation', () => {
         const guestSession = guestRuntime.getSnapshot().session
         expect(hostSession && hostSession.currentMediaId).toBe(media.mediaId)
         expect(guestSession && guestSession.currentMediaId).toBe(media.mediaId)
+        const guestDesiredState = guestPlayback.desiredStates
+          .slice()
+          .reverse()
+          .find(state => state.media && state.media.mediaId === media.mediaId)
+        expect(guestDesiredState && guestDesiredState.seekToleranceMs).toBe(
+          media.kind === 'website' ? 1000 : undefined
+        )
       }
 
       const guestMediaIds = guestPlayback.desiredStates
@@ -335,6 +342,13 @@ describe('runtime/session streaming-site simulation', () => {
       const guestSession = guestRuntime.getSnapshot().session
       expect(hostSession && hostSession.currentMediaId).toBe(finalMedia.mediaId)
       expect(guestSession && guestSession.currentMediaId).toBe(finalMedia.mediaId)
+      const websiteDesiredStates = guestPlayback.desiredStates.filter(
+        state => state.media && state.media.source === 'website'
+      )
+      expect(websiteDesiredStates.length).toBeGreaterThanOrEqual(websiteMedia.length)
+      for (const desiredState of websiteDesiredStates) {
+        expect(desiredState.seekToleranceMs).toBe(1000)
+      }
 
       const metrics = pair.getAggregateMetrics()
       expect(metrics.combinedDroppedMessages).toBe(0)
@@ -357,6 +371,103 @@ describe('runtime/session streaming-site simulation', () => {
       expect(metrics.combinedAverageLatencyMs).toBeLessThanOrEqual(12)
       expect(metrics.combinedMaxMessageBytes).toBeLessThanOrEqual(2048)
       expect(metrics.combinedP95LatencyMs).toBeLessThanOrEqual(12)
+      expect(evaluateSimulatedPeerTransportBudget(metrics)).toEqual({
+        ok: true,
+        failures: []
+      })
+    } finally {
+      hostRuntime.dispose()
+      guestRuntime.dispose()
+    }
+  })
+
+  it('keeps website sync stable when transient control frames are retransmitted', async () => {
+    let nowMs = 50000
+    const pair = createSimulatedPeerTransportPair<
+      ClientToHostWireEnvelope,
+      HostToClientWireEnvelope
+    >({
+      hostInboundValidator: createWireEnvelopeValidator('client-to-host'),
+      guestInboundValidator: createWireEnvelopeValidator('host-to-client'),
+      now: () => nowMs,
+      random: () => 0.5,
+      network: {
+        latencyMs: 6,
+        jitterMs: 2,
+        dropEveryNthMessage: 4,
+        retransmitDroppedFrames: true,
+        retransmitDelayMs: 8,
+        maxQueuedFrames: 128
+      }
+    })
+    const hostRuntime = createSessionRuntime({
+      transport: pair.host,
+      playback: new CapturingPlaybackEngine(),
+      now: () => nowMs
+    })
+    const guestRuntime = createSessionRuntime({
+      transport: pair.guest,
+      playback: new CapturingPlaybackEngine(),
+      now: () => nowMs
+    })
+
+    const flushTransportAndRuntime = async (): Promise<void> => {
+      for (let pass = 0; pass < 4; pass += 1) {
+        pair.flushAll()
+        await settleRuntime()
+      }
+      nowMs += 16
+    }
+
+    try {
+      await hostRuntime.startHostSession({
+        roomId: 'retransmitted-sites-room',
+        hostUsername: 'Cat Host',
+        inviteSecret: 'invite-secret'
+      })
+      await guestRuntime.startGuestSession({
+        roomId: 'retransmitted-sites-room',
+        username: 'Rabbit Guest',
+        inviteSecret: 'invite-secret'
+      })
+      await flushTransportAndRuntime()
+
+      const websiteMedia = streamingSiteMedia.filter(media => media.kind === 'website').slice(0, 4)
+      for (let index = 0; index < websiteMedia.length; index += 1) {
+        const media = websiteMedia[index]
+        await guestRuntime.dispatchGuestCommand({ type: 'addMedia', media })
+        await flushTransportAndRuntime()
+
+        if (index > 0) {
+          await hostRuntime.dispatchHostCommand({ type: 'next' })
+          await flushTransportAndRuntime()
+        }
+
+        await hostRuntime.dispatchHostCommand({
+          type: 'seek',
+          positionMs: Math.min(18000 + index * 500, media.durationMs || 18000)
+        })
+        await flushTransportAndRuntime()
+      }
+
+      const finalMedia = websiteMedia[websiteMedia.length - 1]
+      expect(hostRuntime.getSnapshot().session).toMatchObject({
+        currentMediaId: finalMedia.mediaId
+      })
+      expect(guestRuntime.getSnapshot().session).toMatchObject({
+        currentMediaId: finalMedia.mediaId
+      })
+
+      const metrics = pair.getAggregateMetrics()
+      expect(metrics.combinedDeliveredMessages).toBe(metrics.combinedSentMessages)
+      expect(metrics.combinedDroppedMessages).toBe(0)
+      expect(metrics.combinedLostBytes).toBe(0)
+      expect(metrics.combinedRetransmittedMessages).toBeGreaterThan(0)
+      expect(metrics.combinedOutOfOrderMessages).toBe(0)
+      expect(metrics.combinedSequenceGapMessages).toBe(0)
+      expect(metrics.combinedByteLossRate).toBe(0)
+      expect(metrics.combinedP95LatencyMs).toBeLessThanOrEqual(16)
+      expect(metrics.estimatedRoundTripP95LatencyMs).toBeLessThanOrEqual(32)
       expect(evaluateSimulatedPeerTransportBudget(metrics)).toEqual({
         ok: true,
         failures: []

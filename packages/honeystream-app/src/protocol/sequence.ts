@@ -42,6 +42,6 @@ export const validateInboundSequence = (
   return {
     ok: false,
     error: createSequenceOrderError(receivedSeq, expectedSeq),
-    nextExpectedSeq: receivedSeq > expectedSeq ? receivedSeq + 1 : expectedSeq
+    nextExpectedSeq: expectedSeq
   }
 }

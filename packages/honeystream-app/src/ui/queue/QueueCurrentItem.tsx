@@ -9,6 +9,17 @@ interface QueueCurrentItemProps {
   readonly requestedByLabel?: string
 }
 
+const formatDurationMs = (durationMs: number | undefined): string | undefined => {
+  if (typeof durationMs !== 'number' || !Number.isFinite(durationMs) || durationMs <= 0) {
+    return undefined
+  }
+
+  const totalSeconds = Math.floor(durationMs / 1000)
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`
+}
+
 export const QueueCurrentItem = memo(function QueueCurrentItem(props: QueueCurrentItemProps) {
   if (!props.item) {
     return (
@@ -19,6 +30,7 @@ export const QueueCurrentItem = memo(function QueueCurrentItem(props: QueueCurre
   }
 
   const requestedByLabel = props.requestedByLabel || 'Requested by'
+  const durationLabel = formatDurationMs(props.item.durationMs)
 
   return (
     <section
@@ -28,7 +40,10 @@ export const QueueCurrentItem = memo(function QueueCurrentItem(props: QueueCurre
       aria-live="polite"
     >
       <p>{props.label || 'Current item'}</p>
-      <strong>{props.item.title}</strong>
+      <strong>
+        {props.item.title}
+        {durationLabel ? <span data-queue-duration="true">{durationLabel}</span> : null}
+      </strong>
       <p>{`${requestedByLabel}: ${props.item.requestedBy}`}</p>
     </section>
   )
