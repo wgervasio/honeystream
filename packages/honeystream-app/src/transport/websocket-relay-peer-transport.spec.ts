@@ -101,6 +101,39 @@ describe('E2EWebSocketPeerTransport', () => {
     expect(FakeWebSocket.activeCount()).toBe(0)
   })
 
+  it('fails a guest handshake when the e2e relay reports the peer is unavailable', async () => {
+    const guest = new E2EWebSocketPeerTransport<TestMessage, TestMessage>({
+      roomId: 'relay-missing-host-room',
+      role: 'guest',
+      localPeerId: 'guest-peer',
+      remotePeerIdHint: 'host-peer',
+      inboundValidator: testMessageValidator,
+      connectTimeoutMs: 1000,
+      url: 'ws://127.0.0.1/__honeystream_e2e_peer_relay__'
+    })
+
+    const connecting = guest.connect()
+    const socket = FakeWebSocket.getSocket('guest-peer')
+    if (!socket) throw new Error('Expected guest fake WebSocket to be registered.')
+    socket.deliver(
+      JSON.stringify({
+        kind: 'peerUnavailable',
+        message: 'Network error: e2e relay peer was not found.'
+      })
+    )
+
+    await expect(connecting).rejects.toThrow('e2e relay peer was not found')
+    expect(guest.getState()).toEqual(
+      expect.objectContaining({
+        status: 'failed',
+        reason: 'transport-error',
+        error: expect.objectContaining({ code: 'peer-unavailable' })
+      })
+    )
+    guest.dispose()
+    expect(FakeWebSocket.activeCount()).toBe(0)
+  })
+
   it('fails closed when the relay sends malformed control frames', async () => {
     const errors: string[] = []
     const guest = new E2EWebSocketPeerTransport<TestMessage, TestMessage>({

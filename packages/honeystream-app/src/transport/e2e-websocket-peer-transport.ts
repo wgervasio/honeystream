@@ -1,12 +1,4 @@
-import {
-  PeerTransport,
-  PeerTransportEnvelope,
-  PeerTransportEvent,
-  PeerTransportListener,
-  TransportMessageValidator,
-  TransportUnsubscribe,
-  validatePeerTransportEnvelope
-} from './contracts'
+import { PeerTransport, PeerTransportEnvelope, PeerTransportEvent, PeerTransportListener, TransportMessageValidator, TransportUnsubscribe, validatePeerTransportEnvelope } from './contracts'
 import {
   PeerTransportConnectionState,
   PeerTransportDisconnectReason,
@@ -177,6 +169,14 @@ export class E2EWebSocketPeerTransport<TInboundMessage, TOutboundMessage>
     }
     if (message.kind === 'leave' && typeof message.peerId === 'string') {
       if (message.peerId === this.remotePeerIdValue) this.disconnect('peer-disconnected')
+      return
+    }
+    if (message.kind === 'peerUnavailable') {
+      const errorMessage =
+        typeof message.message === 'string'
+          ? message.message
+          : 'Network error: e2e relay peer was not found.'
+      this.fail('peer-unavailable', errorMessage)
       return
     }
     if (message.kind === 'data' && typeof message.fromPeerId === 'string') {
