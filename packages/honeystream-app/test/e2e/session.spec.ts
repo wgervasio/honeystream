@@ -285,6 +285,11 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
   await waitForRuntimeText(page, 'YouTube plus any-site matrix')
   await waitForRuntimeText(page, `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} two-browser paths`)
   await waitForRuntimeText(page, 'Media bytes stay local')
+  await waitForRuntimeText(page, 'Flawless handoff')
+  await waitForRuntimeText(
+    page,
+    'Invite, join, queue, pause, resume, seek, rate, and next all stay on the zero-loss happy path.'
+  )
 }
 
 function isConnectionAlert(message: string): boolean {

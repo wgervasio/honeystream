@@ -384,8 +384,13 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('YouTube plus any-site matrix')
     expect(html).toContain(`${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} two-browser paths`)
     expect(html).toContain('Media bytes stay local')
+    expect(html).toContain('Flawless handoff')
+    expect(html).toContain(
+      'Invite, join, queue, pause, resume, seek, rate, and next all stay on the zero-loss happy path.'
+    )
     expect(html).toContain('data-browser-sync-receipt="two-browser-seat"')
     expect(html).toContain('data-browser-sync-receipt="site-lanes"')
+    expect(html).toContain('data-browser-sync-receipt="flawless-handoff"')
     expect(html).toContain(`data-site-lane-count="${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}"`)
     expect(html).toContain(`data-site-path-count="${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}"`)
     expect(html).toContain('Paste source')

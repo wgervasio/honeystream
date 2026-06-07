@@ -525,6 +525,12 @@ const BROWSER_SYNC_RECEIPT_ITEMS = [
     label: 'Media bytes stay local',
     detail:
       'Each browser opens the same watch page locally while Honeystream syncs only host-led controls.'
+  },
+  {
+    id: 'flawless-handoff',
+    label: 'Flawless handoff',
+    detail:
+      'Invite, join, queue, pause, resume, seek, rate, and next all stay on the zero-loss happy path.'
   }
 ] as const
 const COMMAND_BAR_LINKS = [
