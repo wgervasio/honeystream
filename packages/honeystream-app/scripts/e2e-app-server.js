@@ -11,6 +11,7 @@ const bundleFiles = ['index.html', 'app.dev.js']
 const buildSignaturePath = path.join(distPath, 'e2e-build-signature.json')
 const profileSeedPath = '/__honeystream_e2e_profile_seed__'
 const relayPath = '/__honeystream_e2e_peer_relay__'
+const defaultRelayGuestPeerTimeoutMs = 5000
 const contentTypes = {
   '.css': 'text/css; charset=utf-8',
   '.html': 'text/html; charset=utf-8',
@@ -190,9 +191,17 @@ function isRelayRole(value) {
   return value === 'guest' || value === 'host'
 }
 
+function getRelayGuestPeerTimeoutMs() {
+  const configuredValue = Number(process.env.HONEYSTREAM_E2E_RELAY_GUEST_TIMEOUT_MS)
+  return Number.isFinite(configuredValue) && configuredValue > 0
+    ? configuredValue
+    : defaultRelayGuestPeerTimeoutMs
+}
+
 function createE2EPeerRelay(server) {
   const rooms = new Map()
   const wsServer = new WebSocket.Server({ server, path: relayPath })
+  const guestPeerTimeoutMs = getRelayGuestPeerTimeoutMs()
 
   const getRoom = roomId => {
     const existingRoom = rooms.get(roomId)
@@ -209,13 +218,34 @@ function createE2EPeerRelay(server) {
     }
   }
 
+  const clearPeerUnavailableTimer = client => {
+    if (!client.peerUnavailableTimer) return
+    clearTimeout(client.peerUnavailableTimer)
+    client.peerUnavailableTimer = undefined
+  }
+
+  const scheduleGuestPeerUnavailable = client => {
+    if (client.role !== 'guest') return
+    clearPeerUnavailableTimer(client)
+    client.peerUnavailableTimer = setTimeout(() => {
+      const room = rooms.get(client.roomId)
+      if (!room || room.guest !== client || room.host) return
+      sendJson(client, {
+        kind: 'peerUnavailable',
+        message: 'Network error: e2e relay peer was not found.'
+      })
+    }, guestPeerTimeoutMs)
+  }
+
   const announcePeerIfReady = room => {
     if (!room.host || !room.guest) return
+    clearPeerUnavailableTimer(room.guest)
     sendJson(room.host, { kind: 'peer', peerId: room.guest.peerId })
     sendJson(room.guest, { kind: 'peer', peerId: room.host.peerId })
   }
 
   const removeClient = client => {
+    clearPeerUnavailableTimer(client)
     const room = rooms.get(client.roomId)
     if (!room || room[client.role] !== client) return
 
@@ -270,10 +300,11 @@ function createE2EPeerRelay(server) {
     const previousClient = room[role]
     if (previousClient) previousClient.socket.close()
 
-    const client = { peerId, role, roomId, socket }
+    const client = { peerId, role, roomId, socket, peerUnavailableTimer: undefined }
     room[role] = client
     socket.on('message', message => forwardData(client, message))
     socket.once('close', () => removeClient(client))
+    scheduleGuestPeerUnavailable(client)
     announcePeerIfReady(room)
   })
 

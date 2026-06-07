@@ -138,6 +138,7 @@ export interface RuntimeSessionShellRouteBoundary extends Disposable {
   readonly store: ProjectionStore<SessionRuntimeProjectionSnapshot>
   readonly settingsStore: ProjectionStore<MinimalSettings>
   readonly invite: PrivateInviteCredentials
+  readonly inviteSecretProvided: boolean
   readonly mediaElementRef: React.RefObject<HTMLVideoElement>
   readonly playbackIntents: PlaybackRuntimeControlIntents
   readonly queueIntents: QueueIntentCallbacks
@@ -1397,6 +1398,10 @@ const RuntimeSessionRouteSurface = ({
         ? 'Rabbit-side guest'
         : 'Room warming up'
     const clockSyncReady = viewModel.snapshot.role === 'host' || clockSyncState === 'synced'
+    const hasInviteSecretForRole =
+      viewModel.snapshot.role === 'guest'
+        ? boundary.inviteSecretProvided
+        : Boolean(boundary.invite.secret)
     const browserSyncReceiptState =
       guest && viewModel.snapshot.transportStatus === 'connected' && clockSyncReady
         ? 'ready'
@@ -1455,7 +1460,7 @@ const RuntimeSessionRouteSurface = ({
           data-byte-loss-rate="0"
           data-clock-sync-state={clockSyncState}
           data-guest-seat-state={guest ? 'present' : 'waiting'}
-          data-invite-secret-state={boundary.invite.secret ? 'present' : 'missing'}
+          data-invite-secret-state={hasInviteSecretForRole ? 'present' : 'missing'}
           data-tail-latency-ms-budget={STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}
           data-transport-status={viewModel.snapshot.transportStatus}
         >
@@ -2271,6 +2276,7 @@ export const createRuntimeSessionShellRouteBoundary = (
     store,
     settingsStore,
     invite,
+    inviteSecretProvided,
     mediaElementRef,
     playbackIntents,
     queueIntents,
