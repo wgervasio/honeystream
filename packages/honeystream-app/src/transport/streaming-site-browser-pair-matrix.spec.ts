@@ -29,7 +29,7 @@ describe('streaming site browser-pair matrix', () => {
       const laneSources = STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES.filter(
         source => source.lane === lane
       )
-      expect(laneSources.length).toBeGreaterThanOrEqual(1)
+      expect(laneSources.length).toBeGreaterThanOrEqual(4)
       expect(laneSources.filter(source => source.exerciseControls)).toHaveLength(1)
     }
   })
