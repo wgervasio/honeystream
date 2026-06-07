@@ -191,7 +191,7 @@ const HAPPY_PATH_STEPS = [
   {
     id: 'sync',
     title: 'Hit play together',
-    detail: 'Host-led controls keep play, pause, seek, and speed changes obvious.'
+    detail: 'Host-led controls keep play, pause, seek, and speed changes obvious with a zero-loss lab seal.'
   }
 ] as const
 const SOURCE_LANES = [
@@ -568,7 +568,8 @@ const ROOM_MOOD_CHIPS = [
   'Reliable retry guard',
   'Observable trace cap',
   'Merge-ready e2e',
-  'Happy sync glow'
+  'Happy sync glow',
+  'Happy handoff checklist'
 ] as const
 const PAIR_GUIDE_CARDS = [
   {
@@ -1869,7 +1870,8 @@ const RuntimeSessionRouteSurface = ({
             <p>
               A soft two-person booth for YouTube, AnimePahe, Cineby, Miruro, direct media, and
               local files. Paste the source, send the invite, then let the low-latency control lane
-              keep both sides together without sharing video bytes.
+              keep both sides together without sharing video bytes, dropped controls, or surprise
+              bytes.
             </p>
             <div
               id="runtime_happy_path"

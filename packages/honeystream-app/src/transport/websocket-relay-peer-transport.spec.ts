@@ -101,6 +101,27 @@ describe('E2EWebSocketPeerTransport', () => {
     expect(FakeWebSocket.activeCount()).toBe(0)
   })
 
+  it('keeps the default isolated-browser handshake grace long enough for slow startup', async () => {
+    jest.useFakeTimers()
+    const guest = new E2EWebSocketPeerTransport<TestMessage, TestMessage>({
+      roomId: 'slow-startup-room',
+      role: 'guest',
+      localPeerId: 'guest-peer',
+      remotePeerIdHint: 'host-peer',
+      inboundValidator: testMessageValidator,
+      url: 'ws://127.0.0.1/__honeystream_e2e_peer_relay__'
+    })
+
+    const connecting = guest.connect()
+    jest.advanceTimersByTime(14999)
+    expect(guest.getState()).toEqual(expect.objectContaining({ status: 'connecting' }))
+    jest.advanceTimersByTime(1)
+
+    await expect(connecting).rejects.toThrow('e2e relay peer was not found')
+    guest.dispose()
+    expect(FakeWebSocket.activeCount()).toBe(0)
+  })
+
   it('fails a guest handshake when the e2e relay reports the peer is unavailable', async () => {
     const guest = new E2EWebSocketPeerTransport<TestMessage, TestMessage>({
       roomId: 'relay-missing-host-room',
@@ -154,8 +175,8 @@ describe('E2EWebSocketPeerTransport', () => {
     if (!socket) throw new Error('Expected guest fake WebSocket to be registered.')
     socket.deliver('not-json')
 
-    await expect(connecting).rejects.toThrow('E2E relay message must be an object with a kind')
-    expect(errors).toEqual(['E2E relay message must be an object with a kind.'])
+    await expect(connecting).rejects.toThrow('E2E relay message must be valid JSON')
+    expect(errors).toEqual(['E2E relay message must be valid JSON.'])
     expect(guest.getState()).toEqual(
       expect.objectContaining({
         status: 'failed',
