@@ -2,6 +2,9 @@ import { TransportMessageValidator } from './contracts'
 
 export type E2EWebSocketRole = 'guest' | 'host'
 export type UnknownRecord = { readonly [key: string]: unknown }
+export type RelayMessageParseResult =
+  | { readonly ok: true; readonly value: unknown }
+  | { readonly ok: false; readonly reason: string }
 
 export interface E2EWebSocketPeerTransportOptions<TInboundMessage> {
   readonly inboundValidator: TransportMessageValidator<TInboundMessage>
@@ -19,11 +22,12 @@ export const RELAY_PATH = '/__honeystream_e2e_peer_relay__'
 export const isRecord = (value: unknown): value is UnknownRecord =>
   typeof value === 'object' && value !== null
 
-export const parseRelayMessage = (value: string): unknown => {
+export const parseRelayMessage = (value: unknown): RelayMessageParseResult => {
+  if (typeof value !== 'string') return { ok: true, value }
   try {
-    return JSON.parse(value)
+    return { ok: true, value: JSON.parse(value) }
   } catch {
-    return undefined
+    return { ok: false, reason: 'E2E relay message must be valid JSON.' }
   }
 }
 

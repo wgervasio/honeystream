@@ -606,6 +606,7 @@ describe('session', () => {
       await waitForRuntimeText(page, 'Observable trace cap')
       await waitForRuntimeText(page, 'Merge-ready e2e')
       await waitForRuntimeText(page, 'Happy sync glow')
+      await waitForRuntimeText(page, 'Happy handoff checklist')
       await waitForRuntimeText(page, '2ms best mock RT')
       await waitForRuntimeText(page, '10ms lab round trip')
       await waitForRuntimeText(page, 'No skipped controls')

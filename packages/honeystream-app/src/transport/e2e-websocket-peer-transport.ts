@@ -13,12 +13,10 @@ import {
   toRelayUrl
 } from './e2e-websocket-peer-transport-protocol'
 
-const DEFAULT_CONNECT_TIMEOUT_MS = 5000
+const DEFAULT_CONNECT_TIMEOUT_MS = 15000
 
-export class E2EWebSocketPeerTransport<TInboundMessage, TOutboundMessage>
-  implements PeerTransport<TInboundMessage, TOutboundMessage> {
+export class E2EWebSocketPeerTransport<TInboundMessage, TOutboundMessage> implements PeerTransport<TInboundMessage, TOutboundMessage> {
   readonly localPeerId: string
-
   private readonly inboundValidator: TransportMessageValidator<TInboundMessage>
   private readonly now: () => number
   private readonly relayUrl: string
@@ -104,11 +102,7 @@ export class E2EWebSocketPeerTransport<TInboundMessage, TOutboundMessage>
       this.raiseUsageError('not-connected', `cannot send while ${this.state.status}`)
     }
     this.socket.send(
-      JSON.stringify({
-        kind: 'data',
-        toPeerId: this.remotePeerIdValue,
-        envelope
-      })
+      JSON.stringify({ kind: 'data', toPeerId: this.remotePeerIdValue, envelope })
     )
   }
 
@@ -157,7 +151,9 @@ export class E2EWebSocketPeerTransport<TInboundMessage, TOutboundMessage>
   }
 
   private receiveRelayMessage(value: unknown): void {
-    const message = typeof value === 'string' ? parseRelayMessage(value) : value
+    const parsedMessage = parseRelayMessage(value)
+    if (!parsedMessage.ok) return this.fail('invalid-envelope', parsedMessage.reason)
+    const message = parsedMessage.value
     if (!isRecord(message) || typeof message.kind !== 'string') {
       this.fail('invalid-envelope', 'E2E relay message must be an object with a kind.')
       return
