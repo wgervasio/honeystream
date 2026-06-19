@@ -412,7 +412,9 @@ const MERGE_GATE_METRICS = [
     id: 'coverage',
     label: 'Coverage gate',
     value: `${STREAMING_SITE_CONNECTION_FIXTURE_COUNT} sites`,
-    detail: 'YouTube, AnimePahe, Cineby, Miruro, and generic pages stay in the matrix.'
+    detail:
+      'YouTube, AnimePahe, Cineby, Miruro, and generic pages stay in the matrix, ' +
+      'including Vimeo, Twitch, Netflix-style, Disney+, and Crunchyroll generic hosts.'
   },
   {
     id: 'per-site-observation',
@@ -491,7 +493,8 @@ const CONNECTION_CONFIDENCE_CARDS = [
     id: 'local-site-load',
     label: 'Local website load',
     detail:
-      'YouTube, AnimePahe, Cineby, Miruro, and generic pages load locally; only typed commands cross the tiny lane.'
+      'YouTube, AnimePahe, Cineby, Miruro, and generic pages load locally; Vimeo, Twitch, ' +
+      'and Netflix-style pages stay generic while only typed commands cross the tiny lane.'
   }
 ] as const
 const BROWSER_SYNC_RECEIPT_ITEMS = [
@@ -518,7 +521,8 @@ const BROWSER_SYNC_RECEIPT_ITEMS = [
     label: 'YouTube plus any-site matrix',
     detail:
       `YouTube, AnimePahe, Cineby, Miruro, and generic lanes cover ` +
-      `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} two-browser paths before merge.`
+      `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} two-browser paths before merge, ` +
+      'including Vimeo, Twitch, Netflix-style, Disney+, and Crunchyroll generic hosts.'
   },
   {
     id: 'local-media',

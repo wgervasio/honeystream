@@ -263,6 +263,9 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('Coverage gate')
     expect(html).toContain(`${STREAMING_SITE_CONNECTION_FIXTURES.length} sites`)
     expect(html).toContain('YouTube, AnimePahe, Cineby, Miruro, and generic pages')
+    expect(html).toContain(
+      'Vimeo, Twitch, Netflix-style, Disney+, and Crunchyroll generic hosts'
+    )
     expect(html).toContain('Per-site proof')
     expect(html).toContain(`${STREAMING_SITE_CONNECTION_FIXTURES.length} observed`)
     expect(html).toContain(
@@ -362,6 +365,7 @@ describe('RuntimeSessionShellPage', () => {
     )
     expect(html).toContain('Local website load')
     expect(html).toContain('YouTube, AnimePahe, Cineby, Miruro, and generic pages load locally')
+    expect(html).toContain('Vimeo, Twitch, and Netflix-style pages stay generic')
     expect(html).toContain(
       `data-tail-latency-ms-budget="${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}"`
     )
@@ -396,6 +400,9 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('Two browsers, one cozy lane')
     expect(html).toContain('0B control loss')
     expect(html).toContain('YouTube plus any-site matrix')
+    expect(html).toContain(
+      'Vimeo, Twitch, Netflix-style, Disney+, and Crunchyroll generic hosts'
+    )
     expect(html).toContain(`${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} two-browser paths`)
     expect(html).toContain('Media bytes stay local')
     expect(html).toContain('Flawless handoff')

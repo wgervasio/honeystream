@@ -33,6 +33,22 @@ const siteExamples = [
     label: 'Miruro',
     placeholder: 'Paste the exact Miruro watch page...',
     helper: 'Miruro lane selected. Use the real watch page you want rabbit-side to load.'
+  },
+  {
+    label: 'Vimeo',
+    placeholder: 'Paste the exact Vimeo page...',
+    helper: 'Vimeo lane selected. Keep it generic and test the exact page in both browsers.'
+  },
+  {
+    label: 'Twitch',
+    placeholder: 'Paste the exact Twitch page...',
+    helper: 'Twitch lane selected. Keep it generic and test the exact page in both browsers.'
+  },
+  {
+    label: 'Netflix-style pages',
+    placeholder: 'Paste the exact watch page...',
+    helper:
+      'Generic site lane selected. Use the exact page both signed-in browsers can open locally.'
   }
 ]
 
