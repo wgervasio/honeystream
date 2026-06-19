@@ -87,12 +87,16 @@ describe('simulated peer transport queue pressure', () => {
       maxP95LatencyMs: 50,
       maxMaxLatencyMs: 50,
       maxQueuedMessages: 0,
+      maxQueuedBytes: 0,
       maxDirectionalAverageLatencyMs: 50,
       maxDirectionalLatencySkewMs: 50,
       maxDirectionalByteLossRate: 1,
       maxDirectionalQueuedMessages: 0,
+      maxDirectionalQueuedBytes: 0,
       maxCombinedPeakQueuedMessages: 1,
+      maxCombinedPeakQueuedBytes: 1,
       maxDirectionalPeakQueuedMessages: 1,
+      maxDirectionalPeakQueuedBytes: 1,
       maxEstimatedRoundTripP95LatencyMs: 100,
       maxEstimatedRoundTripMaxLatencyMs: 100
     })
@@ -100,6 +104,8 @@ describe('simulated peer transport queue pressure', () => {
     expect(budgetResult.failures).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ metric: 'combinedPeakQueuedMessages' }),
+        expect.objectContaining({ metric: 'combinedPeakQueuedBytes' }),
+        expect.objectContaining({ metric: 'maxDirectionalPeakQueuedBytes' }),
         expect.objectContaining({ metric: 'maxDirectionalPeakQueuedMessages' })
       ])
     )

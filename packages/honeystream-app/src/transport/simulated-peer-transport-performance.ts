@@ -1,109 +1,19 @@
 import { AggregateSimulatedPeerTransportMetrics } from './simulated-peer-transport-pair'
+import {
+  STREAMING_SITE_TRANSPORT_BUDGET,
+  SimulatedPeerTransportBudget,
+  SimulatedPeerTransportBudgetFailure,
+  SimulatedPeerTransportBudgetMetric,
+  SimulatedPeerTransportBudgetResult
+} from './simulated-peer-transport-budget'
 
-export interface SimulatedPeerTransportBudget {
-  readonly minDeliveryRate: number
-  readonly maxDroppedMessages: number
-  readonly maxRetransmissionRate: number
-  readonly maxRetransmissionByteRate: number
-  readonly maxOutOfOrderMessages: number
-  readonly maxSequenceGapMessages: number
-  readonly maxByteLossRate: number
-  readonly maxAverageMessageBytes: number
-  readonly maxMessageBytes: number
-  readonly maxAverageLatencyMs: number
-  readonly maxAverageLatencyJitterMs: number
-  readonly maxP95LatencyMs: number
-  readonly maxMaxLatencyMs: number
-  readonly maxMaxLatencyJitterMs: number
-  readonly maxQueuedMessages: number
-  readonly maxDirectionalAverageLatencyMs: number
-  readonly maxDirectionalLatencySkewMs: number
-  readonly maxDirectionalByteLossRate: number
-  readonly maxDirectionalRetransmissionRate: number
-  readonly maxDirectionalRetransmissionByteRate: number
-  readonly maxDirectionalQueuedMessages: number
-  readonly maxCombinedPeakQueuedMessages: number
-  readonly maxDirectionalPeakQueuedMessages: number
-  readonly maxEstimatedRoundTripP95LatencyMs: number
-  readonly maxEstimatedRoundTripMaxLatencyMs: number
-}
-
-export type SimulatedPeerTransportBudgetMetric =
-  | 'combinedDeliveryRate'
-  | 'combinedDroppedMessages'
-  | 'combinedRetransmissionRate'
-  | 'combinedRetransmissionByteRate'
-  | 'combinedOutOfOrderMessages'
-  | 'combinedSequenceGapMessages'
-  | 'combinedByteLossRate'
-  | 'combinedAverageMessageBytes'
-  | 'combinedMaxMessageBytes'
-  | 'combinedAverageLatencyMs'
-  | 'maxDirectionalAverageLatencyJitterMs'
-  | 'combinedP95LatencyMs'
-  | 'combinedMaxLatencyMs'
-  | 'maxDirectionalLatencyJitterMs'
-  | 'combinedQueuedMessages'
-  | 'maxDirectionalAverageLatencyMs'
-  | 'directionalAverageLatencySkewMs'
-  | 'maxDirectionalByteLossRate'
-  | 'maxDirectionalRetransmissionRate'
-  | 'maxDirectionalRetransmissionByteRate'
-  | 'maxDirectionalQueuedMessages'
-  | 'combinedPeakQueuedMessages'
-  | 'maxDirectionalPeakQueuedMessages'
-  | 'estimatedRoundTripP95LatencyMs'
-  | 'estimatedRoundTripMaxLatencyMs'
-
-export interface SimulatedPeerTransportBudgetFailure {
-  readonly metric: SimulatedPeerTransportBudgetMetric
-  readonly expected: string
-  readonly actual: number
-}
-
-export interface SimulatedPeerTransportBudgetResult {
-  readonly ok: boolean
-  readonly failures: readonly SimulatedPeerTransportBudgetFailure[]
-}
-
-/*
-Context: Streaming-site sync tests need a stable host/guest mock-network merge gate.
-Invariant: Website playback shares compact commands only; video bytes stay local to each browser.
-Options considered: Per-test assertions, ad hoc logs, or one reusable budget evaluator.
-Decision: Keep delivery, drop, retransmission overhead, sequence-integrity, byte-loss,
-wire-size, jitter, latency, round-trip tail, and peak-queue caps in this helper.
-Performance impact: Budget checks are O(1) over aggregate metrics already captured by simulations.
-Memory/lifecycle ownership: Metrics are bounded by the simulated transport recorder.
-Failure mode: Over-budget simulations return typed failures for the exact metric that regressed.
-Validation: Covered by simulated-peer-transport-performance and streaming-site runtime tests.
-*/
-export const STREAMING_SITE_TRANSPORT_BUDGET: SimulatedPeerTransportBudget = Object.freeze({
-  minDeliveryRate: 1,
-  maxDroppedMessages: 0,
-  maxRetransmissionRate: 0.5,
-  maxRetransmissionByteRate: 0.5,
-  maxOutOfOrderMessages: 0,
-  maxSequenceGapMessages: 0,
-  maxByteLossRate: 0,
-  maxAverageMessageBytes: 1200,
-  maxMessageBytes: 2048,
-  maxAverageLatencyMs: 16,
-  maxAverageLatencyJitterMs: 4,
-  maxP95LatencyMs: 16,
-  maxMaxLatencyMs: 20,
-  maxMaxLatencyJitterMs: 8,
-  maxQueuedMessages: 0,
-  maxDirectionalAverageLatencyMs: 16,
-  maxDirectionalLatencySkewMs: 8,
-  maxDirectionalByteLossRate: 0,
-  maxDirectionalRetransmissionRate: 0.5,
-  maxDirectionalRetransmissionByteRate: 0.5,
-  maxDirectionalQueuedMessages: 0,
-  maxCombinedPeakQueuedMessages: 64,
-  maxDirectionalPeakQueuedMessages: 32,
-  maxEstimatedRoundTripP95LatencyMs: 32,
-  maxEstimatedRoundTripMaxLatencyMs: 32
-})
+export {
+  STREAMING_SITE_TRANSPORT_BUDGET,
+  SimulatedPeerTransportBudget,
+  SimulatedPeerTransportBudgetFailure,
+  SimulatedPeerTransportBudgetMetric,
+  SimulatedPeerTransportBudgetResult
+} from './simulated-peer-transport-budget'
 
 interface BudgetCheck {
   readonly actual: number
@@ -232,16 +142,32 @@ export const evaluateSimulatedPeerTransportBudget = (
       budget.maxDirectionalQueuedMessages
     ),
     maxCheck(
+      'maxDirectionalQueuedBytes',
+      metrics.maxDirectionalQueuedBytes,
+      budget.maxDirectionalQueuedBytes
+    ),
+    maxCheck(
       'combinedPeakQueuedMessages',
       metrics.combinedPeakQueuedMessages,
       budget.maxCombinedPeakQueuedMessages
+    ),
+    maxCheck(
+      'combinedPeakQueuedBytes',
+      metrics.combinedPeakQueuedBytes,
+      budget.maxCombinedPeakQueuedBytes
     ),
     maxCheck(
       'maxDirectionalPeakQueuedMessages',
       metrics.maxDirectionalPeakQueuedMessages,
       budget.maxDirectionalPeakQueuedMessages
     ),
-    maxCheck('combinedQueuedMessages', metrics.combinedQueuedMessages, budget.maxQueuedMessages)
+    maxCheck(
+      'maxDirectionalPeakQueuedBytes',
+      metrics.maxDirectionalPeakQueuedBytes,
+      budget.maxDirectionalPeakQueuedBytes
+    ),
+    maxCheck('combinedQueuedMessages', metrics.combinedQueuedMessages, budget.maxQueuedMessages),
+    maxCheck('combinedQueuedBytes', metrics.combinedQueuedBytes, budget.maxQueuedBytes)
   ]
   const failures = checks.filter(check => !check.passes).map(overBudgetFailure)
 
