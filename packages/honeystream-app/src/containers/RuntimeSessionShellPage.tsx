@@ -392,7 +392,7 @@ const MERGE_GATE_METRICS = [
   {
     id: 'queue-byte-pressure',
     label: 'Queue byte gate',
-    value: `<=${STREAMING_SITE_CONNECTION_PROFILE_MAX_QUEUED_BYTES}B`,
+    value: `<=${STREAMING_SITE_CONNECTION_BUDGET.maxCombinedPeakQueuedBytes}B`,
     detail:
       'Mock lanes expose peak queued control bytes, so fast paths cannot hide byte-pressure buffering.'
   },
