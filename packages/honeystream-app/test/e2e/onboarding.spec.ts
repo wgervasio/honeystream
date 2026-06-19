@@ -124,6 +124,9 @@ describe('onboarding', () => {
     expect(siteExamples).toContain('AnimePahe')
     expect(siteExamples).toContain('Cineby')
     expect(siteExamples).toContain('Miruro')
+    expect(siteExamples).toContain('Vimeo')
+    expect(siteExamples).toContain('Twitch')
+    expect(siteExamples).toContain('Netflix-style pages')
     await page.click('#home_starter_chips button')
     const selectedStarterPlaceholder = await page.$eval(
       '#home_starter_url',

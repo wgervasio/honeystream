@@ -756,6 +756,9 @@ class Home extends Component<IProps, IState> {
             <strong>AnimePahe</strong>
             <strong>Cineby</strong>
             <strong>Miruro</strong>
+            <strong>Vimeo</strong>
+            <strong>Twitch</strong>
+            <strong>Netflix-style pages</strong>
             <strong>direct MP4</strong>
           </div>
 

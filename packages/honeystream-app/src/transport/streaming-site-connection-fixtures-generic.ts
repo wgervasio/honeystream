@@ -27,6 +27,31 @@ export const STREAMING_SITE_GENERIC_FIXTURES: readonly StreamingSiteConnectionFi
       id: 'generic-cinema-room',
       source: 'https://cinema.example.test/movie/honeystream-night?room=two',
       title: 'Generic cinema room'
+    },
+    {
+      id: 'generic-vimeo-watch',
+      source: 'https://vimeo.com/123456789',
+      title: 'Vimeo generic watch page'
+    },
+    {
+      id: 'generic-twitch-channel',
+      source: 'https://www.twitch.tv/honeystreamsync',
+      title: 'Twitch generic channel page'
+    },
+    {
+      id: 'generic-netflix-title',
+      source: 'https://www.netflix.com/title/80057281',
+      title: 'Netflix generic title page'
+    },
+    {
+      id: 'generic-disneyplus-movie',
+      source: 'https://www.disneyplus.com/movies/honeystream-test/abc123',
+      title: 'Disney+ generic movie page'
+    },
+    {
+      id: 'generic-crunchyroll-watch',
+      source: 'https://www.crunchyroll.com/watch/honeystream-test',
+      title: 'Crunchyroll generic watch page'
     }
   ]
 )

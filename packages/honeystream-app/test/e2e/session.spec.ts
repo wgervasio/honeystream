@@ -302,6 +302,7 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
     'Selected lanes stay under 10ms P95 with 2ms best mock round trips'
   )
   await waitForRuntimeText(page, 'Local website load')
+  await waitForRuntimeText(page, 'Vimeo, Twitch, and Netflix-style pages stay generic')
   await waitForRuntimeText(
     page,
     'YouTube, AnimePahe, Cineby, Miruro, and generic pages load locally'

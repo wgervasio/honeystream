@@ -83,6 +83,9 @@ describe('browser/HomeScreen', () => {
     expect(html).toContain('AnimePahe')
     expect(html).toContain('Cineby')
     expect(html).toContain('Miruro')
+    expect(html).toContain('Vimeo')
+    expect(html).toContain('Twitch')
+    expect(html).toContain('Netflix-style pages')
   })
 
   it('selects a site lane without inserting a fake URL', () => {

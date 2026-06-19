@@ -193,6 +193,41 @@ export const STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES: readonly StreamingSiteBrow
       title: 'cinema.example.test page',
       expectedText: 'cinema.example.test page',
       exerciseControls: false
+    },
+    {
+      lane: 'generic',
+      url: 'vimeo.com/123456789',
+      title: 'vimeo.com page',
+      expectedText: 'vimeo.com page',
+      exerciseControls: false
+    },
+    {
+      lane: 'generic',
+      url: 'www.twitch.tv/honeystreamsync',
+      title: 'www.twitch.tv page',
+      expectedText: 'www.twitch.tv page',
+      exerciseControls: false
+    },
+    {
+      lane: 'generic',
+      url: 'www.netflix.com/title/80057281',
+      title: 'www.netflix.com page',
+      expectedText: 'www.netflix.com page',
+      exerciseControls: false
+    },
+    {
+      lane: 'generic',
+      url: 'www.disneyplus.com/movies/honeystream-test/abc123',
+      title: 'www.disneyplus.com page',
+      expectedText: 'www.disneyplus.com page',
+      exerciseControls: false
+    },
+    {
+      lane: 'generic',
+      url: 'www.crunchyroll.com/watch/honeystream-test',
+      title: 'www.crunchyroll.com page',
+      expectedText: 'www.crunchyroll.com page',
+      exerciseControls: false
     }
   ]
 )

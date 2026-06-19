@@ -50,7 +50,7 @@ describe('streaming site connection lab', () => {
     expect(providers.filter(provider => provider === 'animepahe')).toHaveLength(15)
     expect(providers.filter(provider => provider === 'cineby')).toHaveLength(16)
     expect(providers.filter(provider => provider === 'miruro')).toHaveLength(14)
-    expect(providers.filter(provider => provider === 'unknown')).toHaveLength(5)
+    expect(providers.filter(provider => provider === 'unknown')).toHaveLength(10)
     expect(result.rankedProfiles[0].providerCoverage).toEqual(
       STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE
     )
@@ -63,7 +63,7 @@ describe('streaming site connection lab', () => {
       { provider: 'animepahe', siteCount: 15 },
       { provider: 'cineby', siteCount: 16 },
       { provider: 'miruro', siteCount: 14 },
-      { provider: 'unknown', siteCount: 5 }
+      { provider: 'unknown', siteCount: 10 }
     ])
     const fixtureSentMessages = bestObservation.fixtureObservations.reduce(
       (total, fixture) => total + fixture.sentMessages,
@@ -101,7 +101,7 @@ describe('streaming site connection lab', () => {
   it('covers the requested streaming-site matrix before selecting a transport lane', () => {
     const sources = STREAMING_SITE_CONNECTION_FIXTURES.map(fixture => fixture.source)
 
-    expect(STREAMING_SITE_CONNECTION_FIXTURES).toHaveLength(68)
+    expect(STREAMING_SITE_CONNECTION_FIXTURES).toHaveLength(73)
     expect(sources).toEqual(
       expect.arrayContaining([
         'https://youtube.com',
@@ -121,7 +121,12 @@ describe('streaming site connection lab', () => {
         'https://beta.miruro.tv/watch/honeystream-test?episode=3',
         'https://www.miruro.tv/anime/honeystream-test?watch=1',
         'https://cinema.example.test/movie/honeystream-night?room=two',
-        'https://shows.example.test/title/honeystream-night?episode=1'
+        'https://shows.example.test/title/honeystream-night?episode=1',
+        'https://vimeo.com/123456789',
+        'https://www.twitch.tv/honeystreamsync',
+        'https://www.netflix.com/title/80057281',
+        'https://www.disneyplus.com/movies/honeystream-test/abc123',
+        'https://www.crunchyroll.com/watch/honeystream-test'
       ])
     )
     expect(sources.some(source => source.includes('youtube.com'))).toBe(true)
@@ -130,6 +135,9 @@ describe('streaming site connection lab', () => {
     expect(sources.some(source => source.includes('cineby'))).toBe(true)
     expect(sources.some(source => source.includes('miruro'))).toBe(true)
     expect(sources.some(source => source.includes('streaming.example.test'))).toBe(true)
+    expect(sources.some(source => source.includes('vimeo.com'))).toBe(true)
+    expect(sources.some(source => source.includes('twitch.tv'))).toBe(true)
+    expect(sources.some(source => source.includes('netflix.com'))).toBe(true)
     expect(STREAMING_SITE_CONNECTION_FIXTURES.some(fixture => fixture.durationMs === null)).toBe(
       true
     )
@@ -138,7 +146,7 @@ describe('streaming site connection lab', () => {
       { provider: 'animepahe', siteCount: 15 },
       { provider: 'cineby', siteCount: 16 },
       { provider: 'miruro', siteCount: 14 },
-      { provider: 'unknown', siteCount: 5 }
+      { provider: 'unknown', siteCount: 10 }
     ])
     expect(
       STREAMING_SITE_CONNECTION_FIXTURES.some(
