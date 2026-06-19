@@ -226,7 +226,9 @@ describe('RuntimeSessionShellPage', () => {
       expect(html).toContain(`x${coverage.siteCount}`)
     }
     for (const coverage of STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE) {
-      expect(html).toContain(`${PROVIDER_COVERAGE_LABELS[coverage.provider]} x${coverage.siteCount}`)
+      expect(html).toContain(
+        `${PROVIDER_COVERAGE_LABELS[coverage.provider]} x${coverage.siteCount}`
+      )
     }
     expect(html).toContain('every named provider keeps at least two fixtures')
     expect(html).toContain('Bursts stay calm')
@@ -264,7 +266,7 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain(`${STREAMING_SITE_CONNECTION_FIXTURES.length} sites`)
     expect(html).toContain('YouTube, AnimePahe, Cineby, Miruro, and generic pages')
     expect(html).toContain(
-      'Vimeo, Twitch, Netflix-style, Disney+, and Crunchyroll generic hosts'
+      'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, Disney+, and Crunchyroll generic hosts'
     )
     expect(html).toContain('Per-site proof')
     expect(html).toContain(`${STREAMING_SITE_CONNECTION_FIXTURES.length} observed`)
@@ -365,7 +367,9 @@ describe('RuntimeSessionShellPage', () => {
     )
     expect(html).toContain('Local website load')
     expect(html).toContain('YouTube, AnimePahe, Cineby, Miruro, and generic pages load locally')
-    expect(html).toContain('Vimeo, Twitch, and Netflix-style pages stay generic')
+    expect(html).toContain(
+      'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, and Plex pages stay generic'
+    )
     expect(html).toContain(
       `data-tail-latency-ms-budget="${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}"`
     )
@@ -401,7 +405,7 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('0B control loss')
     expect(html).toContain('YouTube plus any-site matrix')
     expect(html).toContain(
-      'Vimeo, Twitch, Netflix-style, Disney+, and Crunchyroll generic hosts'
+      'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, Disney+, and Crunchyroll generic hosts'
     )
     expect(html).toContain(`${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} two-browser paths`)
     expect(html).toContain('Media bytes stay local')

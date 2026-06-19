@@ -219,7 +219,8 @@ class Home extends Component<IProps, IState> {
         id: 'coverage',
         value: `${STREAMING_SITE_CONNECTION_FIXTURES.length} paths`,
         label: 'site fixtures',
-        detail: 'YouTube, AnimePahe, Cineby, Miruro, and a generic watch page.'
+        detail:
+          'YouTube, AnimePahe, Cineby, Miruro, and generic watch pages including Hulu, Prime Video, and Tubi.'
       },
       {
         id: 'providers',
@@ -759,6 +760,11 @@ class Home extends Component<IProps, IState> {
             <strong>Vimeo</strong>
             <strong>Twitch</strong>
             <strong>Netflix-style pages</strong>
+            <strong>Hulu</strong>
+            <strong>Prime Video</strong>
+            <strong>Tubi</strong>
+            <strong>Dailymotion</strong>
+            <strong>Plex-style pages</strong>
             <strong>direct MP4</strong>
           </div>
 

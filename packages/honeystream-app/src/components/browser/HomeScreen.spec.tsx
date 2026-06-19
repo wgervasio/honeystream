@@ -86,6 +86,9 @@ describe('browser/HomeScreen', () => {
     expect(html).toContain('Vimeo')
     expect(html).toContain('Twitch')
     expect(html).toContain('Netflix-style pages')
+    expect(html).toContain('Hulu')
+    expect(html).toContain('Prime Video')
+    expect(html).toContain('Tubi')
   })
 
   it('selects a site lane without inserting a fake URL', () => {

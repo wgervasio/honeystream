@@ -44,6 +44,32 @@ export const STREAMING_SITE_GENERIC_FIXTURES: readonly StreamingSiteConnectionFi
       title: 'Netflix generic title page'
     },
     {
+      id: 'generic-hulu-watch',
+      source: 'https://www.hulu.com/watch/honeystream-test',
+      title: 'Hulu generic watch page'
+    },
+    {
+      id: 'generic-primevideo-detail',
+      source: 'https://www.primevideo.com/detail/honeystream-test/0ABC123',
+      title: 'Prime Video generic detail page'
+    },
+    {
+      id: 'generic-tubi-movie',
+      source: 'https://tubitv.com/movies/honeystream-test',
+      title: 'Tubi generic movie page',
+      durationMs: 6300000
+    },
+    {
+      id: 'generic-dailymotion-video',
+      source: 'https://www.dailymotion.com/video/xhoneystream',
+      title: 'Dailymotion generic video page'
+    },
+    {
+      id: 'generic-plex-watch',
+      source: 'https://watch.plex.tv/movie/honeystream-test',
+      title: 'Plex generic watch page'
+    },
+    {
       id: 'generic-disneyplus-movie',
       source: 'https://www.disneyplus.com/movies/honeystream-test/abc123',
       title: 'Disney+ generic movie page'

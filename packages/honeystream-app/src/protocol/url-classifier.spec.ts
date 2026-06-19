@@ -57,6 +57,11 @@ describe('protocol URL classifier', () => {
       'https://vimeo.com/123456789',
       'https://www.twitch.tv/honeystreamsync',
       'https://www.netflix.com/title/80057281',
+      'https://www.hulu.com/watch/honeystream-test',
+      'https://www.primevideo.com/detail/honeystream-test/0ABC123',
+      'https://tubitv.com/movies/honeystream-test',
+      'https://www.dailymotion.com/video/xhoneystream',
+      'https://watch.plex.tv/movie/honeystream-test',
       'https://www.disneyplus.com/movies/honeystream-test/abc123',
       'https://www.crunchyroll.com/watch/honeystream-test',
       'https://www.youtube.com/watch/demo.mp4',
@@ -93,14 +98,10 @@ describe('protocol URL classifier', () => {
       'animepahe'
     )
     expect(classifyMediaProvider('https://animepahe.ru')).toBe('animepahe')
-    expect(classifyMediaProvider('https://cdn.cineby.app/movie/example?server=beta')).toBe(
-      'cineby'
-    )
+    expect(classifyMediaProvider('https://cdn.cineby.app/movie/example?server=beta')).toBe('cineby')
     expect(classifyMediaProvider('https://video.cineby.app/movie/example')).toBe('cineby')
     expect(classifyMediaProvider('https://watch.cineby.app/movie/example')).toBe('cineby')
-    expect(classifyMediaProvider('https://cineby.to/tv/example/season/2/episode/3')).toBe(
-      'cineby'
-    )
+    expect(classifyMediaProvider('https://cineby.to/tv/example/season/2/episode/3')).toBe('cineby')
     expect(classifyMediaProvider('https://cineby.to/movie/example')).toBe('cineby')
     expect(classifyMediaProvider('https://www.cineby.to/tv/example/season/1/episode/2')).toBe(
       'cineby'
