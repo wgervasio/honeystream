@@ -191,7 +191,8 @@ const HAPPY_PATH_STEPS = [
   {
     id: 'sync',
     title: 'Hit play together',
-    detail: 'Host-led controls keep play, pause, seek, and speed changes obvious with a zero-loss lab seal.'
+    detail:
+      'Host-led controls keep play, pause, seek, and speed changes obvious with a zero-loss lab seal.'
   }
 ] as const
 const SOURCE_LANES = [
@@ -414,7 +415,8 @@ const MERGE_GATE_METRICS = [
     value: `${STREAMING_SITE_CONNECTION_FIXTURE_COUNT} sites`,
     detail:
       'YouTube, AnimePahe, Cineby, Miruro, and generic pages stay in the matrix, ' +
-      'including Vimeo, Twitch, Netflix-style, Disney+, and Crunchyroll generic hosts.'
+      'including Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, ' +
+      'Disney+, and Crunchyroll generic hosts.'
   },
   {
     id: 'per-site-observation',
@@ -494,7 +496,8 @@ const CONNECTION_CONFIDENCE_CARDS = [
     label: 'Local website load',
     detail:
       'YouTube, AnimePahe, Cineby, Miruro, and generic pages load locally; Vimeo, Twitch, ' +
-      'and Netflix-style pages stay generic while only typed commands cross the tiny lane.'
+      'Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, and Plex pages stay generic while ' +
+      'only typed commands cross the tiny lane.'
   }
 ] as const
 const BROWSER_SYNC_RECEIPT_ITEMS = [
@@ -522,7 +525,8 @@ const BROWSER_SYNC_RECEIPT_ITEMS = [
     detail:
       `YouTube, AnimePahe, Cineby, Miruro, and generic lanes cover ` +
       `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} two-browser paths before merge, ` +
-      'including Vimeo, Twitch, Netflix-style, Disney+, and Crunchyroll generic hosts.'
+      'including Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, ' +
+      'Disney+, and Crunchyroll generic hosts.'
   },
   {
     id: 'local-media',

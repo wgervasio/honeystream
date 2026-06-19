@@ -49,6 +49,21 @@ const siteExamples = [
     placeholder: 'Paste the exact watch page...',
     helper:
       'Generic site lane selected. Use the exact page both signed-in browsers can open locally.'
+  },
+  {
+    label: 'Hulu',
+    placeholder: 'Paste the exact Hulu watch page...',
+    helper: 'Hulu lane selected. Keep it generic and test the exact page in both browsers.'
+  },
+  {
+    label: 'Prime Video',
+    placeholder: 'Paste the exact Prime Video page...',
+    helper: 'Prime Video lane selected. Keep it generic and test the exact page in both browsers.'
+  },
+  {
+    label: 'Tubi',
+    placeholder: 'Paste the exact Tubi movie page...',
+    helper: 'Tubi lane selected. Keep it generic and test the exact page in both browsers.'
   }
 ]
 

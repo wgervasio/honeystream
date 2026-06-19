@@ -13,6 +13,18 @@ export interface StreamingSiteBrowserPairE2ESource {
   readonly url: string
 }
 
+const genericSource = (
+  url: string,
+  title: string,
+  exerciseControls = false
+): StreamingSiteBrowserPairE2ESource => ({
+  expectedText: title,
+  exerciseControls,
+  lane: 'generic',
+  title,
+  url
+})
+
 export const STREAMING_SITE_BROWSER_PAIR_E2E_LANES: readonly StreamingSiteBrowserPairE2ELane[] = Object.freeze(
   ['youtube', 'animepahe', 'cineby', 'miruro', 'generic']
 )
@@ -159,76 +171,34 @@ export const STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES: readonly StreamingSiteBrow
       expectedText: 'Miruro watch page',
       exerciseControls: false
     },
-    {
-      lane: 'generic',
-      url: 'streaming.example.test/watch/two-browser-generic',
-      title: 'streaming.example.test page',
-      expectedText: 'streaming.example.test page',
-      exerciseControls: true
-    },
-    {
-      lane: 'generic',
-      url: 'shows.example.test/title/two-browser-generic?episode=1',
-      title: 'shows.example.test page',
-      expectedText: 'shows.example.test page',
-      exerciseControls: false
-    },
-    {
-      lane: 'generic',
-      url: 'video.example.test/room/two-browser-generic',
-      title: 'video.example.test page',
-      expectedText: 'video.example.test page',
-      exerciseControls: false
-    },
-    {
-      lane: 'generic',
-      url: 'watch.example.test',
-      title: 'watch.example.test page',
-      expectedText: 'watch.example.test page',
-      exerciseControls: false
-    },
-    {
-      lane: 'generic',
-      url: 'cinema.example.test/movie/two-browser-generic?room=cozy',
-      title: 'cinema.example.test page',
-      expectedText: 'cinema.example.test page',
-      exerciseControls: false
-    },
-    {
-      lane: 'generic',
-      url: 'vimeo.com/123456789',
-      title: 'vimeo.com page',
-      expectedText: 'vimeo.com page',
-      exerciseControls: false
-    },
-    {
-      lane: 'generic',
-      url: 'www.twitch.tv/honeystreamsync',
-      title: 'www.twitch.tv page',
-      expectedText: 'www.twitch.tv page',
-      exerciseControls: false
-    },
-    {
-      lane: 'generic',
-      url: 'www.netflix.com/title/80057281',
-      title: 'www.netflix.com page',
-      expectedText: 'www.netflix.com page',
-      exerciseControls: false
-    },
-    {
-      lane: 'generic',
-      url: 'www.disneyplus.com/movies/honeystream-test/abc123',
-      title: 'www.disneyplus.com page',
-      expectedText: 'www.disneyplus.com page',
-      exerciseControls: false
-    },
-    {
-      lane: 'generic',
-      url: 'www.crunchyroll.com/watch/honeystream-test',
-      title: 'www.crunchyroll.com page',
-      expectedText: 'www.crunchyroll.com page',
-      exerciseControls: false
-    }
+    genericSource(
+      'streaming.example.test/watch/two-browser-generic',
+      'streaming.example.test page',
+      true
+    ),
+    genericSource(
+      'shows.example.test/title/two-browser-generic?episode=1',
+      'shows.example.test page'
+    ),
+    genericSource('video.example.test/room/two-browser-generic', 'video.example.test page'),
+    genericSource('watch.example.test', 'watch.example.test page'),
+    genericSource(
+      'cinema.example.test/movie/two-browser-generic?room=cozy',
+      'cinema.example.test page'
+    ),
+    genericSource('vimeo.com/123456789', 'vimeo.com page'),
+    genericSource('www.twitch.tv/honeystreamsync', 'www.twitch.tv page'),
+    genericSource('www.netflix.com/title/80057281', 'www.netflix.com page'),
+    genericSource('www.hulu.com/watch/two-browser-generic', 'www.hulu.com page'),
+    genericSource(
+      'www.primevideo.com/detail/two-browser-generic/0ABC123',
+      'www.primevideo.com page'
+    ),
+    genericSource('tubitv.com/movies/two-browser-generic', 'tubitv.com page'),
+    genericSource('www.dailymotion.com/video/xtwo-browser-generic', 'www.dailymotion.com page'),
+    genericSource('watch.plex.tv/movie/two-browser-generic', 'watch.plex.tv page'),
+    genericSource('www.disneyplus.com/movies/honeystream-test/abc123', 'www.disneyplus.com page'),
+    genericSource('www.crunchyroll.com/watch/honeystream-test', 'www.crunchyroll.com page')
   ]
 )
 
