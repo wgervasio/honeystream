@@ -48,6 +48,13 @@ export const STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES: readonly StreamingSiteBrow
       exerciseControls: false
     },
     {
+      lane: 'youtube',
+      url: 'm.youtube.com/watch?v=two-browser-youtube-mobile&feature=share',
+      title: 'YouTube watch page',
+      expectedText: 'YouTube watch page',
+      exerciseControls: false
+    },
+    {
       lane: 'animepahe',
       url: 'animepahe.ru/play/two-browser-animepahe',
       title: 'AnimePahe watch page',
@@ -71,6 +78,13 @@ export const STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES: readonly StreamingSiteBrow
     {
       lane: 'animepahe',
       url: 'animepahe.com/play/two-browser-animepahe?episode=3',
+      title: 'AnimePahe watch page',
+      expectedText: 'AnimePahe watch page',
+      exerciseControls: false
+    },
+    {
+      lane: 'animepahe',
+      url: 'www.animepahe.com/watch/two-browser-animepahe?episode=4',
       title: 'AnimePahe watch page',
       expectedText: 'AnimePahe watch page',
       exerciseControls: false
@@ -104,6 +118,13 @@ export const STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES: readonly StreamingSiteBrow
       exerciseControls: false
     },
     {
+      lane: 'cineby',
+      url: 'www.cineby.to/movie/two-browser-cineby?quality=auto',
+      title: 'Cineby watch page',
+      expectedText: 'Cineby watch page',
+      exerciseControls: false
+    },
+    {
       lane: 'miruro',
       url: 'miruro.to/watch/two-browser-miruro',
       title: 'Miruro watch page',
@@ -127,6 +148,13 @@ export const STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES: readonly StreamingSiteBrow
     {
       lane: 'miruro',
       url: 'beta.miruro.tv/watch/two-browser-miruro?episode=4',
+      title: 'Miruro watch page',
+      expectedText: 'Miruro watch page',
+      exerciseControls: false
+    },
+    {
+      lane: 'miruro',
+      url: 'anime.miruro.tv/watch/two-browser-miruro?episode=5',
       title: 'Miruro watch page',
       expectedText: 'Miruro watch page',
       exerciseControls: false
@@ -157,6 +185,13 @@ export const STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES: readonly StreamingSiteBrow
       url: 'watch.example.test',
       title: 'watch.example.test page',
       expectedText: 'watch.example.test page',
+      exerciseControls: false
+    },
+    {
+      lane: 'generic',
+      url: 'cinema.example.test/movie/two-browser-generic?room=cozy',
+      title: 'cinema.example.test page',
+      expectedText: 'cinema.example.test page',
       exerciseControls: false
     }
   ]

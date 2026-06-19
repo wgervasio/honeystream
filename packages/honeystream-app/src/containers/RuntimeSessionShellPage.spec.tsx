@@ -45,6 +45,20 @@ interface RouteParams {
   lobbyId: string
 }
 
+const PROVIDER_COVERAGE_LABELS = Object.freeze({
+  youtube: 'YouTube',
+  animepahe: 'AnimePahe',
+  cineby: 'Cineby',
+  miruro: 'Miruro',
+  unknown: 'generic'
+})
+const STREAMING_SITE_PROVIDER_COVERAGE_LABEL = STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE.map(
+  coverage => `${PROVIDER_COVERAGE_LABELS[coverage.provider]} x${coverage.siteCount}`
+).join(' / ')
+const STREAMING_SITE_NAMED_PROVIDER_COUNT = STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE.filter(
+  coverage => coverage.provider !== 'unknown'
+).length
+
 function createRouteProps(lobbyId: string): RouteComponentProps<RouteParams> {
   return {
     history: {} as RouteComponentProps<RouteParams>['history'],
@@ -211,10 +225,9 @@ describe('RuntimeSessionShellPage', () => {
     for (const coverage of STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE) {
       expect(html).toContain(`x${coverage.siteCount}`)
     }
-    expect(html).toContain('YouTube x16')
-    expect(html).toContain('AnimePahe x13')
-    expect(html).toContain('Cineby x14')
-    expect(html).toContain('Miruro x12')
+    for (const coverage of STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE) {
+      expect(html).toContain(`${PROVIDER_COVERAGE_LABELS[coverage.provider]} x${coverage.siteCount}`)
+    }
     expect(html).toContain('every named provider keeps at least two fixtures')
     expect(html).toContain('Bursts stay calm')
     expect(html).toContain('Rapid seek, pause, resume, and rate bursts')
@@ -308,13 +321,11 @@ describe('RuntimeSessionShellPage', () => {
       `data-best-round-trip-ms="${STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS}"`
     )
     expect(html).toContain(`data-site-count="${STREAMING_SITE_CONNECTION_FIXTURES.length}"`)
-    expect(html).toContain(
-      `data-provider-coverage="YouTube x16 / AnimePahe x13 / Cineby x14 / Miruro x12 / generic x3"`
-    )
+    expect(html).toContain(`data-provider-coverage="${STREAMING_SITE_PROVIDER_COVERAGE_LABEL}"`)
     expect(html).toContain(`data-profile-count="${STREAMING_SITE_CONNECTION_PROFILES.length}"`)
     expect(html).toContain(`data-trial-count="${STREAMING_SITE_CONNECTION_TRIAL_COUNT}"`)
     expect(html).toContain('data-connection-lab-proof="site-matrix"')
-    expect(html).toContain('data-provider-count="4"')
+    expect(html).toContain(`data-provider-count="${STREAMING_SITE_NAMED_PROVIDER_COUNT}"`)
     expect(html).toContain(
       `data-queue-byte-cap="${STREAMING_SITE_CONNECTION_PROFILE_MAX_QUEUED_BYTES}"`
     )
