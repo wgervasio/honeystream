@@ -3,6 +3,7 @@ import {
   STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS,
   STREAMING_SITE_CONNECTION_FIXTURES,
   STREAMING_SITE_CONNECTION_PROFILES,
+  STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE,
   STREAMING_SITE_CONNECTION_RANDOM_SAMPLES,
   STREAMING_SITE_CONNECTION_TRIAL_COUNT
 } from './streaming-site-connection-defaults'
@@ -40,13 +41,15 @@ describe('streaming site provider quality gate', () => {
         failures: []
       })
     )
+    const namedProviderCoverage = STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE.filter(
+      coverage => coverage.provider !== 'unknown'
+    )
     expect(providerGate.providerQuality).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ provider: 'youtube', siteCount: 16 }),
-        expect.objectContaining({ provider: 'animepahe', siteCount: 13 }),
-        expect.objectContaining({ provider: 'cineby', siteCount: 14 }),
-        expect.objectContaining({ provider: 'miruro', siteCount: 12 })
-      ])
+      expect.arrayContaining(
+        namedProviderCoverage.map(coverage =>
+          expect.objectContaining({ provider: coverage.provider, siteCount: coverage.siteCount })
+        )
+      )
     )
   })
 

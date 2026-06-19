@@ -4,6 +4,7 @@ import {
   STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT,
   STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES
 } from '../../src/transport/streaming-site-browser-pair-e2e-matrix'
+import { STREAMING_SITE_CONNECTION_FIXTURES } from '../../src/transport/streaming-site-connection-fixtures'
 
 const { getAppBaseUrl } = require('../environment/server-config') as {
   getAppBaseUrl(): string
@@ -28,10 +29,34 @@ const PLAYBACK_STATE_RETRY_TIMEOUT_MS = 15000
 const QUEUE_STATE_TIMEOUT_MS = 60000
 const RUNTIME_TEXT_TIMEOUT_MS = 30000
 const USE_BROADCAST_RTC_E2E = process.env.HONEYSTREAM_E2E_BROADCAST_RTC !== 'false'
+const STREAMING_SITE_CONNECTION_FIXTURE_COUNT = STREAMING_SITE_CONNECTION_FIXTURES.length
+const STREAMING_SITE_PROVIDER_MATCHERS = Object.freeze([
+  { label: 'YouTube', domains: ['youtube.com', 'youtube-nocookie.com', 'youtu.be'] },
+  { label: 'AnimePahe', domains: ['animepahe.com', 'animepahe.ru', 'animepahe.si'] },
+  { label: 'Cineby', domains: ['cineby.app', 'cineby.ru', 'cineby.to'] },
+  { label: 'Miruro', domains: ['miruro.to', 'miruro.tv'] }
+])
+const STREAMING_SITE_NAMED_PROVIDER_COUNT = STREAMING_SITE_PROVIDER_MATCHERS.length
+const normalizeHostname = (hostname: string): string =>
+  hostname
+    .trim()
+    .toLowerCase()
+    .replace(/\.$/, '')
+const isHostOrSubdomain = (hostname: string, domain: string): boolean =>
+  hostname === domain || hostname.endsWith(`.${domain}`)
+const countFixtureHostsForDomains = (domains: readonly string[]): number =>
+  STREAMING_SITE_CONNECTION_FIXTURES.filter(fixture => {
+    const hostname = normalizeHostname(new URL(fixture.source).hostname)
+    return domains.some(domain => isHostOrSubdomain(hostname, domain))
+  }).length
+const STREAMING_SITE_PROVIDER_COVERAGE_LABELS = STREAMING_SITE_PROVIDER_MATCHERS.map(
+  matcher => `${matcher.label} x${countFixtureHostsForDomains(matcher.domains)}`
+)
 const CONNECTION_CONFIDENCE_SELECTOR =
   '#runtime_connection_confidence[data-byte-loss-rate="0"]' +
   '[data-tail-latency-ms-budget="10"][data-best-round-trip-ms="2"]' +
-  '[data-provider-count="4"][data-site-count="58"]' +
+  `[data-provider-count="${STREAMING_SITE_NAMED_PROVIDER_COUNT}"]` +
+  `[data-site-count="${STREAMING_SITE_CONNECTION_FIXTURE_COUNT}"]` +
   `[data-site-lane-count="${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}"]` +
   `[data-site-path-count="${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}"]` +
   '[data-test-modes="broadcast+isolated-live"]'
@@ -201,10 +226,13 @@ async function waitForQueuedItemTitle(page: Page, title: string): Promise<void> 
 async function waitForStreamingMergeProof(page: Page): Promise<void> {
   await page.waitForSelector('[data-streaming-proof="byte-loss"][data-byte-loss-rate="0"]')
   await page.waitForSelector(
-    '#runtime_connection_lab_proof[data-site-count="58"][data-trial-count="3"]'
+    `#runtime_connection_lab_proof[data-site-count="${STREAMING_SITE_CONNECTION_FIXTURE_COUNT}"]` +
+      '[data-trial-count="3"]'
   )
   await page.waitForSelector(
-    '#runtime_merge_gate[data-zero-loss-required="true"][data-provider-count="4"][data-queue-byte-cap="262144"][data-trace-cap="64"]'
+    '#runtime_merge_gate[data-zero-loss-required="true"]' +
+      `[data-provider-count="${STREAMING_SITE_NAMED_PROVIDER_COUNT}"]` +
+      '[data-queue-byte-cap="262144"][data-trace-cap="64"]'
   )
   await page.waitForSelector(
     `#runtime_merge_gate[data-site-lane-count="${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}"]` +
@@ -233,7 +261,8 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
     '[data-merge-gate-metric="retry-byte-overhead"][data-merge-gate-value="<=50%"]'
   )
   await page.waitForSelector(
-    '[data-merge-gate-metric="per-site-observation"][data-merge-gate-value="58 observed"]'
+    '[data-merge-gate-metric="per-site-observation"]' +
+      `[data-merge-gate-value="${STREAMING_SITE_CONNECTION_FIXTURE_COUNT} observed"]`
   )
   await page.waitForSelector(BROWSER_PAIR_MATRIX_SELECTOR)
   await page.waitForSelector(
@@ -472,10 +501,13 @@ describe('session', () => {
       await page.waitForSelector('#runtime_pair_guide')
       await page.waitForSelector('[data-streaming-proof="byte-loss"][data-byte-loss-rate="0"]')
       await page.waitForSelector(
-        '#runtime_connection_lab_proof[data-site-count="58"][data-trial-count="3"]'
+        `#runtime_connection_lab_proof[data-site-count="${STREAMING_SITE_CONNECTION_FIXTURE_COUNT}"]` +
+          '[data-trial-count="3"]'
       )
       await page.waitForSelector(
-        '#runtime_merge_gate[data-zero-loss-required="true"][data-provider-count="4"][data-queue-byte-cap="262144"][data-trace-cap="64"]'
+        '#runtime_merge_gate[data-zero-loss-required="true"]' +
+          `[data-provider-count="${STREAMING_SITE_NAMED_PROVIDER_COUNT}"]` +
+          '[data-queue-byte-cap="262144"][data-trace-cap="64"]'
       )
       await page.waitForSelector(CONNECTION_CONFIDENCE_SELECTOR)
       await page.waitForSelector('[data-merge-gate-metric="byte-loss"][data-merge-gate-value="0%"]')
@@ -491,7 +523,7 @@ describe('session', () => {
       await waitForRuntimeText(page, 'Tiny sync lane')
       await waitForRuntimeText(page, 'Hosting room')
       await waitForRuntimeText(page, '0 control bytes lost')
-      await waitForRuntimeText(page, '58 local fixtures')
+      await waitForRuntimeText(page, `${STREAMING_SITE_CONNECTION_FIXTURE_COUNT} local fixtures`)
       await waitForRuntimeText(page, 'Recovered retries counted')
       await waitForRuntimeText(page, 'Cat-side cue')
       await waitForRuntimeText(page, 'Best next tap')
@@ -515,10 +547,9 @@ describe('session', () => {
       await waitForRuntimeText(page, 'Ultra-low latency lane wins')
       await waitForRuntimeText(page, 'Retry lane stays green')
       await waitForRuntimeText(page, 'Site matrix covered')
-      await waitForRuntimeText(page, 'YouTube x16')
-      await waitForRuntimeText(page, 'AnimePahe x13')
-      await waitForRuntimeText(page, 'Cineby x14')
-      await waitForRuntimeText(page, 'Miruro x12')
+      for (const providerCoverageLabel of STREAMING_SITE_PROVIDER_COVERAGE_LABELS) {
+        await waitForRuntimeText(page, providerCoverageLabel)
+      }
       await waitForRuntimeText(page, 'every named provider keeps at least two fixtures')
       await waitForRuntimeText(page, 'Bursts stay calm')
       await waitForRuntimeText(page, 'Rapid seek, pause, resume, and rate bursts')
@@ -540,7 +571,7 @@ describe('session', () => {
       await waitForRuntimeText(page, 'fast paths cannot hide byte-pressure buffering')
       await waitForRuntimeText(page, 'Retry byte gate')
       await waitForRuntimeText(page, 'Coverage gate')
-      await waitForRuntimeText(page, '58 sites')
+      await waitForRuntimeText(page, `${STREAMING_SITE_CONNECTION_FIXTURE_COUNT} sites`)
       await waitForRuntimeText(page, 'Provider gate')
       await waitForRuntimeText(page, '4 providers')
       await waitForRuntimeText(page, 'Buddy e2e gate')

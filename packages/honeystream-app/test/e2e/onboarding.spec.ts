@@ -2,6 +2,7 @@ import {
   STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT,
   STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT
 } from '../../src/transport/streaming-site-browser-pair-e2e-matrix'
+import { STREAMING_SITE_CONNECTION_FIXTURES } from '../../src/transport/streaming-site-connection-fixtures'
 
 jest.setTimeout(120e3)
 
@@ -112,7 +113,7 @@ describe('onboarding', () => {
     expect(connectionLab).toContain('Connection lab')
     expect(connectionLab).toContain('<=10ms')
     expect(connectionLab).toContain('0 bytes')
-    expect(connectionLab).toContain('58 paths')
+    expect(connectionLab).toContain(`${STREAMING_SITE_CONNECTION_FIXTURES.length} paths`)
     expect(connectionLab).toContain('4 providers')
     expect(connectionLab).toContain(`${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} e2e paths`)
     expect(connectionLab).toContain(`${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT} lanes`)
