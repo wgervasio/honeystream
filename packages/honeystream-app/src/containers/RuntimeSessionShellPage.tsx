@@ -2,6 +2,7 @@ import React, { useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import LayoutMain from 'components/layout/Main'
 import { createErrorSystemEvent, createSystemEventLog, SystemEvent } from '../domain/event-log'
+import { validateInviteSecret } from '../domain/private-invite'
 import { createDefaultMinimalSettings, MinimalSettings } from '../domain/settings/minimalSettings'
 import {
   ProtocolError,
@@ -125,6 +126,7 @@ interface RuntimeRouteRuntimeHandleInput {
   readonly createPlaybackEngine: () => SessionRuntimePlaybackEngine
   readonly createRuntime: (dependencies: SessionRuntimeDependencies) => RuntimeSession
   readonly createTransportPair?: (now: () => number) => RuntimeRouteTransportPair
+  readonly inviteSecret: string
   readonly inviteSecretProvided: boolean
   readonly now: () => number
   readonly roomId: string
@@ -476,8 +478,9 @@ const CONNECTION_CONFIDENCE_CARDS = [
     id: 'isolated-browsers',
     label: 'Two isolated browsers',
     detail:
-      `Broadcast e2e and isolated live e2e both drive the same private invite flow across ` +
-      `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} named and generic website paths.`
+      `Transport reliability covers all ${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} named and ` +
+      'generic website paths; broadcast and isolated live e2e drive one full browser-pair ' +
+      'control burst per lane.'
   },
   {
     id: 'zero-loss-controls',
@@ -903,18 +906,24 @@ const createLiveRuntimeHandle = async (
   const role = input.roomId === localPeerId ? 'host' : 'guest'
 
   /*
-  Context: A guest route without an invite secret is an authorization failure, not a transport probe.
+  Context: A guest route with a missing or malformed invite secret is an authorization failure,
+  not a transport probe.
   Invariant: Guests must prove invite ownership before opening live WebRTC/signaling resources.
   Options considered: Join then reject in SessionRuntime, retry failed joins, or fail before transport.
-  Decision: Reject missing-secret guests before platform.joinLobby so E2E and runtime do not create
-  throwaway peer connections that can destabilize the host browser.
+  Decision: Reject missing or malformed guest secrets before platform.joinLobby so E2E and runtime
+  do not create throwaway peer connections that can destabilize the host browser.
   Performance impact: Invalid joins avoid signal-server/WebRTC startup work.
   Memory/lifecycle ownership: No transport resources are allocated on this failure path.
-  Failure mode: UI records the same explicit "Invite secret is required" boundary error.
-  Validation: Covered by session e2e missing-secret flow and runtime boundary tests.
+  Failure mode: UI records an explicit invite-secret boundary error.
+  Validation: Covered by session e2e missing-secret and invalid-secret flows.
   */
-  if (role === 'guest' && !input.inviteSecretProvided) {
-    throw new Error('Invite secret is required to join a runtime session.')
+  if (role === 'guest') {
+    if (!input.inviteSecretProvided) {
+      throw new Error('Invite secret is required to join a runtime session.')
+    }
+    if (!validateInviteSecret(input.inviteSecret).ok) {
+      throw new Error('Invite secret is invalid for this runtime session.')
+    }
   }
 
   if (isBroadcastRtcE2ERuntime()) {
@@ -2328,6 +2337,7 @@ export const createRuntimeSessionShellRouteBoundary = (
             createPlaybackEngine: playbackEngineFactory,
             createRuntime: runtimeFactory,
             createTransportPair: dependencies.createTransportPair,
+            inviteSecret: invite.secret,
             inviteSecretProvided,
             now,
             roomId

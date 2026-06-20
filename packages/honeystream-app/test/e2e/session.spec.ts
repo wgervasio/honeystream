@@ -1,5 +1,6 @@
 import { Browser, Page, BrowserContext, chromium } from 'playwright-core'
 import {
+  STREAMING_SITE_BROWSER_PAIR_E2E_LANES,
   STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT,
   STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT,
   STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES
@@ -17,18 +18,62 @@ const playwrightConfig = require('../../jest-playwright.config') as {
 const RUNTIME_SHELL_SELECTOR = '[data-runtime-session-shell="true"]'
 const INVITE_LINK_SELECTOR = '[data-invite-field="invite-link"] code'
 const SESSION_E2E_TIMEOUT_MS = 180e3
-const STREAMING_SITE_SESSION_E2E_TIMEOUT_MS = 360e3
+const STREAMING_SITE_SESSION_E2E_TIMEOUT_MS = 600e3
 const APP_READY_OPTIONS = { waitUntil: 'domcontentloaded' as const }
 const PLAYBACK_POSITION_SELECTOR = '#runtime_playback_controls [data-intent="positionMs"]'
 const PLAYBACK_PLAY_PAUSE_SELECTOR = '#runtime_playback_controls [data-intent="playPause"]'
+const ADD_MEDIA_SUBMIT_SELECTOR =
+  'xpath=//form[.//*[@id="runtime-add-media-url"]]//button[@type="submit"]'
 const SEEK_FORWARD_STEP_MS = 10000
 const PLAYBACK_SYNC_TOLERANCE_MS = 750
 const PLAYBACK_SYNC_ASSERTION_TIMEOUT_MS = 15000
+const USE_BROADCAST_RTC_E2E = process.env.HONEYSTREAM_E2E_BROADCAST_RTC !== 'false'
 const PLAYBACK_STATE_RETRY_COUNT = 3
-const PLAYBACK_STATE_RETRY_TIMEOUT_MS = 15000
+const PLAYBACK_STATE_RETRY_TIMEOUT_MS = USE_BROADCAST_RTC_E2E ? 15000 : 30000
 const QUEUE_STATE_TIMEOUT_MS = 60000
 const RUNTIME_TEXT_TIMEOUT_MS = 30000
-const USE_BROADCAST_RTC_E2E = process.env.HONEYSTREAM_E2E_BROADCAST_RTC !== 'false'
+const STREAMING_SITE_BROWSER_PAIR_SESSION_SOURCES = STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES.filter(
+  source => source.exerciseControls
+)
+const STREAMING_SITE_BROWSER_PAIR_GENERIC_GROUP_SIZE = 1
+const createStreamingSiteBrowserPairSourceGroups = () => {
+  const groups: {
+    readonly label: string
+    readonly lane: string
+    readonly sources: typeof STREAMING_SITE_BROWSER_PAIR_SESSION_SOURCES
+  }[] = []
+
+  STREAMING_SITE_BROWSER_PAIR_E2E_LANES.forEach(lane => {
+    const laneSources = STREAMING_SITE_BROWSER_PAIR_SESSION_SOURCES.filter(
+      source => source.lane === lane
+    )
+    if (laneSources.length === 0) return
+
+    if (lane !== 'generic' || laneSources.length <= 1) {
+      groups.push({ label: lane, lane, sources: laneSources })
+      return
+    }
+
+    for (
+      let startIndex = 0;
+      startIndex < laneSources.length;
+      startIndex += STREAMING_SITE_BROWSER_PAIR_GENERIC_GROUP_SIZE
+    ) {
+      const groupIndex = Math.floor(startIndex / STREAMING_SITE_BROWSER_PAIR_GENERIC_GROUP_SIZE) + 1
+      groups.push({
+        label: `${lane} batch ${groupIndex}`,
+        lane,
+        sources: laneSources.slice(
+          startIndex,
+          startIndex + STREAMING_SITE_BROWSER_PAIR_GENERIC_GROUP_SIZE
+        )
+      })
+    }
+  })
+
+  return groups
+}
+const STREAMING_SITE_BROWSER_PAIR_SESSION_SOURCE_GROUPS = createStreamingSiteBrowserPairSourceGroups()
 const STREAMING_SITE_CONNECTION_FIXTURE_COUNT = STREAMING_SITE_CONNECTION_FIXTURES.length
 const STREAMING_SITE_PROVIDER_MATCHERS = Object.freeze([
   { label: 'YouTube', domains: ['youtube.com', 'youtube-nocookie.com', 'youtu.be'] },
@@ -112,6 +157,37 @@ async function waitForRuntimeText(page: Page, text: string): Promise<void> {
   }
 }
 
+async function waitForRuntimeShell(page: Page, label: string): Promise<void> {
+  try {
+    await page.waitForFunction(
+      () =>
+        Boolean(document.querySelector('[data-runtime-session-shell="true"]')) ||
+        Boolean(
+          document.body &&
+            document.body.textContent &&
+            document.body.textContent.includes('Cozy watch room') &&
+            document.body.textContent.includes('Room code')
+        ),
+      undefined,
+      { timeout: RUNTIME_TEXT_TIMEOUT_MS }
+    )
+  } catch (error) {
+    if (!isTimeoutError(error)) throw error
+    const pageState = await page.evaluate(() => ({
+      bodyText: document.body && document.body.textContent ? document.body.textContent : '',
+      href: window.location.href,
+      publicId: window.localStorage.getItem('identity.pub'),
+      welcomed: window.localStorage.getItem('welcomed')
+    }))
+    throw new Error(
+      `Timed out waiting for runtime shell on ${label}. ` +
+        `URL: ${pageState.href}. welcomed=${pageState.welcomed || ''}. ` +
+        `identity.pub=${pageState.publicId || ''}. ` +
+        `Visible text excerpt: ${pageState.bodyText.replace(/\s+/g, ' ').trim().slice(0, 800)}`
+    )
+  }
+}
+
 async function getPlaybackPositionMs(page: Page): Promise<number> {
   const positionText = await page.$eval(
     PLAYBACK_POSITION_SELECTOR,
@@ -123,6 +199,12 @@ async function getPlaybackPositionMs(page: Page): Promise<number> {
   }
 
   return positionMs
+}
+
+async function getPlaybackRateLabel(page: Page): Promise<string> {
+  return page.$eval('#runtime_playback_controls [data-intent="rateValue"]', element =>
+    (element.textContent || '').trim()
+  )
 }
 
 function delay(ms: number): Promise<void> {
@@ -165,19 +247,45 @@ async function getRuntimePlaybackState(
 
 async function waitForPlaybackPositionAtLeast(
   page: Page,
-  expectedPositionMs: number
+  expectedPositionMs: number,
+  label: string
 ): Promise<void> {
-  await page.waitForFunction(expectedPosition => {
-    const positionElement = document.querySelector(
-      '#runtime_playback_controls [data-intent="positionMs"]'
-    )
-    if (!positionElement) {
-      return false
-    }
+  try {
+    await page.waitForFunction(
+      expectedPosition => {
+        const positionElement = document.querySelector(
+          '#runtime_playback_controls [data-intent="positionMs"]'
+        )
+        if (!positionElement) {
+          return false
+        }
 
-    const positionMs = Number(positionElement.getAttribute('data-position-ms') || 'NaN')
-    return Number.isFinite(positionMs) && positionMs >= expectedPosition
-  }, expectedPositionMs)
+        const positionMs = Number(positionElement.getAttribute('data-position-ms') || 'NaN')
+        return Number.isFinite(positionMs) && positionMs >= expectedPosition
+      },
+      expectedPositionMs,
+      { timeout: PLAYBACK_STATE_RETRY_TIMEOUT_MS }
+    )
+  } catch (error) {
+    if (!isTimeoutError(error)) throw error
+    const playbackState = await page.evaluate(() => {
+      const controls = document.querySelector('#runtime_playback_controls')
+      const positionElement = document.querySelector(
+        '#runtime_playback_controls [data-intent="positionMs"]'
+      )
+      return {
+        playbackState: controls ? controls.getAttribute('data-playback-state') || '' : '',
+        positionMs: positionElement ? positionElement.getAttribute('data-position-ms') || '' : '',
+        syncConfident: positionElement ? positionElement.getAttribute('data-sync-confident') || '' : ''
+      }
+    })
+    throw new Error(
+      `Timed out waiting for playback position on ${label}. ` +
+        `expected>=${expectedPositionMs}; actual=${playbackState.positionMs}; ` +
+        `state=${playbackState.playbackState}; sync=${playbackState.syncConfident}. ` +
+        `Visible text excerpt: ${await getBodyTextExcerpt(page)}`
+    )
+  }
 }
 
 async function waitForPlaybackState(
@@ -185,14 +293,59 @@ async function waitForPlaybackState(
   state: 'playing' | 'paused',
   timeout?: number
 ): Promise<void> {
+  const waitTimeout = typeof timeout === 'number' ? timeout : PLAYBACK_STATE_RETRY_TIMEOUT_MS
+  try {
+    await page.waitForFunction(
+      expectedState => {
+        const controls = document.querySelector('#runtime_playback_controls')
+        return Boolean(controls && controls.getAttribute('data-playback-state') === expectedState)
+      },
+      state,
+      { timeout: waitTimeout }
+    )
+  } catch (error) {
+    if (!isTimeoutError(error)) throw error
+    const actualState = await getRuntimePlaybackState(page)
+    throw new Error(
+      `Timed out waiting for playback state ${state}. Last state=${actualState || 'missing'}. ` +
+        `Visible text excerpt: ${await getBodyTextExcerpt(page)}`
+    )
+  }
+}
+
+async function waitForPlaybackRateLabel(page: Page, expectedLabel: string): Promise<void> {
   await page.waitForFunction(
-    expectedState => {
-      const controls = document.querySelector('#runtime_playback_controls')
-      return Boolean(controls && controls.getAttribute('data-playback-state') === expectedState)
+    label => {
+      const rateElement = document.querySelector(
+        '#runtime_playback_controls [data-intent="rateValue"]'
+      )
+      return Boolean(
+        rateElement && rateElement.textContent && rateElement.textContent.trim() === label
+      )
     },
-    state,
-    typeof timeout === 'number' ? { timeout } : undefined
+    expectedLabel,
+    { timeout: PLAYBACK_STATE_RETRY_TIMEOUT_MS }
   )
+}
+
+async function waitForPlaybackRateLabelChange(
+  page: Page,
+  previousLabel: string
+): Promise<string> {
+  await page.waitForFunction(
+    label => {
+      const rateElement = document.querySelector(
+        '#runtime_playback_controls [data-intent="rateValue"]'
+      )
+      const nextLabel =
+        rateElement && rateElement.textContent ? rateElement.textContent.trim() : ''
+      return nextLabel.length > 0 && nextLabel !== label
+    },
+    previousLabel,
+    { timeout: PLAYBACK_STATE_RETRY_TIMEOUT_MS }
+  )
+
+  return getPlaybackRateLabel(page)
 }
 
 async function waitForCurrentQueueTitle(page: Page, title: string): Promise<void> {
@@ -221,6 +374,70 @@ async function waitForQueuedItemTitle(page: Page, title: string): Promise<void> 
     title,
     { timeout: QUEUE_STATE_TIMEOUT_MS }
   )
+}
+
+async function addRuntimeMediaUrl(page: Page, url: string): Promise<void> {
+  await page.fill('#runtime-add-media-url', url)
+  await waitForRuntimeText(page, 'Honeystream will add https:// automatically')
+  await page.click(ADD_MEDIA_SUBMIT_SELECTOR)
+}
+
+async function getCurrentQueueMediaId(page: Page): Promise<string> {
+  return page.$eval('[data-queue-state="current"]', element =>
+    element.getAttribute('data-queue-current-id') || ''
+  )
+}
+
+async function waitForCurrentQueueMediaIdChange(
+  page: Page,
+  previousMediaId: string,
+  label: string
+): Promise<string> {
+  try {
+    await page.waitForFunction(
+      mediaId => {
+        const current = document.querySelector('[data-queue-state="current"]')
+        const nextMediaId = current ? current.getAttribute('data-queue-current-id') || '' : ''
+        return nextMediaId.length > 0 && nextMediaId !== mediaId
+      },
+      previousMediaId,
+      { timeout: QUEUE_STATE_TIMEOUT_MS }
+    )
+  } catch (error) {
+    if (!isTimeoutError(error)) throw error
+    throw new Error(
+      `Timed out waiting for current queue media to change on ${label}. ` +
+        `Visible text excerpt: ${await getBodyTextExcerpt(page)}`
+    )
+  }
+
+  return getCurrentQueueMediaId(page)
+}
+
+async function waitForQueueEmpty(page: Page, label: string): Promise<void> {
+  try {
+    await page.waitForSelector('[data-queue-empty="true"]', { timeout: QUEUE_STATE_TIMEOUT_MS })
+  } catch (error) {
+    if (!isTimeoutError(error)) throw error
+    const queueState = await page.evaluate(() => ({
+      currentMediaId: (() => {
+        const current = document.querySelector('[data-queue-state="current"]')
+        return current ? current.getAttribute('data-queue-current-id') || '' : ''
+      })(),
+      nextDisabled: Boolean(
+        document.querySelector('#runtime_playback_controls [data-intent="next"][disabled]')
+      ),
+      queuedMediaIds: Array.from(document.querySelectorAll('[data-queue-item-id]')).map(
+        item => item.getAttribute('data-queue-item-id') || ''
+      )
+    }))
+    throw new Error(
+      `Timed out waiting for empty queue on ${label}. ` +
+        `current=${queueState.currentMediaId}. nextDisabled=${queueState.nextDisabled}. ` +
+        `queued=${queueState.queuedMediaIds.join(',')}. ` +
+        `Visible text excerpt: ${await getBodyTextExcerpt(page)}`
+    )
+  }
 }
 
 async function waitForStreamingMergeProof(page: Page): Promise<void> {
@@ -289,7 +506,11 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
   await waitForRuntimeText(page, 'Two isolated browsers')
   await waitForRuntimeText(
     page,
-    `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} named and generic website paths`
+    `Transport reliability covers all ${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} named and generic website paths`
+  )
+  await waitForRuntimeText(
+    page,
+    'broadcast and isolated live e2e drive one full browser-pair control burst per lane'
   )
   await waitForRuntimeText(page, 'Zero-loss controls')
   await waitForRuntimeText(
@@ -339,12 +560,34 @@ async function expectNoRuntimeConnectionAlerts(page: Page): Promise<void> {
   expect(connectionAlerts).toEqual([])
 }
 
+async function waitForAttachedSelector(
+  page: Page,
+  selector: string,
+  label: string
+): Promise<void> {
+  try {
+    await page.waitForFunction(
+      expectedSelector => Boolean(document.querySelector(expectedSelector)),
+      selector,
+      { timeout: RUNTIME_TEXT_TIMEOUT_MS }
+    )
+  } catch (error) {
+    if (!isTimeoutError(error)) throw error
+    throw new Error(
+      `Timed out waiting for ${label}. Selector: ${selector}. ` +
+        `Visible text excerpt: ${await getBodyTextExcerpt(page)}`
+    )
+  }
+}
+
 async function expectConnectionRunwayReady(page: Page): Promise<void> {
-  await page.waitForSelector(
+  await waitForAttachedSelector(
+    page,
     '#runtime_connection_runway[data-transport-status="connected"]' +
       '[data-guest-seat-state="present"][data-invite-secret-state="present"]' +
       '[data-byte-loss-rate="0"][data-tail-latency-ms-budget="10"]' +
-      '[data-best-round-trip-ms="2"]'
+      '[data-best-round-trip-ms="2"]',
+    'connected runway'
   )
   await waitForRuntimeText(page, 'Buddy connection runway')
   await waitForRuntimeText(page, 'Invite secret sealed')
@@ -357,25 +600,63 @@ async function expectHealthyTwoBrowserConnection(input: {
   readonly clientPage: Page
   readonly hostPage: Page
 }): Promise<void> {
-  await input.hostPage.waitForSelector('[data-session-state-tone="synced"]')
-  await input.clientPage.waitForSelector('[data-session-state-tone="synced"]')
+  await waitForAttachedSelector(input.hostPage, '[data-session-state-tone="synced"]', 'host sync tone')
+  await waitForAttachedSelector(
+    input.clientPage,
+    '[data-session-state-tone="synced"]',
+    'client sync tone'
+  )
   await expectConnectionRunwayReady(input.hostPage)
   await expectConnectionRunwayReady(input.clientPage)
-  await input.clientPage.waitForSelector(
-    '#runtime_connection_runway[data-clock-sync-state="synced"]'
+  await waitForAttachedSelector(
+    input.clientPage,
+    '#runtime_connection_runway[data-clock-sync-state="synced"]',
+    'client clock sync'
   )
-  await input.hostPage.waitForSelector(
-    '#runtime_playback_controls [data-intent="positionMs"][data-sync-confident="yes"]'
+  await waitForAttachedSelector(
+    input.hostPage,
+    '#runtime_playback_controls [data-intent="positionMs"][data-sync-confident="yes"]',
+    'host playback sync confidence'
   )
-  await input.clientPage.waitForSelector(
-    '#runtime_playback_controls [data-intent="positionMs"][data-sync-confident="yes"]'
+  await waitForAttachedSelector(
+    input.clientPage,
+    '#runtime_playback_controls [data-intent="positionMs"][data-sync-confident="yes"]',
+    'client playback sync confidence'
   )
-  await input.hostPage.waitForSelector(BROWSER_SYNC_RECEIPT_READY_SELECTOR)
-  await input.clientPage.waitForSelector(BROWSER_SYNC_RECEIPT_READY_SELECTOR)
-  await input.hostPage.waitForSelector(HAPPY_SYNC_SEAL_READY_SELECTOR)
-  await input.clientPage.waitForSelector(HAPPY_SYNC_SEAL_READY_SELECTOR)
+  await waitForAttachedSelector(input.hostPage, BROWSER_SYNC_RECEIPT_READY_SELECTOR, 'host receipt')
+  await waitForAttachedSelector(
+    input.clientPage,
+    BROWSER_SYNC_RECEIPT_READY_SELECTOR,
+    'client receipt'
+  )
+  await waitForAttachedSelector(input.hostPage, HAPPY_SYNC_SEAL_READY_SELECTOR, 'host sync seal')
+  await waitForAttachedSelector(input.clientPage, HAPPY_SYNC_SEAL_READY_SELECTOR, 'client sync seal')
   await waitForStreamingMergeProof(input.hostPage)
   await waitForStreamingMergeProof(input.clientPage)
+  await expectNoRuntimeConnectionAlerts(input.hostPage)
+  await expectNoRuntimeConnectionAlerts(input.clientPage)
+}
+
+async function expectTwoBrowserConnectionStillHealthy(input: {
+  readonly clientPage: Page
+  readonly hostPage: Page
+}): Promise<void> {
+  await waitForAttachedSelector(input.hostPage, '[data-session-state-tone="synced"]', 'host sync tone')
+  await waitForAttachedSelector(
+    input.clientPage,
+    '[data-session-state-tone="synced"]',
+    'client sync tone'
+  )
+  await waitForAttachedSelector(
+    input.hostPage,
+    '#runtime_playback_controls [data-intent="positionMs"][data-sync-confident="yes"]',
+    'host playback sync confidence'
+  )
+  await waitForAttachedSelector(
+    input.clientPage,
+    '#runtime_playback_controls [data-intent="positionMs"][data-sync-confident="yes"]',
+    'client playback sync confidence'
+  )
   await expectNoRuntimeConnectionAlerts(input.hostPage)
   await expectNoRuntimeConnectionAlerts(input.clientPage)
 }
@@ -441,10 +722,41 @@ async function clickPlayPauseAndWaitForState(
   throw lastTimeout || new Error(`Playback did not become ${state}.`)
 }
 
+async function clickAvailableRateControlAndWaitForSync(input: {
+  readonly clientPage: Page
+  readonly controlPage: Page
+  readonly hostPage: Page
+  readonly label: string
+}): Promise<void> {
+  const rateUpSelector = '#runtime_playback_controls [data-intent="rateUp"]:not([disabled])'
+  const rateDownSelector = '#runtime_playback_controls [data-intent="rateDown"]:not([disabled])'
+  const rateUpHandle = await input.controlPage.$(rateUpSelector)
+  const controlSelector = rateUpHandle ? rateUpSelector : rateDownSelector
+  if (rateUpHandle) {
+    await rateUpHandle.dispose()
+  }
+
+  await input.controlPage.waitForSelector(controlSelector)
+  const previousRateLabel = await getPlaybackRateLabel(input.controlPage)
+  await input.controlPage.click(controlSelector)
+  const expectedRateLabel = await waitForPlaybackRateLabelChange(
+    input.controlPage,
+    previousRateLabel
+  )
+  await waitForPlaybackRateLabel(input.hostPage, expectedRateLabel)
+  await waitForPlaybackRateLabel(input.clientPage, expectedRateLabel)
+  await expectPlaybackPositionsSynced({
+    clientPage: input.clientPage,
+    hostPage: input.hostPage,
+    label: `${input.label} rate control`
+  })
+}
+
 async function exerciseTwoBrowserPlaybackControls(input: {
   readonly clientPage: Page
   readonly controlPage: Page
   readonly hostPage: Page
+  readonly label: string
 }): Promise<void> {
   await clickPlayPauseAndWaitForState(input.controlPage, 'paused')
   await waitForPlaybackState(input.hostPage, 'paused')
@@ -452,7 +764,7 @@ async function exerciseTwoBrowserPlaybackControls(input: {
   await expectPlaybackPositionsSynced({
     clientPage: input.clientPage,
     hostPage: input.hostPage,
-    label: 'two-browser pause control'
+    label: `${input.label} pause control`
   })
 
   await clickPlayPauseAndWaitForState(input.controlPage, 'playing')
@@ -461,28 +773,52 @@ async function exerciseTwoBrowserPlaybackControls(input: {
   await expectPlaybackPositionsSynced({
     clientPage: input.clientPage,
     hostPage: input.hostPage,
-    label: 'two-browser resume control'
+    label: `${input.label} resume control`
   })
+
+  await clickAvailableRateControlAndWaitForSync(input)
 
   const expectedSeekPositionMs =
     (await getPlaybackPositionMs(input.controlPage)) + SEEK_FORWARD_STEP_MS
   await input.controlPage.click('#runtime_playback_controls [data-intent="seekForward"]')
-  await waitForPlaybackPositionAtLeast(input.hostPage, expectedSeekPositionMs)
-  await waitForPlaybackPositionAtLeast(input.clientPage, expectedSeekPositionMs)
+  await waitForPlaybackPositionAtLeast(
+    input.hostPage,
+    expectedSeekPositionMs,
+    `${input.label} host seek`
+  )
+  await waitForPlaybackPositionAtLeast(
+    input.clientPage,
+    expectedSeekPositionMs,
+    `${input.label} client seek`
+  )
   await expectPlaybackPositionsSynced({
     clientPage: input.clientPage,
     hostPage: input.hostPage,
-    label: 'two-browser seek control'
+    label: `${input.label} seek control`
   })
 }
 
 async function visitRuntimePath(page: Page, path: string): Promise<void> {
   runtimeVisitCounter += 1
   const separator = path.indexOf('?') === -1 ? '?' : '&'
-  await page.goto(
-    `${getAppBaseUrl()}/#${path}${separator}__e2eVisit=${runtimeVisitCounter}`,
-    APP_READY_OPTIONS
-  )
+  let navigationTimedOut = false
+  const navigation = page
+    .goto(`${getAppBaseUrl()}/#${path}${separator}__e2eVisit=${runtimeVisitCounter}`, {
+      ...APP_READY_OPTIONS,
+      timeout: RUNTIME_TEXT_TIMEOUT_MS
+    })
+    .catch(error => {
+      if (navigationTimedOut && isTimeoutError(error)) {
+        return null
+      }
+      throw error
+    })
+  const timeout = delay(RUNTIME_TEXT_TIMEOUT_MS).then(() => {
+    navigationTimedOut = true
+    return null
+  })
+
+  await Promise.race([navigation, timeout])
 }
 
 describe('session', () => {
@@ -491,7 +827,7 @@ describe('session', () => {
   describe('host', () => {
     it('should start a session', async () => {
       await ms.visit(`/join/${hostId}`)
-      await page.waitForSelector(RUNTIME_SHELL_SELECTOR)
+      await waitForRuntimeShell(page, 'host start')
       await page.waitForSelector('#runtime_happy_path')
       await page.waitForSelector('#runtime_buddy_scene')
       await page.waitForSelector('#runtime_room_signals')
@@ -656,7 +992,7 @@ describe('session', () => {
 
     it('should preview supported streaming-site source suggestions', async () => {
       await ms.visit(`/join/${hostId}`)
-      await page.waitForSelector(RUNTIME_SHELL_SELECTOR)
+      await waitForRuntimeShell(page, 'source suggestions')
 
       const suggestions = [
         {
@@ -696,7 +1032,7 @@ describe('session', () => {
 
     it('should preview named streaming-site watch URLs without remote navigation', async () => {
       await ms.visit(`/join/${hostId}`)
-      await page.waitForSelector(RUNTIME_SHELL_SELECTOR)
+      await waitForRuntimeShell(page, 'named streaming-site preview')
       await page.waitForSelector('#runtime-add-media-url')
 
       const sources = [
@@ -746,7 +1082,7 @@ describe('session', () => {
 
     it('should queue shorthand streaming URLs with automatic https', async () => {
       await ms.visit(`/join/${hostId}`)
-      await page.waitForSelector(RUNTIME_SHELL_SELECTOR)
+      await waitForRuntimeShell(page, 'shorthand streaming URLs')
 
       const sources = [
         {
@@ -788,7 +1124,7 @@ describe('session', () => {
 
     it('should queue the initial room URL from the landing launcher', async () => {
       await ms.visit(`/join/${hostId}?url=${encodeURIComponent('youtube.com/watch?v=home-launch')}`)
-      await page.waitForSelector(RUNTIME_SHELL_SELECTOR)
+      await waitForRuntimeShell(page, 'landing launcher URL')
 
       await waitForRuntimeText(page, 'Website loaded')
       await waitForRuntimeText(page, 'watch')
@@ -802,8 +1138,8 @@ describe('session', () => {
       try {
         await ms.setProfile('default', guestPage)
         await visitRuntimePath(guestPage, '/join/deadbeafdeadbeafdeadbeafdeadbeaf?secret=bad')
-        await guestPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
-        await waitForRuntimeText(guestPage, 'Network error')
+        await waitForRuntimeShell(guestPage, 'invalid invite guest')
+        await waitForRuntimeText(guestPage, 'Invite secret is invalid')
       } finally {
         await guestPage.close()
         await guestContext.close()
@@ -827,6 +1163,7 @@ describe('session', () => {
         clientContext = context
       }
       clientPage = await clientContext.newPage()
+      await ms.setProfile('default', page)
     })
 
     afterEach(async () => {
@@ -850,11 +1187,11 @@ describe('session', () => {
       async () => {
         await ms.visit(`/join/${hostId}`)
         const hostPage = page
-        await hostPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
+        await waitForRuntimeShell(hostPage, 'missing-secret host')
 
         await ms.setProfile('clientA', clientPage)
         await visitRuntimePath(clientPage, `/join/${hostId}`)
-        await clientPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
+        await waitForRuntimeShell(clientPage, 'missing-secret client')
         await waitForRuntimeText(clientPage, 'Invite secret is required')
 
         await ms.screenshot('session_host+client')
@@ -865,7 +1202,7 @@ describe('session', () => {
     it('should mirror guest and host queued media and playback controls', async () => {
       await ms.visit(`/join/${hostId}`)
       const hostPage = page
-      await hostPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
+      await waitForRuntimeShell(hostPage, 'mirror host')
       const inviteSecret = await getRuntimeInviteSecret(hostPage)
 
       await ms.setProfile('clientA', clientPage)
@@ -873,15 +1210,13 @@ describe('session', () => {
         clientPage,
         `/join/${hostId}?secret=${encodeURIComponent(inviteSecret)}`
       )
-      await clientPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
+      await waitForRuntimeShell(clientPage, 'mirror client')
       await waitForRuntimeText(hostPage, 'Synced')
       await waitForRuntimeText(clientPage, 'Synced')
       expectLiveBrowserIsolation({ clientBrowser, clientPage, hostPage })
       await expectHealthyTwoBrowserConnection({ clientPage, hostPage })
 
-      await clientPage.fill('#runtime-add-media-url', 'youtube.com/watch?v=guest-e2e')
-      await waitForRuntimeText(clientPage, 'Honeystream will add https:// automatically')
-      await clientPage.press('#runtime-add-media-url', 'Enter')
+      await addRuntimeMediaUrl(clientPage, 'youtube.com/watch?v=guest-e2e')
 
       await waitForRuntimeText(clientPage, 'Media added with https:// filled in')
       await waitForRuntimeText(hostPage, 'Website loaded')
@@ -920,23 +1255,38 @@ describe('session', () => {
       const expectedGuestSeekPositionMs =
         (await getPlaybackPositionMs(clientPage)) + SEEK_FORWARD_STEP_MS
       await clientPage.click('#runtime_playback_controls [data-intent="seekForward"]')
-      await waitForPlaybackPositionAtLeast(hostPage, expectedGuestSeekPositionMs)
-      await waitForPlaybackPositionAtLeast(clientPage, expectedGuestSeekPositionMs)
+      await waitForPlaybackPositionAtLeast(
+        hostPage,
+        expectedGuestSeekPositionMs,
+        'guest seek host'
+      )
+      await waitForPlaybackPositionAtLeast(
+        clientPage,
+        expectedGuestSeekPositionMs,
+        'guest seek client'
+      )
       await expectPlaybackPositionsSynced({
         clientPage,
         hostPage,
         label: 'guest seek'
       })
 
-      await hostPage.fill('#runtime-add-media-url', 'youtube.com/watch?v=host-e2e')
-      await waitForRuntimeText(hostPage, 'Honeystream will add https:// automatically')
-      await hostPage.press('#runtime-add-media-url', 'Enter')
+      await addRuntimeMediaUrl(hostPage, 'youtube.com/watch?v=host-e2e')
 
       await waitForRuntimeText(hostPage, 'Media added with https:// filled in')
       await hostPage.waitForSelector('[data-queue-item-id]')
-      await hostPage.click('#runtime_playback_controls [data-intent="next"]')
-      await hostPage.waitForSelector('[data-queue-empty="true"]')
-      await clientPage.waitForSelector('[data-queue-empty="true"]')
+      const previousHostMediaId = await getCurrentQueueMediaId(hostPage)
+      await hostPage.waitForSelector('#runtime_playback_controls [data-intent="next"]:not([disabled])')
+      await hostPage.click('#runtime_playback_controls [data-intent="next"]:not([disabled])')
+      const nextHostMediaId = await waitForCurrentQueueMediaIdChange(
+        hostPage,
+        previousHostMediaId,
+        'host next'
+      )
+      await waitForCurrentQueueMediaIdChange(clientPage, previousHostMediaId, 'client next')
+      expect(nextHostMediaId).not.toBe(previousHostMediaId)
+      await waitForQueueEmpty(hostPage, 'host next')
+      await waitForQueueEmpty(clientPage, 'client next')
       await waitForCurrentQueueTitle(hostPage, 'YouTube watch page')
       await waitForCurrentQueueTitle(clientPage, 'YouTube watch page')
       await waitForRuntimeText(clientPage, 'Website loaded')
@@ -965,8 +1315,16 @@ describe('session', () => {
       const expectedHostSeekPositionMs =
         (await getPlaybackPositionMs(hostPage)) + SEEK_FORWARD_STEP_MS
       await hostPage.click('#runtime_playback_controls [data-intent="seekForward"]')
-      await waitForPlaybackPositionAtLeast(hostPage, expectedHostSeekPositionMs)
-      await waitForPlaybackPositionAtLeast(clientPage, expectedHostSeekPositionMs)
+      await waitForPlaybackPositionAtLeast(
+        hostPage,
+        expectedHostSeekPositionMs,
+        'host seek host'
+      )
+      await waitForPlaybackPositionAtLeast(
+        clientPage,
+        expectedHostSeekPositionMs,
+        'host seek client'
+      )
       await expectPlaybackPositionsSynced({
         clientPage,
         hostPage,
@@ -974,65 +1332,76 @@ describe('session', () => {
       })
     })
 
-    it(
-      'should sync host and guest browser pages across supported streaming-site lanes',
-      async () => {
-        await ms.visit(`/join/${hostId}`)
-        const hostPage = page
-        await hostPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
-        const inviteSecret = await getRuntimeInviteSecret(hostPage)
+    STREAMING_SITE_BROWSER_PAIR_SESSION_SOURCE_GROUPS.forEach(group => {
+      it(
+        `should sync host and guest browser pages across the ${group.label} streaming-site lane`,
+        async () => {
+          await ms.visit(`/join/${hostId}`)
+          const hostPage = page
+          await waitForRuntimeShell(hostPage, `${group.label} streaming matrix host`)
+          const inviteSecret = await getRuntimeInviteSecret(hostPage)
 
-        await ms.setProfile('clientA', clientPage)
-        await visitRuntimePath(
-          clientPage,
-          `/join/${hostId}?secret=${encodeURIComponent(inviteSecret)}`
-        )
-        await clientPage.waitForSelector(RUNTIME_SHELL_SELECTOR)
-        await waitForRuntimeText(hostPage, 'Synced')
-        await waitForRuntimeText(clientPage, 'Synced')
-        expectLiveBrowserIsolation({ clientBrowser, clientPage, hostPage })
-        await expectHealthyTwoBrowserConnection({ clientPage, hostPage })
-
-        for (let index = 0; index < STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES.length; index += 1) {
-          const source = STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES[index]
-          const addingPage = index % 2 === 0 ? clientPage : hostPage
-
-          await addingPage.fill('#runtime-add-media-url', source.url)
-          await waitForRuntimeText(addingPage, 'Honeystream will add https:// automatically')
-          await addingPage.press('#runtime-add-media-url', 'Enter')
-          await waitForRuntimeText(addingPage, 'Media added with https:// filled in')
-          await waitForRuntimeText(hostPage, source.expectedText)
-          await waitForRuntimeText(clientPage, source.expectedText)
-
-          if (index > 0) {
-            await waitForQueuedItemTitle(hostPage, source.title)
-            await waitForQueuedItemTitle(clientPage, source.title)
-            await hostPage.waitForSelector(
-              '#runtime_playback_controls [data-intent="next"]:not([disabled])'
-            )
-            await hostPage.click('#runtime_playback_controls [data-intent="next"]')
-          }
-
-          await waitForCurrentQueueTitle(hostPage, source.title)
-          await waitForCurrentQueueTitle(clientPage, source.title)
-          await waitForPlaybackState(hostPage, 'playing')
-          await waitForPlaybackState(clientPage, 'playing')
-          await expectPlaybackPositionsSynced({
+          await ms.setProfile('clientA', clientPage)
+          await visitRuntimePath(
             clientPage,
-            hostPage,
-            label: `${source.title} playing`
-          })
-          if (source.exerciseControls) {
-            await exerciseTwoBrowserPlaybackControls({
-              clientPage,
-              controlPage: index % 2 === 0 ? hostPage : clientPage,
-              hostPage
-            })
-          }
+            `/join/${hostId}?secret=${encodeURIComponent(inviteSecret)}`
+          )
+          await waitForRuntimeShell(clientPage, `${group.label} streaming matrix client`)
+          await waitForRuntimeText(hostPage, 'Synced')
+          await waitForRuntimeText(clientPage, 'Synced')
+          expectLiveBrowserIsolation({ clientBrowser, clientPage, hostPage })
           await expectHealthyTwoBrowserConnection({ clientPage, hostPage })
-        }
-      },
-      STREAMING_SITE_SESSION_E2E_TIMEOUT_MS
-    )
+
+          for (let index = 0; index < group.sources.length; index += 1) {
+            const source = group.sources[index]
+            const addingPage = index % 2 === 0 ? clientPage : hostPage
+
+            await addRuntimeMediaUrl(addingPage, source.url)
+            await waitForRuntimeText(hostPage, source.expectedText)
+            await waitForRuntimeText(clientPage, source.expectedText)
+
+            if (index > 0) {
+              const previousHostMediaId = await getCurrentQueueMediaId(hostPage)
+              await waitForQueuedItemTitle(hostPage, source.title)
+              await waitForQueuedItemTitle(clientPage, source.title)
+              await hostPage.waitForSelector('[data-queue-action="next"]:not([disabled])')
+              await hostPage.click('[data-queue-action="next"]:not([disabled])')
+              await waitForCurrentQueueMediaIdChange(
+                hostPage,
+                previousHostMediaId,
+                `${group.label} host next ${index}`
+              )
+              await waitForCurrentQueueMediaIdChange(
+                clientPage,
+                previousHostMediaId,
+                `${group.label} client next ${index}`
+              )
+              await waitForQueueEmpty(hostPage, `${group.label} host next ${index}`)
+              await waitForQueueEmpty(clientPage, `${group.label} client next ${index}`)
+            }
+
+            await waitForCurrentQueueTitle(hostPage, source.title)
+            await waitForCurrentQueueTitle(clientPage, source.title)
+            await waitForPlaybackState(hostPage, 'playing')
+            await waitForPlaybackState(clientPage, 'playing')
+            await expectPlaybackPositionsSynced({
+              clientPage,
+              hostPage,
+              label: `${source.title} playing`
+            })
+            if (source.exerciseControls) {
+              await exerciseTwoBrowserPlaybackControls({
+                clientPage,
+                controlPage: index % 2 === 0 ? hostPage : clientPage,
+                hostPage,
+                label: `${source.lane} ${source.title}`
+              })
+            }
+            await expectTwoBrowserConnectionStillHealthy({ clientPage, hostPage })
+          }
+        },
+        STREAMING_SITE_SESSION_E2E_TIMEOUT_MS
+      )
+    })
   })
 })
