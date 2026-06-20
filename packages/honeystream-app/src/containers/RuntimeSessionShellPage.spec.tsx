@@ -354,7 +354,10 @@ describe('RuntimeSessionShellPage', () => {
     )
     expect(html).toContain('Two isolated browsers')
     expect(html).toContain(
-      `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} named and generic website paths`
+      `Transport reliability covers all ${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} named and generic website paths`
+    )
+    expect(html).toContain(
+      'broadcast and isolated live e2e drive one full browser-pair control burst per lane'
     )
     expect(html).toContain(
       'Live e2e mode runs cat-side and rabbit-side in separate browser processes through the real connection flow'

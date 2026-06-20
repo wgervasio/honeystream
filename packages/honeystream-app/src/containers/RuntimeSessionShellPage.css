@@ -1525,6 +1525,14 @@
   transform: translateY(-1px);
 }
 
+.invitePanel button:active,
+.addMediaPanel button:active,
+.queuePanel button:active,
+.playbackPanel button:active {
+  filter: brightness(1.08);
+  transform: translateY(0) scale(0.97);
+}
+
 .invitePanel button:focus,
 .addMediaPanel button:focus,
 .queuePanel button:focus,
@@ -2022,6 +2030,14 @@
   background: rgba(36, 28, 53, 0.18);
 }
 
+.queueCurrent[data-queue-state='current'] {
+  border-color: rgba(255, 216, 138, 0.42);
+  background: radial-gradient(circle at 16% 18%, rgba(255, 216, 138, 0.2), transparent 42%),
+    linear-gradient(135deg, rgba(158, 215, 255, 0.12), rgba(247, 215, 232, 0.1)),
+    rgba(36, 28, 53, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 18px 34px rgba(255, 216, 138, 0.1);
+}
+
 .queueCurrent strong {
   display: block;
   margin: 0.4rem 0;
@@ -2188,6 +2204,15 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
+  .happySyncSeal[data-seal-state='ready'] {
+    animation: runtime-happy-seal-glow 2200ms ease-in-out infinite;
+  }
+
+  .queueCurrent[data-queue-state='current'],
+  .queuedItems li {
+    animation: runtime-soft-pop 220ms ease-out;
+  }
+
   .syncBeam {
     background-size: 200% 100%;
     animation: runtime-sync-shimmer 2400ms ease-in-out infinite;
@@ -2199,6 +2224,29 @@
 
   .rabbitOrb {
     animation: runtime-pet-float 3400ms ease-in-out 420ms infinite;
+  }
+}
+
+@keyframes runtime-happy-seal-glow {
+  0%,
+  100% {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 18px 36px rgba(255, 127, 150, 0.14);
+  }
+
+  50% {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 20px 42px rgba(255, 216, 138, 0.22);
+  }
+}
+
+@keyframes runtime-soft-pop {
+  from {
+    opacity: 0.86;
+    transform: translateY(0.25rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
