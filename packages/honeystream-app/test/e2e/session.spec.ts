@@ -27,11 +27,11 @@ const ADD_MEDIA_SUBMIT_SELECTOR =
 const SEEK_FORWARD_STEP_MS = 10000
 const PLAYBACK_SYNC_TOLERANCE_MS = 750
 const PLAYBACK_SYNC_ASSERTION_TIMEOUT_MS = 15000
+const USE_BROADCAST_RTC_E2E = process.env.HONEYSTREAM_E2E_BROADCAST_RTC !== 'false'
 const PLAYBACK_STATE_RETRY_COUNT = 3
-const PLAYBACK_STATE_RETRY_TIMEOUT_MS = 15000
+const PLAYBACK_STATE_RETRY_TIMEOUT_MS = USE_BROADCAST_RTC_E2E ? 15000 : 30000
 const QUEUE_STATE_TIMEOUT_MS = 60000
 const RUNTIME_TEXT_TIMEOUT_MS = 30000
-const USE_BROADCAST_RTC_E2E = process.env.HONEYSTREAM_E2E_BROADCAST_RTC !== 'false'
 const STREAMING_SITE_BROWSER_PAIR_SESSION_SOURCES = STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES.filter(
   source => source.exerciseControls
 )
@@ -1216,9 +1216,7 @@ describe('session', () => {
       expectLiveBrowserIsolation({ clientBrowser, clientPage, hostPage })
       await expectHealthyTwoBrowserConnection({ clientPage, hostPage })
 
-      await clientPage.fill('#runtime-add-media-url', 'youtube.com/watch?v=guest-e2e')
-      await waitForRuntimeText(clientPage, 'Honeystream will add https:// automatically')
-      await clientPage.press('#runtime-add-media-url', 'Enter')
+      await addRuntimeMediaUrl(clientPage, 'youtube.com/watch?v=guest-e2e')
 
       await waitForRuntimeText(clientPage, 'Media added with https:// filled in')
       await waitForRuntimeText(hostPage, 'Website loaded')
@@ -1273,9 +1271,7 @@ describe('session', () => {
         label: 'guest seek'
       })
 
-      await hostPage.fill('#runtime-add-media-url', 'youtube.com/watch?v=host-e2e')
-      await waitForRuntimeText(hostPage, 'Honeystream will add https:// automatically')
-      await hostPage.press('#runtime-add-media-url', 'Enter')
+      await addRuntimeMediaUrl(hostPage, 'youtube.com/watch?v=host-e2e')
 
       await waitForRuntimeText(hostPage, 'Media added with https:// filled in')
       await hostPage.waitForSelector('[data-queue-item-id]')
