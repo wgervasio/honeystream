@@ -266,7 +266,7 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain(`${STREAMING_SITE_CONNECTION_FIXTURES.length} sites`)
     expect(html).toContain('YouTube, AnimePahe, Cineby, Miruro, and generic pages')
     expect(html).toContain(
-      'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, Disney+, and Crunchyroll generic hosts'
+      'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, Disney+, Crunchyroll, Apple TV+, and Peacock generic hosts'
     )
     expect(html).toContain('Per-site proof')
     expect(html).toContain(`${STREAMING_SITE_CONNECTION_FIXTURES.length} observed`)
@@ -376,7 +376,7 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('Local website load')
     expect(html).toContain('YouTube, AnimePahe, Cineby, Miruro, and generic pages load locally')
     expect(html).toContain(
-      'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, and Plex pages stay generic'
+      'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, Disney+, Crunchyroll, Apple TV+, and Peacock pages stay generic'
     )
     expect(html).toContain(
       `data-tail-latency-ms-budget="${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}"`
@@ -439,7 +439,7 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('data-happy-path-assurance="youtube-plus"')
     expect(html).toContain('data-happy-path-assurance="control-byte-budget"')
     expect(html).toContain(
-      'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, Disney+, and Crunchyroll generic hosts'
+      'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, Disney+, Crunchyroll, Apple TV+, and Peacock generic hosts'
     )
     expect(html).toContain(`${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} two-browser paths`)
     expect(html).toContain('Media bytes stay local')

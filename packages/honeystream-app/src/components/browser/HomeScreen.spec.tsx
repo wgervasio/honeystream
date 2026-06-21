@@ -89,6 +89,12 @@ describe('browser/HomeScreen', () => {
     expect(html).toContain('Hulu')
     expect(html).toContain('Prime Video')
     expect(html).toContain('Tubi')
+    expect(html).toContain('Dailymotion')
+    expect(html).toContain('Plex-style pages')
+    expect(html).toContain('Disney+')
+    expect(html).toContain('Crunchyroll')
+    expect(html).toContain('Apple TV+')
+    expect(html).toContain('Peacock')
   })
 
   it('selects a site lane without inserting a fake URL', () => {

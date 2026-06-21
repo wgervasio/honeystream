@@ -45,12 +45,6 @@ describe('streaming site connection lab', () => {
     expect(result.bestProfile && result.bestProfile.profile.id).toBe('clean-ultra-low-latency')
     expect(result.rankedProfiles[0].profile.id).toBe('clean-ultra-low-latency')
     expect(result.rankedProfiles[0].siteCount).toBe(STREAMING_SITE_CONNECTION_FIXTURES.length)
-    const providers = result.rankedProfiles[0].providers
-    expect(providers.filter(provider => provider === 'youtube')).toHaveLength(18)
-    expect(providers.filter(provider => provider === 'animepahe')).toHaveLength(15)
-    expect(providers.filter(provider => provider === 'cineby')).toHaveLength(16)
-    expect(providers.filter(provider => provider === 'miruro')).toHaveLength(14)
-    expect(providers.filter(provider => provider === 'unknown')).toHaveLength(15)
     expect(result.rankedProfiles[0].providerCoverage).toEqual(
       STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE
     )
@@ -63,7 +57,7 @@ describe('streaming site connection lab', () => {
       { provider: 'animepahe', siteCount: 15 },
       { provider: 'cineby', siteCount: 16 },
       { provider: 'miruro', siteCount: 14 },
-      { provider: 'unknown', siteCount: 15 }
+      { provider: 'unknown', siteCount: 17 }
     ])
     const fixtureSentMessages = bestObservation.fixtureObservations.reduce(
       (total, fixture) => total + fixture.sentMessages,
@@ -101,7 +95,7 @@ describe('streaming site connection lab', () => {
   it('covers the requested streaming-site matrix before selecting a transport lane', () => {
     const sources = STREAMING_SITE_CONNECTION_FIXTURES.map(fixture => fixture.source)
 
-    expect(STREAMING_SITE_CONNECTION_FIXTURES).toHaveLength(78)
+    expect(STREAMING_SITE_CONNECTION_FIXTURES).toHaveLength(80)
     expect(sources).toEqual(
       expect.arrayContaining([
         'https://youtube.com',
@@ -131,7 +125,9 @@ describe('streaming site connection lab', () => {
         'https://www.dailymotion.com/video/xhoneystream',
         'https://watch.plex.tv/movie/honeystream-test',
         'https://www.disneyplus.com/movies/honeystream-test/abc123',
-        'https://www.crunchyroll.com/watch/honeystream-test'
+        'https://www.crunchyroll.com/watch/honeystream-test',
+        'https://tv.apple.com/us/movie/honeystream-test/umc.cmc.honeystream',
+        'https://www.peacocktv.com/watch/playback/honeystream-test'
       ])
     )
     expect(sources.some(source => source.includes('youtube.com'))).toBe(true)
@@ -143,13 +139,15 @@ describe('streaming site connection lab', () => {
     expect(sources.some(source => source.includes('vimeo.com'))).toBe(true)
     expect(sources.some(source => source.includes('twitch.tv'))).toBe(true)
     expect(sources.some(source => source.includes('netflix.com'))).toBe(true)
-    expect(STREAMING_SITE_CONNECTION_FIXTURES.some(fixture => fixture.durationMs === null)).toBe(true)
+    expect(STREAMING_SITE_CONNECTION_FIXTURES.some(fixture => fixture.durationMs === null)).toBe(
+      true
+    )
     expect(STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE).toEqual([
       { provider: 'youtube', siteCount: 18 },
       { provider: 'animepahe', siteCount: 15 },
       { provider: 'cineby', siteCount: 16 },
       { provider: 'miruro', siteCount: 14 },
-      { provider: 'unknown', siteCount: 15 }
+      { provider: 'unknown', siteCount: 17 }
     ])
     expect(
       STREAMING_SITE_CONNECTION_FIXTURES.some(

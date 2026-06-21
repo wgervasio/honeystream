@@ -1,4 +1,4 @@
-import type { StreamingSiteConnectionFixture } from './streaming-site-connection-lab'
+import { StreamingSiteConnectionFixture } from './streaming-site-connection-lab'
 
 export const STREAMING_SITE_GENERIC_FIXTURES: readonly StreamingSiteConnectionFixture[] = Object.freeze(
   [
@@ -78,6 +78,16 @@ export const STREAMING_SITE_GENERIC_FIXTURES: readonly StreamingSiteConnectionFi
       id: 'generic-crunchyroll-watch',
       source: 'https://www.crunchyroll.com/watch/honeystream-test',
       title: 'Crunchyroll generic watch page'
+    },
+    {
+      id: 'generic-apple-tv-watch',
+      source: 'https://tv.apple.com/us/movie/honeystream-test/umc.cmc.honeystream',
+      title: 'Apple TV+ generic movie page'
+    },
+    {
+      id: 'generic-peacock-watch',
+      source: 'https://www.peacocktv.com/watch/playback/honeystream-test',
+      title: 'Peacock generic watch page'
     }
   ]
 )

@@ -429,7 +429,7 @@ const MERGE_GATE_METRICS = [
     detail:
       'YouTube, AnimePahe, Cineby, Miruro, and generic pages stay in the matrix, ' +
       'including Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, ' +
-      'Disney+, and Crunchyroll generic hosts.'
+      'Disney+, Crunchyroll, Apple TV+, and Peacock generic hosts.'
   },
   {
     id: 'per-site-observation',
@@ -510,8 +510,8 @@ const CONNECTION_CONFIDENCE_CARDS = [
     label: 'Local website load',
     detail:
       'YouTube, AnimePahe, Cineby, Miruro, and generic pages load locally; Vimeo, Twitch, ' +
-      'Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, and Plex pages stay generic while ' +
-      'only typed commands cross the tiny lane.'
+      'Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, Disney+, Crunchyroll, ' +
+      'Apple TV+, and Peacock pages stay generic while only typed commands cross the tiny lane.'
   }
 ] as const
 const BROWSER_SYNC_RECEIPT_ITEMS = [
@@ -540,7 +540,7 @@ const BROWSER_SYNC_RECEIPT_ITEMS = [
       `YouTube, AnimePahe, Cineby, Miruro, and generic lanes cover ` +
       `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} two-browser paths before merge, ` +
       'including Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, ' +
-      'Disney+, and Crunchyroll generic hosts.'
+      'Disney+, Crunchyroll, Apple TV+, and Peacock generic hosts.'
   },
   {
     id: 'local-media',
