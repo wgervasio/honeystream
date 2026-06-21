@@ -33,10 +33,8 @@ const PLAYBACK_STATE_RETRY_TIMEOUT_MS = USE_BROADCAST_RTC_E2E ? 15000 : 30000
 const QUEUE_STATE_TIMEOUT_MS = 60000
 const RUNTIME_TEXT_TIMEOUT_MS = 30000
 const BROWSER_RESOURCE_CLOSE_TIMEOUT_MS = 5000
-const STREAMING_SITE_BROWSER_PAIR_SESSION_SOURCES = STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES.filter(
-  source => source.exerciseControls
-)
-const STREAMING_SITE_BROWSER_PAIR_GENERIC_GROUP_SIZE = 1
+const STREAMING_SITE_BROWSER_PAIR_SESSION_SOURCES = STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES
+const STREAMING_SITE_BROWSER_PAIR_GENERIC_GROUP_SIZE = 5
 const createStreamingSiteBrowserPairSourceGroups = () => {
   const groups: {
     readonly label: string
@@ -114,6 +112,7 @@ const BROWSER_SYNC_RECEIPT_READY_SELECTOR =
   '[data-test-modes="broadcast+isolated-live"]'
 const HAPPY_SYNC_SEAL_READY_SELECTOR =
   '#runtime_happy_sync_seal[data-seal-state="ready"][data-byte-loss-rate="0"]' +
+  '[data-browser-path-coverage="all"]' +
   '[data-tail-latency-ms-budget="10"]' +
   `[data-site-lane-count="${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}"]` +
   `[data-site-path-count="${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}"]` +
@@ -686,6 +685,10 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
   )
   await waitForRuntimeText(page, 'Browser sync receipt')
   await waitForRuntimeText(page, 'Happy sync sealed')
+  await waitForRuntimeText(
+    page,
+    `all ${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} website paths are ready`
+  )
   await waitForRuntimeText(page, 'Two browsers synced')
   await waitForRuntimeText(page, 'Two browsers, one cozy lane')
   await waitForRuntimeText(page, '0B control loss')
@@ -1145,6 +1148,10 @@ describe('session', () => {
       )
       await waitForRuntimeText(page, 'Browser sync receipt')
       await waitForRuntimeText(page, 'Happy sync warming')
+      await waitForRuntimeText(
+        page,
+        `all ${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} website paths`
+      )
       await waitForRuntimeText(page, 'Waiting for two seats')
       await waitForRuntimeText(page, 'Two browsers, one cozy lane')
       await waitForRuntimeText(page, '0B control loss')

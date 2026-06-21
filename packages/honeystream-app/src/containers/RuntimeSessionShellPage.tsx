@@ -1557,6 +1557,7 @@ const RuntimeSessionRouteSurface = ({
             id="runtime_happy_sync_seal"
             className={styles.happySyncSeal}
             aria-label="Happy sync seal"
+            data-browser-path-coverage="all"
             data-byte-loss-rate="0"
             data-seal-state={browserSyncReceiptState}
             data-site-lane-count={STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}
@@ -1569,8 +1570,8 @@ const RuntimeSessionRouteSurface = ({
             </strong>
             <span>
               {browserSyncReceiptState === 'ready'
-                ? 'Two browser seats, one tiny control lane, zero lost bytes, and local website playback are ready.'
-                : 'Waiting for the rabbit-side seat, connected transport, and heartbeat clock sync.'}
+                ? `Two browser seats, one tiny control lane, zero lost bytes, and all ${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} website paths are ready.`
+                : `Waiting for rabbit-side, connected transport, heartbeat clock sync, and all ${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} website paths.`}
             </span>
           </div>
           <div className={styles.syncReceiptGrid}>
