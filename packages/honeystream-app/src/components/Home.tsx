@@ -220,7 +220,8 @@ class Home extends Component<IProps, IState> {
         value: `${STREAMING_SITE_CONNECTION_FIXTURES.length} paths`,
         label: 'site fixtures',
         detail:
-          'YouTube, AnimePahe, Cineby, Miruro, and generic watch pages including Hulu, Prime Video, and Tubi.'
+          'YouTube, AnimePahe, Cineby, Miruro, and generic watch pages including Hulu, ' +
+          'Prime Video, Tubi, Max, and Kanopy.'
       },
       {
         id: 'providers',
@@ -769,6 +770,10 @@ class Home extends Component<IProps, IState> {
             <strong>Crunchyroll</strong>
             <strong>Apple TV+</strong>
             <strong>Peacock</strong>
+            <strong>Max</strong>
+            <strong>Paramount+</strong>
+            <strong>Roku Channel</strong>
+            <strong>Kanopy</strong>
             <strong>direct MP4</strong>
           </div>
 

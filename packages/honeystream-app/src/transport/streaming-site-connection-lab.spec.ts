@@ -57,7 +57,7 @@ describe('streaming site connection lab', () => {
       { provider: 'animepahe', siteCount: 15 },
       { provider: 'cineby', siteCount: 16 },
       { provider: 'miruro', siteCount: 14 },
-      { provider: 'unknown', siteCount: 17 }
+      { provider: 'unknown', siteCount: 21 }
     ])
     const fixtureSentMessages = bestObservation.fixtureObservations.reduce(
       (total, fixture) => total + fixture.sentMessages,
@@ -94,8 +94,7 @@ describe('streaming site connection lab', () => {
 
   it('covers the requested streaming-site matrix before selecting a transport lane', () => {
     const sources = STREAMING_SITE_CONNECTION_FIXTURES.map(fixture => fixture.source)
-
-    expect(STREAMING_SITE_CONNECTION_FIXTURES).toHaveLength(80)
+    expect(STREAMING_SITE_CONNECTION_FIXTURES).toHaveLength(84)
     expect(sources).toEqual(
       expect.arrayContaining([
         'https://youtube.com',
@@ -127,7 +126,11 @@ describe('streaming site connection lab', () => {
         'https://www.disneyplus.com/movies/honeystream-test/abc123',
         'https://www.crunchyroll.com/watch/honeystream-test',
         'https://tv.apple.com/us/movie/honeystream-test/umc.cmc.honeystream',
-        'https://www.peacocktv.com/watch/playback/honeystream-test'
+        'https://www.peacocktv.com/watch/playback/honeystream-test',
+        'https://www.max.com/watch/movie/honeystream-test',
+        'https://www.paramountplus.com/movies/video/honeystream-test',
+        'https://therokuchannel.roku.com/watch/honeystream-test',
+        'https://www.kanopy.com/en/product/honeystream-test'
       ])
     )
     expect(sources.some(source => source.includes('youtube.com'))).toBe(true)
@@ -147,7 +150,7 @@ describe('streaming site connection lab', () => {
       { provider: 'animepahe', siteCount: 15 },
       { provider: 'cineby', siteCount: 16 },
       { provider: 'miruro', siteCount: 14 },
-      { provider: 'unknown', siteCount: 17 }
+      { provider: 'unknown', siteCount: 21 }
     ])
     expect(
       STREAMING_SITE_CONNECTION_FIXTURES.some(

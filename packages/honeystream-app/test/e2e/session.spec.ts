@@ -23,8 +23,6 @@ const STREAMING_SITE_SESSION_E2E_TIMEOUT_MS = 600e3
 const APP_READY_OPTIONS = { waitUntil: 'domcontentloaded' as const }
 const PLAYBACK_POSITION_SELECTOR = '#runtime_playback_controls [data-intent="positionMs"]'
 const PLAYBACK_PLAY_PAUSE_SELECTOR = '#runtime_playback_controls [data-intent="playPause"]'
-const ADD_MEDIA_SUBMIT_SELECTOR =
-  'xpath=//form[.//*[@id="runtime-add-media-url"]]//button[@type="submit"]'
 const SEEK_FORWARD_STEP_MS = 10000
 const PLAYBACK_SYNC_TOLERANCE_MS = 750
 const PLAYBACK_SYNC_ASSERTION_TIMEOUT_MS = 15000
@@ -34,8 +32,9 @@ const PLAYBACK_STATE_RETRY_TIMEOUT_MS = USE_BROADCAST_RTC_E2E ? 15000 : 30000
 const QUEUE_STATE_TIMEOUT_MS = 60000
 const RUNTIME_TEXT_TIMEOUT_MS = 30000
 const BROWSER_RESOURCE_CLOSE_TIMEOUT_MS = 5000
-const STREAMING_SITE_BROWSER_PAIR_SESSION_SOURCES = STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES
-const STREAMING_SITE_BROWSER_PAIR_GENERIC_GROUP_SIZE = 5
+const STREAMING_SITE_BROWSER_PAIR_SESSION_SOURCES = STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES.filter(
+  source => source.exerciseControls
+)
 const createStreamingSiteBrowserPairSourceGroups = () => {
   const groups: {
     readonly label: string
@@ -47,28 +46,10 @@ const createStreamingSiteBrowserPairSourceGroups = () => {
     const laneSources = STREAMING_SITE_BROWSER_PAIR_SESSION_SOURCES.filter(
       source => source.lane === lane
     )
-    if (laneSources.length === 0) return
-
-    if (lane !== 'generic' || laneSources.length <= 1) {
-      groups.push({ label: lane, lane, sources: laneSources })
-      return
+    if (laneSources.length !== 1) {
+      throw new Error(`Expected exactly one browser-pair control source for ${lane}.`)
     }
-
-    for (
-      let startIndex = 0;
-      startIndex < laneSources.length;
-      startIndex += STREAMING_SITE_BROWSER_PAIR_GENERIC_GROUP_SIZE
-    ) {
-      const groupIndex = Math.floor(startIndex / STREAMING_SITE_BROWSER_PAIR_GENERIC_GROUP_SIZE) + 1
-      groups.push({
-        label: `${lane} batch ${groupIndex}`,
-        lane,
-        sources: laneSources.slice(
-          startIndex,
-          startIndex + STREAMING_SITE_BROWSER_PAIR_GENERIC_GROUP_SIZE
-        )
-      })
-    }
+    groups.push({ label: lane, lane, sources: laneSources })
   })
 
   return groups
@@ -339,6 +320,8 @@ type CloseableBrowserResource = {
 
 type KillableBrowserProcess = {
   readonly killed?: boolean
+  readonly exitCode?: number | null
+  readonly signalCode?: string | null
   kill(): void
 }
 
@@ -370,12 +353,15 @@ async function closeBrowserForE2E(browserToClose: Browser | undefined): Promise<
 
   const getProcess = (browserToClose as BrowserWithProcess).process
   const browserProcess = getProcess ? getProcess() : undefined
-  if (browserProcess && !browserProcess.killed) {
-    browserProcess.kill()
-    return
-  }
-
   await closeBrowserResource('Playwright browser', browserToClose)
+  if (
+    browserProcess &&
+    !browserProcess.killed &&
+    (browserProcess.exitCode === null || typeof browserProcess.exitCode === 'undefined') &&
+    !browserProcess.signalCode
+  ) {
+    browserProcess.kill()
+  }
 }
 
 async function expectPlaybackPositionsSynced(input: {
@@ -554,9 +540,11 @@ async function waitForQueuedItemTitle(page: Page, title: string): Promise<void> 
 }
 
 async function addRuntimeMediaUrl(page: Page, url: string): Promise<void> {
-  await page.fill('#runtime-add-media-url', url)
+  await page.fill('#runtime-add-media-url', '')
+  await page.type('#runtime-add-media-url', url)
   await waitForRuntimeText(page, 'Honeystream will add https:// automatically')
-  await page.click(ADD_MEDIA_SUBMIT_SELECTOR)
+  await page.press('#runtime-add-media-url', 'Enter')
+  await waitForRuntimeText(page, 'Media added with https:// filled in')
 }
 
 async function getCurrentQueueMediaId(page: Page): Promise<string> {
@@ -705,7 +693,8 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
   await waitForRuntimeText(page, 'Local website load')
   await waitForRuntimeText(
     page,
-    'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, Disney+, Crunchyroll, Apple TV+, and Peacock pages stay generic'
+    'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, Disney+, ' +
+      'Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, and Kanopy pages stay generic'
   )
   await waitForRuntimeText(
     page,
@@ -758,7 +747,10 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
   await waitForRuntimeText(page, 'Two browsers, one cozy lane')
   await waitForRuntimeText(page, '0B control loss')
   await waitForRuntimeText(page, 'YouTube plus any-site matrix')
-  await waitForRuntimeText(page, `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} two-browser paths`)
+  await waitForRuntimeText(
+    page,
+    `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} two-browser transport paths`
+  )
   await waitForRuntimeText(page, 'Media bytes stay local')
   await waitForRuntimeText(page, 'Flawless handoff')
   await waitForRuntimeText(
@@ -1200,8 +1192,11 @@ describe('session', () => {
       await waitForRuntimeText(page, `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} browser paths`)
       await waitForRuntimeText(
         page,
-        `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} paths across ` +
-          `${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT} site lanes before merge`
+        `Transport reliability covers ${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} paths`
+      )
+      await waitForRuntimeText(
+        page,
+        `control-burst path for each of ${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT} site lanes before merge`
       )
       await waitForRuntimeText(page, 'Connection confidence')
       await waitForRuntimeText(page, 'Secret handshake')
@@ -1227,7 +1222,7 @@ describe('session', () => {
       await waitForRuntimeText(page, 'YouTube plus any-site matrix')
       await waitForRuntimeText(
         page,
-        `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} two-browser paths`
+        `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} two-browser transport paths`
       )
       await waitForRuntimeText(page, 'Media bytes stay local')
       await waitForRuntimeText(page, 'Trace gate')
@@ -1439,11 +1434,18 @@ describe('session', () => {
     let clientPage: Page
     let shouldCloseClientContext = false
 
+    beforeAll(async () => {
+      if (!USE_BROADCAST_RTC_E2E) {
+        clientBrowser = await chromium.launch(playwrightConfig.launchBrowserApp || {})
+      }
+    })
+
     beforeEach(async () => {
-      clientBrowser = undefined
       shouldCloseClientContext = !USE_BROADCAST_RTC_E2E
       if (shouldCloseClientContext) {
-        clientBrowser = await chromium.launch(playwrightConfig.launchBrowserApp || {})
+        if (!clientBrowser) {
+          clientBrowser = await chromium.launch(playwrightConfig.launchBrowserApp || {})
+        }
         clientContext = await clientBrowser.newContext(playwrightConfig.context || {})
       } else {
         clientContext = context
@@ -1461,13 +1463,14 @@ describe('session', () => {
             await closeBrowserResource('client context', clientContext)
           }
         } finally {
-          try {
-            await closeBrowserForE2E(clientBrowser)
-          } finally {
-            await unloadRuntimePage(page, 'host page')
-          }
+          await unloadRuntimePage(page, 'host page')
         }
       }
+    })
+
+    afterAll(async () => {
+      await closeBrowserForE2E(clientBrowser)
+      clientBrowser = undefined
     })
 
     it(

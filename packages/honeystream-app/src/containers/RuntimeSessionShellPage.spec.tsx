@@ -266,7 +266,8 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain(`${STREAMING_SITE_CONNECTION_FIXTURES.length} sites`)
     expect(html).toContain('YouTube, AnimePahe, Cineby, Miruro, and generic pages')
     expect(html).toContain(
-      'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, Disney+, Crunchyroll, Apple TV+, and Peacock generic hosts'
+      'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, Disney+, ' +
+        'Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, and Kanopy generic hosts'
     )
     expect(html).toContain('Per-site proof')
     expect(html).toContain(`${STREAMING_SITE_CONNECTION_FIXTURES.length} observed`)
@@ -281,8 +282,10 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('Buddy e2e gate')
     expect(html).toContain(`${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} browser paths`)
     expect(html).toContain(
-      `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} paths across ` +
-        `${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT} site lanes before merge`
+      `Transport reliability covers ${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} paths`
+    )
+    expect(html).toContain(
+      `control-burst path for each of ${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT} site lanes before merge`
     )
     expect(html).toContain('data-merge-gate-metric="browser-pair-matrix"')
     expect(html).toContain('Merge command')
@@ -376,7 +379,8 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('Local website load')
     expect(html).toContain('YouTube, AnimePahe, Cineby, Miruro, and generic pages load locally')
     expect(html).toContain(
-      'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, Disney+, Crunchyroll, Apple TV+, and Peacock pages stay generic'
+      'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, Disney+, ' +
+        'Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, and Kanopy pages stay generic'
     )
     expect(html).toContain(
       `data-tail-latency-ms-budget="${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}"`
@@ -444,9 +448,12 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('data-happy-path-assurance="mixed-site-handoff"')
     expect(html).toContain('data-happy-path-assurance="control-byte-budget"')
     expect(html).toContain(
-      'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, Disney+, Crunchyroll, Apple TV+, and Peacock generic hosts'
+      'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, Disney+, ' +
+        'Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, and Kanopy generic hosts'
     )
-    expect(html).toContain(`${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} two-browser paths`)
+    expect(html).toContain(
+      `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} two-browser transport paths`
+    )
     expect(html).toContain('Media bytes stay local')
     expect(html).toContain('Flawless handoff')
     expect(html).toContain(

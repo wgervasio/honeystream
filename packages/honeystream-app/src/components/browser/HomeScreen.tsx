@@ -94,6 +94,26 @@ const siteExamples = [
     label: 'Peacock',
     placeholder: 'Paste the exact Peacock watch page...',
     helper: 'Peacock lane selected. Keep it generic and test the exact page in both browsers.'
+  },
+  {
+    label: 'Max',
+    placeholder: 'Paste the exact Max watch page...',
+    helper: 'Max lane selected. Keep it generic and test the exact page in both browsers.'
+  },
+  {
+    label: 'Paramount+',
+    placeholder: 'Paste the exact Paramount+ movie page...',
+    helper: 'Paramount+ lane selected. Keep it generic and test the exact page in both browsers.'
+  },
+  {
+    label: 'Roku Channel',
+    placeholder: 'Paste the exact Roku Channel watch page...',
+    helper: 'Roku Channel lane selected. Keep it generic and test the exact page in both browsers.'
+  },
+  {
+    label: 'Kanopy',
+    placeholder: 'Paste the exact Kanopy page...',
+    helper: 'Kanopy lane selected. Keep it generic and test the exact page in both browsers.'
   }
 ]
 

@@ -95,6 +95,10 @@ describe('browser/HomeScreen', () => {
     expect(html).toContain('Crunchyroll')
     expect(html).toContain('Apple TV+')
     expect(html).toContain('Peacock')
+    expect(html).toContain('Max')
+    expect(html).toContain('Paramount+')
+    expect(html).toContain('Roku Channel')
+    expect(html).toContain('Kanopy')
   })
 
   it('selects a site lane without inserting a fake URL', () => {
