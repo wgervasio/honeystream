@@ -45,10 +45,10 @@ export default {
   duplicate: 'Duplicate',
   embedBlocked:
     'To enable playback with <1>{{host}}</1>, Honeystream must open the website in a popup.',
-  endSessionTitle: 'End Session?',
+  endSessionTitle: 'Close the watch party?',
   endSessionDescription: 'Changing to an offline session will disconnect all connected users.',
-  endSessionModalDescription: 'All users will be disconnected from the session.',
-  endSessionButton: 'End Session',
+  endSessionModalDescription: 'Everyone will be gently disconnected from the cozy room.',
+  endSessionButton: 'Close party',
   enterJoinDest: 'Enter a Honeystream session link.',
   findSession: 'Find Session',
   findSessionDescription:
@@ -141,9 +141,8 @@ export default {
   userNameChanged:
     '<Username id="{{userId}}">{{prevName}}</Username> is now known as <Username id="{{userId}}">{{name}}</Username>.',
   viewOnGitHub: 'View on GitHub',
-  waitingForHost: 'Waiting for host to allow connection',
+  waitingForHost: 'Host is setting up the cozy room. Almost ready!',
   welcome: 'Welcome',
   welcomeToHoneystream: 'Welcome to Honeystream',
-  welcomeMessage1: 'Hi, thanks for trying out Honeystream!',
-
+  welcomeMessage1: 'Hi, thanks for trying out Honeystream!'
 }

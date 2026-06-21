@@ -96,6 +96,7 @@ interface RuntimeSessionShellRouteBoundaryDependencies {
   readonly createPlaybackEngine?: () => SessionRuntimePlaybackEngine
   readonly createRuntime?: (dependencies: SessionRuntimeDependencies) => RuntimeSession
   readonly createTransportPair?: (now: () => number) => RuntimeRouteTransportPair
+  readonly e2eRelayRoomId?: string
   readonly hostUsername?: string
   readonly inviteSecret?: string
   readonly now?: () => number
@@ -130,6 +131,7 @@ interface RuntimeRouteRuntimeHandleInput {
   readonly inviteSecretProvided: boolean
   readonly now: () => number
   readonly roomId: string
+  readonly e2eRelayRoomId?: string
 }
 
 interface LocalFilePlaybackRegistry {
@@ -878,7 +880,7 @@ const createE2ERelayRuntimeHandle = (
 ): RuntimeRouteRuntimeHandle => {
   const inboundDirection = role === 'host' ? 'client-to-host' : 'host-to-client'
   const transport = new E2EWebSocketPeerTransport({
-    roomId: input.roomId,
+    roomId: input.e2eRelayRoomId || input.roomId,
     role,
     localPeerId,
     remotePeerIdHint: role === 'host' ? 'runtime-route-guest' : input.roomId,
@@ -1172,6 +1174,16 @@ const readInitialMediaUrl = (search: string | undefined): string | undefined => 
   const url = new URLSearchParams(search).get('url')
   const trimmedUrl = url ? url.trim() : ''
   return trimmedUrl.length > 0 ? trimmedUrl : undefined
+}
+
+const readE2ERelayRoomId = (search: string | undefined): string | undefined => {
+  if (!isIsolatedRelayE2ERuntime() || typeof search !== 'string' || search.length === 0) {
+    return undefined
+  }
+
+  const relayRoomId = new URLSearchParams(search).get('__e2eRelayRoom')
+  const trimmedRelayRoomId = relayRoomId ? relayRoomId.trim() : ''
+  return /^[a-z0-9._:-]{1,160}$/i.test(trimmedRelayRoomId) ? trimmedRelayRoomId : undefined
 }
 
 const getMediaTitleFromUrl = (mediaUrl: URL): string => {
@@ -1716,11 +1728,11 @@ const RuntimeSessionRouteSurface = ({
             guestLabel="Rabbit-side"
             waitingForGuestLabel="Waiting for rabbit-side guest..."
             stateLabels={{
-              idle: 'Warming up',
-              hosting: 'Hosting room',
-              joining: 'Joining room',
-              connected: 'Synced',
-              ended: 'Room closed'
+              idle: 'Warming up the cozy room',
+              hosting: 'Hosting the watch party',
+              joining: 'Joining the fun',
+              connected: 'Synced and smiling',
+              ended: 'Room tucked away'
             }}
             {...viewModel.sessionShellProps}
           />
@@ -1859,8 +1871,8 @@ const RuntimeSessionRouteSurface = ({
           labels={{
             play: "Let's go",
             pause: 'Pause here',
-            seekBackward: 'Rewind 10s',
-            seekForward: 'Fast forward 10s',
+            seekBackward: 'Rewind 10s together',
+            seekForward: 'Fast forward 10s together',
             rateDown: 'Slower',
             rateUp: 'Faster',
             next: 'Next pick'
@@ -2340,7 +2352,8 @@ export const createRuntimeSessionShellRouteBoundary = (
             inviteSecret: invite.secret,
             inviteSecretProvided,
             now,
-            roomId
+            roomId,
+            e2eRelayRoomId: dependencies.e2eRelayRoomId
           })
           if (disposed || startEpoch !== currentStartEpoch) {
             pendingRuntimeHandle.dispose()
@@ -2403,9 +2416,10 @@ export const RuntimeSessionShellPage = ({ location, match }: RouteComponentProps
   const lobbyId = match.params.lobbyId
   const inviteSecret = useMemo(() => readInviteSecret(location.search), [location.search])
   const initialMediaUrl = useMemo(() => readInitialMediaUrl(location.search), [location.search])
+  const e2eRelayRoomId = useMemo(() => readE2ERelayRoomId(location.search), [location.search])
   const boundary = useMemo(
-    () => createRuntimeSessionShellRouteBoundary(lobbyId, { inviteSecret }),
-    [inviteSecret, lobbyId, location.search]
+    () => createRuntimeSessionShellRouteBoundary(lobbyId, { e2eRelayRoomId, inviteSecret }),
+    [e2eRelayRoomId, inviteSecret, lobbyId, location.search]
   )
 
   useEffect(() => {

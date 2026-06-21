@@ -6,13 +6,13 @@ const DEFAULT_RATE_STEP = 0.25
 const MS_PER_SECOND = 1_000
 const SECONDS_PER_MINUTE = 60
 const DEFAULT_LABELS: Readonly<PlaybackRuntimeControlLabels> = Object.freeze({
-  play: 'Play',
-  pause: 'Pause',
-  seekBackward: 'Rewind 10s',
-  seekForward: 'Fast forward 10s',
-  rateDown: 'Rate -',
-  rateUp: 'Rate +',
-  next: 'Next'
+  play: 'Play together',
+  pause: 'Pause together',
+  seekBackward: 'Rewind 10s together',
+  seekForward: 'Fast forward 10s together',
+  rateDown: 'Slower',
+  rateUp: 'Faster',
+  next: 'Next up'
 })
 const normalizePositiveStep = (value: number | undefined, fallback: number): number => {
   if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {

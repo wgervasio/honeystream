@@ -1,6 +1,7 @@
 export type PeerTransportDisconnectReason =
   | 'manual'
   | 'peer-disconnected'
+  | 'protocol-version-mismatch'
   | 'validation-failed'
   | 'transport-error'
   | 'disposed'

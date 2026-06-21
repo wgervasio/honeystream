@@ -2,13 +2,16 @@ const { promises: fs } = require('fs')
 const childProcess = require('child_process')
 const net = require('net')
 const path = require('path')
-const { getServers, setup: setupServer, teardown: teardownServer } = require('jest-dev-server')
+const { getServers, setup: setupServer } = require('jest-dev-server')
 const { removeServerConfig, writeServerConfig } = require('./server-config')
 
 const DEFAULT_APP_PORT = '8080'
 const DEFAULT_SIGNAL_SERVER_PORT = '27064'
 const MAX_PORT_SEARCH_ATTEMPTS = 100
 const SERVER_LAUNCH_TIMEOUT_MS = Number(process.env.HONEYSTREAM_E2E_SERVER_TIMEOUT_MS || 600e3)
+const SERVER_TEARDOWN_TIMEOUT_MS = Number(
+  process.env.HONEYSTREAM_E2E_SERVER_TEARDOWN_TIMEOUT_MS || 5000
+)
 const useExternalServers = process.env.HONEYSTREAM_E2E_EXTERNAL_SERVER === 'true'
 
 function parsePort(value, label) {
@@ -126,11 +129,15 @@ function destroyChildStream(stream) {
 }
 
 function buildAppBundle() {
-  const result = childProcess.spawnSync(process.execPath, ['scripts/e2e-app-server.js', '--build-only'], {
-    cwd: path.join(__dirname, '../..'),
-    env: process.env,
-    stdio: 'inherit'
-  })
+  const result = childProcess.spawnSync(
+    process.execPath,
+    ['scripts/e2e-app-server.js', '--build-only'],
+    {
+      cwd: path.join(__dirname, '../..'),
+      env: process.env,
+      stdio: 'inherit'
+    }
+  )
 
   if (result.error) {
     throw result.error
@@ -151,17 +158,14 @@ async function setup(jestConfig = {}) {
     process.env.PUBLIC_HOST = config.appHost
     process.env.PORT = config.appPort
     process.env.HONEYSTREAM_E2E_LOCAL_RTC = process.env.HONEYSTREAM_E2E_LOCAL_RTC || 'true'
-    process.env.HONEYSTREAM_E2E_BROADCAST_RTC =
-      process.env.HONEYSTREAM_E2E_BROADCAST_RTC || 'true'
+    process.env.HONEYSTREAM_E2E_BROADCAST_RTC = process.env.HONEYSTREAM_E2E_BROADCAST_RTC || 'true'
     buildAppBundle()
 
     await setupServer([
       {
         command: `cross-env HOST=${config.appHost} PUBLIC_HOST=${config.appHost} PORT=${
           config.appPort
-        } HONEYSTREAM_SIGNAL_SERVER=${
-          config.signalServerUrl
-        } HONEYSTREAM_E2E_LOCAL_RTC=${
+        } HONEYSTREAM_SIGNAL_SERVER=${config.signalServerUrl} HONEYSTREAM_E2E_LOCAL_RTC=${
           process.env.HONEYSTREAM_E2E_LOCAL_RTC
         } HONEYSTREAM_E2E_BROADCAST_RTC=${
           process.env.HONEYSTREAM_E2E_BROADCAST_RTC
@@ -191,6 +195,8 @@ function releaseServerProcessHandles() {
 
   servers.forEach(server => {
     if (!server) return
+    server.removeAllListeners('exit')
+    server.removeAllListeners('error')
     if (server.stderr) {
       server.stderr.unpipe(process.stderr)
     }
@@ -201,10 +207,47 @@ function releaseServerProcessHandles() {
   servers.splice(0, servers.length)
 }
 
+function withTimeout(operation, label, timeoutMs) {
+  let timeout
+  const operationPromise = Promise.resolve()
+    .then(operation)
+    .catch(error => {
+      console.warn(`${label} failed:`, error && error.message ? error.message : error)
+      return undefined
+    })
+  const timeoutPromise = new Promise(resolve => {
+    timeout = setTimeout(() => {
+      console.warn(`${label} did not finish within ${timeoutMs}ms.`)
+      resolve(undefined)
+    }, timeoutMs)
+  })
+
+  return Promise.race([operationPromise, timeoutPromise]).finally(() => {
+    if (timeout) {
+      clearTimeout(timeout)
+    }
+  })
+}
+
+async function destroyServerProcesses() {
+  const servers = getServers().slice()
+  releaseServerProcessHandles()
+
+  await Promise.all(
+    servers.map((server, index) =>
+      withTimeout(
+        () => (server && typeof server.destroy === 'function' ? server.destroy() : undefined),
+        `E2E server ${index + 1} teardown`,
+        SERVER_TEARDOWN_TIMEOUT_MS
+      )
+    )
+  )
+}
+
 async function teardown(jestConfig = {}) {
   if (!useExternalServers) {
     try {
-      await teardownServer()
+      await destroyServerProcesses()
     } finally {
       releaseServerProcessHandles()
       removeServerConfig()

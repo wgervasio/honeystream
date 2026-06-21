@@ -274,9 +274,9 @@ class _GameLobby extends React.Component<PrivateProps, IState> {
   }
 
   private renderRoomStatus(): JSX.Element {
-    const mediaStatus = this.props.currentMedia ? 'Now watching' : 'Ready for the first link'
-    const guestStatus = this.props.isMultiplayer ? 'Rabbit-side synced' : 'Rabbit-side waiting'
-    const centerLabel = this.props.isMultiplayer ? 'Together' : 'Invite buddy'
+    const mediaStatus = this.props.currentMedia ? 'Now enjoying' : 'Ready for the first cozy link'
+    const guestStatus = this.props.isMultiplayer ? 'Rabbit-side in sync' : 'Rabbit-side warming up'
+    const centerLabel = this.props.isMultiplayer ? 'Sweet sync' : 'Invite buddy'
 
     return (
       <div className={styles.roomStatus} aria-label="Cozy room status">
