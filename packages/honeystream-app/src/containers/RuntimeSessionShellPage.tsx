@@ -570,6 +570,12 @@ const BROWSER_SYNC_ASSURANCE_ITEMS = [
       `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}-path two-browser matrix.`
   },
   {
+    id: 'mixed-site-handoff',
+    label: 'YouTube to any-site hop',
+    detail:
+      'One connected room tests a YouTube start, a generic website next, both-seat controls, and zero lost bytes before merge.'
+  },
+  {
     id: 'control-byte-budget',
     label: '0B loss lane',
     detail:
