@@ -399,10 +399,11 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('Browser sync receipt')
     expect(html).toContain('Waiting for two seats')
     expect(html).toContain('id="runtime_happy_sync_seal"')
+    expect(html).toContain('data-browser-path-coverage="all"')
     expect(html).toContain('data-seal-state="warming"')
     expect(html).toContain('Happy sync warming')
     expect(html).toContain(
-      'Waiting for the rabbit-side seat, connected transport, and heartbeat clock sync'
+      `Waiting for rabbit-side, connected transport, heartbeat clock sync, and all ${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} website paths`
     )
     expect(html).toContain('Two browsers, one cozy lane')
     expect(html).toContain('0B control loss')
