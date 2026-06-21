@@ -319,6 +319,11 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('>Play</b>')
     expect(html).toContain('data-streaming-proof="byte-loss"')
     expect(html).toContain('data-byte-loss-rate="0"')
+    expect(html).toContain('data-lost-control-bytes="0"')
+    expect(html).toContain('data-dropped-control-messages="0"')
+    expect(html).toContain('data-reordered-control-messages="0"')
+    expect(html).toContain('data-sequence-gap-control-messages="0"')
+    expect(html).toContain('data-missing-directional-deliveries="0"')
     expect(html).toContain(
       `data-round-trip-p95-budget-ms="${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}"`
     )
@@ -394,6 +399,9 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('data-guest-seat-state="waiting"')
     expect(html).toContain('data-invite-secret-state="present"')
     expect(html).toContain('data-clock-sync-state="warming"')
+    expect(html).toContain(
+      'data-connection-checklist="invite-secret-join-transport-heartbeat-queue-controls-next"'
+    )
     expect(html).toContain('id="runtime_browser_sync_receipt"')
     expect(html).toContain('data-receipt-state="warming"')
     expect(html).toContain('Browser sync receipt')
@@ -403,7 +411,7 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('data-seal-state="warming"')
     expect(html).toContain('Happy sync warming')
     expect(html).toContain(
-      `Waiting for rabbit-side, connected transport, heartbeat clock sync, and all ${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} website paths`
+      `Waiting for rabbit-side, connected transport, heartbeat clock sync, no dropped controls, and all ${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} website paths`
     )
     expect(html).toContain('Two browsers, one cozy lane')
     expect(html).toContain('0B control loss')
@@ -411,7 +419,9 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('id="runtime_happy_path_assurance"')
     expect(html).toContain('data-connection-flow="invite-join-queue-controls-next"')
     expect(html).toContain('Happy path assurance')
-    expect(html).toContain('Waiting for both browsers to finish the cozy connection checklist')
+    expect(html).toContain(
+      'Waiting for both browsers to finish the cozy connection checklist with zero dropped or reordered controls'
+    )
     expect(html).toContain('Invite to sync')
     expect(html).toContain(
       'Private secret, rabbit join, connected transport, and heartbeat clock check must all turn green'
@@ -421,7 +431,7 @@ describe('RuntimeSessionShellPage', () => {
       'YouTube watch, mobile, music, nocookie, and generic watch pages stay in the'
     )
     expect(html).toContain('0B loss lane')
-    expect(html).toContain('Every control burst must keep 0B lost')
+    expect(html).toContain('Every control burst must keep 0B lost, 0 dropped, 0 skipped')
     expect(html).toContain('Happy handoff')
     expect(html).toContain(
       'Queue, pause, resume, seek, rate, and next are exercised from both seats before merge'

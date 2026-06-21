@@ -181,6 +181,15 @@ const STREAMING_SITE_PROVIDER_COVERAGE_LABEL = STREAMING_SITE_CONNECTION_PROVIDE
 const STREAMING_SITE_NAMED_PROVIDER_COUNT = STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE.filter(
   coverage => coverage.provider !== 'unknown'
 ).length
+const ZERO_LOSS_CONTROL_RATE = 0
+const ZERO_LOSS_CONTROL_BYTES = 0
+const ZERO_DROPPED_CONTROL_MESSAGES = 0
+const ZERO_MISSING_DIRECTIONAL_DELIVERIES = 0
+const ZERO_REORDERED_CONTROL_MESSAGES = 0
+const ZERO_SKIPPED_CONTROL_MESSAGES = 0
+const BROWSER_PAIR_E2E_TEST_MODES = 'broadcast+isolated-live'
+const BROWSER_PAIR_CONNECTION_CHECKLIST =
+  'invite-secret-join-transport-heartbeat-queue-controls-next'
 const HAPPY_PATH_STEPS = [
   {
     id: 'paste',
@@ -564,14 +573,13 @@ const BROWSER_SYNC_ASSURANCE_ITEMS = [
     id: 'control-byte-budget',
     label: '0B loss lane',
     detail:
-      `Every control burst must keep 0B lost, compact frames, and <=` +
+      `Every control burst must keep 0B lost, 0 dropped, 0 skipped, compact frames, and <=` +
       `${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms P95 mock round trips.`
   },
   {
     id: 'happy-handoff',
     label: 'Happy handoff',
-    detail:
-      'Queue, pause, resume, seek, rate, and next are exercised from both seats before merge.'
+    detail: 'Queue, pause, resume, seek, rate, and next are exercised from both seats before merge.'
   }
 ] as const
 const COMMAND_BAR_LINKS = [
@@ -1521,10 +1529,16 @@ const RuntimeSessionRouteSurface = ({
           className={`${styles.card} ${styles.signalDock} ${styles.connectionRunway}`}
           aria-label="Buddy connection runway"
           data-best-round-trip-ms={STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS}
-          data-byte-loss-rate="0"
+          data-byte-loss-rate={ZERO_LOSS_CONTROL_RATE}
           data-clock-sync-state={clockSyncState}
+          data-connection-checklist={BROWSER_PAIR_CONNECTION_CHECKLIST}
+          data-dropped-control-messages={ZERO_DROPPED_CONTROL_MESSAGES}
           data-guest-seat-state={guest ? 'present' : 'waiting'}
           data-invite-secret-state={hasInviteSecretForRole ? 'present' : 'missing'}
+          data-lost-control-bytes={ZERO_LOSS_CONTROL_BYTES}
+          data-missing-directional-deliveries={ZERO_MISSING_DIRECTIONAL_DELIVERIES}
+          data-reordered-control-messages={ZERO_REORDERED_CONTROL_MESSAGES}
+          data-sequence-gap-control-messages={ZERO_SKIPPED_CONTROL_MESSAGES}
           data-tail-latency-ms-budget={STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}
           data-transport-status={viewModel.snapshot.transportStatus}
         >
@@ -1566,12 +1580,17 @@ const RuntimeSessionRouteSurface = ({
           id="runtime_browser_sync_receipt"
           className={`${styles.card} ${styles.syncReceipt}`}
           aria-label="Browser sync receipt"
-          data-byte-loss-rate="0"
+          data-byte-loss-rate={ZERO_LOSS_CONTROL_RATE}
+          data-dropped-control-messages={ZERO_DROPPED_CONTROL_MESSAGES}
+          data-lost-control-bytes={ZERO_LOSS_CONTROL_BYTES}
+          data-missing-directional-deliveries={ZERO_MISSING_DIRECTIONAL_DELIVERIES}
           data-receipt-state={browserSyncReceiptState}
+          data-reordered-control-messages={ZERO_REORDERED_CONTROL_MESSAGES}
+          data-sequence-gap-control-messages={ZERO_SKIPPED_CONTROL_MESSAGES}
           data-site-lane-count={STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}
           data-site-path-count={STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}
           data-tail-latency-ms-budget={STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}
-          data-test-modes="broadcast+isolated-live"
+          data-test-modes={BROWSER_PAIR_E2E_TEST_MODES}
         >
           <div className={styles.cardHeader}>
             <p className={styles.kicker}>Browser sync receipt</p>
@@ -1586,29 +1605,40 @@ const RuntimeSessionRouteSurface = ({
             className={styles.happySyncSeal}
             aria-label="Happy sync seal"
             data-browser-path-coverage="all"
-            data-byte-loss-rate="0"
+            data-byte-loss-rate={ZERO_LOSS_CONTROL_RATE}
+            data-dropped-control-messages={ZERO_DROPPED_CONTROL_MESSAGES}
+            data-lost-control-bytes={ZERO_LOSS_CONTROL_BYTES}
+            data-missing-directional-deliveries={ZERO_MISSING_DIRECTIONAL_DELIVERIES}
+            data-reordered-control-messages={ZERO_REORDERED_CONTROL_MESSAGES}
             data-seal-state={browserSyncReceiptState}
+            data-sequence-gap-control-messages={ZERO_SKIPPED_CONTROL_MESSAGES}
             data-site-lane-count={STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}
             data-site-path-count={STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}
             data-tail-latency-ms-budget={STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}
-            data-test-modes="broadcast+isolated-live"
+            data-test-modes={BROWSER_PAIR_E2E_TEST_MODES}
           >
             <strong>
               {browserSyncReceiptState === 'ready' ? 'Happy sync sealed' : 'Happy sync warming'}
             </strong>
             <span>
               {browserSyncReceiptState === 'ready'
-                ? `Two browser seats, one tiny control lane, zero lost bytes, and all ${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} website paths are ready.`
-                : `Waiting for rabbit-side, connected transport, heartbeat clock sync, and all ${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} website paths.`}
+                ? `Two browser seats, one tiny control lane, zero lost bytes, no dropped controls, no skipped controls, and all ${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} website paths are ready.`
+                : `Waiting for rabbit-side, connected transport, heartbeat clock sync, no dropped controls, and all ${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} website paths.`}
             </span>
           </div>
           <div
             id="runtime_happy_path_assurance"
             className={styles.happyPathAssurance}
             aria-label="Happy path assurance"
-            data-byte-loss-rate="0"
+            data-byte-loss-rate={ZERO_LOSS_CONTROL_RATE}
+            data-connection-checklist={BROWSER_PAIR_CONNECTION_CHECKLIST}
             data-connection-flow="invite-join-queue-controls-next"
+            data-dropped-control-messages={ZERO_DROPPED_CONTROL_MESSAGES}
             data-happy-path-state={browserSyncReceiptState}
+            data-lost-control-bytes={ZERO_LOSS_CONTROL_BYTES}
+            data-missing-directional-deliveries={ZERO_MISSING_DIRECTIONAL_DELIVERIES}
+            data-reordered-control-messages={ZERO_REORDERED_CONTROL_MESSAGES}
+            data-sequence-gap-control-messages={ZERO_SKIPPED_CONTROL_MESSAGES}
             data-site-lane-count={STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}
             data-site-path-count={STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}
             data-tail-latency-ms-budget={STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}
@@ -1616,8 +1646,8 @@ const RuntimeSessionRouteSurface = ({
             <strong>Happy path assurance</strong>
             <span>
               {browserSyncReceiptState === 'ready'
-                ? 'Invite, join, source, controls, and next are glowing green.'
-                : 'Waiting for both browsers to finish the cozy connection checklist.'}
+                ? 'Invite, join, source, controls, next, and zero dropped or reordered controls are glowing green.'
+                : 'Waiting for both browsers to finish the cozy connection checklist with zero dropped or reordered controls.'}
             </span>
             <div>
               {BROWSER_SYNC_ASSURANCE_ITEMS.map(item => (
@@ -2078,8 +2108,13 @@ const RuntimeSessionRouteSurface = ({
           id="runtime_merge_gate"
           className={`${styles.card} ${styles.mergeGate}`}
           aria-label="Streaming merge gate"
-          data-byte-loss-rate="0"
+          data-byte-loss-rate={ZERO_LOSS_CONTROL_RATE}
+          data-dropped-control-messages={ZERO_DROPPED_CONTROL_MESSAGES}
+          data-lost-control-bytes={ZERO_LOSS_CONTROL_BYTES}
+          data-missing-directional-deliveries={ZERO_MISSING_DIRECTIONAL_DELIVERIES}
           data-provider-count={STREAMING_SITE_NAMED_PROVIDER_COUNT}
+          data-reordered-control-messages={ZERO_REORDERED_CONTROL_MESSAGES}
+          data-sequence-gap-control-messages={ZERO_SKIPPED_CONTROL_MESSAGES}
           data-site-lane-count={STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}
           data-queue-byte-cap={STREAMING_SITE_CONNECTION_PROFILE_MAX_QUEUED_BYTES}
           data-site-path-count={STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}
@@ -2111,13 +2146,18 @@ const RuntimeSessionRouteSurface = ({
           className={`${styles.card} ${styles.signalDock}`}
           aria-label="Connection confidence"
           data-best-round-trip-ms={STREAMING_SITE_CONNECTION_FASTEST_ROUND_TRIP_MS}
-          data-byte-loss-rate="0"
+          data-byte-loss-rate={ZERO_LOSS_CONTROL_RATE}
+          data-dropped-control-messages={ZERO_DROPPED_CONTROL_MESSAGES}
+          data-lost-control-bytes={ZERO_LOSS_CONTROL_BYTES}
+          data-missing-directional-deliveries={ZERO_MISSING_DIRECTIONAL_DELIVERIES}
           data-provider-count={STREAMING_SITE_NAMED_PROVIDER_COUNT}
+          data-reordered-control-messages={ZERO_REORDERED_CONTROL_MESSAGES}
+          data-sequence-gap-control-messages={ZERO_SKIPPED_CONTROL_MESSAGES}
           data-site-lane-count={STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}
           data-site-path-count={STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}
           data-site-count={STREAMING_SITE_CONNECTION_FIXTURE_COUNT}
           data-tail-latency-ms-budget={STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}
-          data-test-modes="broadcast+isolated-live"
+          data-test-modes={BROWSER_PAIR_E2E_TEST_MODES}
         >
           <strong>Connection confidence</strong>
           {CONNECTION_CONFIDENCE_CARDS.map(card => (

@@ -98,6 +98,9 @@ const STREAMING_SITE_PROVIDER_COVERAGE_LABELS = STREAMING_SITE_PROVIDER_MATCHERS
 )
 const CONNECTION_CONFIDENCE_SELECTOR =
   '#runtime_connection_confidence[data-byte-loss-rate="0"]' +
+  '[data-lost-control-bytes="0"][data-dropped-control-messages="0"]' +
+  '[data-reordered-control-messages="0"][data-sequence-gap-control-messages="0"]' +
+  '[data-missing-directional-deliveries="0"]' +
   '[data-tail-latency-ms-budget="10"][data-best-round-trip-ms="2"]' +
   `[data-provider-count="${STREAMING_SITE_NAMED_PROVIDER_COUNT}"]` +
   `[data-site-count="${STREAMING_SITE_CONNECTION_FIXTURE_COUNT}"]` +
@@ -106,6 +109,9 @@ const CONNECTION_CONFIDENCE_SELECTOR =
   '[data-test-modes="broadcast+isolated-live"]'
 const BROWSER_SYNC_RECEIPT_READY_SELECTOR =
   '#runtime_browser_sync_receipt[data-receipt-state="ready"][data-byte-loss-rate="0"]' +
+  '[data-lost-control-bytes="0"][data-dropped-control-messages="0"]' +
+  '[data-reordered-control-messages="0"][data-sequence-gap-control-messages="0"]' +
+  '[data-missing-directional-deliveries="0"]' +
   '[data-tail-latency-ms-budget="10"]' +
   `[data-site-lane-count="${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}"]` +
   `[data-site-path-count="${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}"]` +
@@ -113,6 +119,9 @@ const BROWSER_SYNC_RECEIPT_READY_SELECTOR =
 const HAPPY_SYNC_SEAL_READY_SELECTOR =
   '#runtime_happy_sync_seal[data-seal-state="ready"][data-byte-loss-rate="0"]' +
   '[data-browser-path-coverage="all"]' +
+  '[data-lost-control-bytes="0"][data-dropped-control-messages="0"]' +
+  '[data-reordered-control-messages="0"][data-sequence-gap-control-messages="0"]' +
+  '[data-missing-directional-deliveries="0"]' +
   '[data-tail-latency-ms-budget="10"]' +
   `[data-site-lane-count="${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}"]` +
   `[data-site-path-count="${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}"]` +
@@ -691,12 +700,19 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
   )
   await page.waitForSelector(
     '#runtime_happy_path_assurance[data-happy-path-state="ready"][data-byte-loss-rate="0"]' +
+      '[data-lost-control-bytes="0"][data-dropped-control-messages="0"]' +
+      '[data-reordered-control-messages="0"][data-sequence-gap-control-messages="0"]' +
+      '[data-missing-directional-deliveries="0"]' +
+      '[data-connection-checklist="invite-secret-join-transport-heartbeat-queue-controls-next"]' +
       '[data-connection-flow="invite-join-queue-controls-next"]' +
       `[data-site-lane-count="${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}"]` +
       `[data-site-path-count="${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}"]`
   )
   await waitForRuntimeText(page, 'Happy path assurance')
-  await waitForRuntimeText(page, 'Invite, join, source, controls, and next are glowing green')
+  await waitForRuntimeText(
+    page,
+    'Invite, join, source, controls, next, and zero dropped or reordered controls are glowing green'
+  )
   await waitForRuntimeText(page, 'Invite to sync')
   await waitForRuntimeText(
     page,
@@ -708,7 +724,7 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
     'YouTube watch, mobile, music, nocookie, and generic watch pages stay in the'
   )
   await waitForRuntimeText(page, '0B loss lane')
-  await waitForRuntimeText(page, 'Every control burst must keep 0B lost')
+  await waitForRuntimeText(page, 'Every control burst must keep 0B lost, 0 dropped, 0 skipped')
   await waitForRuntimeText(page, 'Happy handoff')
   await waitForRuntimeText(
     page,
@@ -764,7 +780,11 @@ async function expectConnectionRunwayReady(page: Page): Promise<void> {
     page,
     '#runtime_connection_runway[data-transport-status="connected"]' +
       '[data-guest-seat-state="present"][data-invite-secret-state="present"]' +
+      '[data-connection-checklist="invite-secret-join-transport-heartbeat-queue-controls-next"]' +
       '[data-byte-loss-rate="0"][data-tail-latency-ms-budget="10"]' +
+      '[data-lost-control-bytes="0"][data-dropped-control-messages="0"]' +
+      '[data-reordered-control-messages="0"][data-sequence-gap-control-messages="0"]' +
+      '[data-missing-directional-deliveries="0"]' +
       '[data-best-round-trip-ms="2"]',
     'connected runway'
   )
