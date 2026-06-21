@@ -217,7 +217,14 @@ export const STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES: readonly StreamingSiteBrow
       'tv.apple.com/us/movie/honeystream-test/umc.cmc.honeystream',
       'tv.apple.com page'
     ),
-    genericSource('www.peacocktv.com/watch/playback/honeystream-test', 'www.peacocktv.com page')
+    genericSource('www.peacocktv.com/watch/playback/honeystream-test', 'www.peacocktv.com page'),
+    genericSource('www.max.com/watch/movie/honeystream-test', 'www.max.com page'),
+    genericSource(
+      'www.paramountplus.com/movies/video/honeystream-test',
+      'www.paramountplus.com page'
+    ),
+    genericSource('therokuchannel.roku.com/watch/honeystream-test', 'therokuchannel.roku.com page'),
+    genericSource('www.kanopy.com/en/product/honeystream-test', 'www.kanopy.com page')
   ]
 )
 

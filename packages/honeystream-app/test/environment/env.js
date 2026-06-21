@@ -152,7 +152,13 @@ function withTimeout(operation, label, timeoutMs) {
 }
 
 function closeBrowserProcess(browserProcess) {
-  if (!browserProcess || !browserProcess.pid || browserProcess.killed) {
+  if (
+    !browserProcess ||
+    !browserProcess.pid ||
+    browserProcess.killed ||
+    (browserProcess.exitCode !== null && typeof browserProcess.exitCode !== 'undefined') ||
+    browserProcess.signalCode
+  ) {
     return
   }
 
@@ -180,6 +186,7 @@ async function closeBrowser(browser) {
 
   const browserProcess = typeof browser.process === 'function' ? browser.process() : undefined
   if (browserProcess) {
+    await closeResource('Playwright browser close', browser)
     closeBrowserProcess(browserProcess)
     return
   }

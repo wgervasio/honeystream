@@ -88,6 +88,26 @@ export const STREAMING_SITE_GENERIC_FIXTURES: readonly StreamingSiteConnectionFi
       id: 'generic-peacock-watch',
       source: 'https://www.peacocktv.com/watch/playback/honeystream-test',
       title: 'Peacock generic watch page'
+    },
+    {
+      id: 'generic-max-title',
+      source: 'https://www.max.com/watch/movie/honeystream-test',
+      title: 'Max generic movie page'
+    },
+    {
+      id: 'generic-paramountplus-video',
+      source: 'https://www.paramountplus.com/movies/video/honeystream-test',
+      title: 'Paramount+ generic movie page'
+    },
+    {
+      id: 'generic-roku-channel-watch',
+      source: 'https://therokuchannel.roku.com/watch/honeystream-test',
+      title: 'Roku Channel generic watch page'
+    },
+    {
+      id: 'generic-kanopy-product',
+      source: 'https://www.kanopy.com/en/product/honeystream-test',
+      title: 'Kanopy generic product page'
     }
   ]
 )
