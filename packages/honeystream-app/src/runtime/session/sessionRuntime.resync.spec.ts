@@ -6,7 +6,8 @@ import {
   ClientToHostEnvelope,
   HostToClientEnvelope,
   PROTOCOL_VERSION,
-  ProtocolError
+  ProtocolError,
+  SessionSnapshot
 } from 'protocol/types'
 import { parseWireEnvelope } from 'protocol'
 import { TransportMessageValidator } from 'transport/contracts'
@@ -59,11 +60,6 @@ describe('runtime/session resync and protocol recovery', () => {
       guestInboundValidator: acceptsUnknownMessage,
       now: () => nowMs
     })
-    const hostRuntime = createSessionRuntime({
-      transport: pair.host,
-      playback: new FakePlaybackEngine(),
-      now: () => nowMs
-    })
     const guestRuntime = createSessionRuntime({
       transport: pair.guest,
       playback: new FakePlaybackEngine(),
@@ -80,15 +76,42 @@ describe('runtime/session resync and protocol recovery', () => {
     })
 
     try {
-      await hostRuntime.startHostSession({
-        roomId: 'resync-room',
-        hostUsername: 'Host',
-        inviteSecret: 'invite-secret'
-      })
       await guestRuntime.startGuestSession({
         roomId: 'resync-room',
         username: 'Guest',
         inviteSecret: 'invite-secret'
+      })
+      await flushRuntime()
+
+      const seedSnapshot: SessionSnapshot = {
+        roomId: 'resync-room',
+        status: 'connected',
+        participants: {
+          host: { peerId: 'host', username: 'Host', role: 'host' },
+          guest: { peerId: 'guest', username: 'Guest', role: 'guest' }
+        },
+        queue: [],
+        playback: {
+          state: 'idle',
+          positionMs: 0,
+          updatedAtHostMs: nowMs,
+          rate: 1
+        },
+        eventCursor: 0
+      }
+      pair.host.send({
+        seq: 1,
+        sentAtMs: nowMs,
+        message: {
+          version: PROTOCOL_VERSION,
+          direction: 'host-to-client',
+          seq: 1,
+          sentAtMs: nowMs,
+          event: {
+            type: 'snapshot',
+            snapshot: seedSnapshot
+          }
+        }
       })
       await flushRuntime()
 
@@ -137,18 +160,32 @@ describe('runtime/session resync and protocol recovery', () => {
         expect.arrayContaining([expect.objectContaining({ code: 'invalidSequence' })])
       )
 
-      const hostSnapshot = hostRuntime.getSnapshot().session
-      if (!hostSnapshot) {
-        throw new Error('Expected host snapshot for resync repair.')
-      }
+      nowMs += 999
+      pair.host.send({
+        seq: 11,
+        sentAtMs: nowMs,
+        message: { ...skippedHostEvent, seq: 11, sentAtMs: nowMs }
+      })
+      await flushRuntime()
+      expect(snapshotRequestTimes).toEqual([10000, 10751])
+
+      nowMs += 1
+      pair.host.send({
+        seq: 12,
+        sentAtMs: nowMs,
+        message: { ...skippedHostEvent, seq: 12, sentAtMs: nowMs }
+      })
+      await flushRuntime()
+      expect(snapshotRequestTimes).toEqual([10000, 10751, 11751])
+
       const repairSnapshot: HostToClientEnvelope = {
         version: PROTOCOL_VERSION,
         direction: 'host-to-client',
-        seq: 10,
+        seq: 2,
         sentAtMs: nowMs,
         event: {
           type: 'snapshot',
-          snapshot: hostSnapshot
+          snapshot: seedSnapshot
         }
       }
       pair.host.send({
@@ -162,9 +199,16 @@ describe('runtime/session resync and protocol recovery', () => {
         roomId: 'resync-room',
         status: 'connected'
       })
+      nowMs += 1
+      pair.host.send({
+        seq: 5,
+        sentAtMs: nowMs,
+        message: { ...skippedHostEvent, seq: 5, sentAtMs: nowMs }
+      })
+      await flushRuntime()
+      expect(snapshotRequestTimes).toEqual([10000, 10751, 11751, 11752])
     } finally {
       unsubscribeHostProbe()
-      hostRuntime.dispose()
       guestRuntime.dispose()
     }
   })
@@ -298,10 +342,12 @@ describe('runtime/session resync and protocol recovery', () => {
         expect.arrayContaining([expect.objectContaining({ code: 'unsupportedVersion' })])
       )
       expect(guestRuntime.getSnapshot().runtimeErrors).toEqual(
-        expect.arrayContaining([
-          'Protocol version mismatch. Reload the room to reconnect safely.'
-        ])
+        expect.arrayContaining(['Protocol version mismatch. Reload the room to reconnect safely.'])
       )
+      expect(guestRuntime.getSnapshot().transportState).toMatchObject({
+        status: 'disconnected',
+        reason: 'protocol-version-mismatch'
+      })
     } finally {
       hostRuntime.dispose()
       guestRuntime.dispose()

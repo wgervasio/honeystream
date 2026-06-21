@@ -59,6 +59,7 @@ const DEFAULT_DIAGNOSTICS_CAP = 64
 const DEFAULT_RUNTIME_ERROR_CAP = 32
 const DEFAULT_MEDIA_CACHE_CAP = 32
 const DEFAULT_SNAPSHOT_REQUEST_COOLDOWN_MS = 500
+const DEFAULT_SNAPSHOT_REQUEST_MAX_BACKOFF_MS = 4000
 const DEFAULT_CLOCK_SYNC_SAMPLE_CAP = 12
 const CLOCK_SYNC_BEST_SAMPLE_COUNT = 5
 const CLOCK_SYNC_MAX_OFFSET_STEP_MS = 100
@@ -139,6 +140,14 @@ const selectStableClockOffset = (samples: readonly ClockSyncSample[]): number =>
   return median(bestSamples.map(sample => sample.estimatedHostOffsetMs))
 }
 
+const getSnapshotRequestCooldownMs = (resyncAttempt: number): number => {
+  const exponent = Math.max(0, resyncAttempt - 1)
+  return Math.min(
+    DEFAULT_SNAPSHOT_REQUEST_MAX_BACKOFF_MS,
+    DEFAULT_SNAPSHOT_REQUEST_COOLDOWN_MS * Math.pow(2, exponent)
+  )
+}
+
 export class DefaultSessionRuntime implements SessionRuntime {
   private readonly transport: SessionRuntimeDependencies['transport']
   private readonly playback: SessionRuntimeDependencies['playback']
@@ -168,6 +177,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
   private sequence = 0
   private expectedInboundSeq: number | undefined
   private lastGuestSnapshotRequestAtMs: number | undefined
+  private guestSnapshotResyncAttempt = 0
   private disposed = false
   private inboundQueue: Promise<void> = Promise.resolve()
   private heartbeatTimer: ReturnType<typeof setInterval> | undefined
@@ -224,6 +234,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
     this.eventCursor = 0
     this.expectedInboundSeq = undefined
     this.lastGuestSnapshotRequestAtMs = undefined
+    this.guestSnapshotResyncAttempt = 0
     this.hostState = createSessionState({
       roomId: input.roomId,
       hostId: this.transport.localPeerId,
@@ -250,6 +261,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
     this.expectedGuestRoomId = input.roomId
     this.expectedInboundSeq = undefined
     this.lastGuestSnapshotRequestAtMs = undefined
+    this.guestSnapshotResyncAttempt = 0
     this.updateProjection()
 
     await this.transport.connect()
@@ -525,6 +537,8 @@ export class DefaultSessionRuntime implements SessionRuntime {
       this.recordProtocolDiagnostic(event.error)
       if (event.error.code === 'unsupportedVersion') {
         this.recordRuntimeError('Protocol version mismatch. Reload the room to reconnect safely.')
+        this.stopHeartbeatLoop()
+        this.transport.disconnect('protocol-version-mismatch')
       }
     } else if (event.type === 'systemError') {
       this.recordRuntimeError(`[host:${event.errorCode}] ${event.message}`)
@@ -539,6 +553,10 @@ export class DefaultSessionRuntime implements SessionRuntime {
         }".`
       )
       return
+    }
+
+    if (event.type === 'snapshot') {
+      this.resetGuestSnapshotResync()
     }
 
     if (event.type === 'mediaQueued') {
@@ -587,9 +605,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
     }
   }
 
-  private async applyPlaybackDesiredState(
-    desiredState: PlaybackEngineDesiredState
-  ): Promise<void> {
+  private async applyPlaybackDesiredState(desiredState: PlaybackEngineDesiredState): Promise<void> {
     try {
       const result = await this.playback.applyDesiredState(desiredState)
       this.playbackAdapterKind = result.adapterKind
@@ -619,14 +635,16 @@ export class DefaultSessionRuntime implements SessionRuntime {
     if (this.transport.getState().status !== 'connected') return
     const nowMs =
       typeof notBeforeMs === 'number' ? this.runtimeTimeAtOrAfter(notBeforeMs) : this.now()
-    if (
-      reason === 'resync' &&
-      typeof this.lastGuestSnapshotRequestAtMs === 'number' &&
-      nowMs - this.lastGuestSnapshotRequestAtMs < DEFAULT_SNAPSHOT_REQUEST_COOLDOWN_MS
-    ) {
-      return
+    if (reason === 'resync' && typeof this.lastGuestSnapshotRequestAtMs === 'number') {
+      const cooldownMs = getSnapshotRequestCooldownMs(this.guestSnapshotResyncAttempt)
+      if (nowMs - this.lastGuestSnapshotRequestAtMs < cooldownMs) {
+        return
+      }
     }
     this.lastGuestSnapshotRequestAtMs = nowMs
+    if (reason === 'resync') {
+      this.guestSnapshotResyncAttempt += 1
+    }
 
     this.sendWireEnvelope({
       version: PROTOCOL_VERSION,
@@ -638,6 +656,11 @@ export class DefaultSessionRuntime implements SessionRuntime {
         reason
       }
     })
+  }
+
+  private resetGuestSnapshotResync(): void {
+    this.lastGuestSnapshotRequestAtMs = undefined
+    this.guestSnapshotResyncAttempt = 0
   }
 
   private startHeartbeatLoop(): void {

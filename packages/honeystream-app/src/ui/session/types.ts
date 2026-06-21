@@ -2,21 +2,22 @@ export type SessionViewState = 'idle' | 'hosting' | 'joining' | 'connected' | 'e
 export type SessionViewStateTone = 'warming' | 'waiting' | 'joining' | 'synced' | 'ended'
 
 export const SESSION_VIEW_STATE_LABELS: Readonly<Record<SessionViewState, string>> = Object.freeze({
-  idle: 'Warming up',
-  hosting: 'Hosting room',
-  joining: 'Joining room',
-  connected: 'Synced',
-  ended: 'Room closed'
+  idle: 'Warming up the cozy room',
+  hosting: 'Hosting the watch party',
+  joining: 'Joining the fun',
+  connected: 'Synced and smiling',
+  ended: 'Room tucked away'
 })
 
-export const SESSION_VIEW_STATE_TONES: Readonly<Record<SessionViewState, SessionViewStateTone>> =
-  Object.freeze({
-    idle: 'warming',
-    hosting: 'waiting',
-    joining: 'joining',
-    connected: 'synced',
-    ended: 'ended'
-  })
+export const SESSION_VIEW_STATE_TONES: Readonly<
+  Record<SessionViewState, SessionViewStateTone>
+> = Object.freeze({
+  idle: 'warming',
+  hosting: 'waiting',
+  joining: 'joining',
+  connected: 'synced',
+  ended: 'ended'
+})
 
 export type SessionSystemErrorCode =
   | 'invite-invalid'

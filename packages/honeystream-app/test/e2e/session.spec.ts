@@ -32,6 +32,7 @@ const PLAYBACK_STATE_RETRY_COUNT = 3
 const PLAYBACK_STATE_RETRY_TIMEOUT_MS = USE_BROADCAST_RTC_E2E ? 15000 : 30000
 const QUEUE_STATE_TIMEOUT_MS = 60000
 const RUNTIME_TEXT_TIMEOUT_MS = 30000
+const BROWSER_RESOURCE_CLOSE_TIMEOUT_MS = 5000
 const STREAMING_SITE_BROWSER_PAIR_SESSION_SOURCES = STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES.filter(
   source => source.exerciseControls
 )
@@ -121,6 +122,7 @@ const BROWSER_PAIR_MATRIX_SELECTOR =
   '[data-merge-gate-metric="browser-pair-matrix"]' +
   `[data-merge-gate-value="${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} browser paths"]`
 let runtimeVisitCounter = 0
+let e2eRelayRoomCounter = 0
 
 jest.setTimeout(SESSION_E2E_TIMEOUT_MS)
 
@@ -138,7 +140,8 @@ async function getRuntimeInviteSecret(page: Page): Promise<string> {
 
 async function waitForRuntimeText(page: Page, text: string): Promise<void> {
   try {
-    await page.waitForFunction(
+    await waitForPageStringCondition(
+      page,
       expectedText =>
         Boolean(
           document.body &&
@@ -146,7 +149,8 @@ async function waitForRuntimeText(page: Page, text: string): Promise<void> {
             document.body.textContent.includes(expectedText)
         ),
       text,
-      { timeout: RUNTIME_TEXT_TIMEOUT_MS }
+      RUNTIME_TEXT_TIMEOUT_MS,
+      `runtime text: ${text}`
     )
   } catch (error) {
     if (!isTimeoutError(error)) throw error
@@ -159,7 +163,8 @@ async function waitForRuntimeText(page: Page, text: string): Promise<void> {
 
 async function waitForRuntimeShell(page: Page, label: string): Promise<void> {
   try {
-    await page.waitForFunction(
+    await waitForPageReadyCondition(
+      page,
       () =>
         Boolean(document.querySelector('[data-runtime-session-shell="true"]')) ||
         Boolean(
@@ -168,23 +173,46 @@ async function waitForRuntimeShell(page: Page, label: string): Promise<void> {
             document.body.textContent.includes('Cozy watch room') &&
             document.body.textContent.includes('Room code')
         ),
-      undefined,
-      { timeout: RUNTIME_TEXT_TIMEOUT_MS }
+      RUNTIME_TEXT_TIMEOUT_MS,
+      `runtime shell on ${label}`
     )
   } catch (error) {
     if (!isTimeoutError(error)) throw error
-    const pageState = await page.evaluate(() => ({
-      bodyText: document.body && document.body.textContent ? document.body.textContent : '',
-      href: window.location.href,
-      publicId: window.localStorage.getItem('identity.pub'),
-      welcomed: window.localStorage.getItem('welcomed')
-    }))
+    const pageState = await getRuntimePageState(page)
     throw new Error(
       `Timed out waiting for runtime shell on ${label}. ` +
         `URL: ${pageState.href}. welcomed=${pageState.welcomed || ''}. ` +
         `identity.pub=${pageState.publicId || ''}. ` +
-        `Visible text excerpt: ${pageState.bodyText.replace(/\s+/g, ' ').trim().slice(0, 800)}`
+        `Visible text excerpt: ${pageState.bodyText
+          .replace(/\s+/g, ' ')
+          .trim()
+          .slice(0, 800)}`
     )
+  }
+}
+
+async function getRuntimePageState(
+  page: Page
+): Promise<{
+  readonly bodyText: string
+  readonly href: string
+  readonly publicId: string
+  readonly welcomed: string
+}> {
+  try {
+    return await page.evaluate(() => ({
+      bodyText: document.body && document.body.textContent ? document.body.textContent : '',
+      href: window.location.href,
+      publicId: window.localStorage.getItem('identity.pub') || '',
+      welcomed: window.localStorage.getItem('welcomed') || ''
+    }))
+  } catch (stateError) {
+    return {
+      bodyText: `page state unavailable: ${formatErrorMessage(stateError)}`,
+      href: '',
+      publicId: '',
+      welcomed: ''
+    }
   }
 }
 
@@ -209,6 +237,118 @@ async function getPlaybackRateLabel(page: Page): Promise<string> {
 
 function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+async function waitForBoundedPageOperation(
+  operation: () => Promise<unknown>,
+  timeoutMs: number,
+  label: string
+): Promise<void> {
+  try {
+    await operation()
+  } catch (error) {
+    if (!isTimeoutError(error)) {
+      throw error
+    }
+    throw new Error(`Timed out waiting for ${label} after ${timeoutMs}ms.`)
+  }
+}
+
+async function waitForPageStringCondition(
+  page: Page,
+  condition: (arg: string) => boolean,
+  arg: string,
+  timeoutMs: number,
+  label: string
+): Promise<void> {
+  await waitForBoundedPageOperation(
+    () => page.waitForFunction(condition, arg, { timeout: timeoutMs }),
+    timeoutMs,
+    label
+  )
+}
+
+async function waitForPageNumberCondition(
+  page: Page,
+  condition: (arg: number) => boolean,
+  arg: number,
+  timeoutMs: number,
+  label: string
+): Promise<void> {
+  await waitForBoundedPageOperation(
+    () => page.waitForFunction(condition, arg, { timeout: timeoutMs }),
+    timeoutMs,
+    label
+  )
+}
+
+async function waitForPageReadyCondition(
+  page: Page,
+  condition: () => boolean,
+  timeoutMs: number,
+  label: string
+): Promise<void> {
+  await waitForBoundedPageOperation(
+    () => page.waitForFunction(condition, undefined, { timeout: timeoutMs }),
+    timeoutMs,
+    label
+  )
+}
+
+async function gotoWithBoundedNavigation(
+  page: Page,
+  url: string,
+  timeoutMs: number
+): Promise<void> {
+  await page.goto(url, {
+    ...APP_READY_OPTIONS,
+    timeout: timeoutMs
+  })
+}
+
+type CloseableBrowserResource = {
+  readonly close: () => Promise<void>
+}
+
+type KillableBrowserProcess = {
+  readonly killed?: boolean
+  kill(): void
+}
+
+type BrowserWithProcess = Browser & {
+  process?: () => KillableBrowserProcess | null
+}
+
+async function closeBrowserResource(
+  label: string,
+  resource: CloseableBrowserResource | undefined
+): Promise<void> {
+  if (!resource) return
+
+  let timedOut = false
+  const closePromise = resource.close().catch(error => {
+    if (!timedOut) {
+      console.warn(`${label} close failed:`, error && error.message ? error.message : error)
+    }
+  })
+  const timeoutPromise = delay(BROWSER_RESOURCE_CLOSE_TIMEOUT_MS).then(() => {
+    timedOut = true
+  })
+
+  await Promise.race([closePromise, timeoutPromise])
+}
+
+async function closeBrowserForE2E(browserToClose: Browser | undefined): Promise<void> {
+  if (!browserToClose) return
+
+  const getProcess = (browserToClose as BrowserWithProcess).process
+  const browserProcess = getProcess ? getProcess() : undefined
+  if (browserProcess && !browserProcess.killed) {
+    browserProcess.kill()
+    return
+  }
+
+  await closeBrowserResource('Playwright browser', browserToClose)
 }
 
 async function expectPlaybackPositionsSynced(input: {
@@ -251,7 +391,8 @@ async function waitForPlaybackPositionAtLeast(
   label: string
 ): Promise<void> {
   try {
-    await page.waitForFunction(
+    await waitForPageNumberCondition(
+      page,
       expectedPosition => {
         const positionElement = document.querySelector(
           '#runtime_playback_controls [data-intent="positionMs"]'
@@ -264,7 +405,8 @@ async function waitForPlaybackPositionAtLeast(
         return Number.isFinite(positionMs) && positionMs >= expectedPosition
       },
       expectedPositionMs,
-      { timeout: PLAYBACK_STATE_RETRY_TIMEOUT_MS }
+      PLAYBACK_STATE_RETRY_TIMEOUT_MS,
+      `playback position on ${label}`
     )
   } catch (error) {
     if (!isTimeoutError(error)) throw error
@@ -276,7 +418,9 @@ async function waitForPlaybackPositionAtLeast(
       return {
         playbackState: controls ? controls.getAttribute('data-playback-state') || '' : '',
         positionMs: positionElement ? positionElement.getAttribute('data-position-ms') || '' : '',
-        syncConfident: positionElement ? positionElement.getAttribute('data-sync-confident') || '' : ''
+        syncConfident: positionElement
+          ? positionElement.getAttribute('data-sync-confident') || ''
+          : ''
       }
     })
     throw new Error(
@@ -295,13 +439,15 @@ async function waitForPlaybackState(
 ): Promise<void> {
   const waitTimeout = typeof timeout === 'number' ? timeout : PLAYBACK_STATE_RETRY_TIMEOUT_MS
   try {
-    await page.waitForFunction(
+    await waitForPageStringCondition(
+      page,
       expectedState => {
         const controls = document.querySelector('#runtime_playback_controls')
         return Boolean(controls && controls.getAttribute('data-playback-state') === expectedState)
       },
       state,
-      { timeout: waitTimeout }
+      waitTimeout,
+      `playback state ${state}`
     )
   } catch (error) {
     if (!isTimeoutError(error)) throw error
@@ -314,7 +460,8 @@ async function waitForPlaybackState(
 }
 
 async function waitForPlaybackRateLabel(page: Page, expectedLabel: string): Promise<void> {
-  await page.waitForFunction(
+  await waitForPageStringCondition(
+    page,
     label => {
       const rateElement = document.querySelector(
         '#runtime_playback_controls [data-intent="rateValue"]'
@@ -324,32 +471,32 @@ async function waitForPlaybackRateLabel(page: Page, expectedLabel: string): Prom
       )
     },
     expectedLabel,
-    { timeout: PLAYBACK_STATE_RETRY_TIMEOUT_MS }
+    PLAYBACK_STATE_RETRY_TIMEOUT_MS,
+    `playback rate label ${expectedLabel}`
   )
 }
 
-async function waitForPlaybackRateLabelChange(
-  page: Page,
-  previousLabel: string
-): Promise<string> {
-  await page.waitForFunction(
+async function waitForPlaybackRateLabelChange(page: Page, previousLabel: string): Promise<string> {
+  await waitForPageStringCondition(
+    page,
     label => {
       const rateElement = document.querySelector(
         '#runtime_playback_controls [data-intent="rateValue"]'
       )
-      const nextLabel =
-        rateElement && rateElement.textContent ? rateElement.textContent.trim() : ''
+      const nextLabel = rateElement && rateElement.textContent ? rateElement.textContent.trim() : ''
       return nextLabel.length > 0 && nextLabel !== label
     },
     previousLabel,
-    { timeout: PLAYBACK_STATE_RETRY_TIMEOUT_MS }
+    PLAYBACK_STATE_RETRY_TIMEOUT_MS,
+    `playback rate label change from ${previousLabel}`
   )
 
   return getPlaybackRateLabel(page)
 }
 
 async function waitForCurrentQueueTitle(page: Page, title: string): Promise<void> {
-  await page.waitForFunction(
+  await waitForPageStringCondition(
+    page,
     expectedTitle => {
       const currentTitle = document.querySelector('[data-queue-state="current"] strong')
       return Boolean(
@@ -359,12 +506,14 @@ async function waitForCurrentQueueTitle(page: Page, title: string): Promise<void
       )
     },
     title,
-    { timeout: QUEUE_STATE_TIMEOUT_MS }
+    QUEUE_STATE_TIMEOUT_MS,
+    `current queue title ${title}`
   )
 }
 
 async function waitForQueuedItemTitle(page: Page, title: string): Promise<void> {
-  await page.waitForFunction(
+  await waitForPageStringCondition(
+    page,
     expectedTitle =>
       Array.prototype.some.call(
         document.querySelectorAll('[data-queue-item-id] span:first-child'),
@@ -372,7 +521,8 @@ async function waitForQueuedItemTitle(page: Page, title: string): Promise<void> 
           Boolean(element.textContent && element.textContent.indexOf(expectedTitle) !== -1)
       ),
     title,
-    { timeout: QUEUE_STATE_TIMEOUT_MS }
+    QUEUE_STATE_TIMEOUT_MS,
+    `queued item title ${title}`
   )
 }
 
@@ -383,8 +533,9 @@ async function addRuntimeMediaUrl(page: Page, url: string): Promise<void> {
 }
 
 async function getCurrentQueueMediaId(page: Page): Promise<string> {
-  return page.$eval('[data-queue-state="current"]', element =>
-    element.getAttribute('data-queue-current-id') || ''
+  return page.$eval(
+    '[data-queue-state="current"]',
+    element => element.getAttribute('data-queue-current-id') || ''
   )
 }
 
@@ -394,14 +545,16 @@ async function waitForCurrentQueueMediaIdChange(
   label: string
 ): Promise<string> {
   try {
-    await page.waitForFunction(
+    await waitForPageStringCondition(
+      page,
       mediaId => {
         const current = document.querySelector('[data-queue-state="current"]')
         const nextMediaId = current ? current.getAttribute('data-queue-current-id') || '' : ''
         return nextMediaId.length > 0 && nextMediaId !== mediaId
       },
       previousMediaId,
-      { timeout: QUEUE_STATE_TIMEOUT_MS }
+      QUEUE_STATE_TIMEOUT_MS,
+      `current queue media change on ${label}`
     )
   } catch (error) {
     if (!isTimeoutError(error)) throw error
@@ -560,16 +713,14 @@ async function expectNoRuntimeConnectionAlerts(page: Page): Promise<void> {
   expect(connectionAlerts).toEqual([])
 }
 
-async function waitForAttachedSelector(
-  page: Page,
-  selector: string,
-  label: string
-): Promise<void> {
+async function waitForAttachedSelector(page: Page, selector: string, label: string): Promise<void> {
   try {
-    await page.waitForFunction(
+    await waitForPageStringCondition(
+      page,
       expectedSelector => Boolean(document.querySelector(expectedSelector)),
       selector,
-      { timeout: RUNTIME_TEXT_TIMEOUT_MS }
+      RUNTIME_TEXT_TIMEOUT_MS,
+      label
     )
   } catch (error) {
     if (!isTimeoutError(error)) throw error
@@ -600,7 +751,11 @@ async function expectHealthyTwoBrowserConnection(input: {
   readonly clientPage: Page
   readonly hostPage: Page
 }): Promise<void> {
-  await waitForAttachedSelector(input.hostPage, '[data-session-state-tone="synced"]', 'host sync tone')
+  await waitForAttachedSelector(
+    input.hostPage,
+    '[data-session-state-tone="synced"]',
+    'host sync tone'
+  )
   await waitForAttachedSelector(
     input.clientPage,
     '[data-session-state-tone="synced"]',
@@ -630,7 +785,11 @@ async function expectHealthyTwoBrowserConnection(input: {
     'client receipt'
   )
   await waitForAttachedSelector(input.hostPage, HAPPY_SYNC_SEAL_READY_SELECTOR, 'host sync seal')
-  await waitForAttachedSelector(input.clientPage, HAPPY_SYNC_SEAL_READY_SELECTOR, 'client sync seal')
+  await waitForAttachedSelector(
+    input.clientPage,
+    HAPPY_SYNC_SEAL_READY_SELECTOR,
+    'client sync seal'
+  )
   await waitForStreamingMergeProof(input.hostPage)
   await waitForStreamingMergeProof(input.clientPage)
   await expectNoRuntimeConnectionAlerts(input.hostPage)
@@ -641,7 +800,11 @@ async function expectTwoBrowserConnectionStillHealthy(input: {
   readonly clientPage: Page
   readonly hostPage: Page
 }): Promise<void> {
-  await waitForAttachedSelector(input.hostPage, '[data-session-state-tone="synced"]', 'host sync tone')
+  await waitForAttachedSelector(
+    input.hostPage,
+    '[data-session-state-tone="synced"]',
+    'host sync tone'
+  )
   await waitForAttachedSelector(
     input.clientPage,
     '[data-session-state-tone="synced"]',
@@ -675,19 +838,35 @@ function expectLiveBrowserIsolation(input: {
 
 function isTimeoutError(error: unknown): boolean {
   if (error instanceof Error) {
-    return /timeout/i.test(error.message)
+    return /timeout|timed out/i.test(error.message)
   }
   if (typeof error === 'object' && error !== null && 'message' in error) {
-    return /timeout/i.test(String((error as { readonly message?: unknown }).message))
+    return /timeout|timed out/i.test(String((error as { readonly message?: unknown }).message))
   }
 
   return false
 }
 
+function formatErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message
+  }
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    return String((error as { readonly message?: unknown }).message)
+  }
+
+  return String(error)
+}
+
 async function getBodyTextExcerpt(page: Page): Promise<string> {
-  const bodyText = await page.evaluate(() =>
-    document.body && document.body.textContent ? document.body.textContent : ''
-  )
+  let bodyText = ''
+  try {
+    bodyText = await page.evaluate(() =>
+      document.body && document.body.textContent ? document.body.textContent : ''
+    )
+  } catch (error) {
+    bodyText = `page text unavailable: ${formatErrorMessage(error)}`
+  }
 
   return bodyText
     .replace(/\s+/g, ' ')
@@ -798,33 +977,64 @@ async function exerciseTwoBrowserPlaybackControls(input: {
   })
 }
 
-async function visitRuntimePath(page: Page, path: string): Promise<void> {
-  runtimeVisitCounter += 1
-  const separator = path.indexOf('?') === -1 ? '?' : '&'
-  let navigationTimedOut = false
-  const navigation = page
-    .goto(`${getAppBaseUrl()}/#${path}${separator}__e2eVisit=${runtimeVisitCounter}`, {
-      ...APP_READY_OPTIONS,
-      timeout: RUNTIME_TEXT_TIMEOUT_MS
-    })
-    .catch(error => {
-      if (navigationTimedOut && isTimeoutError(error)) {
-        return null
-      }
-      throw error
-    })
-  const timeout = delay(RUNTIME_TEXT_TIMEOUT_MS).then(() => {
-    navigationTimedOut = true
-    return null
-  })
+const toSafeE2ERelayRoomLabel = (label: string): string =>
+  label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
 
-  await Promise.race([navigation, timeout])
+function createE2ERelayRoomId(roomId: string, label: string): string {
+  e2eRelayRoomCounter += 1
+  return `${roomId}:${e2eRelayRoomCounter}:${toSafeE2ERelayRoomLabel(label)}`
+}
+
+function appendRuntimeQueryParam(path: string, name: string, value: string): string {
+  const separator = path.indexOf('?') === -1 ? '?' : '&'
+  return `${path}${separator}${encodeURIComponent(name)}=${encodeURIComponent(value)}`
+}
+
+async function visitRuntimePath(
+  page: Page,
+  path: string,
+  options?: { readonly e2eRelayRoomId?: string }
+): Promise<void> {
+  runtimeVisitCounter += 1
+  const pathWithRelayRoom =
+    options && options.e2eRelayRoomId
+      ? appendRuntimeQueryParam(path, '__e2eRelayRoom', options.e2eRelayRoomId)
+      : path
+  const separator = pathWithRelayRoom.indexOf('?') === -1 ? '?' : '&'
+  try {
+    await gotoWithBoundedNavigation(
+      page,
+      `${getAppBaseUrl()}/#${pathWithRelayRoom}${separator}__e2eVisit=${runtimeVisitCounter}`,
+      RUNTIME_TEXT_TIMEOUT_MS
+    )
+  } catch (error) {
+    if (!isTimeoutError(error)) throw error
+  }
+}
+
+async function unloadRuntimePage(page: Page, label: string): Promise<void> {
+  try {
+    await gotoWithBoundedNavigation(page, 'about:blank', RUNTIME_TEXT_TIMEOUT_MS)
+  } catch (error) {
+    console.warn(`${label} unload failed:`, formatErrorMessage(error))
+  }
 }
 
 describe('session', () => {
   const hostId = ms.useProfile()
 
   describe('host', () => {
+    beforeEach(async () => {
+      await ms.setProfile('default', page)
+    })
+
+    afterEach(async () => {
+      await unloadRuntimePage(page, 'host page')
+    })
+
     it('should start a session', async () => {
       await ms.visit(`/join/${hostId}`)
       await waitForRuntimeShell(page, 'host start')
@@ -861,7 +1071,7 @@ describe('session', () => {
       await waitForRuntimeText(page, 'Cat checks the source')
       await waitForRuntimeText(page, 'Rabbit gets one hop')
       await waitForRuntimeText(page, 'Tiny sync lane')
-      await waitForRuntimeText(page, 'Hosting room')
+      await waitForRuntimeText(page, 'Hosting the watch party')
       await waitForRuntimeText(page, '0 control bytes lost')
       await waitForRuntimeText(page, `${STREAMING_SITE_CONNECTION_FIXTURE_COUNT} local fixtures`)
       await waitForRuntimeText(page, 'Recovered retries counted')
@@ -1141,8 +1351,8 @@ describe('session', () => {
         await waitForRuntimeShell(guestPage, 'invalid invite guest')
         await waitForRuntimeText(guestPage, 'Invite secret is invalid')
       } finally {
-        await guestPage.close()
-        await guestContext.close()
+        await closeBrowserResource('invalid invite page', guestPage)
+        await closeBrowserResource('invalid invite context', guestContext)
       }
     })
   })
@@ -1168,15 +1378,17 @@ describe('session', () => {
 
     afterEach(async () => {
       try {
-        await clientPage.close()
+        await closeBrowserResource('client page', clientPage)
       } finally {
         try {
           if (clientContext && shouldCloseClientContext) {
-            await clientContext.close()
+            await closeBrowserResource('client context', clientContext)
           }
         } finally {
-          if (clientBrowser) {
-            await clientBrowser.close()
+          try {
+            await closeBrowserForE2E(clientBrowser)
+          } finally {
+            await unloadRuntimePage(page, 'host page')
           }
         }
       }
@@ -1185,12 +1397,13 @@ describe('session', () => {
     it(
       'should require the private invite secret for clients',
       async () => {
-        await ms.visit(`/join/${hostId}`)
+        const e2eRelayRoomId = createE2ERelayRoomId(hostId, 'missing-secret')
+        await visitRuntimePath(page, `/join/${hostId}`, { e2eRelayRoomId })
         const hostPage = page
         await waitForRuntimeShell(hostPage, 'missing-secret host')
 
         await ms.setProfile('clientA', clientPage)
-        await visitRuntimePath(clientPage, `/join/${hostId}`)
+        await visitRuntimePath(clientPage, `/join/${hostId}`, { e2eRelayRoomId })
         await waitForRuntimeShell(clientPage, 'missing-secret client')
         await waitForRuntimeText(clientPage, 'Invite secret is required')
 
@@ -1200,7 +1413,8 @@ describe('session', () => {
     )
 
     it('should mirror guest and host queued media and playback controls', async () => {
-      await ms.visit(`/join/${hostId}`)
+      const e2eRelayRoomId = createE2ERelayRoomId(hostId, 'mirror')
+      await visitRuntimePath(page, `/join/${hostId}`, { e2eRelayRoomId })
       const hostPage = page
       await waitForRuntimeShell(hostPage, 'mirror host')
       const inviteSecret = await getRuntimeInviteSecret(hostPage)
@@ -1208,7 +1422,8 @@ describe('session', () => {
       await ms.setProfile('clientA', clientPage)
       await visitRuntimePath(
         clientPage,
-        `/join/${hostId}?secret=${encodeURIComponent(inviteSecret)}`
+        `/join/${hostId}?secret=${encodeURIComponent(inviteSecret)}`,
+        { e2eRelayRoomId }
       )
       await waitForRuntimeShell(clientPage, 'mirror client')
       await waitForRuntimeText(hostPage, 'Synced')
@@ -1255,11 +1470,7 @@ describe('session', () => {
       const expectedGuestSeekPositionMs =
         (await getPlaybackPositionMs(clientPage)) + SEEK_FORWARD_STEP_MS
       await clientPage.click('#runtime_playback_controls [data-intent="seekForward"]')
-      await waitForPlaybackPositionAtLeast(
-        hostPage,
-        expectedGuestSeekPositionMs,
-        'guest seek host'
-      )
+      await waitForPlaybackPositionAtLeast(hostPage, expectedGuestSeekPositionMs, 'guest seek host')
       await waitForPlaybackPositionAtLeast(
         clientPage,
         expectedGuestSeekPositionMs,
@@ -1276,7 +1487,9 @@ describe('session', () => {
       await waitForRuntimeText(hostPage, 'Media added with https:// filled in')
       await hostPage.waitForSelector('[data-queue-item-id]')
       const previousHostMediaId = await getCurrentQueueMediaId(hostPage)
-      await hostPage.waitForSelector('#runtime_playback_controls [data-intent="next"]:not([disabled])')
+      await hostPage.waitForSelector(
+        '#runtime_playback_controls [data-intent="next"]:not([disabled])'
+      )
       await hostPage.click('#runtime_playback_controls [data-intent="next"]:not([disabled])')
       const nextHostMediaId = await waitForCurrentQueueMediaIdChange(
         hostPage,
@@ -1315,11 +1528,7 @@ describe('session', () => {
       const expectedHostSeekPositionMs =
         (await getPlaybackPositionMs(hostPage)) + SEEK_FORWARD_STEP_MS
       await hostPage.click('#runtime_playback_controls [data-intent="seekForward"]')
-      await waitForPlaybackPositionAtLeast(
-        hostPage,
-        expectedHostSeekPositionMs,
-        'host seek host'
-      )
+      await waitForPlaybackPositionAtLeast(hostPage, expectedHostSeekPositionMs, 'host seek host')
       await waitForPlaybackPositionAtLeast(
         clientPage,
         expectedHostSeekPositionMs,
@@ -1336,7 +1545,8 @@ describe('session', () => {
       it(
         `should sync host and guest browser pages across the ${group.label} streaming-site lane`,
         async () => {
-          await ms.visit(`/join/${hostId}`)
+          const e2eRelayRoomId = createE2ERelayRoomId(hostId, group.label)
+          await visitRuntimePath(page, `/join/${hostId}`, { e2eRelayRoomId })
           const hostPage = page
           await waitForRuntimeShell(hostPage, `${group.label} streaming matrix host`)
           const inviteSecret = await getRuntimeInviteSecret(hostPage)
@@ -1344,7 +1554,8 @@ describe('session', () => {
           await ms.setProfile('clientA', clientPage)
           await visitRuntimePath(
             clientPage,
-            `/join/${hostId}?secret=${encodeURIComponent(inviteSecret)}`
+            `/join/${hostId}?secret=${encodeURIComponent(inviteSecret)}`,
+            { e2eRelayRoomId }
           )
           await waitForRuntimeShell(clientPage, `${group.label} streaming matrix client`)
           await waitForRuntimeText(hostPage, 'Synced')

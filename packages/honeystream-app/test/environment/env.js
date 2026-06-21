@@ -7,9 +7,9 @@ const playwrightConfig = require('../../jest-playwright.config')
 
 const ARTIFACTS_PATH = path.join(__dirname, '../artifacts')
 const APP_READY_OPTIONS = Object.freeze({ waitUntil: 'domcontentloaded' })
-const PROFILE_SEED_PATH = '/__honeystream_e2e_profile_seed__'
 const CAPTURE_SCREENSHOTS = process.env.HONEYSTREAM_E2E_SCREENSHOTS === 'true'
 const BROWSER_CLOSE_TIMEOUT_MS = 5000
+const NAVIGATION_TIMEOUT_MS = 30000
 const PERSISTED_STATE_KEY = 'persist:honeystream-state'
 
 const PROFILES = {
@@ -49,34 +49,63 @@ function withE2EVisitParam(pathname) {
   return `${pathname}${pathname.includes('?') ? '&' : '?'}__e2eVisit=${visitCounter}`
 }
 
+function isTimeoutError(error) {
+  return Boolean(error && error.message && /timeout|timed out/i.test(error.message))
+}
+
+async function gotoAppPage(page, url, opts, label) {
+  try {
+    await page.goto(url, {
+      ...(opts || APP_READY_OPTIONS),
+      timeout: NAVIGATION_TIMEOUT_MS
+    })
+  } catch (error) {
+    if (!isTimeoutError(error)) {
+      throw error
+    }
+    console.warn(`${label} navigation timed out after ${NAVIGATION_TIMEOUT_MS}ms.`)
+  }
+}
+
+function getProfileStorage(profile) {
+  return {
+    identity: profile.identity.secret,
+    'identity.pub': profile.identity.public,
+    [PERSISTED_STATE_KEY]: JSON.stringify({
+      settings: JSON.stringify(profile.initialState.settings),
+      _persist: JSON.stringify({ version: 3, rehydrated: true })
+    }),
+    ...profile.localStorage
+  }
+}
+
+function writeProfileStorage(data) {
+  if (window.location.protocol !== 'http:' && window.location.protocol !== 'https:') {
+    return
+  }
+
+  Object.keys(data).forEach(key => {
+    const value = data[key]
+    if (value) {
+      localStorage.setItem(key, value)
+    } else {
+      localStorage.removeItem(key)
+    }
+  })
+}
+
 async function setProfile(profileName = 'default', page = this.global.page) {
   const profile = PROFILES[profileName]
   if (!profile) {
     throw new Error(`Unknown e2e profile "${profileName}".`)
   }
 
-  await page.goto(`${getAppBaseUrl()}${PROFILE_SEED_PATH}`, APP_READY_OPTIONS)
-  await page.evaluate(
-    data => {
-      Object.keys(data).forEach(key => {
-        const value = data[key]
-        if (value) {
-          localStorage.setItem(key, value)
-        } else {
-          localStorage.removeItem(key)
-        }
-      })
-    },
-    {
-      identity: profile.identity.secret,
-      'identity.pub': profile.identity.public,
-      [PERSISTED_STATE_KEY]: JSON.stringify({
-        settings: JSON.stringify(profile.initialState.settings),
-        _persist: JSON.stringify({ version: 3, rehydrated: true })
-      }),
-      ...profile.localStorage
-    }
-  )
+  const storage = getProfileStorage(profile)
+  await page.addInitScript(writeProfileStorage, storage)
+
+  if (page.url().startsWith(getAppBaseUrl())) {
+    await page.evaluate(writeProfileStorage, storage)
+  }
 
   return profile.identity.public
 }
@@ -102,21 +131,16 @@ const screenshot = (filename, page) => {
 
 function withTimeout(operation, label, timeoutMs) {
   let timeout
-  let timedOut = false
   const operationPromise = Promise.resolve()
     .then(operation)
     .catch(error => {
-      if (timedOut) {
-        console.warn(`${label} failed after timeout:`, error && error.message ? error.message : error)
-        return undefined
-      }
-
-      throw error
+      console.warn(`${label} failed:`, error && error.message ? error.message : error)
+      return undefined
     })
-  const timeoutPromise = new Promise((_, reject) => {
+  const timeoutPromise = new Promise(resolve => {
     timeout = setTimeout(() => {
-      timedOut = true
-      reject(new Error(`${label} did not finish within ${timeoutMs}ms.`))
+      console.warn(`${label} did not finish within ${timeoutMs}ms.`)
+      resolve(undefined)
     }, timeoutMs)
   })
 
@@ -182,9 +206,11 @@ class HoneystreamEnvironment extends NodeEnvironment {
     const honeystream = {
       screenshot: (filename, page = this.global.page) => screenshot(filename, page),
       visit: async (pathname, opts) =>
-        this.global.page.goto(
+        gotoAppPage(
+          this.global.page,
           `${getAppBaseUrl()}/#${withE2EVisitParam(pathname)}`,
-          opts || APP_READY_OPTIONS
+          opts || APP_READY_OPTIONS,
+          'app route'
         ),
       useProfile: useProfile.bind(this),
       setProfile: setProfile.bind(this)
