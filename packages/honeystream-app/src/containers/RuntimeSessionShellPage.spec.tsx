@@ -408,6 +408,26 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('Two browsers, one cozy lane')
     expect(html).toContain('0B control loss')
     expect(html).toContain('YouTube plus any-site matrix')
+    expect(html).toContain('id="runtime_happy_path_assurance"')
+    expect(html).toContain('data-connection-flow="invite-join-queue-controls-next"')
+    expect(html).toContain('Happy path assurance')
+    expect(html).toContain('Waiting for both browsers to finish the cozy connection checklist')
+    expect(html).toContain('Invite to sync')
+    expect(html).toContain(
+      'Private secret, rabbit join, connected transport, and heartbeat clock check must all turn green'
+    )
+    expect(html).toContain('YouTube to any site')
+    expect(html).toContain(
+      'YouTube watch, mobile, music, nocookie, and generic watch pages stay in the'
+    )
+    expect(html).toContain('0B loss lane')
+    expect(html).toContain('Every control burst must keep 0B lost')
+    expect(html).toContain('Happy handoff')
+    expect(html).toContain(
+      'Queue, pause, resume, seek, rate, and next are exercised from both seats before merge'
+    )
+    expect(html).toContain('data-happy-path-assurance="youtube-plus"')
+    expect(html).toContain('data-happy-path-assurance="control-byte-budget"')
     expect(html).toContain(
       'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, Disney+, and Crunchyroll generic hosts'
     )

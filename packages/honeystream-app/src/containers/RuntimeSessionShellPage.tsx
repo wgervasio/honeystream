@@ -546,6 +546,34 @@ const BROWSER_SYNC_RECEIPT_ITEMS = [
       'Invite, join, queue, pause, resume, seek, rate, and next all stay on the zero-loss happy path.'
   }
 ] as const
+const BROWSER_SYNC_ASSURANCE_ITEMS = [
+  {
+    id: 'invite-to-sync',
+    label: 'Invite to sync',
+    detail:
+      'Private secret, rabbit join, connected transport, and heartbeat clock check must all turn green.'
+  },
+  {
+    id: 'youtube-plus',
+    label: 'YouTube to any site',
+    detail:
+      `YouTube watch, mobile, music, nocookie, and generic watch pages stay in the ` +
+      `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}-path two-browser matrix.`
+  },
+  {
+    id: 'control-byte-budget',
+    label: '0B loss lane',
+    detail:
+      `Every control burst must keep 0B lost, compact frames, and <=` +
+      `${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}ms P95 mock round trips.`
+  },
+  {
+    id: 'happy-handoff',
+    label: 'Happy handoff',
+    detail:
+      'Queue, pause, resume, seek, rate, and next are exercised from both seats before merge.'
+  }
+] as const
 const COMMAND_BAR_LINKS = [
   { label: 'Paste source', href: '#runtime-add-media-url' },
   { label: 'Copy invite', href: '#runtime_invite_panel' },
@@ -1573,6 +1601,32 @@ const RuntimeSessionRouteSurface = ({
                 ? `Two browser seats, one tiny control lane, zero lost bytes, and all ${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} website paths are ready.`
                 : `Waiting for rabbit-side, connected transport, heartbeat clock sync, and all ${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} website paths.`}
             </span>
+          </div>
+          <div
+            id="runtime_happy_path_assurance"
+            className={styles.happyPathAssurance}
+            aria-label="Happy path assurance"
+            data-byte-loss-rate="0"
+            data-connection-flow="invite-join-queue-controls-next"
+            data-happy-path-state={browserSyncReceiptState}
+            data-site-lane-count={STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}
+            data-site-path-count={STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}
+            data-tail-latency-ms-budget={STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}
+          >
+            <strong>Happy path assurance</strong>
+            <span>
+              {browserSyncReceiptState === 'ready'
+                ? 'Invite, join, source, controls, and next are glowing green.'
+                : 'Waiting for both browsers to finish the cozy connection checklist.'}
+            </span>
+            <div>
+              {BROWSER_SYNC_ASSURANCE_ITEMS.map(item => (
+                <article key={item.id} data-happy-path-assurance={item.id}>
+                  <b>{item.label}</b>
+                  <p>{item.detail}</p>
+                </article>
+              ))}
+            </div>
           </div>
           <div className={styles.syncReceiptGrid}>
             {BROWSER_SYNC_RECEIPT_ITEMS.map(item => (
