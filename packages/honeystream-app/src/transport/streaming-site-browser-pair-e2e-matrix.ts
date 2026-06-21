@@ -212,7 +212,12 @@ export const STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES: readonly StreamingSiteBrow
     genericSource('www.dailymotion.com/video/xtwo-browser-generic', 'www.dailymotion.com page'),
     genericSource('watch.plex.tv/movie/two-browser-generic', 'watch.plex.tv page'),
     genericSource('www.disneyplus.com/movies/honeystream-test/abc123', 'www.disneyplus.com page'),
-    genericSource('www.crunchyroll.com/watch/honeystream-test', 'www.crunchyroll.com page')
+    genericSource('www.crunchyroll.com/watch/honeystream-test', 'www.crunchyroll.com page'),
+    genericSource(
+      'tv.apple.com/us/movie/honeystream-test/umc.cmc.honeystream',
+      'tv.apple.com page'
+    ),
+    genericSource('www.peacocktv.com/watch/playback/honeystream-test', 'www.peacocktv.com page')
   ]
 )
 

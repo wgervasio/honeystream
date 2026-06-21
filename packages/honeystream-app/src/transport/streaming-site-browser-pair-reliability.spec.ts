@@ -60,7 +60,7 @@ describe('streaming site browser-pair reliability gate', () => {
         { provider: 'animepahe', siteCount: 5 },
         { provider: 'cineby', siteCount: 5 },
         { provider: 'miruro', siteCount: 5 },
-        { provider: 'unknown', siteCount: 15 }
+        { provider: 'unknown', siteCount: 17 }
       ])
     )
     expect(bestProfile.maxCombinedByteLossRate).toBe(0)

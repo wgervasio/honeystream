@@ -686,7 +686,7 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
   await waitForRuntimeText(page, 'Local website load')
   await waitForRuntimeText(
     page,
-    'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, and Plex pages stay generic'
+    'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, Disney+, Crunchyroll, Apple TV+, and Peacock pages stay generic'
   )
   await waitForRuntimeText(
     page,

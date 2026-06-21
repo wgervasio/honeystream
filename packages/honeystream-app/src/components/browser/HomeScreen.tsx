@@ -64,6 +64,36 @@ const siteExamples = [
     label: 'Tubi',
     placeholder: 'Paste the exact Tubi movie page...',
     helper: 'Tubi lane selected. Keep it generic and test the exact page in both browsers.'
+  },
+  {
+    label: 'Dailymotion',
+    placeholder: 'Paste the exact Dailymotion video page...',
+    helper: 'Dailymotion lane selected. Keep it generic and test the exact page in both browsers.'
+  },
+  {
+    label: 'Plex-style pages',
+    placeholder: 'Paste the exact Plex watch page...',
+    helper: 'Plex lane selected. Keep it generic and test the exact page in both browsers.'
+  },
+  {
+    label: 'Disney+',
+    placeholder: 'Paste the exact Disney+ movie page...',
+    helper: 'Disney+ lane selected. Keep it generic and test the exact page in both browsers.'
+  },
+  {
+    label: 'Crunchyroll',
+    placeholder: 'Paste the exact Crunchyroll episode page...',
+    helper: 'Crunchyroll lane selected. Keep it generic and test the exact page in both browsers.'
+  },
+  {
+    label: 'Apple TV+',
+    placeholder: 'Paste the exact Apple TV+ movie page...',
+    helper: 'Apple TV+ lane selected. Keep it generic and test the exact page in both browsers.'
+  },
+  {
+    label: 'Peacock',
+    placeholder: 'Paste the exact Peacock watch page...',
+    helper: 'Peacock lane selected. Keep it generic and test the exact page in both browsers.'
   }
 ]
 

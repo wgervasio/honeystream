@@ -765,6 +765,10 @@ class Home extends Component<IProps, IState> {
             <strong>Tubi</strong>
             <strong>Dailymotion</strong>
             <strong>Plex-style pages</strong>
+            <strong>Disney+</strong>
+            <strong>Crunchyroll</strong>
+            <strong>Apple TV+</strong>
+            <strong>Peacock</strong>
             <strong>direct MP4</strong>
           </div>
 

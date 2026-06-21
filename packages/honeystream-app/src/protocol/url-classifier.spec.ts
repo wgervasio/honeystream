@@ -64,6 +64,8 @@ describe('protocol URL classifier', () => {
       'https://watch.plex.tv/movie/honeystream-test',
       'https://www.disneyplus.com/movies/honeystream-test/abc123',
       'https://www.crunchyroll.com/watch/honeystream-test',
+      'https://tv.apple.com/us/movie/honeystream-test/umc.cmc.honeystream',
+      'https://www.peacocktv.com/watch/playback/honeystream-test',
       'https://www.youtube.com/watch/demo.mp4',
       'https://animepahe.ru/play/demo.m3u8',
       'https://cineby.app/movie/demo.webm',
