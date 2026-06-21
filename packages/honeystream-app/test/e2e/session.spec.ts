@@ -689,6 +689,31 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
     page,
     `all ${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} website paths are ready`
   )
+  await page.waitForSelector(
+    '#runtime_happy_path_assurance[data-happy-path-state="ready"][data-byte-loss-rate="0"]' +
+      '[data-connection-flow="invite-join-queue-controls-next"]' +
+      `[data-site-lane-count="${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}"]` +
+      `[data-site-path-count="${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}"]`
+  )
+  await waitForRuntimeText(page, 'Happy path assurance')
+  await waitForRuntimeText(page, 'Invite, join, source, controls, and next are glowing green')
+  await waitForRuntimeText(page, 'Invite to sync')
+  await waitForRuntimeText(
+    page,
+    'Private secret, rabbit join, connected transport, and heartbeat clock check must all turn green'
+  )
+  await waitForRuntimeText(page, 'YouTube to any site')
+  await waitForRuntimeText(
+    page,
+    'YouTube watch, mobile, music, nocookie, and generic watch pages stay in the'
+  )
+  await waitForRuntimeText(page, '0B loss lane')
+  await waitForRuntimeText(page, 'Every control burst must keep 0B lost')
+  await waitForRuntimeText(page, 'Happy handoff')
+  await waitForRuntimeText(
+    page,
+    'Queue, pause, resume, seek, rate, and next are exercised from both seats before merge'
+  )
   await waitForRuntimeText(page, 'Two browsers synced')
   await waitForRuntimeText(page, 'Two browsers, one cozy lane')
   await waitForRuntimeText(page, '0B control loss')

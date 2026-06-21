@@ -537,6 +537,83 @@
   text-align: right;
 }
 
+.happyPathAssurance {
+  display: grid;
+  grid-template-columns: minmax(10rem, 0.75fr) minmax(12rem, 1fr);
+  gap: 0.7rem;
+  align-items: stretch;
+  padding: 0.85rem;
+  border: 1px solid rgba(255, 216, 138, 0.32);
+  border-radius: 22px;
+  background: radial-gradient(circle at 12% 18%, rgba(255, 216, 138, 0.22), transparent 42%),
+    rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.13);
+}
+
+.happyPathAssurance > strong,
+.happyPathAssurance > span {
+  min-height: 4rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-radius: 18px;
+}
+
+.happyPathAssurance > strong {
+  padding: 0 0.85rem;
+  background: var(--app-button-gradient);
+  color: #fff;
+  font-size: 0.82rem;
+  letter-spacing: 0.1em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  box-shadow: 0 14px 32px rgba(255, 127, 150, 0.2);
+}
+
+.happyPathAssurance > span {
+  padding: 0 0.9rem;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.9rem;
+  line-height: 1.3rem;
+}
+
+.happyPathAssurance > div {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.happyPathAssurance article {
+  min-height: 6rem;
+  display: grid;
+  align-content: center;
+  gap: 0.34rem;
+  padding: 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.happyPathAssurance article:nth-child(even) {
+  background: radial-gradient(circle at 82% 18%, rgba(247, 215, 232, 0.2), transparent 42%),
+    rgba(255, 255, 255, 0.08);
+}
+
+.happyPathAssurance b {
+  color: #fff;
+  font-size: 0.9rem;
+  line-height: 1.1;
+}
+
+.happyPathAssurance p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.82rem;
+  line-height: 1.18rem;
+}
+
 .syncReceiptGrid article {
   min-height: 7rem;
   display: grid;
@@ -2284,6 +2361,8 @@
   .commandBar,
   .readinessMeter,
   .readinessMeter div,
+  .happyPathAssurance,
+  .happyPathAssurance > div,
   .syncReceiptGrid,
   .pairGuideGrid,
   .runwayGrid,

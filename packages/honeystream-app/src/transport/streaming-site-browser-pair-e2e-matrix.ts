@@ -67,6 +67,20 @@ export const STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES: readonly StreamingSiteBrow
       exerciseControls: false
     },
     {
+      lane: 'youtube',
+      url: 'music.youtube.com/watch?v=two-browser-youtube-music',
+      title: 'YouTube watch page',
+      expectedText: 'YouTube watch page',
+      exerciseControls: false
+    },
+    {
+      lane: 'youtube',
+      url: 'www.youtube-nocookie.com/embed/two-browser-youtube-nocookie',
+      title: 'YouTube watch page',
+      expectedText: 'YouTube watch page',
+      exerciseControls: false
+    },
+    {
       lane: 'animepahe',
       url: 'animepahe.ru/play/two-browser-animepahe',
       title: 'AnimePahe watch page',
