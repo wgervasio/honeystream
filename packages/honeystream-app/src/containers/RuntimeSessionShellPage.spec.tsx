@@ -430,6 +430,10 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain(
       'YouTube watch, mobile, music, nocookie, and generic watch pages stay in the'
     )
+    expect(html).toContain('YouTube to any-site hop')
+    expect(html).toContain(
+      'One connected room tests a YouTube start, a generic website next, both-seat controls, and zero lost bytes before merge'
+    )
     expect(html).toContain('0B loss lane')
     expect(html).toContain('Every control burst must keep 0B lost, 0 dropped, 0 skipped')
     expect(html).toContain('Happy handoff')
@@ -437,6 +441,7 @@ describe('RuntimeSessionShellPage', () => {
       'Queue, pause, resume, seek, rate, and next are exercised from both seats before merge'
     )
     expect(html).toContain('data-happy-path-assurance="youtube-plus"')
+    expect(html).toContain('data-happy-path-assurance="mixed-site-handoff"')
     expect(html).toContain('data-happy-path-assurance="control-byte-budget"')
     expect(html).toContain(
       'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, Disney+, Crunchyroll, Apple TV+, and Peacock generic hosts'
