@@ -36,6 +36,7 @@ import {
   STREAMING_SITE_CONNECTION_TRIAL_COUNT
 } from '../transport/streaming-site-connection-defaults'
 import {
+  STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES,
   STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT,
   STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT
 } from '../transport/streaming-site-browser-pair-e2e-matrix'
@@ -57,6 +58,12 @@ const STREAMING_SITE_PROVIDER_COVERAGE_LABEL = STREAMING_SITE_CONNECTION_PROVIDE
 ).join(' / ')
 const STREAMING_SITE_NAMED_PROVIDER_COUNT = STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE.filter(
   coverage => coverage.provider !== 'unknown'
+).length
+const STREAMING_SITE_BROWSER_PAIR_YOUTUBE_PATH_COUNT = STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES.filter(
+  source => source.lane === 'youtube'
+).length
+const STREAMING_SITE_BROWSER_PAIR_GENERIC_PATH_COUNT = STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES.filter(
+  source => source.lane === 'generic'
 ).length
 const EMPTY_TRANSPORT_TELEMETRY: SessionRuntimeProjection['transportTelemetry'] = Object.freeze({
   averageReceivedLatencyMs: 0,
@@ -455,6 +462,24 @@ describe('RuntimeSessionShellPage', () => {
       'Waiting for this browser seat to send and receive real typed control frames'
     )
     expect(html).toContain('Typed control frames stay &lt;=2048B while media bytes stay local.')
+    expect(html).toContain('id="runtime_site_matrix_receipt"')
+    expect(html).toContain('Site matrix receipt')
+    expect(html).toContain(`data-source-path-count="${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}"`)
+    expect(html).toContain(
+      `data-youtube-path-count="${STREAMING_SITE_BROWSER_PAIR_YOUTUBE_PATH_COUNT}"`
+    )
+    expect(html).toContain(
+      `data-generic-path-count="${STREAMING_SITE_BROWSER_PAIR_GENERIC_PATH_COUNT}"`
+    )
+    expect(html).toContain(
+      `data-control-burst-lanes="${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}"`
+    )
+    expect(html).toContain('YouTube routes checked')
+    expect(html).toContain('Watch, short-link, root, playlist, mobile, music, and nocookie paths')
+    expect(html).toContain('Any-site routes checked')
+    expect(html).toContain('preview as local website lanes before queueing')
+    expect(html).toContain('One burst per lane')
+    expect(html).toContain('pause, resume, seek, rate, and next control burst with 0B lost')
     expect(html).toContain('Invite to sync')
     expect(html).toContain(
       'Private secret, rabbit join, connected transport, and heartbeat clock check must all turn green'

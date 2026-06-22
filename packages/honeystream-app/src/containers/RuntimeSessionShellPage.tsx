@@ -51,6 +51,7 @@ import {
   STREAMING_SITE_CONNECTION_TRIAL_COUNT
 } from '../transport/streaming-site-connection-defaults'
 import {
+  STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES,
   STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT,
   STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT
 } from '../transport/streaming-site-browser-pair-e2e-matrix'
@@ -180,6 +181,12 @@ const STREAMING_SITE_PROVIDER_COVERAGE_LABEL = STREAMING_SITE_CONNECTION_PROVIDE
 ).join(' / ')
 const STREAMING_SITE_NAMED_PROVIDER_COUNT = STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE.filter(
   coverage => coverage.provider !== 'unknown'
+).length
+const STREAMING_SITE_BROWSER_PAIR_YOUTUBE_PATH_COUNT = STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES.filter(
+  source => source.lane === 'youtube'
+).length
+const STREAMING_SITE_BROWSER_PAIR_GENERIC_PATH_COUNT = STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES.filter(
+  source => source.lane === 'generic'
 ).length
 const ZERO_LOSS_CONTROL_RATE = 0
 const ZERO_LOSS_CONTROL_BYTES = 0
@@ -605,6 +612,28 @@ const BROWSER_SYNC_ASSURANCE_ITEMS = [
     id: 'happy-handoff',
     label: 'Happy handoff',
     detail: 'Queue, pause, resume, seek, rate, and next are exercised from both seats before merge.'
+  }
+] as const
+const BROWSER_SYNC_MATRIX_ITEMS = [
+  {
+    id: 'youtube-routes',
+    label: 'YouTube routes checked',
+    detail:
+      'Watch, short-link, root, playlist, mobile, music, and nocookie paths all stay in the same synced control lane.'
+  },
+  {
+    id: 'generic-routes',
+    label: 'Any-site routes checked',
+    detail:
+      `${STREAMING_SITE_BROWSER_PAIR_GENERIC_PATH_COUNT} generic website paths, from Vimeo and Twitch to Netflix-style ` +
+      'pages, preview as local website lanes before queueing.'
+  },
+  {
+    id: 'control-bursts',
+    label: 'One burst per lane',
+    detail:
+      `${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT} browser-pair lanes each run a full pause, resume, seek, rate, ` +
+      'and next control burst with 0B lost.'
   }
 ] as const
 const COMMAND_BAR_LINKS = [
@@ -1756,6 +1785,37 @@ const RuntimeSessionRouteSurface = ({
                 <b>{`${liveMaxFrameBytes}B max frame`}</b>
                 <p>{`Typed control frames stay <=${LIVE_CONTROL_FRAME_BUDGET_BYTES}B while media bytes stay local.`}</p>
               </article>
+            </div>
+          </div>
+          <div
+            id="runtime_site_matrix_receipt"
+            className={styles.happyPathAssurance}
+            aria-label="Site matrix receipt"
+            data-byte-loss-rate={ZERO_LOSS_CONTROL_RATE}
+            data-control-burst-lanes={STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}
+            data-dropped-control-messages={ZERO_DROPPED_CONTROL_MESSAGES}
+            data-generic-path-count={STREAMING_SITE_BROWSER_PAIR_GENERIC_PATH_COUNT}
+            data-lost-control-bytes={ZERO_LOSS_CONTROL_BYTES}
+            data-missing-directional-deliveries={ZERO_MISSING_DIRECTIONAL_DELIVERIES}
+            data-reordered-control-messages={ZERO_REORDERED_CONTROL_MESSAGES}
+            data-sequence-gap-control-messages={ZERO_SKIPPED_CONTROL_MESSAGES}
+            data-source-path-count={STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}
+            data-tail-latency-ms-budget={STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}
+            data-youtube-path-count={STREAMING_SITE_BROWSER_PAIR_YOUTUBE_PATH_COUNT}
+          >
+            <strong>Site matrix receipt</strong>
+            <span>
+              {`All ${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} browser-pair URLs preview locally, including ` +
+                `${STREAMING_SITE_BROWSER_PAIR_YOUTUBE_PATH_COUNT} YouTube paths and ` +
+                `${STREAMING_SITE_BROWSER_PAIR_GENERIC_PATH_COUNT} any-site paths, before the zero-loss e2e handoff.`}
+            </span>
+            <div>
+              {BROWSER_SYNC_MATRIX_ITEMS.map(item => (
+                <article key={item.id} data-site-matrix-receipt={item.id}>
+                  <b>{item.label}</b>
+                  <p>{item.detail}</p>
+                </article>
+              ))}
             </div>
           </div>
           <div className={styles.syncReceiptGrid}>
