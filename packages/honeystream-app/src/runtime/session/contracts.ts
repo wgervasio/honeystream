@@ -36,6 +36,19 @@ export interface SessionRuntimeClockSyncSnapshot {
   readonly sampleCount: number
 }
 
+export interface SessionRuntimeTransportTelemetrySnapshot {
+  readonly averageReceivedLatencyMs: number
+  readonly latencySampleCount: number
+  readonly maxReceivedFrameBytes: number
+  readonly maxReceivedLatencyMs: number
+  readonly maxSentFrameBytes: number
+  readonly p95ReceivedLatencyMs: number
+  readonly receivedBytes: number
+  readonly receivedMessages: number
+  readonly sentBytes: number
+  readonly sentMessages: number
+}
+
 export interface SessionRuntimeProjection {
   readonly role: SessionRuntimeRole
   readonly lifecycle: SessionRuntimeLifecycle
@@ -43,6 +56,7 @@ export interface SessionRuntimeProjection {
   readonly session?: SessionSnapshot
   readonly clockSync?: SessionRuntimeClockSyncSnapshot
   readonly playbackAdapterKind?: SessionRuntimePlaybackAdapterKind
+  readonly transportTelemetry: SessionRuntimeTransportTelemetrySnapshot
   readonly diagnostics: readonly ProtocolError[]
   readonly runtimeErrors: readonly string[]
 }
@@ -100,7 +114,9 @@ export interface SessionRuntimeDependencies {
 }
 
 export interface SessionRuntimeProjectionSource {
-  subscribeToSnapshots(listener: (snapshot: SessionRuntimeProjection) => void): ProjectionUnsubscribe
+  subscribeToSnapshots(
+    listener: (snapshot: SessionRuntimeProjection) => void
+  ): ProjectionUnsubscribe
 }
 
 export interface SessionRuntime extends SessionRuntimeProjectionSource {

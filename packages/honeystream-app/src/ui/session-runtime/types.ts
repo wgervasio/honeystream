@@ -23,12 +23,26 @@ export interface SessionRuntimeClockSyncSnapshot {
   readonly sampleCount: number
 }
 
+export interface SessionRuntimeTransportTelemetrySnapshot {
+  readonly averageReceivedLatencyMs: number
+  readonly latencySampleCount: number
+  readonly maxReceivedFrameBytes: number
+  readonly maxReceivedLatencyMs: number
+  readonly maxSentFrameBytes: number
+  readonly p95ReceivedLatencyMs: number
+  readonly receivedBytes: number
+  readonly receivedMessages: number
+  readonly sentBytes: number
+  readonly sentMessages: number
+}
+
 export interface SessionRuntimeProjectionSnapshot {
   readonly role: SessionRuntimeProjectionRole
   readonly session: SessionSnapshot
   readonly transportStatus: SessionRuntimeTransportStatus
   readonly clockSync?: SessionRuntimeClockSyncSnapshot
   readonly playbackAdapterKind?: SessionRuntimePlaybackAdapterKind
+  readonly transportTelemetry: SessionRuntimeTransportTelemetrySnapshot
   readonly systemErrors: readonly SessionRuntimeSystemErrorSnapshot[]
 }
 

@@ -78,6 +78,8 @@ const countFixtureHostsForDomains = (domains: readonly string[]): number =>
 const STREAMING_SITE_PROVIDER_COVERAGE_LABELS = STREAMING_SITE_PROVIDER_MATCHERS.map(
   matcher => `${matcher.label} x${countFixtureHostsForDomains(matcher.domains)}`
 )
+const LIVE_CONTROL_LATENCY_BUDGET_MS = 1500
+const LIVE_CONTROL_FRAME_BUDGET_BYTES = 2048
 const CONNECTION_CONFIDENCE_SELECTOR =
   '#runtime_connection_confidence[data-byte-loss-rate="0"]' +
   '[data-lost-control-bytes="0"][data-dropped-control-messages="0"]' +
@@ -108,6 +110,12 @@ const HAPPY_SYNC_SEAL_READY_SELECTOR =
   `[data-site-lane-count="${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}"]` +
   `[data-site-path-count="${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}"]` +
   '[data-test-modes="broadcast+isolated-live"]'
+const LIVE_CONTROL_RECEIPT_READY_SELECTOR =
+  '#runtime_live_control_receipt[data-live-receipt-state="ready"]' +
+  '[data-live-sent-control-state="observed"][data-live-received-control-state="observed"]' +
+  '[data-live-latency-state="under-budget"][data-live-frame-state="under-budget"]' +
+  `[data-live-latency-budget-ms="${LIVE_CONTROL_LATENCY_BUDGET_MS}"]` +
+  `[data-live-frame-budget-bytes="${LIVE_CONTROL_FRAME_BUDGET_BYTES}"]`
 const BROWSER_PAIR_MATRIX_SELECTOR =
   '[data-merge-gate-metric="browser-pair-matrix"]' +
   `[data-merge-gate-value="${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} browser paths"]`
@@ -811,6 +819,25 @@ async function expectConnectionRunwayReady(page: Page): Promise<void> {
   await waitForRuntimeText(page, 'zero control bytes lost')
 }
 
+async function expectLiveControlReceiptReady(page: Page, label: string): Promise<void> {
+  try {
+    await waitForAttachedSelector(page, LIVE_CONTROL_RECEIPT_READY_SELECTOR, label)
+  } catch (error) {
+    if (!isTimeoutError(error)) throw error
+    const receiptState = await page.$eval('#runtime_live_control_receipt', element =>
+      Array.from(element.attributes)
+        .map(attribute => `${attribute.name}=${attribute.value}`)
+        .join(' ')
+    )
+    throw new Error(`${formatErrorMessage(error)} Live receipt: ${receiptState}`)
+  }
+  await waitForRuntimeText(page, 'Live control receipt')
+  await waitForRuntimeText(
+    page,
+    'sent and received real typed control frames under the live e2e latency and frame-size budgets'
+  )
+}
+
 async function expectHealthyTwoBrowserConnection(input: {
   readonly clientPage: Page
   readonly hostPage: Page
@@ -854,6 +881,8 @@ async function expectHealthyTwoBrowserConnection(input: {
     HAPPY_SYNC_SEAL_READY_SELECTOR,
     'client sync seal'
   )
+  await expectLiveControlReceiptReady(input.hostPage, 'host live control receipt')
+  await expectLiveControlReceiptReady(input.clientPage, 'client live control receipt')
   await waitForStreamingMergeProof(input.hostPage)
   await waitForStreamingMergeProof(input.clientPage)
   await expectNoRuntimeConnectionAlerts(input.hostPage)
@@ -1212,6 +1241,11 @@ describe('session', () => {
       )
       await waitForRuntimeText(page, 'Browser sync receipt')
       await waitForRuntimeText(page, 'Happy sync warming')
+      await waitForRuntimeText(page, 'Live control receipt')
+      await waitForRuntimeText(
+        page,
+        'Waiting for this browser seat to send and receive real typed control frames'
+      )
       await waitForRuntimeText(
         page,
         `all ${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} website paths`

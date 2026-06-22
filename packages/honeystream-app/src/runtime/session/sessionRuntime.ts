@@ -29,8 +29,10 @@ import { toProtocolHostEventsFromTransition } from 'runtime/protocol'
 import {
   PeerTransportEvent,
   PeerTransportMessageDelivery,
+  PeerTransportEnvelope,
   TransportUnsubscribe
 } from 'transport/contracts'
+import { serializedByteLength } from 'transport/transport-byte-length'
 import {
   createProjectionStore,
   ProjectionStore,
@@ -43,6 +45,7 @@ import {
   SessionRuntimeDependencies,
   SessionRuntimePlaybackAdapterKind,
   SessionRuntimeProjection,
+  SessionRuntimeTransportTelemetrySnapshot,
   StartGuestSessionInput,
   StartHostSessionInput
 } from './contracts'
@@ -61,6 +64,7 @@ const DEFAULT_MEDIA_CACHE_CAP = 32
 const DEFAULT_SNAPSHOT_REQUEST_COOLDOWN_MS = 500
 const DEFAULT_SNAPSHOT_REQUEST_MAX_BACKOFF_MS = 4000
 const DEFAULT_CLOCK_SYNC_SAMPLE_CAP = 12
+const DEFAULT_TRANSPORT_TELEMETRY_SAMPLE_CAP = 64
 const CLOCK_SYNC_BEST_SAMPLE_COUNT = 5
 const CLOCK_SYNC_MAX_OFFSET_STEP_MS = 100
 const CLOCK_SYNC_REAPPLY_THRESHOLD_MS = 50
@@ -128,6 +132,29 @@ const median = (samples: readonly number[]): number => {
   return sortedSamples[Math.floor(sortedSamples.length / 2)]
 }
 
+const percentile = (samples: readonly number[], percentileValue: number): number => {
+  if (samples.length === 0) return 0
+  const sortedSamples = samples.slice().sort((left, right) => left - right)
+  const index = Math.min(
+    sortedSamples.length - 1,
+    Math.max(0, Math.ceil(sortedSamples.length * percentileValue) - 1)
+  )
+  return sortedSamples[index]
+}
+
+const createEmptyTransportTelemetry = (): SessionRuntimeTransportTelemetrySnapshot => ({
+  averageReceivedLatencyMs: 0,
+  latencySampleCount: 0,
+  maxReceivedFrameBytes: 0,
+  maxReceivedLatencyMs: 0,
+  maxSentFrameBytes: 0,
+  p95ReceivedLatencyMs: 0,
+  receivedBytes: 0,
+  receivedMessages: 0,
+  sentBytes: 0,
+  sentMessages: 0
+})
+
 const clampToRange = (value: number, min: number, max: number): number =>
   Math.min(max, Math.max(min, value))
 
@@ -173,6 +200,8 @@ export class DefaultSessionRuntime implements SessionRuntime {
   private diagnostics: readonly ProtocolError[] = []
   private runtimeErrors: readonly string[] = []
   private playbackAdapterKind: SessionRuntimePlaybackAdapterKind | undefined
+  private transportTelemetry = createEmptyTransportTelemetry()
+  private transportLatencySamples: readonly number[] = []
   private eventCursor = 0
   private sequence = 0
   private expectedInboundSeq: number | undefined
@@ -200,6 +229,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
       transportState: this.transport.getState(),
       clockSync: this.clockSync,
       playbackAdapterKind: this.playbackAdapterKind,
+      transportTelemetry: this.transportTelemetry,
       diagnostics: [],
       runtimeErrors: []
     }
@@ -319,6 +349,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
         this.recordRuntimeError(`[transport:${event.error.code}] ${event.error.message}`)
         return
       case 'message':
+        this.recordTransportReceived(event.delivery)
         this.enqueueInboundDelivery(event.delivery)
     }
   }
@@ -752,11 +783,50 @@ export class DefaultSessionRuntime implements SessionRuntime {
   }
 
   private sendWireEnvelope(envelope: WireEnvelope): void {
-    this.transport.send({
+    const transportEnvelope: PeerTransportEnvelope<WireEnvelope> = {
       seq: envelope.seq,
       sentAtMs: envelope.sentAtMs,
       message: envelope
-    })
+    }
+    this.transport.send(transportEnvelope)
+    this.recordTransportSent(transportEnvelope)
+  }
+
+  private recordTransportSent(envelope: PeerTransportEnvelope<WireEnvelope>): void {
+    const bytes = serializedByteLength(envelope)
+    this.transportTelemetry = {
+      ...this.transportTelemetry,
+      maxSentFrameBytes: Math.max(this.transportTelemetry.maxSentFrameBytes, bytes),
+      sentBytes: this.transportTelemetry.sentBytes + bytes,
+      sentMessages: this.transportTelemetry.sentMessages + 1
+    }
+    this.updateProjection()
+  }
+
+  private recordTransportReceived(delivery: PeerTransportMessageDelivery<unknown>): void {
+    const bytes = serializedByteLength(delivery.envelope)
+    const latencyMs = Math.max(0, delivery.receivedAtMs - delivery.envelope.sentAtMs)
+    const receivedMessages = this.transportTelemetry.receivedMessages + 1
+    const receivedBytes = this.transportTelemetry.receivedBytes + bytes
+    const latencySamples = [...this.transportLatencySamples, latencyMs].slice(
+      -DEFAULT_TRANSPORT_TELEMETRY_SAMPLE_CAP
+    )
+    this.transportLatencySamples = latencySamples
+    this.transportTelemetry = {
+      ...this.transportTelemetry,
+      averageReceivedLatencyMs:
+        (this.transportTelemetry.averageReceivedLatencyMs *
+          this.transportTelemetry.receivedMessages +
+          latencyMs) /
+        receivedMessages,
+      latencySampleCount: latencySamples.length,
+      maxReceivedFrameBytes: Math.max(this.transportTelemetry.maxReceivedFrameBytes, bytes),
+      maxReceivedLatencyMs: Math.max(this.transportTelemetry.maxReceivedLatencyMs, latencyMs),
+      p95ReceivedLatencyMs: percentile(latencySamples, 0.95),
+      receivedBytes,
+      receivedMessages
+    }
+    this.updateProjection()
   }
 
   private nextSequence(): number {
@@ -783,6 +853,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
       session: this.projection.session,
       clockSync: this.clockSync,
       playbackAdapterKind: this.playbackAdapterKind,
+      transportTelemetry: this.transportTelemetry,
       diagnostics: this.diagnostics,
       runtimeErrors: this.runtimeErrors,
       ...overrides

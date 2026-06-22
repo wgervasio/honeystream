@@ -11,6 +11,7 @@ export type {
   SessionRuntimeProjection,
   SessionRuntimeProjectionSource,
   SessionRuntimeRole,
+  SessionRuntimeTransportTelemetrySnapshot,
   StartGuestSessionInput,
   StartHostSessionInput
 } from './contracts'
