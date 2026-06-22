@@ -62,6 +62,16 @@ const STREAMING_SITE_PROVIDER_MATCHERS = Object.freeze([
   { label: 'Cineby', domains: ['cineby.app', 'cineby.ru', 'cineby.to'] },
   { label: 'Miruro', domains: ['miruro.to', 'miruro.tv'] }
 ])
+const STREAMING_SITE_BROWSER_PAIR_LANE_LABELS: Record<
+  StreamingSiteBrowserPairE2ESource['lane'],
+  string
+> = {
+  youtube: 'YouTube',
+  animepahe: 'AnimePahe',
+  cineby: 'Cineby',
+  miruro: 'Miruro',
+  generic: 'Website'
+}
 const STREAMING_SITE_NAMED_PROVIDER_COUNT = STREAMING_SITE_PROVIDER_MATCHERS.length
 const normalizeHostname = (hostname: string): string =>
   hostname
@@ -137,6 +147,10 @@ const MIXED_SITE_HANDOFF_GENERIC_SOURCE = findStreamingSiteBrowserPairSource(
   'generic',
   'vimeo.com/123456789'
 )
+const getBrowserPairPreviewProvider = (source: StreamingSiteBrowserPairE2ESource): string =>
+  source.lane === 'generic' ? 'unknown' : source.lane
+const getBrowserPairPreviewLabel = (source: StreamingSiteBrowserPairE2ESource): string =>
+  `${STREAMING_SITE_BROWSER_PAIR_LANE_LABELS[source.lane]} lane`
 let runtimeVisitCounter = 0
 let e2eRelayRoomCounter = 0
 
@@ -729,6 +743,21 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
     page,
     'Invite, join, source, controls, next, and zero dropped or reordered controls are glowing green'
   )
+  await page.waitForSelector(
+    '#runtime_site_matrix_receipt[data-byte-loss-rate="0"]' +
+      '[data-lost-control-bytes="0"][data-dropped-control-messages="0"]' +
+      '[data-reordered-control-messages="0"][data-sequence-gap-control-messages="0"]' +
+      '[data-missing-directional-deliveries="0"]' +
+      '[data-tail-latency-ms-budget="10"]' +
+      `[data-source-path-count="${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}"]` +
+      `[data-control-burst-lanes="${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}"]`
+  )
+  await waitForRuntimeText(page, 'Site matrix receipt')
+  await waitForRuntimeText(page, 'YouTube routes checked')
+  await waitForRuntimeText(page, 'Any-site routes checked')
+  await waitForRuntimeText(page, 'One burst per lane')
+  await waitForRuntimeText(page, 'preview as local website lanes before queueing')
+  await waitForRuntimeText(page, 'pause, resume, seek, rate, and next control burst with 0B lost')
   await waitForRuntimeText(page, 'Invite to sync')
   await waitForRuntimeText(
     page,
@@ -1392,6 +1421,35 @@ describe('session', () => {
         )
         await waitForRuntimeText(page, 'Honeystream will add https:// automatically')
       }
+      await page.fill('#runtime-add-media-url', '')
+    })
+
+    it('should preview every browser-pair source URL without remote navigation', async () => {
+      await ms.visit(`/join/${hostId}`)
+      await waitForRuntimeShell(page, 'browser-pair source matrix preview')
+      await page.waitForSelector('#runtime-add-media-url')
+      await page.waitForSelector(
+        `#runtime_site_matrix_receipt[data-source-path-count="${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}"]` +
+          `[data-control-burst-lanes="${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}"]`
+      )
+
+      for (const source of STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES) {
+        await page.fill('#runtime-add-media-url', source.url)
+        await page.waitForSelector(
+          `[data-add-media-source-preview="website"][data-add-media-provider="${getBrowserPairPreviewProvider(
+            source
+          )}"]`
+        )
+        const previewText = await page.$eval(
+          '[data-add-media-source-preview="website"]',
+          element => element.textContent || ''
+        )
+        expect(previewText).toContain(getBrowserPairPreviewLabel(source))
+        expect(previewText).toContain('Each browser opens')
+        expect(previewText).toContain('controls stay synced')
+        expect(previewText).toContain('Honeystream will add https:// automatically')
+      }
+
       await page.fill('#runtime-add-media-url', '')
     })
 
