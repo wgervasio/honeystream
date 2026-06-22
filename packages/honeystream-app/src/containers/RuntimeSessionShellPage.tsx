@@ -477,7 +477,8 @@ const MERGE_GATE_METRICS = [
     value: `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} browser paths`,
     detail:
       `Transport reliability covers ${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} paths; ` +
-      'dual-browser e2e queues, pauses, resumes, seeks, advances, and syncs one ' +
+      'dual-browser e2e queues every browser path, then pauses, resumes, seeks, advances, ' +
+      'and syncs one ' +
       `control-burst path for each of ${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT} site lanes before merge.`
   },
   {
@@ -514,8 +515,8 @@ const CONNECTION_CONFIDENCE_CARDS = [
     label: 'Two isolated browsers',
     detail:
       `Transport reliability covers all ${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} named and ` +
-      'generic website paths; broadcast and isolated live e2e drive one full browser-pair ' +
-      'control burst per lane.'
+      'generic website paths; broadcast and isolated live e2e queue every browser path and ' +
+      'drive one full control burst per lane.'
   },
   {
     id: 'zero-loss-controls',

@@ -304,7 +304,7 @@ describe('RuntimeSessionShellPage', () => {
       `Transport reliability covers ${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} paths`
     )
     expect(html).toContain(
-      `control-burst path for each of ${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT} site lanes before merge`
+      'dual-browser e2e queues every browser path'
     )
     expect(html).toContain('data-merge-gate-metric="browser-pair-matrix"')
     expect(html).toContain('Merge command')
@@ -384,7 +384,7 @@ describe('RuntimeSessionShellPage', () => {
       `Transport reliability covers all ${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} named and generic website paths`
     )
     expect(html).toContain(
-      'broadcast and isolated live e2e drive one full browser-pair control burst per lane'
+      'broadcast and isolated live e2e queue every browser path and drive one full control burst per lane'
     )
     expect(html).toContain(
       'Live e2e mode runs cat-side and rabbit-side in separate browser processes through the real connection flow'
