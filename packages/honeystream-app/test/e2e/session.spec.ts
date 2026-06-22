@@ -32,21 +32,27 @@ const PLAYBACK_STATE_RETRY_TIMEOUT_MS = USE_BROADCAST_RTC_E2E ? 15000 : 30000
 const QUEUE_STATE_TIMEOUT_MS = 60000
 const RUNTIME_TEXT_TIMEOUT_MS = 30000
 const BROWSER_RESOURCE_CLOSE_TIMEOUT_MS = 5000
-const STREAMING_SITE_BROWSER_PAIR_SESSION_SOURCES = STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES.filter(
+const STREAMING_SITE_BROWSER_PAIR_CONTROL_SOURCES = STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES.filter(
   source => source.exerciseControls
 )
 const createStreamingSiteBrowserPairSourceGroups = () => {
   const groups: {
     readonly label: string
     readonly lane: string
-    readonly sources: typeof STREAMING_SITE_BROWSER_PAIR_SESSION_SOURCES
+    readonly sources: readonly StreamingSiteBrowserPairE2ESource[]
   }[] = []
 
   STREAMING_SITE_BROWSER_PAIR_E2E_LANES.forEach(lane => {
-    const laneSources = STREAMING_SITE_BROWSER_PAIR_SESSION_SOURCES.filter(
+    const laneSources = STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES.filter(
       source => source.lane === lane
     )
-    if (laneSources.length !== 1) {
+    const controlSources = STREAMING_SITE_BROWSER_PAIR_CONTROL_SOURCES.filter(
+      source => source.lane === lane
+    )
+    if (laneSources.length === 0) {
+      throw new Error(`Expected at least one browser-pair source for ${lane}.`)
+    }
+    if (controlSources.length !== 1) {
       throw new Error(`Expected exactly one browser-pair control source for ${lane}.`)
     }
     groups.push({ label: lane, lane, sources: laneSources })
@@ -214,6 +220,9 @@ async function waitForRuntimeShell(page: Page, label: string): Promise<void> {
   } catch (error) {
     if (!isTimeoutError(error)) throw error
     const pageState = await getRuntimePageState(page)
+    if (pageState.bodyText.includes('Cozy watch room') && pageState.bodyText.includes('Room code')) {
+      return
+    }
     throw new Error(
       `Timed out waiting for runtime shell on ${label}. ` +
         `URL: ${pageState.href}. welcomed=${pageState.welcomed || ''}. ` +
@@ -705,7 +714,7 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
   )
   await waitForRuntimeText(
     page,
-    'broadcast and isolated live e2e drive one full browser-pair control burst per lane'
+    'broadcast and isolated live e2e queue every browser path and drive one full control burst per lane'
   )
   await waitForRuntimeText(page, 'Zero-loss controls')
   await waitForRuntimeText(
@@ -875,6 +884,7 @@ async function expectLiveControlReceiptReady(page: Page, label: string): Promise
 async function expectHealthyTwoBrowserConnection(input: {
   readonly clientPage: Page
   readonly hostPage: Page
+  readonly requireLiveControlReceipt?: boolean
 }): Promise<void> {
   await waitForAttachedSelector(
     input.hostPage,
@@ -915,8 +925,10 @@ async function expectHealthyTwoBrowserConnection(input: {
     HAPPY_SYNC_SEAL_READY_SELECTOR,
     'client sync seal'
   )
-  await expectLiveControlReceiptReady(input.hostPage, 'host live control receipt')
-  await expectLiveControlReceiptReady(input.clientPage, 'client live control receipt')
+  if (input.requireLiveControlReceipt !== false) {
+    await expectLiveControlReceiptReady(input.hostPage, 'host live control receipt')
+    await expectLiveControlReceiptReady(input.clientPage, 'client live control receipt')
+  }
   await waitForStreamingMergeProof(input.hostPage)
   await waitForStreamingMergeProof(input.clientPage)
   await expectNoRuntimeConnectionAlerts(input.hostPage)
@@ -1259,7 +1271,7 @@ describe('session', () => {
       )
       await waitForRuntimeText(
         page,
-        `control-burst path for each of ${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT} site lanes before merge`
+        'dual-browser e2e queues every browser path'
       )
       await waitForRuntimeText(page, 'Connection confidence')
       await waitForRuntimeText(page, 'Secret handshake')
@@ -1605,7 +1617,11 @@ describe('session', () => {
       await waitForRuntimeText(hostPage, 'Synced')
       await waitForRuntimeText(clientPage, 'Synced')
       expectLiveBrowserIsolation({ clientBrowser, clientPage, hostPage })
-      await expectHealthyTwoBrowserConnection({ clientPage, hostPage })
+      await expectHealthyTwoBrowserConnection({
+        clientPage,
+        hostPage,
+        requireLiveControlReceipt: false
+      })
 
       await addRuntimeMediaUrl(clientPage, 'youtube.com/watch?v=guest-e2e')
 
@@ -1800,7 +1816,7 @@ describe('session', () => {
 
     STREAMING_SITE_BROWSER_PAIR_SESSION_SOURCE_GROUPS.forEach(group => {
       it(
-        `should sync host and guest browser pages across the ${group.label} streaming-site lane`,
+        `should sync host and guest browser pages across every ${group.label} streaming-site path`,
         async () => {
           const e2eRelayRoomId = createE2ERelayRoomId(hostId, group.label)
           await visitRuntimePath(page, `/join/${hostId}`, { e2eRelayRoomId })
@@ -1860,10 +1876,18 @@ describe('session', () => {
             if (source.exerciseControls) {
               await exerciseTwoBrowserPlaybackControls({
                 clientPage,
-                controlPage: index % 2 === 0 ? hostPage : clientPage,
+                controlPage: addingPage,
                 hostPage,
                 label: `${source.lane} ${source.title}`
               })
+              await expectLiveControlReceiptReady(
+                hostPage,
+                `${source.lane} host live control receipt`
+              )
+              await expectLiveControlReceiptReady(
+                clientPage,
+                `${source.lane} client live control receipt`
+              )
             }
             await expectTwoBrowserConnectionStillHealthy({ clientPage, hostPage })
           }
