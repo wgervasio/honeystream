@@ -58,6 +58,18 @@ const STREAMING_SITE_PROVIDER_COVERAGE_LABEL = STREAMING_SITE_CONNECTION_PROVIDE
 const STREAMING_SITE_NAMED_PROVIDER_COUNT = STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE.filter(
   coverage => coverage.provider !== 'unknown'
 ).length
+const EMPTY_TRANSPORT_TELEMETRY: SessionRuntimeProjection['transportTelemetry'] = Object.freeze({
+  averageReceivedLatencyMs: 0,
+  latencySampleCount: 0,
+  maxReceivedFrameBytes: 0,
+  maxReceivedLatencyMs: 0,
+  maxSentFrameBytes: 0,
+  p95ReceivedLatencyMs: 0,
+  receivedBytes: 0,
+  receivedMessages: 0,
+  sentBytes: 0,
+  sentMessages: 0
+})
 
 function createRouteProps(lobbyId: string): RouteComponentProps<RouteParams> {
   return {
@@ -426,6 +438,23 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain(
       'Waiting for both browsers to finish the cozy connection checklist with zero dropped or reordered controls'
     )
+    expect(html).toContain('id="runtime_live_control_receipt"')
+    expect(html).toContain('Live control receipt')
+    expect(html).toContain('data-live-receipt-state="warming"')
+    expect(html).toContain('data-live-sent-control-state="waiting"')
+    expect(html).toContain('data-live-received-control-state="waiting"')
+    expect(html).toContain('data-live-latency-state="waiting"')
+    expect(html).toContain('data-live-frame-state="waiting"')
+    expect(html).toContain('data-live-sent-control-messages="0"')
+    expect(html).toContain('data-live-received-control-messages="0"')
+    expect(html).toContain('data-live-latency-budget-ms="1500"')
+    expect(html).toContain(
+      `data-live-frame-budget-bytes="${STREAMING_SITE_CONNECTION_BUDGET.maxMessageBytes}"`
+    )
+    expect(html).toContain(
+      'Waiting for this browser seat to send and receive real typed control frames'
+    )
+    expect(html).toContain('Typed control frames stay &lt;=2048B while media bytes stay local.')
     expect(html).toContain('Invite to sync')
     expect(html).toContain(
       'Private secret, rabbit join, connected transport, and heartbeat clock check must all turn green'
@@ -581,6 +610,7 @@ describe('createRuntimeSessionShellRouteBoundary', () => {
       role: 'host',
       lifecycle: 'idle',
       transportState: transportPair.host.getState(),
+      transportTelemetry: EMPTY_TRANSPORT_TELEMETRY,
       diagnostics: [],
       runtimeErrors: []
     }
@@ -629,6 +659,7 @@ describe('createRuntimeSessionShellRouteBoundary', () => {
       role: 'host',
       lifecycle: 'running',
       transportState: transportPair.host.getState(),
+      transportTelemetry: EMPTY_TRANSPORT_TELEMETRY,
       diagnostics: [],
       runtimeErrors: []
     }
@@ -681,6 +712,7 @@ describe('createRuntimeSessionShellRouteBoundary', () => {
       role: 'host',
       lifecycle: 'running',
       transportState: transportPair.host.getState(),
+      transportTelemetry: EMPTY_TRANSPORT_TELEMETRY,
       diagnostics: [],
       runtimeErrors: []
     }
@@ -768,6 +800,7 @@ describe('createRuntimeSessionShellRouteBoundary', () => {
       role: 'host',
       lifecycle: 'running',
       transportState: transportPair.host.getState(),
+      transportTelemetry: EMPTY_TRANSPORT_TELEMETRY,
       diagnostics: [],
       runtimeErrors: []
     }
@@ -820,6 +853,7 @@ describe('createRuntimeSessionShellRouteBoundary', () => {
       role: 'host',
       lifecycle: 'running',
       transportState: transportPair.host.getState(),
+      transportTelemetry: EMPTY_TRANSPORT_TELEMETRY,
       diagnostics: [],
       runtimeErrors: []
     }

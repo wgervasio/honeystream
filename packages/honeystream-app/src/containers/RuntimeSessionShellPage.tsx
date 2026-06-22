@@ -187,9 +187,25 @@ const ZERO_DROPPED_CONTROL_MESSAGES = 0
 const ZERO_MISSING_DIRECTIONAL_DELIVERIES = 0
 const ZERO_REORDERED_CONTROL_MESSAGES = 0
 const ZERO_SKIPPED_CONTROL_MESSAGES = 0
+const LIVE_CONTROL_LATENCY_BUDGET_MS = 1500
+const LIVE_CONTROL_FRAME_BUDGET_BYTES = STREAMING_SITE_CONNECTION_BUDGET.maxMessageBytes
 const BROWSER_PAIR_E2E_TEST_MODES = 'broadcast+isolated-live'
 const BROWSER_PAIR_CONNECTION_CHECKLIST =
   'invite-secret-join-transport-heartbeat-queue-controls-next'
+const EMPTY_TRANSPORT_TELEMETRY: SessionRuntimeProjectionSnapshot['transportTelemetry'] = Object.freeze(
+  {
+    averageReceivedLatencyMs: 0,
+    latencySampleCount: 0,
+    maxReceivedFrameBytes: 0,
+    maxReceivedLatencyMs: 0,
+    maxSentFrameBytes: 0,
+    p95ReceivedLatencyMs: 0,
+    receivedBytes: 0,
+    receivedMessages: 0,
+    sentBytes: 0,
+    sentMessages: 0
+  }
+)
 const HAPPY_PATH_STEPS = [
   {
     id: 'paste',
@@ -1029,6 +1045,7 @@ const createFallbackRuntimeProjection = (now: () => number): SessionRuntimeProje
   role: 'uninitialized',
   lifecycle: 'idle',
   transportState: { status: 'idle', changedAtMs: now() },
+  transportTelemetry: EMPTY_TRANSPORT_TELEMETRY,
   diagnostics: [],
   runtimeErrors: []
 })
@@ -1146,6 +1163,7 @@ const mapProjectionToShellSnapshot = (
     transportStatus: projection.transportState.status,
     clockSync: projection.clockSync,
     playbackAdapterKind: projection.playbackAdapterKind,
+    transportTelemetry: projection.transportTelemetry,
     systemErrors: [
       ...(includeLocalWarning ? [LOCAL_ONLY_WARNING] : []),
       ...projection.diagnostics.map(mapProtocolErrorToSystemError),
@@ -1487,6 +1505,30 @@ const RuntimeSessionRouteSurface = ({
       guest && viewModel.snapshot.transportStatus === 'connected' && clockSyncReady
         ? 'ready'
         : 'warming'
+    const liveTelemetry = viewModel.snapshot.transportTelemetry
+    const liveP95LatencyMs = Math.round(liveTelemetry.p95ReceivedLatencyMs)
+    const liveAverageLatencyMs = Math.round(liveTelemetry.averageReceivedLatencyMs)
+    const liveMaxFrameBytes = Math.max(
+      liveTelemetry.maxSentFrameBytes,
+      liveTelemetry.maxReceivedFrameBytes
+    )
+    const liveSentState = liveTelemetry.sentMessages > 0 ? 'observed' : 'waiting'
+    const liveReceivedState = liveTelemetry.receivedMessages > 0 ? 'observed' : 'waiting'
+    const liveLatencyState =
+      liveTelemetry.receivedMessages > 0 && liveP95LatencyMs <= LIVE_CONTROL_LATENCY_BUDGET_MS
+        ? 'under-budget'
+        : 'waiting'
+    const liveFrameState =
+      liveMaxFrameBytes > 0 && liveMaxFrameBytes <= LIVE_CONTROL_FRAME_BUDGET_BYTES
+        ? 'under-budget'
+        : 'waiting'
+    const liveControlReceiptState =
+      liveSentState === 'observed' &&
+      liveReceivedState === 'observed' &&
+      liveLatencyState === 'under-budget' &&
+      liveFrameState === 'under-budget'
+        ? 'ready'
+        : 'warming'
 
     return (
       <div className={styles.roomGrid}>
@@ -1665,6 +1707,55 @@ const RuntimeSessionRouteSurface = ({
                   <p>{item.detail}</p>
                 </article>
               ))}
+            </div>
+          </div>
+          <div
+            id="runtime_live_control_receipt"
+            className={styles.happyPathAssurance}
+            aria-label="Live control receipt"
+            data-live-average-latency-ms={liveAverageLatencyMs}
+            data-live-frame-budget-bytes={LIVE_CONTROL_FRAME_BUDGET_BYTES}
+            data-live-frame-state={liveFrameState}
+            data-live-latency-budget-ms={LIVE_CONTROL_LATENCY_BUDGET_MS}
+            data-live-latency-sample-count={liveTelemetry.latencySampleCount}
+            data-live-latency-state={liveLatencyState}
+            data-live-max-frame-bytes={liveMaxFrameBytes}
+            data-live-p95-latency-ms={liveP95LatencyMs}
+            data-live-receipt-state={liveControlReceiptState}
+            data-live-received-control-bytes={liveTelemetry.receivedBytes}
+            data-live-received-control-messages={liveTelemetry.receivedMessages}
+            data-live-received-control-state={liveReceivedState}
+            data-live-sent-control-bytes={liveTelemetry.sentBytes}
+            data-live-sent-control-messages={liveTelemetry.sentMessages}
+            data-live-sent-control-state={liveSentState}
+          >
+            <strong>Live control receipt</strong>
+            <span>
+              {liveControlReceiptState === 'ready'
+                ? 'This browser seat has sent and received real typed control frames under the live e2e latency and frame-size budgets.'
+                : 'Waiting for this browser seat to send and receive real typed control frames.'}
+            </span>
+            <div>
+              <article data-live-control-metric="sent">
+                <b>Sent frames</b>
+                <p>{`${liveTelemetry.sentMessages} messages / ${liveTelemetry.sentBytes}B`}</p>
+              </article>
+              <article data-live-control-metric="received">
+                <b>Received frames</b>
+                <p>{`${liveTelemetry.receivedMessages} messages / ${
+                  liveTelemetry.receivedBytes
+                }B`}</p>
+              </article>
+              <article data-live-control-metric="latency">
+                <b>{`P95 ${liveP95LatencyMs}ms`}</b>
+                <p>{`Live receipt budget <=${LIVE_CONTROL_LATENCY_BUDGET_MS}ms with ${
+                  liveTelemetry.latencySampleCount
+                } bounded samples.`}</p>
+              </article>
+              <article data-live-control-metric="frame-size">
+                <b>{`${liveMaxFrameBytes}B max frame`}</b>
+                <p>{`Typed control frames stay <=${LIVE_CONTROL_FRAME_BUDGET_BYTES}B while media bytes stay local.`}</p>
+              </article>
             </div>
           </div>
           <div className={styles.syncReceiptGrid}>

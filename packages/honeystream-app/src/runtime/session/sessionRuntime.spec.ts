@@ -175,6 +175,18 @@ describe('runtime/session/SessionRuntime', () => {
     expect(guestSession.current).toEqual(createMedia('media-guest'))
     expect(hostRuntime.getSnapshot().playbackAdapterKind).toBe('embed-extension')
     expect(guestRuntime.getSnapshot().playbackAdapterKind).toBe('embed-extension')
+    expect(hostRuntime.getSnapshot().transportTelemetry).toEqual(
+      expect.objectContaining({
+        receivedMessages: expect.any(Number),
+        sentMessages: expect.any(Number)
+      })
+    )
+    expect(hostRuntime.getSnapshot().transportTelemetry.receivedMessages).toBeGreaterThan(0)
+    expect(hostRuntime.getSnapshot().transportTelemetry.sentMessages).toBeGreaterThan(0)
+    expect(hostRuntime.getSnapshot().transportTelemetry.receivedBytes).toBeGreaterThan(0)
+    expect(guestRuntime.getSnapshot().transportTelemetry.receivedMessages).toBeGreaterThan(0)
+    expect(guestRuntime.getSnapshot().transportTelemetry.sentMessages).toBeGreaterThan(0)
+    expect(guestRuntime.getSnapshot().transportTelemetry.sentBytes).toBeGreaterThan(0)
   })
 
   it('records heartbeat clock sync and only reapplies playing guest playback on meaningful offset changes', async () => {
@@ -353,9 +365,9 @@ describe('runtime/session/SessionRuntime', () => {
 
     hostProjection = hostRuntime.getSnapshot()
     expect(hostProjection.session && hostProjection.session.currentMediaId).toBeUndefined()
-    expect(hostProjection.diagnostics.filter(error => error.code === 'invalidSequence')).toHaveLength(
-      2
-    )
+    expect(
+      hostProjection.diagnostics.filter(error => error.code === 'invalidSequence')
+    ).toHaveLength(2)
   })
 
   it('keeps host snapshots moving when playback application fails', async () => {

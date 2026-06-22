@@ -13,6 +13,21 @@ import {
   SessionRuntimeSystemErrorSnapshot
 } from './types'
 
+const EMPTY_TRANSPORT_TELEMETRY: SessionRuntimeProjectionSnapshot['transportTelemetry'] = Object.freeze(
+  {
+    averageReceivedLatencyMs: 0,
+    latencySampleCount: 0,
+    maxReceivedFrameBytes: 0,
+    maxReceivedLatencyMs: 0,
+    maxSentFrameBytes: 0,
+    p95ReceivedLatencyMs: 0,
+    receivedBytes: 0,
+    receivedMessages: 0,
+    sentBytes: 0,
+    sentMessages: 0
+  }
+)
+
 const buildProjectionSnapshot = (
   status: SessionRuntimeProjectionSnapshot['session']['status'] = 'connected',
   systemErrors: readonly SessionRuntimeSystemErrorSnapshot[] = []
@@ -45,6 +60,7 @@ const buildProjectionSnapshot = (
     eventCursor: 4
   },
   transportStatus: 'connected',
+  transportTelemetry: EMPTY_TRANSPORT_TELEMETRY,
   systemErrors
 })
 
