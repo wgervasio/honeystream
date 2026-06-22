@@ -66,6 +66,14 @@ const starterSiteExamples = [
     guidance: 'Use the real watch page you want both sides to open together.'
   },
   {
+    id: 'any-site',
+    label: 'Any site',
+    detail: 'Generic page',
+    placeholder: 'Paste any exact watch page both browsers can open...',
+    guidance:
+      'Bilibili, Kick, Rumble, Odysee, Niconico, and other generic lanes stay in the browser-pair matrix.'
+  },
+  {
     id: 'direct',
     label: 'Direct MP4',
     detail: 'Clean media',
@@ -221,7 +229,7 @@ class Home extends Component<IProps, IState> {
         label: 'site fixtures',
         detail:
           'YouTube, AnimePahe, Cineby, Miruro, and generic watch pages including Hulu, ' +
-          'Prime Video, Tubi, Max, and Kanopy.'
+          'Prime Video, Tubi, Max, Kanopy, Bilibili, Kick, Rumble, Odysee, and Niconico.'
       },
       {
         id: 'providers',
@@ -774,6 +782,11 @@ class Home extends Component<IProps, IState> {
             <strong>Paramount+</strong>
             <strong>Roku Channel</strong>
             <strong>Kanopy</strong>
+            <strong>Bilibili</strong>
+            <strong>Kick</strong>
+            <strong>Rumble</strong>
+            <strong>Odysee</strong>
+            <strong>Niconico</strong>
             <strong>direct MP4</strong>
           </div>
 

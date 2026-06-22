@@ -286,7 +286,8 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('YouTube, AnimePahe, Cineby, Miruro, and generic pages')
     expect(html).toContain(
       'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, Disney+, ' +
-        'Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, and Kanopy generic hosts'
+        'Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, Kanopy, Bilibili, ' +
+        'Kick, Rumble, Odysee, and Niconico generic hosts'
     )
     expect(html).toContain('Per-site proof')
     expect(html).toContain(`${STREAMING_SITE_CONNECTION_FIXTURES.length} observed`)
@@ -399,7 +400,8 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('YouTube, AnimePahe, Cineby, Miruro, and generic pages load locally')
     expect(html).toContain(
       'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, Disney+, ' +
-        'Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, and Kanopy pages stay generic'
+        'Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, Kanopy, Bilibili, ' +
+        'Kick, Rumble, Odysee, and Niconico pages stay generic'
     )
     expect(html).toContain(
       `data-tail-latency-ms-budget="${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}"`
@@ -426,6 +428,7 @@ describe('RuntimeSessionShellPage', () => {
       'data-connection-checklist="invite-secret-join-transport-heartbeat-queue-controls-next"'
     )
     expect(html).toContain('id="runtime_browser_sync_receipt"')
+    expect(html).toContain('data-browser-isolation="broadcast-context+separate-browser-process"')
     expect(html).toContain('data-receipt-state="warming"')
     expect(html).toContain('Browser sync receipt')
     expect(html).toContain('Waiting for two seats')
@@ -503,7 +506,12 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('data-happy-path-assurance="control-byte-budget"')
     expect(html).toContain(
       'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, Disney+, ' +
-        'Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, and Kanopy generic hosts'
+        'Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, Kanopy, Bilibili, ' +
+        'Kick, Rumble, Odysee, and Niconico generic hosts'
+    )
+    expect(html).toContain('Separate-browser proof')
+    expect(html).toContain(
+      'Broadcast smoke and isolated browser-process e2e both connect, queue, control, and advance before merge.'
     )
     expect(html).toContain(
       `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} two-browser transport paths`
@@ -515,6 +523,7 @@ describe('RuntimeSessionShellPage', () => {
     )
     expect(html).toContain('data-browser-sync-receipt="two-browser-seat"')
     expect(html).toContain('data-browser-sync-receipt="site-lanes"')
+    expect(html).toContain('data-browser-sync-receipt="browser-process-proof"')
     expect(html).toContain('data-browser-sync-receipt="flawless-handoff"')
     expect(html).toContain(`data-site-lane-count="${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}"`)
     expect(html).toContain(`data-site-path-count="${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}"`)

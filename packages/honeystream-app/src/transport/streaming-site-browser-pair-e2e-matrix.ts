@@ -29,6 +29,59 @@ export const STREAMING_SITE_BROWSER_PAIR_E2E_LANES: readonly StreamingSiteBrowse
   ['youtube', 'animepahe', 'cineby', 'miruro', 'generic']
 )
 
+export const STREAMING_SITE_BROWSER_PAIR_GENERIC_SITE_LABELS: readonly string[] = Object.freeze([
+  'Vimeo',
+  'Twitch',
+  'Netflix-style',
+  'Hulu',
+  'Prime Video',
+  'Tubi',
+  'Dailymotion',
+  'Plex',
+  'Disney+',
+  'Crunchyroll',
+  'Apple TV+',
+  'Peacock',
+  'Max',
+  'Paramount+',
+  'Roku Channel',
+  'Kanopy',
+  'Bilibili',
+  'Kick',
+  'Rumble',
+  'Odysee',
+  'Niconico'
+])
+
+const GENERIC_BROWSER_PAIR_SOURCE_SPECS: readonly [string, string, boolean?][] = Object.freeze([
+  ['streaming.example.test/watch/two-browser-generic', 'streaming.example.test page', true],
+  ['shows.example.test/title/two-browser-generic?episode=1', 'shows.example.test page'],
+  ['video.example.test/room/two-browser-generic', 'video.example.test page'],
+  ['watch.example.test', 'watch.example.test page'],
+  ['cinema.example.test/movie/two-browser-generic?room=cozy', 'cinema.example.test page'],
+  ['vimeo.com/123456789', 'vimeo.com page'],
+  ['www.twitch.tv/honeystreamsync', 'www.twitch.tv page'],
+  ['www.netflix.com/title/80057281', 'www.netflix.com page'],
+  ['www.hulu.com/watch/two-browser-generic', 'www.hulu.com page'],
+  ['www.primevideo.com/detail/two-browser-generic/0ABC123', 'www.primevideo.com page'],
+  ['tubitv.com/movies/two-browser-generic', 'tubitv.com page'],
+  ['www.dailymotion.com/video/xtwo-browser-generic', 'www.dailymotion.com page'],
+  ['watch.plex.tv/movie/two-browser-generic', 'watch.plex.tv page'],
+  ['www.disneyplus.com/movies/honeystream-test/abc123', 'www.disneyplus.com page'],
+  ['www.crunchyroll.com/watch/honeystream-test', 'www.crunchyroll.com page'],
+  ['tv.apple.com/us/movie/honeystream-test/umc.cmc.honeystream', 'tv.apple.com page'],
+  ['www.peacocktv.com/watch/playback/honeystream-test', 'www.peacocktv.com page'],
+  ['www.max.com/watch/movie/honeystream-test', 'www.max.com page'],
+  ['www.paramountplus.com/movies/video/honeystream-test', 'www.paramountplus.com page'],
+  ['therokuchannel.roku.com/watch/honeystream-test', 'therokuchannel.roku.com page'],
+  ['www.kanopy.com/en/product/honeystream-test', 'www.kanopy.com page'],
+  ['www.bilibili.com/video/BVtwoBrowserGeneric', 'www.bilibili.com page'],
+  ['kick.com/honeystreamsync', 'kick.com page'],
+  ['rumble.com/vtwo-browser-generic', 'rumble.com page'],
+  ['odysee.com/@honeystream:sync/two-browser-generic', 'odysee.com page'],
+  ['www.nicovideo.jp/watch/sm12345678', 'www.nicovideo.jp page']
+])
+
 export const STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES: readonly StreamingSiteBrowserPairE2ESource[] = Object.freeze(
   [
     {
@@ -185,46 +238,9 @@ export const STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES: readonly StreamingSiteBrow
       expectedText: 'Miruro watch page',
       exerciseControls: false
     },
-    genericSource(
-      'streaming.example.test/watch/two-browser-generic',
-      'streaming.example.test page',
-      true
-    ),
-    genericSource(
-      'shows.example.test/title/two-browser-generic?episode=1',
-      'shows.example.test page'
-    ),
-    genericSource('video.example.test/room/two-browser-generic', 'video.example.test page'),
-    genericSource('watch.example.test', 'watch.example.test page'),
-    genericSource(
-      'cinema.example.test/movie/two-browser-generic?room=cozy',
-      'cinema.example.test page'
-    ),
-    genericSource('vimeo.com/123456789', 'vimeo.com page'),
-    genericSource('www.twitch.tv/honeystreamsync', 'www.twitch.tv page'),
-    genericSource('www.netflix.com/title/80057281', 'www.netflix.com page'),
-    genericSource('www.hulu.com/watch/two-browser-generic', 'www.hulu.com page'),
-    genericSource(
-      'www.primevideo.com/detail/two-browser-generic/0ABC123',
-      'www.primevideo.com page'
-    ),
-    genericSource('tubitv.com/movies/two-browser-generic', 'tubitv.com page'),
-    genericSource('www.dailymotion.com/video/xtwo-browser-generic', 'www.dailymotion.com page'),
-    genericSource('watch.plex.tv/movie/two-browser-generic', 'watch.plex.tv page'),
-    genericSource('www.disneyplus.com/movies/honeystream-test/abc123', 'www.disneyplus.com page'),
-    genericSource('www.crunchyroll.com/watch/honeystream-test', 'www.crunchyroll.com page'),
-    genericSource(
-      'tv.apple.com/us/movie/honeystream-test/umc.cmc.honeystream',
-      'tv.apple.com page'
-    ),
-    genericSource('www.peacocktv.com/watch/playback/honeystream-test', 'www.peacocktv.com page'),
-    genericSource('www.max.com/watch/movie/honeystream-test', 'www.max.com page'),
-    genericSource(
-      'www.paramountplus.com/movies/video/honeystream-test',
-      'www.paramountplus.com page'
-    ),
-    genericSource('therokuchannel.roku.com/watch/honeystream-test', 'therokuchannel.roku.com page'),
-    genericSource('www.kanopy.com/en/product/honeystream-test', 'www.kanopy.com page')
+    ...GENERIC_BROWSER_PAIR_SOURCE_SPECS.map(([url, title, exerciseControls]) =>
+      genericSource(url, title, exerciseControls)
+    )
   ]
 )
 

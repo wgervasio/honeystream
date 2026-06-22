@@ -4,6 +4,7 @@ import {
   STREAMING_SITE_BROWSER_PAIR_E2E_LANES,
   STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT,
   STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES,
+  STREAMING_SITE_BROWSER_PAIR_GENERIC_SITE_LABELS,
   StreamingSiteBrowserPairE2ELane
 } from './streaming-site-browser-pair-e2e-matrix'
 
@@ -38,5 +39,12 @@ describe('streaming site browser-pair matrix', () => {
     for (const source of STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES) {
       expect(providerToLane(classifyMediaProvider(normalizeSource(source.url)))).toBe(source.lane)
     }
+  })
+
+  it('keeps the visible generic site label list broad enough for any-site testing', () => {
+    expect(STREAMING_SITE_BROWSER_PAIR_GENERIC_SITE_LABELS).toEqual(
+      expect.arrayContaining(['Bilibili', 'Kick', 'Rumble', 'Odysee', 'Niconico'])
+    )
+    expect(STREAMING_SITE_BROWSER_PAIR_GENERIC_SITE_LABELS.length).toBeGreaterThanOrEqual(20)
   })
 })
