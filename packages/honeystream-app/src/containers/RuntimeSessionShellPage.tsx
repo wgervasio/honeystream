@@ -597,9 +597,9 @@ const BROWSER_SYNC_ASSURANCE_ITEMS = [
   },
   {
     id: 'mixed-site-handoff',
-    label: 'YouTube to any-site hop',
+    label: 'YouTube to every site hop',
     detail:
-      'One connected room tests a YouTube start, a generic website next, both-seat controls, and zero lost bytes before merge.'
+      'One connected room tests a YouTube start, AnimePahe, Cineby, Miruro, a generic website next, both-seat controls, and zero lost bytes before merge.'
   },
   {
     id: 'control-byte-budget',

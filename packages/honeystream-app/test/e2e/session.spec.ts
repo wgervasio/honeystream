@@ -143,9 +143,14 @@ const MIXED_SITE_HANDOFF_YOUTUBE_SOURCE = findStreamingSiteBrowserPairSource(
   'youtube',
   'youtube.com/watch?v=two-browser-youtube'
 )
-const MIXED_SITE_HANDOFF_GENERIC_SOURCE = findStreamingSiteBrowserPairSource(
-  'generic',
-  'vimeo.com/123456789'
+const MIXED_SITE_HANDOFF_SOURCES: readonly StreamingSiteBrowserPairE2ESource[] = Object.freeze(
+  [
+    MIXED_SITE_HANDOFF_YOUTUBE_SOURCE,
+    findStreamingSiteBrowserPairSource('animepahe', 'animepahe.ru/play/two-browser-animepahe'),
+    findStreamingSiteBrowserPairSource('cineby', 'cineby.app/movie/two-browser-cineby'),
+    findStreamingSiteBrowserPairSource('miruro', 'miruro.to/watch/two-browser-miruro'),
+    findStreamingSiteBrowserPairSource('generic', 'vimeo.com/123456789')
+  ]
 )
 const getBrowserPairPreviewProvider = (source: StreamingSiteBrowserPairE2ESource): string =>
   source.lane === 'generic' ? 'unknown' : source.lane
@@ -768,10 +773,10 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
     page,
     'YouTube watch, mobile, music, nocookie, and generic watch pages stay in the'
   )
-  await waitForRuntimeText(page, 'YouTube to any-site hop')
+  await waitForRuntimeText(page, 'YouTube to every site hop')
   await waitForRuntimeText(
     page,
-    'One connected room tests a YouTube start, a generic website next, both-seat controls, and zero lost bytes before merge'
+    'One connected room tests a YouTube start, AnimePahe, Cineby, Miruro, a generic website next, both-seat controls, and zero lost bytes before merge'
   )
   await waitForRuntimeText(page, '0B loss lane')
   await waitForRuntimeText(page, 'Every control burst must keep 0B lost, 0 dropped, 0 skipped')
@@ -1713,9 +1718,9 @@ describe('session', () => {
     })
 
     it(
-      'should keep one two-browser connection happy from YouTube into an any-site handoff',
+      'should keep one two-browser connection happy from YouTube through every site handoff lane',
       async () => {
-        const e2eRelayRoomId = createE2ERelayRoomId(hostId, 'youtube-any-site-handoff')
+        const e2eRelayRoomId = createE2ERelayRoomId(hostId, 'youtube-every-site-handoff')
         await visitRuntimePath(page, `/join/${hostId}`, { e2eRelayRoomId })
         const hostPage = page
         await waitForRuntimeShell(hostPage, 'mixed-site handoff host')
@@ -1747,37 +1752,48 @@ describe('session', () => {
           label: 'mixed-site YouTube start'
         })
 
-        await addRuntimeMediaUrl(hostPage, MIXED_SITE_HANDOFF_GENERIC_SOURCE.url)
-        await waitForQueuedItemTitle(hostPage, MIXED_SITE_HANDOFF_GENERIC_SOURCE.title)
-        await waitForQueuedItemTitle(clientPage, MIXED_SITE_HANDOFF_GENERIC_SOURCE.title)
-        const previousHostMediaId = await getCurrentQueueMediaId(hostPage)
-        await hostPage.waitForSelector('[data-queue-action="next"]:not([disabled])')
-        await hostPage.click('[data-queue-action="next"]:not([disabled])')
-        await waitForCurrentQueueMediaIdChange(
-          hostPage,
-          previousHostMediaId,
-          'mixed-site host next'
-        )
-        await waitForCurrentQueueMediaIdChange(
-          clientPage,
-          previousHostMediaId,
-          'mixed-site client next'
-        )
-        await waitForQueueEmpty(hostPage, 'mixed-site host queue')
-        await waitForQueueEmpty(clientPage, 'mixed-site client queue')
-        await waitForRuntimeText(hostPage, MIXED_SITE_HANDOFF_GENERIC_SOURCE.expectedText)
-        await waitForRuntimeText(clientPage, MIXED_SITE_HANDOFF_GENERIC_SOURCE.expectedText)
-        await waitForCurrentQueueTitle(hostPage, MIXED_SITE_HANDOFF_GENERIC_SOURCE.title)
-        await waitForCurrentQueueTitle(clientPage, MIXED_SITE_HANDOFF_GENERIC_SOURCE.title)
-        await waitForPlaybackState(hostPage, 'playing')
-        await waitForPlaybackState(clientPage, 'playing')
+        for (let index = 1; index < MIXED_SITE_HANDOFF_SOURCES.length; index += 1) {
+          const source = MIXED_SITE_HANDOFF_SOURCES[index]
+          const addingPage = index % 2 === 0 ? clientPage : hostPage
+          const previousHostMediaId = await getCurrentQueueMediaId(hostPage)
+
+          await addRuntimeMediaUrl(addingPage, source.url)
+          await waitForQueuedItemTitle(hostPage, source.title)
+          await waitForQueuedItemTitle(clientPage, source.title)
+          await hostPage.waitForSelector('[data-queue-action="next"]:not([disabled])')
+          await hostPage.click('[data-queue-action="next"]:not([disabled])')
+          await waitForCurrentQueueMediaIdChange(
+            hostPage,
+            previousHostMediaId,
+            `mixed-site ${source.lane} host next`
+          )
+          await waitForCurrentQueueMediaIdChange(
+            clientPage,
+            previousHostMediaId,
+            `mixed-site ${source.lane} client next`
+          )
+          await waitForQueueEmpty(hostPage, `mixed-site ${source.lane} host queue`)
+          await waitForQueueEmpty(clientPage, `mixed-site ${source.lane} client queue`)
+          await waitForRuntimeText(hostPage, source.expectedText)
+          await waitForRuntimeText(clientPage, source.expectedText)
+          await waitForCurrentQueueTitle(hostPage, source.title)
+          await waitForCurrentQueueTitle(clientPage, source.title)
+          await waitForPlaybackState(hostPage, 'playing')
+          await waitForPlaybackState(clientPage, 'playing')
+          await expectPlaybackPositionsSynced({
+            clientPage,
+            hostPage,
+            label: `mixed-site ${source.lane} handoff`
+          })
+          await expectTwoBrowserConnectionStillHealthy({ clientPage, hostPage })
+        }
+
         await exerciseTwoBrowserPlaybackControls({
           clientPage,
           controlPage: hostPage,
           hostPage,
-          label: 'mixed-site generic handoff'
+          label: 'mixed-site final handoff'
         })
-        await expectTwoBrowserConnectionStillHealthy({ clientPage, hostPage })
       },
       STREAMING_SITE_SESSION_E2E_TIMEOUT_MS
     )
