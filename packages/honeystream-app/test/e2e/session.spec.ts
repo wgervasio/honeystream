@@ -109,6 +109,7 @@ const CONNECTION_CONFIDENCE_SELECTOR =
   '[data-test-modes="broadcast+isolated-live"]'
 const BROWSER_SYNC_RECEIPT_READY_SELECTOR =
   '#runtime_browser_sync_receipt[data-receipt-state="ready"][data-byte-loss-rate="0"]' +
+  '[data-browser-isolation="broadcast-context+separate-browser-process"]' +
   '[data-lost-control-bytes="0"][data-dropped-control-messages="0"]' +
   '[data-reordered-control-messages="0"][data-sequence-gap-control-messages="0"]' +
   '[data-missing-directional-deliveries="0"]' +
@@ -118,6 +119,7 @@ const BROWSER_SYNC_RECEIPT_READY_SELECTOR =
   '[data-test-modes="broadcast+isolated-live"]'
 const HAPPY_SYNC_SEAL_READY_SELECTOR =
   '#runtime_happy_sync_seal[data-seal-state="ready"][data-byte-loss-rate="0"]' +
+  '[data-browser-isolation="broadcast-context+separate-browser-process"]' +
   '[data-browser-path-coverage="all"]' +
   '[data-lost-control-bytes="0"][data-dropped-control-messages="0"]' +
   '[data-reordered-control-messages="0"][data-sequence-gap-control-messages="0"]' +
@@ -128,6 +130,7 @@ const HAPPY_SYNC_SEAL_READY_SELECTOR =
   '[data-test-modes="broadcast+isolated-live"]'
 const LIVE_CONTROL_RECEIPT_READY_SELECTOR =
   '#runtime_live_control_receipt[data-live-receipt-state="ready"]' +
+  '[data-browser-isolation="broadcast-context+separate-browser-process"]' +
   '[data-live-sent-control-state="observed"][data-live-received-control-state="observed"]' +
   '[data-live-latency-state="under-budget"][data-live-frame-state="under-budget"]' +
   `[data-live-latency-budget-ms="${LIVE_CONTROL_LATENCY_BUDGET_MS}"]` +
@@ -730,7 +733,8 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
   await waitForRuntimeText(
     page,
     'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, Disney+, ' +
-      'Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, and Kanopy pages stay generic'
+      'Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, Kanopy, Bilibili, ' +
+      'Kick, Rumble, Odysee, and Niconico pages stay generic'
   )
   await waitForRuntimeText(
     page,
@@ -803,6 +807,11 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
     `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} two-browser transport paths`
   )
   await waitForRuntimeText(page, 'Media bytes stay local')
+  await waitForRuntimeText(page, 'Separate-browser proof')
+  await waitForRuntimeText(
+    page,
+    'Broadcast smoke and isolated browser-process e2e both connect, queue, control, and advance before merge'
+  )
   await waitForRuntimeText(page, 'Flawless handoff')
   await waitForRuntimeText(
     page,
@@ -1185,7 +1194,10 @@ describe('session', () => {
       await page.waitForSelector('#runtime_room_mood')
       await page.waitForSelector('#runtime_cozy_command_bar')
       await page.waitForSelector('#runtime_connection_runway[data-guest-seat-state="waiting"]')
-      await page.waitForSelector('#runtime_browser_sync_receipt[data-receipt-state="warming"]')
+      await page.waitForSelector(
+        '#runtime_browser_sync_receipt[data-receipt-state="warming"]' +
+          '[data-browser-isolation="broadcast-context+separate-browser-process"]'
+      )
       await page.waitForSelector('#runtime_readiness_meter')
       await page.waitForSelector('#runtime_pair_guide')
       await page.waitForSelector('[data-streaming-proof="byte-loss"][data-byte-loss-rate="0"]')

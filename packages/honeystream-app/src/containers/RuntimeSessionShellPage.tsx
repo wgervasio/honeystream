@@ -197,6 +197,7 @@ const ZERO_SKIPPED_CONTROL_MESSAGES = 0
 const LIVE_CONTROL_LATENCY_BUDGET_MS = 1500
 const LIVE_CONTROL_FRAME_BUDGET_BYTES = STREAMING_SITE_CONNECTION_BUDGET.maxMessageBytes
 const BROWSER_PAIR_E2E_TEST_MODES = 'broadcast+isolated-live'
+const BROWSER_PAIR_PROCESS_ISOLATION = 'broadcast-context+separate-browser-process'
 const BROWSER_PAIR_CONNECTION_CHECKLIST =
   'invite-secret-join-transport-heartbeat-queue-controls-next'
 const EMPTY_TRANSPORT_TELEMETRY: SessionRuntimeProjectionSnapshot['transportTelemetry'] = Object.freeze(
@@ -452,8 +453,8 @@ const MERGE_GATE_METRICS = [
     detail:
       'YouTube, AnimePahe, Cineby, Miruro, and generic pages stay in the matrix, ' +
       'including Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, ' +
-      'Disney+, Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, and Kanopy ' +
-      'generic hosts.'
+      'Disney+, Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, Kanopy, ' +
+      'Bilibili, Kick, Rumble, Odysee, and Niconico generic hosts.'
   },
   {
     id: 'per-site-observation',
@@ -536,8 +537,8 @@ const CONNECTION_CONFIDENCE_CARDS = [
     detail:
       'YouTube, AnimePahe, Cineby, Miruro, and generic pages load locally; Vimeo, Twitch, ' +
       'Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, Disney+, Crunchyroll, ' +
-      'Apple TV+, Peacock, Max, Paramount+, Roku Channel, and Kanopy pages stay generic ' +
-      'while only typed commands cross the tiny lane.'
+      'Apple TV+, Peacock, Max, Paramount+, Roku Channel, Kanopy, Bilibili, Kick, Rumble, ' +
+      'Odysee, and Niconico pages stay generic while only typed commands cross the tiny lane.'
   }
 ] as const
 const BROWSER_SYNC_RECEIPT_ITEMS = [
@@ -566,8 +567,14 @@ const BROWSER_SYNC_RECEIPT_ITEMS = [
       `YouTube, AnimePahe, Cineby, Miruro, and generic lanes cover ` +
       `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} two-browser transport paths before merge, ` +
       'including Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, ' +
-      'Disney+, Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, and Kanopy ' +
-      'generic hosts.'
+      'Disney+, Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, Kanopy, ' +
+      'Bilibili, Kick, Rumble, Odysee, and Niconico generic hosts.'
+  },
+  {
+    id: 'browser-process-proof',
+    label: 'Separate-browser proof',
+    detail:
+      'Broadcast smoke and isolated browser-process e2e both connect, queue, control, and advance before merge.'
   },
   {
     id: 'local-media',
@@ -627,7 +634,7 @@ const BROWSER_SYNC_MATRIX_ITEMS = [
     label: 'Any-site routes checked',
     detail:
       `${STREAMING_SITE_BROWSER_PAIR_GENERIC_PATH_COUNT} generic website paths, from Vimeo and Twitch to Netflix-style ` +
-      'pages, preview as local website lanes before queueing.'
+      'pages, Bilibili, Kick, Rumble, Odysee, and Niconico, preview as local website lanes before queueing.'
   },
   {
     id: 'control-bursts',
@@ -1661,6 +1668,7 @@ const RuntimeSessionRouteSurface = ({
           id="runtime_browser_sync_receipt"
           className={`${styles.card} ${styles.syncReceipt}`}
           aria-label="Browser sync receipt"
+          data-browser-isolation={BROWSER_PAIR_PROCESS_ISOLATION}
           data-byte-loss-rate={ZERO_LOSS_CONTROL_RATE}
           data-dropped-control-messages={ZERO_DROPPED_CONTROL_MESSAGES}
           data-lost-control-bytes={ZERO_LOSS_CONTROL_BYTES}
@@ -1685,6 +1693,7 @@ const RuntimeSessionRouteSurface = ({
             id="runtime_happy_sync_seal"
             className={styles.happySyncSeal}
             aria-label="Happy sync seal"
+            data-browser-isolation={BROWSER_PAIR_PROCESS_ISOLATION}
             data-browser-path-coverage="all"
             data-byte-loss-rate={ZERO_LOSS_CONTROL_RATE}
             data-dropped-control-messages={ZERO_DROPPED_CONTROL_MESSAGES}
@@ -1711,6 +1720,7 @@ const RuntimeSessionRouteSurface = ({
             id="runtime_happy_path_assurance"
             className={styles.happyPathAssurance}
             aria-label="Happy path assurance"
+            data-browser-isolation={BROWSER_PAIR_PROCESS_ISOLATION}
             data-byte-loss-rate={ZERO_LOSS_CONTROL_RATE}
             data-connection-checklist={BROWSER_PAIR_CONNECTION_CHECKLIST}
             data-connection-flow="invite-join-queue-controls-next"
@@ -1743,6 +1753,7 @@ const RuntimeSessionRouteSurface = ({
             id="runtime_live_control_receipt"
             className={styles.happyPathAssurance}
             aria-label="Live control receipt"
+            data-browser-isolation={BROWSER_PAIR_PROCESS_ISOLATION}
             data-live-average-latency-ms={liveAverageLatencyMs}
             data-live-frame-budget-bytes={LIVE_CONTROL_FRAME_BUDGET_BYTES}
             data-live-frame-state={liveFrameState}

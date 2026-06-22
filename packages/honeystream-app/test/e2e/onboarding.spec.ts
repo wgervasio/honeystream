@@ -87,6 +87,7 @@ describe('onboarding', () => {
     expect(watchLauncher).toContain('source already queued')
     expect(watchLauncher).toContain('Direct MP4')
     expect(watchLauncher).toContain('Miruro')
+    expect(watchLauncher).toContain('Any site')
     expect(firstActionPath).toContain('01')
     expect(firstActionPath).toContain('Queue source')
     expect(firstActionPath).toContain('02')
@@ -119,6 +120,8 @@ describe('onboarding', () => {
     expect(connectionLab).toContain(`${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT} lanes`)
     expect(connectionLab).toContain('two separate browser seats')
     expect(connectionLab).toContain('provider gates')
+    expect(connectionLab).toContain('Bilibili')
+    expect(connectionLab).toContain('Niconico')
     expect(connectionLab).toContain('Mocked sites stay quick')
     expect(siteExamples).toContain('YouTube')
     expect(siteExamples).toContain('AnimePahe')
@@ -140,6 +143,11 @@ describe('onboarding', () => {
     expect(siteExamples).toContain('Paramount+')
     expect(siteExamples).toContain('Roku Channel')
     expect(siteExamples).toContain('Kanopy')
+    expect(siteExamples).toContain('Bilibili')
+    expect(siteExamples).toContain('Kick')
+    expect(siteExamples).toContain('Rumble')
+    expect(siteExamples).toContain('Odysee')
+    expect(siteExamples).toContain('Niconico')
     await page.click('#home_starter_chips button')
     const selectedStarterPlaceholder = await page.$eval(
       '#home_starter_url',
