@@ -194,7 +194,7 @@ const ZERO_DROPPED_CONTROL_MESSAGES = 0
 const ZERO_MISSING_DIRECTIONAL_DELIVERIES = 0
 const ZERO_REORDERED_CONTROL_MESSAGES = 0
 const ZERO_SKIPPED_CONTROL_MESSAGES = 0
-const LIVE_CONTROL_LATENCY_BUDGET_MS = 1500
+const LIVE_CONTROL_LATENCY_BUDGET_MS = 2000
 const LIVE_CONTROL_FRAME_BUDGET_BYTES = STREAMING_SITE_CONNECTION_BUDGET.maxMessageBytes
 const BROWSER_PAIR_E2E_TEST_MODES = 'broadcast+isolated-live'
 const BROWSER_PAIR_CONNECTION_CHECKLIST =
@@ -451,8 +451,9 @@ const MERGE_GATE_METRICS = [
     value: `${STREAMING_SITE_CONNECTION_FIXTURE_COUNT} sites`,
     detail:
       'YouTube, AnimePahe, Cineby, Miruro, and generic pages stay in the matrix, ' +
-      'including Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, ' +
-      'Disney+, Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, and Kanopy ' +
+      'including Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, TikTok, ' +
+      'Instagram, Plex, Disney+, Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku ' +
+      'Channel, and Kanopy ' +
       'generic hosts.'
   },
   {
@@ -535,8 +536,8 @@ const CONNECTION_CONFIDENCE_CARDS = [
     label: 'Local website load',
     detail:
       'YouTube, AnimePahe, Cineby, Miruro, and generic pages load locally; Vimeo, Twitch, ' +
-      'Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, Disney+, Crunchyroll, ' +
-      'Apple TV+, Peacock, Max, Paramount+, Roku Channel, and Kanopy pages stay generic ' +
+      'Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, TikTok, Instagram, Plex, ' +
+      'Disney+, Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, and Kanopy pages stay generic ' +
       'while only typed commands cross the tiny lane.'
   }
 ] as const
@@ -565,8 +566,9 @@ const BROWSER_SYNC_RECEIPT_ITEMS = [
     detail:
       `YouTube, AnimePahe, Cineby, Miruro, and generic lanes cover ` +
       `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} two-browser transport paths before merge, ` +
-      'including Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, ' +
-      'Disney+, Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, and Kanopy ' +
+      'including Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, TikTok, ' +
+      'Instagram, Plex, Disney+, Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku ' +
+      'Channel, and Kanopy ' +
       'generic hosts.'
   },
   {
@@ -593,7 +595,7 @@ const BROWSER_SYNC_ASSURANCE_ITEMS = [
     id: 'youtube-plus',
     label: 'YouTube to any site',
     detail:
-      `YouTube watch, mobile, music, nocookie, and generic watch pages stay in the ` +
+      `YouTube watch, shorts, live, mobile, music, nocookie, and generic watch pages stay in the ` +
       `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}-path two-browser matrix.`
   },
   {
@@ -620,13 +622,15 @@ const BROWSER_SYNC_MATRIX_ITEMS = [
     id: 'youtube-routes',
     label: 'YouTube routes checked',
     detail:
-      'Watch, short-link, root, playlist, mobile, music, and nocookie paths all stay in the same synced control lane.'
+      'Watch, short-link, root, playlist, mobile, music, nocookie, shorts, and live paths ' +
+      'all stay in the same synced control lane.'
   },
   {
     id: 'generic-routes',
     label: 'Any-site routes checked',
     detail:
-      `${STREAMING_SITE_BROWSER_PAIR_GENERIC_PATH_COUNT} generic website paths, from Vimeo and Twitch to Netflix-style ` +
+      `${STREAMING_SITE_BROWSER_PAIR_GENERIC_PATH_COUNT} generic website paths, from Vimeo ` +
+      'and Twitch to TikTok, Instagram, and Netflix-style ' +
       'pages, preview as local website lanes before queueing.'
   },
   {

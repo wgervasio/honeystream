@@ -56,11 +56,11 @@ describe('streaming site browser-pair reliability gate', () => {
     expect(bestProfile.siteCount).toBe(STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES.length)
     expect(bestProfile.providerCoverage).toEqual(
       expect.arrayContaining([
-        { provider: 'youtube', siteCount: 7 },
+        { provider: 'youtube', siteCount: 9 },
         { provider: 'animepahe', siteCount: 5 },
         { provider: 'cineby', siteCount: 5 },
         { provider: 'miruro', siteCount: 5 },
-        { provider: 'unknown', siteCount: 21 }
+        { provider: 'unknown', siteCount: 23 }
       ])
     )
     expect(bestProfile.maxCombinedByteLossRate).toBe(0)
