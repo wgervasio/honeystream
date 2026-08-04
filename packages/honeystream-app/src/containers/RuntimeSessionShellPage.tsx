@@ -194,7 +194,7 @@ const ZERO_DROPPED_CONTROL_MESSAGES = 0
 const ZERO_MISSING_DIRECTIONAL_DELIVERIES = 0
 const ZERO_REORDERED_CONTROL_MESSAGES = 0
 const ZERO_SKIPPED_CONTROL_MESSAGES = 0
-const LIVE_CONTROL_LATENCY_BUDGET_MS = 2000
+const LIVE_CONTROL_LATENCY_BUDGET_MS = 1500
 const LIVE_CONTROL_FRAME_BUDGET_BYTES = STREAMING_SITE_CONNECTION_BUDGET.maxMessageBytes
 const BROWSER_PAIR_E2E_TEST_MODES = 'broadcast+isolated-live'
 const BROWSER_PAIR_CONNECTION_CHECKLIST =
@@ -587,7 +587,7 @@ const BROWSER_SYNC_RECEIPT_ITEMS = [
     id: 'live-receipt',
     label: 'Live receipt green',
     detail:
-      'The happy seal waits until this browser seat has sent and received real typed control frames under budget.'
+      `The happy seal waits until this browser seat has sent and received real typed control frames under the ${LIVE_CONTROL_LATENCY_BUDGET_MS}ms live budget.`
   }
 ] as const
 const BROWSER_SYNC_ASSURANCE_ITEMS = [
@@ -1780,7 +1780,7 @@ const RuntimeSessionRouteSurface = ({
             <strong>Live control receipt</strong>
             <span>
               {liveControlReceiptState === 'ready'
-                ? 'This browser seat has sent and received real typed control frames under the live e2e latency and frame-size budgets.'
+                ? `This browser seat has sent and received real typed control frames under the ${LIVE_CONTROL_LATENCY_BUDGET_MS}ms live latency and frame-size budgets.`
                 : 'Waiting for this browser seat to send and receive real typed control frames.'}
             </span>
             <div>
