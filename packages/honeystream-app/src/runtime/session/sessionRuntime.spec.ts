@@ -261,6 +261,109 @@ describe('runtime/session/SessionRuntime', () => {
     })
   })
 
+  it('warms up the first heartbeat only after the accepted guest snapshot arrives', async () => {
+    let nowMs = 11000
+    const pair = createInMemoryPeerTransportPair({
+      hostInboundValidator: acceptsUnknownMessage,
+      guestInboundValidator: acceptsUnknownMessage,
+      now: () => nowMs
+    })
+    const hostRuntime = createSessionRuntime({
+      transport: pair.host,
+      playback: new FakePlaybackEngine(),
+      heartbeatIntervalMs: 5000,
+      now: () => nowMs
+    })
+    const guestRuntime = createSessionRuntime({
+      transport: pair.guest,
+      playback: new FakePlaybackEngine(),
+      heartbeatIntervalMs: 5000,
+      now: () => nowMs
+    })
+
+    try {
+      await hostRuntime.startHostSession({
+        roomId: 'room-1',
+        hostUsername: 'Host',
+        inviteSecret: 'invite-secret'
+      })
+      await guestRuntime.startGuestSession({
+        roomId: 'room-1',
+        username: 'Guest',
+        inviteSecret: 'invite-secret'
+      })
+
+      expect(guestRuntime.getSnapshot().transportTelemetry.sentMessages).toBe(1)
+
+      await flushRuntime()
+
+      expect(guestRuntime.getSnapshot().clockSync).toEqual({
+        estimatedHostOffsetMs: 0,
+        lastRoundTripMs: 0,
+        lastSyncedAtMs: nowMs,
+        sampleCount: 1
+      })
+      expect(guestRuntime.getSnapshot().transportTelemetry.sentMessages).toBeGreaterThan(1)
+      expect(hostRuntime.getSnapshot().transportTelemetry.receivedMessages).toBeGreaterThan(1)
+    } finally {
+      guestRuntime.dispose()
+      hostRuntime.dispose()
+    }
+  })
+
+  it('rejects heartbeat commands before a guest has joined', async () => {
+    let nowMs = 12000
+    const pair = createInMemoryPeerTransportPair({
+      hostInboundValidator: acceptsUnknownMessage,
+      guestInboundValidator: acceptsUnknownMessage,
+      now: () => nowMs
+    })
+    const hostRuntime = createSessionRuntime({
+      transport: pair.host,
+      playback: new FakePlaybackEngine(),
+      now: () => nowMs
+    })
+
+    try {
+      await hostRuntime.startHostSession({
+        roomId: 'room-1',
+        hostUsername: 'Host',
+        inviteSecret: 'invite-secret'
+      })
+
+      const heartbeat: ClientToHostEnvelope = {
+        version: PROTOCOL_VERSION,
+        direction: 'client-to-host',
+        seq: 1,
+        sentAtMs: nowMs,
+        command: {
+          type: 'heartbeat',
+          clientSentAtMs: nowMs
+        }
+      }
+      pair.guest.send({
+        seq: heartbeat.seq,
+        sentAtMs: heartbeat.sentAtMs,
+        message: heartbeat
+      })
+      await flushRuntime()
+
+      const projection = hostRuntime.getSnapshot()
+      expect(projection.session && projection.session.participants.guest).toBeUndefined()
+      expect(projection.diagnostics).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            code: 'invalidCommand',
+            path: 'command.heartbeat'
+          })
+        ])
+      )
+    } finally {
+      hostRuntime.dispose()
+      pair.guest.dispose()
+    }
+  })
+
   it('records protocol diagnostics for malformed inbound envelopes', async () => {
     let nowMs = 5000
     const pair = createInMemoryPeerTransportPair({
