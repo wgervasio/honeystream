@@ -455,6 +455,11 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('data-live-sent-control-messages="0"')
     expect(html).toContain('data-live-received-control-messages="0"')
     expect(html).toContain('data-live-latency-budget-ms="1500"')
+    expect(html).toContain('data-live-action-p95-budget-ms="5000"')
+    expect(html).toContain('data-live-browser-mode="separate-browser-processes"')
+    expect(html).toContain('data-live-browser-process-count="2"')
+    expect(html).toContain('data-live-byte-reconciliation="sent-equals-received"')
+    expect(html).toContain('data-live-pair-check="host-and-guest-sent-received-lossless"')
     expect(html).toContain(
       `data-live-frame-budget-bytes="${STREAMING_SITE_CONNECTION_BUDGET.maxMessageBytes}"`
     )
@@ -462,6 +467,18 @@ describe('RuntimeSessionShellPage', () => {
       'Waiting for this browser seat to send and receive real typed control frames'
     )
     expect(html).toContain('Typed control frames stay &lt;=2048B while media bytes stay local.')
+    expect(html).toContain('Different browser processes')
+    expect(html).toContain('2 isolated browser processes run the same private room')
+    expect(html).toContain('Both seats sent + received')
+    expect(html).toContain(
+      'Cat-side and rabbit-side each have to send and receive real typed frames'
+    )
+    expect(html).toContain('Pair bytes reconcile')
+    expect(html).toContain(
+      'host+guest sent bytes match received bytes after every queue and control action'
+    )
+    expect(html).toContain('Live controls stay light')
+    expect(html).toContain('Action P95 stays &lt;=5000ms')
     expect(html).toContain('id="runtime_site_matrix_receipt"')
     expect(html).toContain('Site matrix receipt')
     expect(html).toContain(`data-source-path-count="${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}"`)
