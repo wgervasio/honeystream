@@ -1999,7 +1999,7 @@ const RuntimeSessionRouteSurface = ({
           data-tail-latency-ms-budget={STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}
         >
           <div className={styles.cardHeader}>
-            <p className={styles.kicker}>Happy buddy passport</p>
+            <p className={styles.kicker}>Buddy passport</p>
             <span>{guest ? 'Both seats mapped' : 'Rabbit seat saved'}</span>
           </div>
           <div className={styles.passportSeats}>
