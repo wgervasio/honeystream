@@ -8,7 +8,8 @@ jest.mock('components/TitleBar', () => ({
 
 import {
   createRuntimeSessionShellRouteBoundary,
-  RuntimeSessionShellPage
+  RuntimeSessionShellPage,
+  selectBrowserPlaybackAdapterKind
 } from './RuntimeSessionShellPage'
 import { parseWireEnvelope, ClientCommand, WireEnvelope } from '../protocol'
 import {
@@ -197,6 +198,29 @@ const installCryptoMock = (): (() => void) => {
 }
 
 describe('RuntimeSessionShellPage', () => {
+  it('routes browser website playback through popup while preserving media-element paths', () => {
+    expect(
+      selectBrowserPlaybackAdapterKind({
+        mediaId: 'youtube-website',
+        source: 'website',
+        url: 'https://youtube.com/watch?v=honeystream-demo'
+      })
+    ).toBe('popup')
+    expect(
+      selectBrowserPlaybackAdapterKind({
+        mediaId: 'direct-video',
+        source: 'direct-media',
+        url: 'https://cdn.example.test/honeystream.mp4'
+      })
+    ).toBe('embed-extension')
+    expect(
+      selectBrowserPlaybackAdapterKind({
+        mediaId: 'local-video',
+        source: 'local-file',
+        url: 'honeystream-local://video-key'
+      })
+    ).toBe('local-file')
+  })
   it('renders route-owned runtime session shell details for the lobby route', () => {
     const restoreCrypto = installCryptoMock()
 

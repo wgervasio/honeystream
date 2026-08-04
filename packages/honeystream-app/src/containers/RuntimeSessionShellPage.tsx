@@ -20,7 +20,12 @@ import {
   PlaybackEngineApplyResult,
   PlaybackEngineDesiredState
 } from '../playback/engine/playbackEngineContract'
-import { createPlaybackRuntime, PlaybackRuntimeAdapterContext } from '../playback/runtime'
+import {
+  createPlaybackRuntime,
+  PlaybackRuntimeAdapterContext,
+  PlaybackRuntimeAdapterKind,
+  selectPlaybackAdapterKind
+} from '../playback/runtime'
 import { MediaElementPlaybackAdapter } from '../playback/adapters/media-element'
 import { createPopupAdapterFactory, PopupAdapterOpenPopup } from '../playback/adapters/popup'
 import { LocalFileMetadata, localFileToMediaUrl } from '../playback/adapters/local-file'
@@ -741,8 +746,8 @@ const PAIR_GUIDE_CARDS = [
 Context: The runtime route chooses browser playback adapters for mixed streaming sites.
 Invariant: Media bytes stay local; only typed playback commands cross the session transport.
 Options considered: Popup all websites, embed all websites, or reuse provider-aware selection.
-Decision: Reuse PlaybackRuntime selection and only prefer popups for providers likely to block embeds.
-Performance impact: YouTube/direct media keep the lower-friction embed path while popup-heavy sites avoid failed embeds.
+Decision: Route websites through popup playback while keeping direct media and local files on media elements.
+Performance impact: Website pages avoid failed media-element loads; direct media keeps the lower-friction path.
 Memory/lifecycle ownership: PlaybackRuntime owns adapter creation and disposal for each media change.
 Failure mode: Unsupported pages surface through existing adapter/runtime errors without hidden fallbacks.
 Validation: Covered by adapterSelection, RuntimeSessionShellPage, streaming-site runtime, and e2e tests.
@@ -752,6 +757,18 @@ const STREAMING_SITE_PROVIDER_ADAPTER_PREFERENCES = [
   { provider: 'cineby' as const, adapterKind: 'popup' as const },
   { provider: 'miruro' as const, adapterKind: 'popup' as const }
 ] as const
+
+export const selectBrowserPlaybackAdapterKind = (
+  media: PlaybackRuntimeAdapterContext['media']
+): PlaybackRuntimeAdapterKind => {
+  if (media.source === 'website') {
+    return 'popup'
+  }
+
+  return selectPlaybackAdapterKind(media, {
+    providerAdapterPreferences: STREAMING_SITE_PROVIDER_ADAPTER_PREFERENCES
+  })
+}
 
 type LaunchStepState = 'complete' | 'next' | 'waiting'
 
@@ -948,9 +965,7 @@ const createBrowserPlaybackRuntime = (
       createEmbedExtensionAdapter: context => createMediaElementAdapter(context, getMediaElement),
       createPopupAdapter: context => popupFactory.createAdapter(context.media)
     },
-    selection: {
-      providerAdapterPreferences: STREAMING_SITE_PROVIDER_ADAPTER_PREFERENCES
-    }
+    selectAdapterKind: selectBrowserPlaybackAdapterKind
   })
 }
 
