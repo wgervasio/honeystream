@@ -32,6 +32,7 @@ import {
   PeerTransportEnvelope,
   TransportUnsubscribe
 } from 'transport/contracts'
+import { interpolatePercentile } from 'transport/latency-percentile'
 import { serializedByteLength } from 'transport/transport-byte-length'
 import {
   createProjectionStore,
@@ -130,16 +131,6 @@ const median = (samples: readonly number[]): number => {
   if (samples.length === 0) return 0
   const sortedSamples = samples.slice().sort((left, right) => left - right)
   return sortedSamples[Math.floor(sortedSamples.length / 2)]
-}
-
-const percentile = (samples: readonly number[], percentileValue: number): number => {
-  if (samples.length === 0) return 0
-  const sortedSamples = samples.slice().sort((left, right) => left - right)
-  const index = Math.min(
-    sortedSamples.length - 1,
-    Math.max(0, Math.ceil(sortedSamples.length * percentileValue) - 1)
-  )
-  return sortedSamples[index]
 }
 
 const createEmptyTransportTelemetry = (): SessionRuntimeTransportTelemetrySnapshot => ({
@@ -822,7 +813,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
       latencySampleCount: latencySamples.length,
       maxReceivedFrameBytes: Math.max(this.transportTelemetry.maxReceivedFrameBytes, bytes),
       maxReceivedLatencyMs: Math.max(this.transportTelemetry.maxReceivedLatencyMs, latencyMs),
-      p95ReceivedLatencyMs: percentile(latencySamples, 0.95),
+      p95ReceivedLatencyMs: interpolatePercentile(latencySamples, 0.95),
       receivedBytes,
       receivedMessages
     }

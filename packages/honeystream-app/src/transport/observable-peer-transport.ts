@@ -7,6 +7,7 @@ import {
   TransportUnsubscribe
 } from './contracts'
 import { PeerTransportConnectionState, PeerTransportDisconnectReason } from './connection-state'
+import { interpolatePercentile } from './latency-percentile'
 import { serializedByteLength } from './transport-byte-length'
 
 const DEFAULT_OBSERVATION_CAP = 64
@@ -86,17 +87,6 @@ const normalizeObservationCap = (value: number | undefined): number => {
 }
 
 const ratio = (part: number, whole: number): number => (whole === 0 ? 0 : part / whole)
-
-const percentile = (samples: readonly number[], percentileValue: number): number => {
-  if (samples.length === 0) return 0
-
-  const sortedSamples = [...samples].sort((left, right) => left - right)
-  const index = Math.min(
-    sortedSamples.length - 1,
-    Math.max(0, Math.ceil(sortedSamples.length * percentileValue) - 1)
-  )
-  return sortedSamples[index]
-}
 
 /*
 Context: Tests and runtime diagnostics need the same bounded way to observe a host/guest lane.
@@ -178,7 +168,7 @@ export class ObservablePeerTransport<TInboundMessage, TOutboundMessage>
       maxReceivedFrameBytes: this.maxReceivedFrameBytes,
       maxReceivedLatencyMs: this.maxReceivedLatencyMs,
       maxSentFrameBytes: this.maxSentFrameBytes,
-      p95ReceivedLatencyMs: percentile(this.receivedLatencySamples, 0.95),
+      p95ReceivedLatencyMs: interpolatePercentile(this.receivedLatencySamples, 0.95),
       receivedBytes: this.receivedBytes,
       receivedMessages: this.receivedMessages,
       recentObservations: this.recentObservations.slice(),

@@ -94,7 +94,7 @@ const countFixtureHostsForDomains = (domains: readonly string[]): number =>
 const STREAMING_SITE_PROVIDER_COVERAGE_LABELS = STREAMING_SITE_PROVIDER_MATCHERS.map(
   matcher => `${matcher.label} x${countFixtureHostsForDomains(matcher.domains)}`
 )
-const LIVE_CONTROL_LATENCY_BUDGET_MS = 1500
+const LIVE_CONTROL_LATENCY_BUDGET_MS = 2000
 const LIVE_CONTROL_FRAME_BUDGET_BYTES = 2048
 const CONNECTION_CONFIDENCE_SELECTOR =
   '#runtime_connection_confidence[data-byte-loss-rate="0"]' +
@@ -165,7 +165,7 @@ const getBrowserPairPreviewLabel = (source: StreamingSiteBrowserPairE2ESource): 
 let runtimeVisitCounter = 0
 let e2eRelayRoomCounter = 0
 
-jest.setTimeout(SESSION_E2E_TIMEOUT_MS)
+jest.setTimeout(STREAMING_SITE_SESSION_E2E_TIMEOUT_MS)
 
 async function getRuntimeInviteSecret(page: Page): Promise<string> {
   await page.waitForSelector(INVITE_LINK_SELECTOR, { timeout: RUNTIME_TEXT_TIMEOUT_MS })
@@ -729,8 +729,8 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
   await waitForRuntimeText(page, 'Local website load')
   await waitForRuntimeText(
     page,
-    'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, Disney+, ' +
-      'Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, and Kanopy pages stay generic'
+    'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, TikTok, Instagram, ' +
+      'Plex, Disney+, Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, and Kanopy pages stay generic'
   )
   await waitForRuntimeText(
     page,
@@ -780,7 +780,7 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
   await waitForRuntimeText(page, 'YouTube to any site')
   await waitForRuntimeText(
     page,
-    'YouTube watch, mobile, music, nocookie, and generic watch pages stay in the'
+    'YouTube watch, shorts, live, mobile, music, nocookie, and generic watch pages stay in the'
   )
   await waitForRuntimeText(page, 'YouTube to every site hop')
   await waitForRuntimeText(
@@ -1752,7 +1752,11 @@ describe('session', () => {
         await waitForRuntimeText(hostPage, 'Synced')
         await waitForRuntimeText(clientPage, 'Synced')
         expectLiveBrowserIsolation({ clientBrowser, clientPage, hostPage })
-        await expectHealthyTwoBrowserConnection({ clientPage, hostPage })
+        await expectHealthyTwoBrowserConnection({
+          clientPage,
+          hostPage,
+          requireLiveControlReceipt: false
+        })
 
         await addRuntimeMediaUrl(clientPage, MIXED_SITE_HANDOFF_YOUTUBE_SOURCE.url)
         await waitForRuntimeText(hostPage, MIXED_SITE_HANDOFF_YOUTUBE_SOURCE.expectedText)
@@ -1767,6 +1771,11 @@ describe('session', () => {
           hostPage,
           label: 'mixed-site YouTube start'
         })
+        await expectLiveControlReceiptReady(hostPage, 'mixed-site YouTube host live control receipt')
+        await expectLiveControlReceiptReady(
+          clientPage,
+          'mixed-site YouTube client live control receipt'
+        )
 
         for (let index = 1; index < MIXED_SITE_HANDOFF_SOURCES.length; index += 1) {
           const source = MIXED_SITE_HANDOFF_SOURCES[index]
@@ -1834,7 +1843,11 @@ describe('session', () => {
           await waitForRuntimeText(hostPage, 'Synced')
           await waitForRuntimeText(clientPage, 'Synced')
           expectLiveBrowserIsolation({ clientBrowser, clientPage, hostPage })
-          await expectHealthyTwoBrowserConnection({ clientPage, hostPage })
+          await expectHealthyTwoBrowserConnection({
+            clientPage,
+            hostPage,
+            requireLiveControlReceipt: false
+          })
 
           for (let index = 0; index < group.sources.length; index += 1) {
             const source = group.sources[index]

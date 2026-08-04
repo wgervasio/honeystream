@@ -81,6 +81,20 @@ export const STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES: readonly StreamingSiteBrow
       exerciseControls: false
     },
     {
+      lane: 'youtube',
+      url: 'www.youtube.com/shorts/two-browser-youtube-short',
+      title: 'YouTube watch page',
+      expectedText: 'YouTube watch page',
+      exerciseControls: false
+    },
+    {
+      lane: 'youtube',
+      url: 'www.youtube.com/live/two-browser-youtube-live?feature=share',
+      title: 'YouTube watch page',
+      expectedText: 'YouTube watch page',
+      exerciseControls: false
+    },
+    {
       lane: 'animepahe',
       url: 'animepahe.ru/play/two-browser-animepahe',
       title: 'AnimePahe watch page',
@@ -210,6 +224,11 @@ export const STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES: readonly StreamingSiteBrow
     ),
     genericSource('tubitv.com/movies/two-browser-generic', 'tubitv.com page'),
     genericSource('www.dailymotion.com/video/xtwo-browser-generic', 'www.dailymotion.com page'),
+    genericSource(
+      'www.tiktok.com/@honeystream/video/two-browser-generic',
+      'www.tiktok.com page'
+    ),
+    genericSource('www.instagram.com/reel/two-browser-generic', 'www.instagram.com page'),
     genericSource('watch.plex.tv/movie/two-browser-generic', 'watch.plex.tv page'),
     genericSource('www.disneyplus.com/movies/honeystream-test/abc123', 'www.disneyplus.com page'),
     genericSource('www.crunchyroll.com/watch/honeystream-test', 'www.crunchyroll.com page'),

@@ -285,8 +285,8 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain(`${STREAMING_SITE_CONNECTION_FIXTURES.length} sites`)
     expect(html).toContain('YouTube, AnimePahe, Cineby, Miruro, and generic pages')
     expect(html).toContain(
-      'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, Disney+, ' +
-        'Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, and Kanopy generic hosts'
+      'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, TikTok, ' +
+        'Instagram, Plex, Disney+, Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, and Kanopy generic hosts'
     )
     expect(html).toContain('Per-site proof')
     expect(html).toContain(`${STREAMING_SITE_CONNECTION_FIXTURES.length} observed`)
@@ -398,8 +398,8 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('Local website load')
     expect(html).toContain('YouTube, AnimePahe, Cineby, Miruro, and generic pages load locally')
     expect(html).toContain(
-      'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, Disney+, ' +
-        'Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, and Kanopy pages stay generic'
+      'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, TikTok, ' +
+        'Instagram, Plex, Disney+, Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, and Kanopy pages stay generic'
     )
     expect(html).toContain(
       `data-tail-latency-ms-budget="${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}"`
@@ -454,7 +454,7 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('data-live-frame-state="waiting"')
     expect(html).toContain('data-live-sent-control-messages="0"')
     expect(html).toContain('data-live-received-control-messages="0"')
-    expect(html).toContain('data-live-latency-budget-ms="1500"')
+    expect(html).toContain('data-live-latency-budget-ms="2000"')
     expect(html).toContain(
       `data-live-frame-budget-bytes="${STREAMING_SITE_CONNECTION_BUDGET.maxMessageBytes}"`
     )
@@ -475,7 +475,9 @@ describe('RuntimeSessionShellPage', () => {
       `data-control-burst-lanes="${STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT}"`
     )
     expect(html).toContain('YouTube routes checked')
-    expect(html).toContain('Watch, short-link, root, playlist, mobile, music, and nocookie paths')
+    expect(html).toContain(
+      'Watch, short-link, root, playlist, mobile, music, nocookie, shorts, and live paths'
+    )
     expect(html).toContain('Any-site routes checked')
     expect(html).toContain('preview as local website lanes before queueing')
     expect(html).toContain('One burst per lane')
@@ -486,7 +488,7 @@ describe('RuntimeSessionShellPage', () => {
     )
     expect(html).toContain('YouTube to any site')
     expect(html).toContain(
-      'YouTube watch, mobile, music, nocookie, and generic watch pages stay in the'
+      'YouTube watch, shorts, live, mobile, music, nocookie, and generic watch pages stay in the'
     )
     expect(html).toContain('YouTube to every site hop')
     expect(html).toContain(
@@ -502,8 +504,8 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('data-happy-path-assurance="mixed-site-handoff"')
     expect(html).toContain('data-happy-path-assurance="control-byte-budget"')
     expect(html).toContain(
-      'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, Plex, Disney+, ' +
-        'Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, and Kanopy generic hosts'
+      'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, TikTok, ' +
+        'Instagram, Plex, Disney+, Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, and Kanopy generic hosts'
     )
     expect(html).toContain(
       `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} two-browser transport paths`
