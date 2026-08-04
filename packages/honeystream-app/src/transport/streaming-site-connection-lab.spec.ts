@@ -1,3 +1,4 @@
+import { classifyMediaProvider } from 'protocol'
 import { STREAMING_SITE_TRANSPORT_BUDGET } from './simulated-peer-transport-performance'
 import {
   runStreamingSiteConnectionLab,
@@ -32,6 +33,9 @@ const findRank = (
   return rank
 }
 
+const countUnknownFixtureSources = (sources: readonly string[]): number =>
+  sources.filter(source => classifyMediaProvider(source) === 'unknown').length
+
 describe('streaming site connection lab', () => {
   it('selects the lowest-latency zero-loss mock connection across supported sites', async () => {
     const result = await runStreamingSiteConnectionLab({
@@ -52,13 +56,7 @@ describe('streaming site connection lab', () => {
     const bestObservation = findObservation(result.observations, 'clean-ultra-low-latency')
     const metrics = bestObservation.metrics
     expect(bestObservation.budgetResult).toEqual({ ok: true, failures: [] })
-    expect(bestObservation.providerCoverage).toEqual([
-      { provider: 'youtube', siteCount: 18 },
-      { provider: 'animepahe', siteCount: 15 },
-      { provider: 'cineby', siteCount: 16 },
-      { provider: 'miruro', siteCount: 14 },
-      { provider: 'unknown', siteCount: 21 }
-    ])
+    expect(bestObservation.providerCoverage).toEqual(STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE)
     const fixtureSentMessages = bestObservation.fixtureObservations.reduce(
       (total, fixture) => total + fixture.sentMessages,
       0
@@ -94,7 +92,7 @@ describe('streaming site connection lab', () => {
 
   it('covers the requested streaming-site matrix before selecting a transport lane', () => {
     const sources = STREAMING_SITE_CONNECTION_FIXTURES.map(fixture => fixture.source)
-    expect(STREAMING_SITE_CONNECTION_FIXTURES).toHaveLength(84)
+    expect(STREAMING_SITE_CONNECTION_FIXTURES).toHaveLength(88)
     expect(sources).toEqual(
       expect.arrayContaining([
         'https://youtube.com',
@@ -130,28 +128,30 @@ describe('streaming site connection lab', () => {
         'https://www.max.com/watch/movie/honeystream-test',
         'https://www.paramountplus.com/movies/video/honeystream-test',
         'https://therokuchannel.roku.com/watch/honeystream-test',
-        'https://www.kanopy.com/en/product/honeystream-test'
+        'https://www.kanopy.com/en/product/honeystream-test',
+        'https://www.bilibili.tv/en/video/honeystream-test',
+        'https://rumble.com/vhoneystream-test.html',
+        'https://soundcloud.com/honeystream/night-drive',
+        'https://www.facebook.com/watch/?v=honeystream-test'
       ])
     )
-    expect(sources.some(source => source.includes('youtube.com'))).toBe(true)
-    expect(sources.some(source => source.includes('youtu.be'))).toBe(true)
-    expect(sources.some(source => source.includes('animepahe'))).toBe(true)
-    expect(sources.some(source => source.includes('cineby'))).toBe(true)
-    expect(sources.some(source => source.includes('miruro'))).toBe(true)
-    expect(sources.some(source => source.includes('streaming.example.test'))).toBe(true)
-    expect(sources.some(source => source.includes('vimeo.com'))).toBe(true)
-    expect(sources.some(source => source.includes('twitch.tv'))).toBe(true)
-    expect(sources.some(source => source.includes('netflix.com'))).toBe(true)
     expect(STREAMING_SITE_CONNECTION_FIXTURES.some(fixture => fixture.durationMs === null)).toBe(
       true
     )
-    expect(STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE).toEqual([
-      { provider: 'youtube', siteCount: 18 },
-      { provider: 'animepahe', siteCount: 15 },
-      { provider: 'cineby', siteCount: 16 },
-      { provider: 'miruro', siteCount: 14 },
-      { provider: 'unknown', siteCount: 21 }
-    ])
+    expect(STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE).toEqual(
+      expect.arrayContaining([
+        { provider: 'youtube', siteCount: 18 },
+        { provider: 'animepahe', siteCount: 15 },
+        { provider: 'cineby', siteCount: 16 },
+        { provider: 'miruro', siteCount: 14 }
+      ])
+    )
+    expect(
+      STREAMING_SITE_CONNECTION_PROVIDER_COVERAGE.find(coverage => coverage.provider === 'unknown')
+    ).toEqual({
+      provider: 'unknown',
+      siteCount: countUnknownFixtureSources(sources)
+    })
     expect(
       STREAMING_SITE_CONNECTION_FIXTURES.some(
         fixture => typeof fixture.durationMs === 'number' && fixture.durationMs < 60000

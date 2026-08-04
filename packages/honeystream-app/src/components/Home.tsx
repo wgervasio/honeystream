@@ -221,7 +221,7 @@ class Home extends Component<IProps, IState> {
         label: 'site fixtures',
         detail:
           'YouTube, AnimePahe, Cineby, Miruro, and generic watch pages including Hulu, ' +
-          'Prime Video, Tubi, Max, and Kanopy.'
+          'Prime Video, Tubi, Max, Kanopy, Bilibili, Rumble, SoundCloud, and Facebook Watch.'
       },
       {
         id: 'providers',
@@ -774,6 +774,10 @@ class Home extends Component<IProps, IState> {
             <strong>Paramount+</strong>
             <strong>Roku Channel</strong>
             <strong>Kanopy</strong>
+            <strong>Bilibili</strong>
+            <strong>Rumble</strong>
+            <strong>SoundCloud</strong>
+            <strong>Facebook Watch</strong>
             <strong>direct MP4</strong>
           </div>
 

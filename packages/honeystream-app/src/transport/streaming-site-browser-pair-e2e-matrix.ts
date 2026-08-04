@@ -243,10 +243,16 @@ export const STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES: readonly StreamingSiteBrow
       'www.paramountplus.com page'
     ),
     genericSource('therokuchannel.roku.com/watch/honeystream-test', 'therokuchannel.roku.com page'),
-    genericSource('www.kanopy.com/en/product/honeystream-test', 'www.kanopy.com page')
+    genericSource('www.kanopy.com/en/product/honeystream-test', 'www.kanopy.com page'),
+    genericSource('www.bilibili.tv/en/video/honeystream-test', 'www.bilibili.tv page'),
+    genericSource('rumble.com/vhoneystream-test.html', 'rumble.com page'),
+    genericSource('soundcloud.com/honeystream/night-drive', 'soundcloud.com page'),
+    genericSource(
+      'www.facebook.com/watch/?v=honeystream-test',
+      'www.facebook.com page'
+    )
   ]
 )
-
 export const STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT =
   STREAMING_SITE_BROWSER_PAIR_E2E_LANES.length
 export const STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT =

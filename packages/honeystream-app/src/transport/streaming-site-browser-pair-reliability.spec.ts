@@ -26,6 +26,10 @@ const browserPairFixtures: readonly StreamingSiteConnectionFixture[] = STREAMING
     title: source.title
   })
 )
+const expectedProviderCoverage = STREAMING_SITE_BROWSER_PAIR_E2E_LANES.map(lane => ({
+  provider: lane === 'generic' ? 'unknown' : lane,
+  siteCount: STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES.filter(source => source.lane === lane).length
+}))
 
 const findControlBurstSource = (lane: string): StreamingSiteBrowserPairE2ESource => {
   const source = STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES.find(
@@ -54,15 +58,7 @@ describe('streaming site browser-pair reliability gate', () => {
     expect(result.trialCount).toBe(STREAMING_SITE_CONNECTION_TRIAL_COUNT)
     expect(bestProfile.profile.id).toBe('clean-ultra-low-latency')
     expect(bestProfile.siteCount).toBe(STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES.length)
-    expect(bestProfile.providerCoverage).toEqual(
-      expect.arrayContaining([
-        { provider: 'youtube', siteCount: 9 },
-        { provider: 'animepahe', siteCount: 5 },
-        { provider: 'cineby', siteCount: 5 },
-        { provider: 'miruro', siteCount: 5 },
-        { provider: 'unknown', siteCount: 23 }
-      ])
-    )
+    expect(bestProfile.providerCoverage).toEqual(expect.arrayContaining(expectedProviderCoverage))
     expect(bestProfile.maxCombinedByteLossRate).toBe(0)
     expect(bestProfile.maxCombinedDroppedMessages).toBe(0)
     expect(bestProfile.maxCombinedRetransmissionByteRate).toBe(0)

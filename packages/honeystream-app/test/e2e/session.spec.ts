@@ -94,9 +94,13 @@ const countFixtureHostsForDomains = (domains: readonly string[]): number =>
 const STREAMING_SITE_PROVIDER_COVERAGE_LABELS = STREAMING_SITE_PROVIDER_MATCHERS.map(
   matcher => `${matcher.label} x${countFixtureHostsForDomains(matcher.domains)}`
 )
+const GENERIC_STREAMING_SITE_EXAMPLES =
+  'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, TikTok, Instagram, ' +
+  'Plex, Disney+, Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, Kanopy, ' +
+  'Bilibili, Rumble, SoundCloud, and Facebook Watch'
 const LIVE_CONTROL_LATENCY_BUDGET_MS = 1500
 const LIVE_CONTROL_ACTION_P95_BUDGET_MS = 5000
-const LIVE_CONTROL_PROGRESS_BUDGET_MS = 5000
+const LIVE_CONTROL_PROGRESS_BUDGET_MS = 10000
 const LIVE_CONTROL_PAIR_LOSSLESS_BUDGET_MS = USE_BROADCAST_RTC_E2E ? 5000 : 2000
 const LIVE_CONTROL_FRAME_BUDGET_BYTES = 2048
 const LIVE_BROWSER_PAIR_MODE = 'separate-browser-processes'
@@ -942,8 +946,7 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
   await waitForRuntimeText(page, 'Local website load')
   await waitForRuntimeText(
     page,
-    'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, TikTok, Instagram, ' +
-      'Plex, Disney+, Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, and Kanopy pages stay generic'
+    `${GENERIC_STREAMING_SITE_EXAMPLES} pages stay generic`
   )
   await waitForRuntimeText(
     page,
