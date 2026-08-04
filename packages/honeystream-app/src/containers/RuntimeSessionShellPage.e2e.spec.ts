@@ -214,6 +214,21 @@ const readQueueTotal = (targetPage: playwright.Page): Promise<number> =>
     return currentCount + document.querySelectorAll('[data-queue-item-id]').length
   })
 
+const readQueueTitles = (targetPage: playwright.Page): Promise<readonly string[]> =>
+  targetPage.evaluate(() => {
+    const titles: string[] = []
+    const currentTitle = document.querySelector('[data-queue-state="current"] strong')
+    if (currentTitle && currentTitle.textContent) {
+      titles.push(currentTitle.textContent.trim())
+    }
+    document.querySelectorAll('[data-queue-item-id] > span:first-child').forEach(element => {
+      if (element.textContent) {
+        titles.push(element.textContent.trim())
+      }
+    })
+    return titles
+  })
+
 const waitForQueueTotal = async (
   targetPage: playwright.Page,
   expectedTotal: number,
@@ -223,6 +238,17 @@ const waitForQueueTotal = async (
     `${label} queue total ${expectedTotal}`,
     async () => (await readQueueTotal(targetPage)) === expectedTotal
   )
+}
+
+const waitForQueueTitles = async (
+  targetPage: playwright.Page,
+  expectedTitles: readonly string[],
+  label: string
+): Promise<void> => {
+  await waitUntil(`${label} queue titles`, async () => {
+    const actualTitles = await readQueueTitles(targetPage)
+    return JSON.stringify(actualTitles) === JSON.stringify(expectedTitles)
+  })
 }
 
 const readAttributes = (
@@ -483,9 +509,14 @@ describe('RuntimeSessionShellPage browser-pair e2e sync', () => {
 
       for (let index = 0; index < STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES.length; index += 1) {
         await submitAddMediaUrl(hostPage, STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES[index].url)
+        const expectedTitles = STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES.slice(0, index + 1).map(
+          source => source.expectedText
+        )
         await Promise.all([
           waitForQueueTotal(hostPage, index + 1, `host source ${index + 1}`),
-          waitForQueueTotal(guestSeat.page, index + 1, `guest source ${index + 1}`)
+          waitForQueueTotal(guestSeat.page, index + 1, `guest source ${index + 1}`),
+          waitForQueueTitles(hostPage, expectedTitles, `host source ${index + 1}`),
+          waitForQueueTitles(guestSeat.page, expectedTitles, `guest source ${index + 1}`)
         ])
       }
 
