@@ -95,6 +95,9 @@ const STREAMING_SITE_PROVIDER_COVERAGE_LABELS = STREAMING_SITE_PROVIDER_MATCHERS
   matcher => `${matcher.label} x${countFixtureHostsForDomains(matcher.domains)}`
 )
 const LIVE_CONTROL_LATENCY_BUDGET_MS = 2000
+const LIVE_CONTROL_PROGRESS_BUDGET_MS = USE_BROADCAST_RTC_E2E
+  ? 5000
+  : LIVE_CONTROL_LATENCY_BUDGET_MS
 const LIVE_CONTROL_FRAME_BUDGET_BYTES = 2048
 const CONNECTION_CONFIDENCE_SELECTOR =
   '#runtime_connection_confidence[data-byte-loss-rate="0"]' +
@@ -110,6 +113,7 @@ const CONNECTION_CONFIDENCE_SELECTOR =
 const BROWSER_SYNC_RECEIPT_READY_SELECTOR =
   '#runtime_browser_sync_receipt[data-receipt-state="ready"][data-byte-loss-rate="0"]' +
   '[data-lost-control-bytes="0"][data-dropped-control-messages="0"]' +
+  '[data-live-control-receipt-state="ready"]' +
   '[data-reordered-control-messages="0"][data-sequence-gap-control-messages="0"]' +
   '[data-missing-directional-deliveries="0"]' +
   '[data-tail-latency-ms-budget="10"]' +
@@ -120,6 +124,7 @@ const HAPPY_SYNC_SEAL_READY_SELECTOR =
   '#runtime_happy_sync_seal[data-seal-state="ready"][data-byte-loss-rate="0"]' +
   '[data-browser-path-coverage="all"]' +
   '[data-lost-control-bytes="0"][data-dropped-control-messages="0"]' +
+  '[data-live-control-receipt-state="ready"]' +
   '[data-reordered-control-messages="0"][data-sequence-gap-control-messages="0"]' +
   '[data-missing-directional-deliveries="0"]' +
   '[data-tail-latency-ms-budget="10"]' +
@@ -162,6 +167,25 @@ const getBrowserPairPreviewProvider = (source: StreamingSiteBrowserPairE2ESource
   source.lane === 'generic' ? 'unknown' : source.lane
 const getBrowserPairPreviewLabel = (source: StreamingSiteBrowserPairE2ESource): string =>
   `${STREAMING_SITE_BROWSER_PAIR_LANE_LABELS[source.lane]} lane`
+interface LiveControlMetricSnapshot {
+  readonly maxFrameBytes: number
+  readonly p95LatencyMs: number
+  readonly receivedBytes: number
+  readonly receivedMessages: number
+  readonly sentBytes: number
+  readonly sentMessages: number
+}
+
+interface LiveControlPairMetricSnapshot {
+  readonly client: LiveControlMetricSnapshot
+  readonly host: LiveControlMetricSnapshot
+}
+
+type LiveControlActionRunner = (label: string, action: () => Promise<void>) => Promise<void>
+type FocusableE2EPage = Page & {
+  readonly bringToFront?: () => Promise<void>
+}
+
 let runtimeVisitCounter = 0
 let e2eRelayRoomCounter = 0
 
@@ -281,6 +305,110 @@ async function getPlaybackRateLabel(page: Page): Promise<string> {
 
 function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+const totalLiveControlBytes = (snapshot: LiveControlMetricSnapshot): number =>
+  snapshot.sentBytes + snapshot.receivedBytes
+
+const totalLiveControlMessages = (snapshot: LiveControlMetricSnapshot): number =>
+  snapshot.sentMessages + snapshot.receivedMessages
+
+async function focusE2EPage(page: Page): Promise<void> {
+  const focusablePage = page as FocusableE2EPage
+  if (focusablePage.bringToFront) {
+    await focusablePage.bringToFront()
+    return
+  }
+  await page.evaluate(() => window.focus())
+}
+
+async function getLiveControlMetricSnapshot(page: Page): Promise<LiveControlMetricSnapshot> {
+  return page.$eval('#runtime_live_control_receipt', element => {
+    const readNumber = (name: string): number => {
+      const value = Number(element.getAttribute(name) || '0')
+      return Number.isFinite(value) ? value : 0
+    }
+
+    return {
+      maxFrameBytes: readNumber('data-live-max-frame-bytes'),
+      p95LatencyMs: readNumber('data-live-p95-latency-ms'),
+      receivedBytes: readNumber('data-live-received-control-bytes'),
+      receivedMessages: readNumber('data-live-received-control-messages'),
+      sentBytes: readNumber('data-live-sent-control-bytes'),
+      sentMessages: readNumber('data-live-sent-control-messages')
+    }
+  })
+}
+
+async function getLiveControlPairMetricSnapshot(input: {
+  readonly clientPage: Page
+  readonly hostPage: Page
+}): Promise<LiveControlPairMetricSnapshot> {
+  const host = await getLiveControlMetricSnapshot(input.hostPage)
+  const client = await getLiveControlMetricSnapshot(input.clientPage)
+  return { client, host }
+}
+
+async function waitForLiveControlMetricProgress(
+  page: Page,
+  before: LiveControlMetricSnapshot,
+  label: string
+): Promise<LiveControlMetricSnapshot> {
+  const startedAtMs = Date.now()
+  let after = await getLiveControlMetricSnapshot(page)
+  while (
+    Date.now() - startedAtMs <= LIVE_CONTROL_PROGRESS_BUDGET_MS &&
+    (totalLiveControlMessages(after) <= totalLiveControlMessages(before) ||
+      totalLiveControlBytes(after) <= totalLiveControlBytes(before))
+  ) {
+    await delay(25)
+    after = await getLiveControlMetricSnapshot(page)
+  }
+
+  const elapsedMs = Date.now() - startedAtMs
+  expect(totalLiveControlMessages(after)).toBeGreaterThan(totalLiveControlMessages(before))
+  expect(totalLiveControlBytes(after)).toBeGreaterThan(totalLiveControlBytes(before))
+  expect(elapsedMs).toBeLessThanOrEqual(LIVE_CONTROL_PROGRESS_BUDGET_MS)
+  expect(after.maxFrameBytes).toBeGreaterThan(0)
+  expect(after.maxFrameBytes).toBeLessThanOrEqual(LIVE_CONTROL_FRAME_BUDGET_BYTES)
+  return after
+}
+
+async function expectLiveControlProgress(input: {
+  readonly before: LiveControlPairMetricSnapshot
+  readonly clientPage: Page
+  readonly hostPage: Page
+  readonly label: string
+}): Promise<LiveControlPairMetricSnapshot> {
+  await focusE2EPage(input.hostPage)
+  const host = await waitForLiveControlMetricProgress(
+    input.hostPage,
+    input.before.host,
+    `${input.label} host`
+  )
+  await focusE2EPage(input.clientPage)
+  const client = await waitForLiveControlMetricProgress(
+    input.clientPage,
+    input.before.client,
+    `${input.label} client`
+  )
+  return { client, host }
+}
+
+function createLiveControlActionRunner(input: {
+  readonly clientPage: Page
+  readonly hostPage: Page
+}): LiveControlActionRunner {
+  return async (label: string, action: () => Promise<void>): Promise<void> => {
+    const before = await getLiveControlPairMetricSnapshot(input)
+    await action()
+    await expectLiveControlProgress({
+      before,
+      clientPage: input.clientPage,
+      hostPage: input.hostPage,
+      label
+    })
+  }
 }
 
 async function waitForBoundedPageOperation(
@@ -745,6 +873,7 @@ async function waitForStreamingMergeProof(page: Page): Promise<void> {
   await page.waitForSelector(
     '#runtime_happy_path_assurance[data-happy-path-state="ready"][data-byte-loss-rate="0"]' +
       '[data-lost-control-bytes="0"][data-dropped-control-messages="0"]' +
+      '[data-live-control-receipt-state="ready"]' +
       '[data-reordered-control-messages="0"][data-sequence-gap-control-messages="0"]' +
       '[data-missing-directional-deliveries="0"]' +
       '[data-connection-checklist="invite-secret-join-transport-heartbeat-queue-controls-next"]' +
@@ -884,7 +1013,6 @@ async function expectLiveControlReceiptReady(page: Page, label: string): Promise
 async function expectHealthyTwoBrowserConnection(input: {
   readonly clientPage: Page
   readonly hostPage: Page
-  readonly requireLiveControlReceipt?: boolean
 }): Promise<void> {
   await waitForAttachedSelector(
     input.hostPage,
@@ -925,10 +1053,8 @@ async function expectHealthyTwoBrowserConnection(input: {
     HAPPY_SYNC_SEAL_READY_SELECTOR,
     'client sync seal'
   )
-  if (input.requireLiveControlReceipt !== false) {
-    await expectLiveControlReceiptReady(input.hostPage, 'host live control receipt')
-    await expectLiveControlReceiptReady(input.clientPage, 'client live control receipt')
-  }
+  await expectLiveControlReceiptReady(input.hostPage, 'host live control receipt')
+  await expectLiveControlReceiptReady(input.clientPage, 'client live control receipt')
   await waitForStreamingMergeProof(input.hostPage)
   await waitForStreamingMergeProof(input.clientPage)
   await expectNoRuntimeConnectionAlerts(input.hostPage)
@@ -1045,6 +1171,7 @@ async function clickAvailableRateControlAndWaitForSync(input: {
   readonly controlPage: Page
   readonly hostPage: Page
   readonly label: string
+  readonly runLiveControlAction?: LiveControlActionRunner
 }): Promise<void> {
   const rateUpSelector = '#runtime_playback_controls [data-intent="rateUp"]:not([disabled])'
   const rateDownSelector = '#runtime_playback_controls [data-intent="rateDown"]:not([disabled])'
@@ -1056,7 +1183,13 @@ async function clickAvailableRateControlAndWaitForSync(input: {
 
   await input.controlPage.waitForSelector(controlSelector)
   const previousRateLabel = await getPlaybackRateLabel(input.controlPage)
-  await input.controlPage.click(controlSelector)
+  if (input.runLiveControlAction) {
+    await input.runLiveControlAction(`${input.label} rate control`, () =>
+      input.controlPage.click(controlSelector)
+    )
+  } else {
+    await input.controlPage.click(controlSelector)
+  }
   const expectedRateLabel = await waitForPlaybackRateLabelChange(
     input.controlPage,
     previousRateLabel
@@ -1075,8 +1208,15 @@ async function exerciseTwoBrowserPlaybackControls(input: {
   readonly controlPage: Page
   readonly hostPage: Page
   readonly label: string
+  readonly runLiveControlAction?: LiveControlActionRunner
 }): Promise<void> {
-  await clickPlayPauseAndWaitForState(input.controlPage, 'paused')
+  if (input.runLiveControlAction) {
+    await input.runLiveControlAction(`${input.label} pause control`, () =>
+      clickPlayPauseAndWaitForState(input.controlPage, 'paused')
+    )
+  } else {
+    await clickPlayPauseAndWaitForState(input.controlPage, 'paused')
+  }
   await waitForPlaybackState(input.hostPage, 'paused')
   await waitForPlaybackState(input.clientPage, 'paused')
   await expectPlaybackPositionsSynced({
@@ -1085,7 +1225,13 @@ async function exerciseTwoBrowserPlaybackControls(input: {
     label: `${input.label} pause control`
   })
 
-  await clickPlayPauseAndWaitForState(input.controlPage, 'playing')
+  if (input.runLiveControlAction) {
+    await input.runLiveControlAction(`${input.label} resume control`, () =>
+      clickPlayPauseAndWaitForState(input.controlPage, 'playing')
+    )
+  } else {
+    await clickPlayPauseAndWaitForState(input.controlPage, 'playing')
+  }
   await waitForPlaybackState(input.hostPage, 'playing')
   await waitForPlaybackState(input.clientPage, 'playing')
   await expectPlaybackPositionsSynced({
@@ -1098,7 +1244,13 @@ async function exerciseTwoBrowserPlaybackControls(input: {
 
   const expectedSeekPositionMs =
     (await getPlaybackPositionMs(input.controlPage)) + SEEK_FORWARD_STEP_MS
-  await input.controlPage.click('#runtime_playback_controls [data-intent="seekForward"]')
+  if (input.runLiveControlAction) {
+    await input.runLiveControlAction(`${input.label} seek control`, () =>
+      input.controlPage.click('#runtime_playback_controls [data-intent="seekForward"]')
+    )
+  } else {
+    await input.controlPage.click('#runtime_playback_controls [data-intent="seekForward"]')
+  }
   await waitForPlaybackPositionAtLeast(
     input.hostPage,
     expectedSeekPositionMs,
@@ -1619,11 +1771,13 @@ describe('session', () => {
       expectLiveBrowserIsolation({ clientBrowser, clientPage, hostPage })
       await expectHealthyTwoBrowserConnection({
         clientPage,
-        hostPage,
-        requireLiveControlReceipt: false
+        hostPage
       })
+      const runLiveControlAction = createLiveControlActionRunner({ clientPage, hostPage })
 
-      await addRuntimeMediaUrl(clientPage, 'youtube.com/watch?v=guest-e2e')
+      await runLiveControlAction('guest queued YouTube', () =>
+        addRuntimeMediaUrl(clientPage, 'youtube.com/watch?v=guest-e2e')
+      )
 
       await waitForRuntimeText(clientPage, 'Media added with https:// filled in')
       await waitForRuntimeText(hostPage, 'Website loaded')
@@ -1646,7 +1800,9 @@ describe('session', () => {
         label: 'guest queued YouTube playback'
       })
 
-      await clickPlayPauseAndWaitForState(clientPage, 'paused')
+      await runLiveControlAction('guest pause', () =>
+        clickPlayPauseAndWaitForState(clientPage, 'paused')
+      )
       await waitForPlaybackState(hostPage, 'paused')
       await waitForPlaybackState(clientPage, 'paused')
       await expectPlaybackPositionsSynced({
@@ -1655,13 +1811,17 @@ describe('session', () => {
         label: 'guest pause'
       })
 
-      await clientPage.click('#runtime_playback_controls [data-intent="rateUp"]')
+      await runLiveControlAction('guest rate', () =>
+        clientPage.click('#runtime_playback_controls [data-intent="rateUp"]')
+      )
       await waitForRuntimeText(hostPage, '1.25x')
       await waitForRuntimeText(clientPage, '1.25x')
 
       const expectedGuestSeekPositionMs =
         (await getPlaybackPositionMs(clientPage)) + SEEK_FORWARD_STEP_MS
-      await clientPage.click('#runtime_playback_controls [data-intent="seekForward"]')
+      await runLiveControlAction('guest seek', () =>
+        clientPage.click('#runtime_playback_controls [data-intent="seekForward"]')
+      )
       await waitForPlaybackPositionAtLeast(hostPage, expectedGuestSeekPositionMs, 'guest seek host')
       await waitForPlaybackPositionAtLeast(
         clientPage,
@@ -1674,7 +1834,9 @@ describe('session', () => {
         label: 'guest seek'
       })
 
-      await addRuntimeMediaUrl(hostPage, 'youtube.com/watch?v=host-e2e')
+      await runLiveControlAction('host queued YouTube', () =>
+        addRuntimeMediaUrl(hostPage, 'youtube.com/watch?v=host-e2e')
+      )
 
       await waitForRuntimeText(hostPage, 'Media added with https:// filled in')
       await hostPage.waitForSelector('[data-queue-item-id]')
@@ -1682,7 +1844,9 @@ describe('session', () => {
       await hostPage.waitForSelector(
         '#runtime_playback_controls [data-intent="next"]:not([disabled])'
       )
-      await hostPage.click('#runtime_playback_controls [data-intent="next"]:not([disabled])')
+      await runLiveControlAction('host advanced YouTube', () =>
+        hostPage.click('#runtime_playback_controls [data-intent="next"]:not([disabled])')
+      )
       const nextHostMediaId = await waitForCurrentQueueMediaIdChange(
         hostPage,
         previousHostMediaId,
@@ -1704,7 +1868,9 @@ describe('session', () => {
         label: 'host advanced YouTube playback'
       })
 
-      await clickPlayPauseAndWaitForState(hostPage, 'paused')
+      await runLiveControlAction('host pause', () =>
+        clickPlayPauseAndWaitForState(hostPage, 'paused')
+      )
       await waitForPlaybackState(hostPage, 'paused')
       await waitForPlaybackState(clientPage, 'paused')
       await expectPlaybackPositionsSynced({
@@ -1713,13 +1879,17 @@ describe('session', () => {
         label: 'host pause'
       })
 
-      await hostPage.click('#runtime_playback_controls [data-intent="rateUp"]')
+      await runLiveControlAction('host rate', () =>
+        hostPage.click('#runtime_playback_controls [data-intent="rateUp"]')
+      )
       await waitForRuntimeText(hostPage, '1.25x')
       await waitForRuntimeText(clientPage, '1.25x')
 
       const expectedHostSeekPositionMs =
         (await getPlaybackPositionMs(hostPage)) + SEEK_FORWARD_STEP_MS
-      await hostPage.click('#runtime_playback_controls [data-intent="seekForward"]')
+      await runLiveControlAction('host seek', () =>
+        hostPage.click('#runtime_playback_controls [data-intent="seekForward"]')
+      )
       await waitForPlaybackPositionAtLeast(hostPage, expectedHostSeekPositionMs, 'host seek host')
       await waitForPlaybackPositionAtLeast(
         clientPage,
@@ -1754,11 +1924,13 @@ describe('session', () => {
         expectLiveBrowserIsolation({ clientBrowser, clientPage, hostPage })
         await expectHealthyTwoBrowserConnection({
           clientPage,
-          hostPage,
-          requireLiveControlReceipt: false
+          hostPage
         })
+        const runLiveControlAction = createLiveControlActionRunner({ clientPage, hostPage })
 
-        await addRuntimeMediaUrl(clientPage, MIXED_SITE_HANDOFF_YOUTUBE_SOURCE.url)
+        await runLiveControlAction('mixed-site YouTube queue', () =>
+          addRuntimeMediaUrl(clientPage, MIXED_SITE_HANDOFF_YOUTUBE_SOURCE.url)
+        )
         await waitForRuntimeText(hostPage, MIXED_SITE_HANDOFF_YOUTUBE_SOURCE.expectedText)
         await waitForRuntimeText(clientPage, MIXED_SITE_HANDOFF_YOUTUBE_SOURCE.expectedText)
         await waitForCurrentQueueTitle(hostPage, MIXED_SITE_HANDOFF_YOUTUBE_SOURCE.title)
@@ -1769,24 +1941,24 @@ describe('session', () => {
           clientPage,
           controlPage: clientPage,
           hostPage,
-          label: 'mixed-site YouTube start'
+          label: 'mixed-site YouTube start',
+          runLiveControlAction
         })
-        await expectLiveControlReceiptReady(hostPage, 'mixed-site YouTube host live control receipt')
-        await expectLiveControlReceiptReady(
-          clientPage,
-          'mixed-site YouTube client live control receipt'
-        )
 
         for (let index = 1; index < MIXED_SITE_HANDOFF_SOURCES.length; index += 1) {
           const source = MIXED_SITE_HANDOFF_SOURCES[index]
           const addingPage = index % 2 === 0 ? clientPage : hostPage
           const previousHostMediaId = await getCurrentQueueMediaId(hostPage)
 
-          await addRuntimeMediaUrl(addingPage, source.url)
+          await runLiveControlAction(`mixed-site ${source.lane} queued`, () =>
+            addRuntimeMediaUrl(addingPage, source.url)
+          )
           await waitForQueuedItemTitle(hostPage, source.title)
           await waitForQueuedItemTitle(clientPage, source.title)
           await hostPage.waitForSelector('[data-queue-action="next"]:not([disabled])')
-          await hostPage.click('[data-queue-action="next"]:not([disabled])')
+          await runLiveControlAction(`mixed-site ${source.lane} next`, () =>
+            hostPage.click('[data-queue-action="next"]:not([disabled])')
+          )
           await waitForCurrentQueueMediaIdChange(
             hostPage,
             previousHostMediaId,
@@ -1817,7 +1989,8 @@ describe('session', () => {
           clientPage,
           controlPage: hostPage,
           hostPage,
-          label: 'mixed-site final handoff'
+          label: 'mixed-site final handoff',
+          runLiveControlAction
         })
       },
       STREAMING_SITE_SESSION_E2E_TIMEOUT_MS
@@ -1845,15 +2018,17 @@ describe('session', () => {
           expectLiveBrowserIsolation({ clientBrowser, clientPage, hostPage })
           await expectHealthyTwoBrowserConnection({
             clientPage,
-            hostPage,
-            requireLiveControlReceipt: false
+            hostPage
           })
+          const runLiveControlAction = createLiveControlActionRunner({ clientPage, hostPage })
 
           for (let index = 0; index < group.sources.length; index += 1) {
             const source = group.sources[index]
             const addingPage = index % 2 === 0 ? clientPage : hostPage
 
-            await addRuntimeMediaUrl(addingPage, source.url)
+            await runLiveControlAction(`${group.label} ${source.title} queued`, () =>
+              addRuntimeMediaUrl(addingPage, source.url)
+            )
             await waitForRuntimeText(hostPage, source.expectedText)
             await waitForRuntimeText(clientPage, source.expectedText)
 
@@ -1862,7 +2037,9 @@ describe('session', () => {
               await waitForQueuedItemTitle(hostPage, source.title)
               await waitForQueuedItemTitle(clientPage, source.title)
               await hostPage.waitForSelector('[data-queue-action="next"]:not([disabled])')
-              await hostPage.click('[data-queue-action="next"]:not([disabled])')
+              await runLiveControlAction(`${group.label} ${source.title} next`, () =>
+                hostPage.click('[data-queue-action="next"]:not([disabled])')
+              )
               await waitForCurrentQueueMediaIdChange(
                 hostPage,
                 previousHostMediaId,
@@ -1891,16 +2068,9 @@ describe('session', () => {
                 clientPage,
                 controlPage: addingPage,
                 hostPage,
-                label: `${source.lane} ${source.title}`
+                label: `${source.lane} ${source.title}`,
+                runLiveControlAction
               })
-              await expectLiveControlReceiptReady(
-                hostPage,
-                `${source.lane} host live control receipt`
-              )
-              await expectLiveControlReceiptReady(
-                clientPage,
-                `${source.lane} client live control receipt`
-              )
             }
             await expectTwoBrowserConnectionStillHealthy({ clientPage, hostPage })
           }
