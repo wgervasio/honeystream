@@ -1738,7 +1738,7 @@ describe('session', () => {
         {
           url: 'youtube.com/watch?v=honeystream-demo',
           title: 'YouTube watch page',
-          adapterKind: 'embed-extension'
+          adapterKind: 'popup'
         },
         {
           url: 'animepahe.ru/play/honeystream-demo',
