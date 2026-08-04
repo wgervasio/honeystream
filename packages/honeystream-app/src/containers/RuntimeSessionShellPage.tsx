@@ -582,6 +582,12 @@ const BROWSER_SYNC_RECEIPT_ITEMS = [
     label: 'Flawless handoff',
     detail:
       'Invite, join, queue, pause, resume, seek, rate, and next all stay on the zero-loss happy path.'
+  },
+  {
+    id: 'live-receipt',
+    label: 'Live receipt green',
+    detail:
+      'The happy seal waits until this browser seat has sent and received real typed control frames under budget.'
   }
 ] as const
 const BROWSER_SYNC_ASSURANCE_ITEMS = [
@@ -1535,10 +1541,6 @@ const RuntimeSessionRouteSurface = ({
       viewModel.snapshot.role === 'guest'
         ? boundary.inviteSecretProvided
         : Boolean(boundary.invite.secret)
-    const browserSyncReceiptState =
-      guest && viewModel.snapshot.transportStatus === 'connected' && clockSyncReady
-        ? 'ready'
-        : 'warming'
     const liveTelemetry = viewModel.snapshot.transportTelemetry
     const liveP95LatencyMs = Math.round(liveTelemetry.p95ReceivedLatencyMs)
     const liveAverageLatencyMs = Math.round(liveTelemetry.averageReceivedLatencyMs)
@@ -1561,6 +1563,13 @@ const RuntimeSessionRouteSurface = ({
       liveReceivedState === 'observed' &&
       liveLatencyState === 'under-budget' &&
       liveFrameState === 'under-budget'
+        ? 'ready'
+        : 'warming'
+    const browserSyncReceiptState =
+      guest &&
+      viewModel.snapshot.transportStatus === 'connected' &&
+      clockSyncReady &&
+      liveControlReceiptState === 'ready'
         ? 'ready'
         : 'warming'
 
@@ -1668,6 +1677,9 @@ const RuntimeSessionRouteSurface = ({
           data-byte-loss-rate={ZERO_LOSS_CONTROL_RATE}
           data-dropped-control-messages={ZERO_DROPPED_CONTROL_MESSAGES}
           data-lost-control-bytes={ZERO_LOSS_CONTROL_BYTES}
+          data-live-control-receipt-state={liveControlReceiptState}
+          data-live-max-frame-bytes={liveMaxFrameBytes}
+          data-live-p95-latency-ms={liveP95LatencyMs}
           data-missing-directional-deliveries={ZERO_MISSING_DIRECTIONAL_DELIVERIES}
           data-receipt-state={browserSyncReceiptState}
           data-reordered-control-messages={ZERO_REORDERED_CONTROL_MESSAGES}
@@ -1693,6 +1705,7 @@ const RuntimeSessionRouteSurface = ({
             data-byte-loss-rate={ZERO_LOSS_CONTROL_RATE}
             data-dropped-control-messages={ZERO_DROPPED_CONTROL_MESSAGES}
             data-lost-control-bytes={ZERO_LOSS_CONTROL_BYTES}
+            data-live-control-receipt-state={liveControlReceiptState}
             data-missing-directional-deliveries={ZERO_MISSING_DIRECTIONAL_DELIVERIES}
             data-reordered-control-messages={ZERO_REORDERED_CONTROL_MESSAGES}
             data-seal-state={browserSyncReceiptState}
@@ -1708,7 +1721,7 @@ const RuntimeSessionRouteSurface = ({
             <span>
               {browserSyncReceiptState === 'ready'
                 ? `Two browser seats, one tiny control lane, zero lost bytes, no dropped controls, no skipped controls, and all ${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} website paths are ready.`
-                : `Waiting for rabbit-side, connected transport, heartbeat clock sync, no dropped controls, and all ${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} website paths.`}
+                : `Waiting for rabbit-side, connected transport, heartbeat clock sync, live control receipt, no dropped controls, and all ${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} website paths.`}
             </span>
           </div>
           <div
@@ -1721,6 +1734,7 @@ const RuntimeSessionRouteSurface = ({
             data-dropped-control-messages={ZERO_DROPPED_CONTROL_MESSAGES}
             data-happy-path-state={browserSyncReceiptState}
             data-lost-control-bytes={ZERO_LOSS_CONTROL_BYTES}
+            data-live-control-receipt-state={liveControlReceiptState}
             data-missing-directional-deliveries={ZERO_MISSING_DIRECTIONAL_DELIVERIES}
             data-reordered-control-messages={ZERO_REORDERED_CONTROL_MESSAGES}
             data-sequence-gap-control-messages={ZERO_SKIPPED_CONTROL_MESSAGES}

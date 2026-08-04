@@ -434,7 +434,7 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('data-seal-state="warming"')
     expect(html).toContain('Happy sync warming')
     expect(html).toContain(
-      `Waiting for rabbit-side, connected transport, heartbeat clock sync, no dropped controls, and all ${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} website paths`
+      `Waiting for rabbit-side, connected transport, heartbeat clock sync, live control receipt, no dropped controls, and all ${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} website paths`
     )
     expect(html).toContain('Two browsers, one cozy lane')
     expect(html).toContain('0B control loss')

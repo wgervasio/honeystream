@@ -12,6 +12,9 @@ module.exports = {
       '--no-sandbox',
       '--disable-setuid-sandbox',
       '--disable-dev-shm-usage',
+      '--disable-background-timer-throttling',
+      '--disable-backgrounding-occluded-windows',
+      '--disable-renderer-backgrounding',
       '--disable-features=WebRtcHideLocalIpsWithMdns'
     ],
     ...(executablePath ? { executablePath } : {})
