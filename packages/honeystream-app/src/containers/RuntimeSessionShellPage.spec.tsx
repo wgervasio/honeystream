@@ -454,7 +454,7 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('data-live-frame-state="waiting"')
     expect(html).toContain('data-live-sent-control-messages="0"')
     expect(html).toContain('data-live-received-control-messages="0"')
-    expect(html).toContain('data-live-latency-budget-ms="2000"')
+    expect(html).toContain('data-live-latency-budget-ms="1500"')
     expect(html).toContain(
       `data-live-frame-budget-bytes="${STREAMING_SITE_CONNECTION_BUDGET.maxMessageBytes}"`
     )

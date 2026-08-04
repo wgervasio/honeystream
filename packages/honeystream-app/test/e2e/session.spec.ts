@@ -94,10 +94,10 @@ const countFixtureHostsForDomains = (domains: readonly string[]): number =>
 const STREAMING_SITE_PROVIDER_COVERAGE_LABELS = STREAMING_SITE_PROVIDER_MATCHERS.map(
   matcher => `${matcher.label} x${countFixtureHostsForDomains(matcher.domains)}`
 )
-const LIVE_CONTROL_LATENCY_BUDGET_MS = 2000
-const LIVE_CONTROL_PROGRESS_BUDGET_MS = USE_BROADCAST_RTC_E2E
-  ? 5000
-  : LIVE_CONTROL_LATENCY_BUDGET_MS
+const LIVE_CONTROL_LATENCY_BUDGET_MS = 1500
+const LIVE_CONTROL_ACTION_P95_BUDGET_MS = 5000
+const LIVE_CONTROL_PROGRESS_BUDGET_MS = 5000
+const LIVE_CONTROL_PAIR_LOSSLESS_BUDGET_MS = USE_BROADCAST_RTC_E2E ? 5000 : 2000
 const LIVE_CONTROL_FRAME_BUDGET_BYTES = 2048
 const CONNECTION_CONFIDENCE_SELECTOR =
   '#runtime_connection_confidence[data-byte-loss-rate="0"]' +
@@ -179,6 +179,13 @@ interface LiveControlMetricSnapshot {
 interface LiveControlPairMetricSnapshot {
   readonly client: LiveControlMetricSnapshot
   readonly host: LiveControlMetricSnapshot
+}
+
+interface LiveControlPairAggregate {
+  readonly receivedBytes: number
+  readonly receivedMessages: number
+  readonly sentBytes: number
+  readonly sentMessages: number
 }
 
 type LiveControlActionRunner = (label: string, action: () => Promise<void>) => Promise<void>
@@ -313,6 +320,23 @@ const totalLiveControlBytes = (snapshot: LiveControlMetricSnapshot): number =>
 const totalLiveControlMessages = (snapshot: LiveControlMetricSnapshot): number =>
   snapshot.sentMessages + snapshot.receivedMessages
 
+const aggregateLiveControlPairMetrics = (
+  snapshot: LiveControlPairMetricSnapshot
+): LiveControlPairAggregate => ({
+  receivedBytes: snapshot.host.receivedBytes + snapshot.client.receivedBytes,
+  receivedMessages: snapshot.host.receivedMessages + snapshot.client.receivedMessages,
+  sentBytes: snapshot.host.sentBytes + snapshot.client.sentBytes,
+  sentMessages: snapshot.host.sentMessages + snapshot.client.sentMessages
+})
+
+const isLiveControlPairLossless = (snapshot: LiveControlPairMetricSnapshot): boolean => {
+  const aggregate = aggregateLiveControlPairMetrics(snapshot)
+  return (
+    aggregate.sentMessages === aggregate.receivedMessages &&
+    aggregate.sentBytes === aggregate.receivedBytes
+  )
+}
+
 async function focusE2EPage(page: Page): Promise<void> {
   const focusablePage = page as FocusableE2EPage
   if (focusablePage.bringToFront) {
@@ -371,7 +395,35 @@ async function waitForLiveControlMetricProgress(
   expect(elapsedMs).toBeLessThanOrEqual(LIVE_CONTROL_PROGRESS_BUDGET_MS)
   expect(after.maxFrameBytes).toBeGreaterThan(0)
   expect(after.maxFrameBytes).toBeLessThanOrEqual(LIVE_CONTROL_FRAME_BUDGET_BYTES)
+  if (after.receivedMessages > 0) {
+    expect(after.p95LatencyMs).toBeLessThanOrEqual(LIVE_CONTROL_ACTION_P95_BUDGET_MS)
+  }
   return after
+}
+
+async function waitForLiveControlPairLossless(input: {
+  readonly clientPage: Page
+  readonly hostPage: Page
+  readonly label: string
+}): Promise<void> {
+  const startedAtMs = Date.now()
+  let snapshot = await getLiveControlPairMetricSnapshot(input)
+  while (
+    Date.now() - startedAtMs <= LIVE_CONTROL_PAIR_LOSSLESS_BUDGET_MS &&
+    !isLiveControlPairLossless(snapshot)
+  ) {
+    await delay(25)
+    snapshot = await getLiveControlPairMetricSnapshot(input)
+  }
+
+  if (!isLiveControlPairLossless(snapshot)) {
+    const aggregate = aggregateLiveControlPairMetrics(snapshot)
+    throw new Error(
+      `Expected live control pair to settle losslessly after ${input.label}. ` +
+        `sent=${aggregate.sentMessages}/${aggregate.sentBytes}B ` +
+        `received=${aggregate.receivedMessages}/${aggregate.receivedBytes}B.`
+    )
+  }
 }
 
 async function expectLiveControlProgress(input: {
@@ -392,6 +444,11 @@ async function expectLiveControlProgress(input: {
     input.before.client,
     `${input.label} client`
   )
+  await waitForLiveControlPairLossless({
+    clientPage: input.clientPage,
+    hostPage: input.hostPage,
+    label: input.label
+  })
   return { client, host }
 }
 
@@ -1006,7 +1063,7 @@ async function expectLiveControlReceiptReady(page: Page, label: string): Promise
   await waitForRuntimeText(page, 'Live control receipt')
   await waitForRuntimeText(
     page,
-    'sent and received real typed control frames under the live e2e latency and frame-size budgets'
+    `sent and received real typed control frames under the ${LIVE_CONTROL_LATENCY_BUDGET_MS}ms live latency and frame-size budgets`
   )
 }
 
