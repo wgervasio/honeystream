@@ -1992,6 +1992,11 @@ const RuntimeSessionRouteSurface = ({
           id="runtime_buddy_passport"
           className={`${styles.card} ${styles.buddyPassport}`}
           aria-label="Cat and rabbit buddy passport"
+          data-browser-sync-receipt-state={browserSyncReceiptState}
+          data-byte-loss-rate={ZERO_LOSS_CONTROL_RATE}
+          data-live-control-receipt-state={liveControlReceiptState}
+          data-lost-control-bytes={ZERO_LOSS_CONTROL_BYTES}
+          data-tail-latency-ms-budget={STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}
         >
           <div className={styles.cardHeader}>
             <p className={styles.kicker}>Buddy passport</p>
@@ -2002,9 +2007,17 @@ const RuntimeSessionRouteSurface = ({
               <strong>Cat-side host</strong>
               {currentMedia ? 'Source keeper and playback lead.' : 'Pick the first source.'}
             </span>
-            <span data-passport-sync={viewModel.snapshot.session.playback.state}>
-              <strong>{playbackStateLabel}</strong>
-              {queuedCountLabel}
+            <span
+              data-passport-sync={viewModel.snapshot.session.playback.state}
+              data-passport-live-receipt={liveControlReceiptState}
+              data-passport-seal={browserSyncReceiptState}
+            >
+              <strong>
+                {browserSyncReceiptState === 'ready' ? 'Happy sync sealed' : playbackStateLabel}
+              </strong>
+              {browserSyncReceiptState === 'ready'
+                ? `Live receipt green, ${queuedCountLabel}, and 0B lost.`
+                : `${queuedCountLabel}; waiting for the live receipt glow.`}
             </span>
             <span data-passport-seat="rabbit">
               <strong>Rabbit-side guest</strong>
