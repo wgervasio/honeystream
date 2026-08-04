@@ -203,6 +203,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
   private heartbeatTimer: ReturnType<typeof setInterval> | undefined
   private clockSync?: SessionRuntimeClockSyncSnapshot
   private clockSyncOffsetSamples: readonly ClockSyncSample[] = []
+  private sentAcceptedSnapshotHeartbeat = false
 
   constructor(dependencies: SessionRuntimeDependencies) {
     this.transport = dependencies.transport
@@ -283,6 +284,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
     this.expectedInboundSeq = undefined
     this.lastGuestSnapshotRequestAtMs = undefined
     this.guestSnapshotResyncAttempt = 0
+    this.sentAcceptedSnapshotHeartbeat = false
     this.updateProjection()
 
     await this.transport.connect()
@@ -439,6 +441,18 @@ export class DefaultSessionRuntime implements SessionRuntime {
 
     switch (command.type) {
       case 'heartbeat': {
+        if (!state.participants.guest || state.participants.guest.id !== fromPeerId) {
+          const protocolError = invalidCommandError(
+            'Heartbeat was rejected before the guest joined.',
+            'command.heartbeat'
+          )
+          this.recordProtocolDiagnostic(protocolError)
+          this.trySendHostEvent(
+            { type: 'protocolRejected', error: protocolError },
+            this.runtimeTimeAtOrAfter(nowHostMs)
+          )
+          return
+        }
         const responseSentAtMs = this.runtimeTimeAtOrAfter(nowHostMs)
         this.trySendHostEvent(
           {
@@ -579,6 +593,7 @@ export class DefaultSessionRuntime implements SessionRuntime {
 
     if (event.type === 'snapshot') {
       this.resetGuestSnapshotResync()
+      this.sendGuestHeartbeatAfterAcceptedSnapshot()
     }
 
     if (event.type === 'mediaQueued') {
@@ -689,7 +704,6 @@ export class DefaultSessionRuntime implements SessionRuntime {
     this.stopHeartbeatLoop()
     if (typeof this.heartbeatIntervalMs !== 'number') return
 
-    this.sendGuestHeartbeat()
     this.heartbeatTimer = setInterval(() => {
       if (this.disposed) return
       try {
@@ -698,6 +712,14 @@ export class DefaultSessionRuntime implements SessionRuntime {
         this.recordRuntimeError(`[heartbeat] ${toErrorMessage(error)}`)
       }
     }, this.heartbeatIntervalMs)
+  }
+
+  private sendGuestHeartbeatAfterAcceptedSnapshot(): void {
+    if (this.sentAcceptedSnapshotHeartbeat) return
+    if (typeof this.heartbeatIntervalMs !== 'number') return
+
+    this.sentAcceptedSnapshotHeartbeat = true
+    this.sendGuestHeartbeat()
   }
 
   private stopHeartbeatLoop(): void {

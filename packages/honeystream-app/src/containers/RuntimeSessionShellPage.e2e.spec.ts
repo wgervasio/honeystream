@@ -535,6 +535,7 @@ describe('RuntimeSessionShellPage browser-pair e2e sync', () => {
         currentSourceIndex += 1
       }
 
+      await Promise.all([waitForHappySealReady(hostPage), waitForHappySealReady(guestSeat.page)])
       const sealAttributes = await readAttributes(hostPage, HAPPY_SYNC_SEAL_SELECTOR, [
         'data-byte-loss-rate',
         'data-dropped-control-messages',
