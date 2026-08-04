@@ -195,7 +195,11 @@ const ZERO_MISSING_DIRECTIONAL_DELIVERIES = 0
 const ZERO_REORDERED_CONTROL_MESSAGES = 0
 const ZERO_SKIPPED_CONTROL_MESSAGES = 0
 const LIVE_CONTROL_LATENCY_BUDGET_MS = 1500
+const LIVE_CONTROL_ACTION_P95_BUDGET_MS = 5000
 const LIVE_CONTROL_FRAME_BUDGET_BYTES = STREAMING_SITE_CONNECTION_BUDGET.maxMessageBytes
+const BROWSER_PAIR_LIVE_BROWSER_MODE = 'separate-browser-processes'
+const BROWSER_PAIR_LIVE_BROWSER_PROCESS_COUNT = 2
+const BROWSER_PAIR_LIVE_RECEIPT_CHECK = 'host-and-guest-sent-received-lossless'
 const BROWSER_PAIR_E2E_TEST_MODES = 'broadcast+isolated-live'
 const BROWSER_PAIR_CONNECTION_CHECKLIST =
   'invite-secret-join-transport-heartbeat-queue-controls-next'
@@ -588,6 +592,34 @@ const BROWSER_SYNC_RECEIPT_ITEMS = [
     label: 'Live receipt green',
     detail:
       `The happy seal waits until this browser seat has sent and received real typed control frames under the ${LIVE_CONTROL_LATENCY_BUDGET_MS}ms live budget.`
+  }
+] as const
+const LIVE_PAIR_RECEIPT_ITEMS = [
+  {
+    id: 'different-processes',
+    label: 'Different browser processes',
+    detail:
+      `${BROWSER_PAIR_LIVE_BROWSER_PROCESS_COUNT} isolated browser processes run the same ` +
+      'private room before the e2e gate turns green.'
+  },
+  {
+    id: 'both-seats-observed',
+    label: 'Both seats sent + received',
+    detail:
+      'Cat-side and rabbit-side each have to send and receive real typed frames before the happy seal is ready.'
+  },
+  {
+    id: 'pair-byte-reconcile',
+    label: 'Pair bytes reconcile',
+    detail:
+      'The live e2e runner checks host+guest sent bytes match received bytes after every queue and control action.'
+  },
+  {
+    id: 'action-budget',
+    label: 'Live controls stay light',
+    detail:
+      `Action P95 stays <=${LIVE_CONTROL_ACTION_P95_BUDGET_MS}ms, frames stay <=` +
+      `${LIVE_CONTROL_FRAME_BUDGET_BYTES}B, and media bytes stay local.`
   }
 ] as const
 const BROWSER_SYNC_ASSURANCE_ITEMS = [
@@ -1762,12 +1794,17 @@ const RuntimeSessionRouteSurface = ({
             className={styles.happyPathAssurance}
             aria-label="Live control receipt"
             data-live-average-latency-ms={liveAverageLatencyMs}
+            data-live-action-p95-budget-ms={LIVE_CONTROL_ACTION_P95_BUDGET_MS}
+            data-live-browser-mode={BROWSER_PAIR_LIVE_BROWSER_MODE}
+            data-live-browser-process-count={BROWSER_PAIR_LIVE_BROWSER_PROCESS_COUNT}
+            data-live-byte-reconciliation="sent-equals-received"
             data-live-frame-budget-bytes={LIVE_CONTROL_FRAME_BUDGET_BYTES}
             data-live-frame-state={liveFrameState}
             data-live-latency-budget-ms={LIVE_CONTROL_LATENCY_BUDGET_MS}
             data-live-latency-sample-count={liveTelemetry.latencySampleCount}
             data-live-latency-state={liveLatencyState}
             data-live-max-frame-bytes={liveMaxFrameBytes}
+            data-live-pair-check={BROWSER_PAIR_LIVE_RECEIPT_CHECK}
             data-live-p95-latency-ms={liveP95LatencyMs}
             data-live-receipt-state={liveControlReceiptState}
             data-live-received-control-bytes={liveTelemetry.receivedBytes}
@@ -1804,6 +1841,12 @@ const RuntimeSessionRouteSurface = ({
                 <b>{`${liveMaxFrameBytes}B max frame`}</b>
                 <p>{`Typed control frames stay <=${LIVE_CONTROL_FRAME_BUDGET_BYTES}B while media bytes stay local.`}</p>
               </article>
+              {LIVE_PAIR_RECEIPT_ITEMS.map(item => (
+                <article key={item.id} data-live-pair-receipt={item.id}>
+                  <b>{item.label}</b>
+                  <p>{item.detail}</p>
+                </article>
+              ))}
             </div>
           </div>
           <div

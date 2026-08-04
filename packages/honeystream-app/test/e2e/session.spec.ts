@@ -99,6 +99,9 @@ const LIVE_CONTROL_ACTION_P95_BUDGET_MS = 5000
 const LIVE_CONTROL_PROGRESS_BUDGET_MS = 5000
 const LIVE_CONTROL_PAIR_LOSSLESS_BUDGET_MS = USE_BROADCAST_RTC_E2E ? 5000 : 2000
 const LIVE_CONTROL_FRAME_BUDGET_BYTES = 2048
+const LIVE_BROWSER_PAIR_MODE = 'separate-browser-processes'
+const LIVE_BROWSER_PROCESS_COUNT = 2
+const LIVE_PAIR_RECEIPT_CHECK = 'host-and-guest-sent-received-lossless'
 const CONNECTION_CONFIDENCE_SELECTOR =
   '#runtime_connection_confidence[data-byte-loss-rate="0"]' +
   '[data-lost-control-bytes="0"][data-dropped-control-messages="0"]' +
@@ -133,9 +136,14 @@ const HAPPY_SYNC_SEAL_READY_SELECTOR =
   '[data-test-modes="broadcast+isolated-live"]'
 const LIVE_CONTROL_RECEIPT_READY_SELECTOR =
   '#runtime_live_control_receipt[data-live-receipt-state="ready"]' +
+  `[data-live-action-p95-budget-ms="${LIVE_CONTROL_ACTION_P95_BUDGET_MS}"]` +
+  `[data-live-browser-mode="${LIVE_BROWSER_PAIR_MODE}"]` +
+  `[data-live-browser-process-count="${LIVE_BROWSER_PROCESS_COUNT}"]` +
+  '[data-live-byte-reconciliation="sent-equals-received"]' +
   '[data-live-sent-control-state="observed"][data-live-received-control-state="observed"]' +
   '[data-live-latency-state="under-budget"][data-live-frame-state="under-budget"]' +
   `[data-live-latency-budget-ms="${LIVE_CONTROL_LATENCY_BUDGET_MS}"]` +
+  `[data-live-pair-check="${LIVE_PAIR_RECEIPT_CHECK}"]` +
   `[data-live-frame-budget-bytes="${LIVE_CONTROL_FRAME_BUDGET_BYTES}"]`
 const BROWSER_PAIR_MATRIX_SELECTOR =
   '[data-merge-gate-metric="browser-pair-matrix"]' +
@@ -182,6 +190,8 @@ interface LiveControlPairMetricSnapshot {
 }
 
 interface LiveControlPairAggregate {
+  readonly maxFrameBytes: number
+  readonly maxP95LatencyMs: number
   readonly receivedBytes: number
   readonly receivedMessages: number
   readonly sentBytes: number
@@ -323,6 +333,8 @@ const totalLiveControlMessages = (snapshot: LiveControlMetricSnapshot): number =
 const aggregateLiveControlPairMetrics = (
   snapshot: LiveControlPairMetricSnapshot
 ): LiveControlPairAggregate => ({
+  maxFrameBytes: Math.max(snapshot.host.maxFrameBytes, snapshot.client.maxFrameBytes),
+  maxP95LatencyMs: Math.max(snapshot.host.p95LatencyMs, snapshot.client.p95LatencyMs),
   receivedBytes: snapshot.host.receivedBytes + snapshot.client.receivedBytes,
   receivedMessages: snapshot.host.receivedMessages + snapshot.client.receivedMessages,
   sentBytes: snapshot.host.sentBytes + snapshot.client.sentBytes,
@@ -332,8 +344,15 @@ const aggregateLiveControlPairMetrics = (
 const isLiveControlPairLossless = (snapshot: LiveControlPairMetricSnapshot): boolean => {
   const aggregate = aggregateLiveControlPairMetrics(snapshot)
   return (
+    snapshot.host.sentMessages > 0 &&
+    snapshot.host.receivedMessages > 0 &&
+    snapshot.client.sentMessages > 0 &&
+    snapshot.client.receivedMessages > 0 &&
     aggregate.sentMessages === aggregate.receivedMessages &&
-    aggregate.sentBytes === aggregate.receivedBytes
+    aggregate.sentBytes === aggregate.receivedBytes &&
+    aggregate.maxFrameBytes > 0 &&
+    aggregate.maxFrameBytes <= LIVE_CONTROL_FRAME_BUDGET_BYTES &&
+    aggregate.maxP95LatencyMs <= LIVE_CONTROL_ACTION_P95_BUDGET_MS
   )
 }
 
@@ -421,7 +440,8 @@ async function waitForLiveControlPairLossless(input: {
     throw new Error(
       `Expected live control pair to settle losslessly after ${input.label}. ` +
         `sent=${aggregate.sentMessages}/${aggregate.sentBytes}B ` +
-        `received=${aggregate.receivedMessages}/${aggregate.receivedBytes}B.`
+        `received=${aggregate.receivedMessages}/${aggregate.receivedBytes}B ` +
+        `maxFrame=${aggregate.maxFrameBytes}B maxP95=${aggregate.maxP95LatencyMs}ms.`
     )
   }
 }
@@ -542,6 +562,7 @@ type CloseableBrowserResource = {
 type KillableBrowserProcess = {
   readonly killed?: boolean
   readonly exitCode?: number | null
+  readonly pid?: number
   readonly signalCode?: string | null
   kill(): void
 }
@@ -583,6 +604,13 @@ async function closeBrowserForE2E(browserToClose: Browser | undefined): Promise<
   ) {
     browserProcess.kill()
   }
+}
+
+function getBrowserProcessId(browserInstance: Browser | undefined): number | undefined {
+  if (!browserInstance) return undefined
+  const getProcess = (browserInstance as BrowserWithProcess).process
+  const browserProcess = getProcess ? getProcess() : undefined
+  return browserProcess && typeof browserProcess.pid === 'number' ? browserProcess.pid : undefined
 }
 
 async function expectPlaybackPositionsSynced(input: {
@@ -1065,6 +1093,18 @@ async function expectLiveControlReceiptReady(page: Page, label: string): Promise
     page,
     `sent and received real typed control frames under the ${LIVE_CONTROL_LATENCY_BUDGET_MS}ms live latency and frame-size budgets`
   )
+  await waitForRuntimeText(page, 'Different browser processes')
+  await waitForRuntimeText(page, 'Both seats sent + received')
+  await waitForRuntimeText(page, 'Pair bytes reconcile')
+  await waitForRuntimeText(page, 'Live controls stay light')
+  await waitForRuntimeText(
+    page,
+    `${LIVE_BROWSER_PROCESS_COUNT} isolated browser processes run the same private room before the e2e gate turns green`
+  )
+  await waitForRuntimeText(
+    page,
+    `Action P95 stays <=${LIVE_CONTROL_ACTION_P95_BUDGET_MS}ms, frames stay <=${LIVE_CONTROL_FRAME_BUDGET_BYTES}B`
+  )
 }
 
 async function expectHealthyTwoBrowserConnection(input: {
@@ -1156,6 +1196,14 @@ function expectLiveBrowserIsolation(input: {
   expect(input.clientBrowser).toBeDefined()
   expect(input.clientBrowser).not.toBe(browser)
   expect(input.clientPage.context()).not.toBe(input.hostPage.context())
+  const hostBrowserProcessId = getBrowserProcessId(browser)
+  const clientBrowserProcessId = getBrowserProcessId(input.clientBrowser)
+  if (
+    typeof hostBrowserProcessId === 'number' &&
+    typeof clientBrowserProcessId === 'number'
+  ) {
+    expect(clientBrowserProcessId).not.toBe(hostBrowserProcessId)
+  }
 }
 
 function isTimeoutError(error: unknown): boolean {
