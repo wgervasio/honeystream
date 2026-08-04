@@ -99,6 +99,10 @@ describe('browser/HomeScreen', () => {
     expect(html).toContain('Paramount+')
     expect(html).toContain('Roku Channel')
     expect(html).toContain('Kanopy')
+    expect(html).toContain('Bilibili')
+    expect(html).toContain('Rumble')
+    expect(html).toContain('SoundCloud')
+    expect(html).toContain('Facebook Watch')
   })
 
   it('selects a site lane without inserting a fake URL', () => {

@@ -108,6 +108,26 @@ export const STREAMING_SITE_GENERIC_FIXTURES: readonly StreamingSiteConnectionFi
       id: 'generic-kanopy-product',
       source: 'https://www.kanopy.com/en/product/honeystream-test',
       title: 'Kanopy generic product page'
+    },
+    {
+      id: 'generic-bilibili-video',
+      source: 'https://www.bilibili.tv/en/video/honeystream-test',
+      title: 'Bilibili generic video page'
+    },
+    {
+      id: 'generic-rumble-watch',
+      source: 'https://rumble.com/vhoneystream-test.html',
+      title: 'Rumble generic watch page'
+    },
+    {
+      id: 'generic-soundcloud-track',
+      source: 'https://soundcloud.com/honeystream/night-drive',
+      title: 'SoundCloud generic track page'
+    },
+    {
+      id: 'generic-facebook-watch',
+      source: 'https://www.facebook.com/watch/?v=honeystream-test',
+      title: 'Facebook Watch generic page'
     }
   ]
 )

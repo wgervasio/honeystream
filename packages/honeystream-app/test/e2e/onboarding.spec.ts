@@ -140,6 +140,10 @@ describe('onboarding', () => {
     expect(siteExamples).toContain('Paramount+')
     expect(siteExamples).toContain('Roku Channel')
     expect(siteExamples).toContain('Kanopy')
+    expect(siteExamples).toContain('Bilibili')
+    expect(siteExamples).toContain('Rumble')
+    expect(siteExamples).toContain('SoundCloud')
+    expect(siteExamples).toContain('Facebook Watch')
     await page.click('#home_starter_chips button')
     const selectedStarterPlaceholder = await page.$eval(
       '#home_starter_url',

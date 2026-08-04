@@ -65,6 +65,10 @@ const STREAMING_SITE_BROWSER_PAIR_YOUTUBE_PATH_COUNT = STREAMING_SITE_BROWSER_PA
 const STREAMING_SITE_BROWSER_PAIR_GENERIC_PATH_COUNT = STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES.filter(
   source => source.lane === 'generic'
 ).length
+const GENERIC_STREAMING_SITE_EXAMPLES =
+  'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, TikTok, ' +
+  'Instagram, Plex, Disney+, Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, ' +
+  'Kanopy, Bilibili, Rumble, SoundCloud, and Facebook Watch'
 const EMPTY_TRANSPORT_TELEMETRY: SessionRuntimeProjection['transportTelemetry'] = Object.freeze({
   averageReceivedLatencyMs: 0,
   latencySampleCount: 0,
@@ -284,10 +288,7 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('Coverage gate')
     expect(html).toContain(`${STREAMING_SITE_CONNECTION_FIXTURES.length} sites`)
     expect(html).toContain('YouTube, AnimePahe, Cineby, Miruro, and generic pages')
-    expect(html).toContain(
-      'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, TikTok, ' +
-        'Instagram, Plex, Disney+, Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, and Kanopy generic hosts'
-    )
+    expect(html).toContain(`${GENERIC_STREAMING_SITE_EXAMPLES} generic hosts`)
     expect(html).toContain('Per-site proof')
     expect(html).toContain(`${STREAMING_SITE_CONNECTION_FIXTURES.length} observed`)
     expect(html).toContain(
@@ -397,10 +398,7 @@ describe('RuntimeSessionShellPage', () => {
     )
     expect(html).toContain('Local website load')
     expect(html).toContain('YouTube, AnimePahe, Cineby, Miruro, and generic pages load locally')
-    expect(html).toContain(
-      'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, TikTok, ' +
-        'Instagram, Plex, Disney+, Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, and Kanopy pages stay generic'
-    )
+    expect(html).toContain(`${GENERIC_STREAMING_SITE_EXAMPLES} pages stay generic`)
     expect(html).toContain(
       `data-tail-latency-ms-budget="${STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}"`
     )
@@ -520,10 +518,7 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('data-happy-path-assurance="youtube-plus"')
     expect(html).toContain('data-happy-path-assurance="mixed-site-handoff"')
     expect(html).toContain('data-happy-path-assurance="control-byte-budget"')
-    expect(html).toContain(
-      'Vimeo, Twitch, Netflix-style, Hulu, Prime Video, Tubi, Dailymotion, TikTok, ' +
-        'Instagram, Plex, Disney+, Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, and Kanopy generic hosts'
-    )
+    expect(html).toContain(`${GENERIC_STREAMING_SITE_EXAMPLES} generic hosts`)
     expect(html).toContain(
       `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} two-browser transport paths`
     )

@@ -114,6 +114,27 @@ const siteExamples = [
     label: 'Kanopy',
     placeholder: 'Paste the exact Kanopy page...',
     helper: 'Kanopy lane selected. Keep it generic and test the exact page in both browsers.'
+  },
+  {
+    label: 'Bilibili',
+    placeholder: 'Paste the exact Bilibili video page...',
+    helper: 'Bilibili lane selected. Keep it generic and test the exact page in both browsers.'
+  },
+  {
+    label: 'Rumble',
+    placeholder: 'Paste the exact Rumble watch page...',
+    helper: 'Rumble lane selected. Keep it generic and test the exact page in both browsers.'
+  },
+  {
+    label: 'SoundCloud',
+    placeholder: 'Paste the exact SoundCloud track page...',
+    helper: 'SoundCloud lane selected. Keep it generic and test the exact page in both browsers.'
+  },
+  {
+    label: 'Facebook Watch',
+    placeholder: 'Paste the exact Facebook Watch page...',
+    helper:
+      'Facebook Watch lane selected. Keep it generic and test the exact page in both browsers.'
   }
 ]
 
