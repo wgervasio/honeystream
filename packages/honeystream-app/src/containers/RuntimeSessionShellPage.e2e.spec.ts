@@ -3,6 +3,7 @@ import playwrightConfig from '../../jest-playwright.config'
 import {
   STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT,
   STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT,
+  StreamingSiteBrowserPairE2ESource,
   STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES
 } from '../transport/streaming-site-browser-pair-e2e-matrix'
 
@@ -197,15 +198,26 @@ const readAddMediaInputValue = (targetPage: playwright.Page): Promise<string> =>
     return input.value
   }, ADD_MEDIA_INPUT_SELECTOR)
 
-const submitAddMediaUrl = async (targetPage: playwright.Page, sourceUrl: string): Promise<void> => {
+const submitAddMediaUrl = async (
+  targetPage: playwright.Page,
+  source: StreamingSiteBrowserPairE2ESource
+): Promise<void> => {
   await targetPage.waitForSelector(ADD_MEDIA_INPUT_SELECTOR, { timeout: APP_READY_TIMEOUT_MS })
+  const expectedProvider = toExpectedPreviewProvider(source)
+  const sourceUrl = source.url
   await setAddMediaInputValue(targetPage, sourceUrl)
   await waitUntil(
     `media URL input to contain ${sourceUrl}`,
     async () => (await readAddMediaInputValue(targetPage)) === sourceUrl
   )
-  await waitUntil('media source preview', () =>
-    targetPage.evaluate(() => Boolean(document.querySelector('[data-add-media-source-preview]')))
+  await waitUntil(`media source preview for ${sourceUrl}`, () =>
+    targetPage.evaluate(
+      ({ provider }) => {
+        const preview = document.querySelector('[data-add-media-source-preview="website"]')
+        return preview ? preview.getAttribute('data-add-media-provider') === provider : false
+      },
+      { provider: expectedProvider }
+    )
   )
   await targetPage.evaluate(selector => {
     const input = document.querySelector(selector)
@@ -242,6 +254,28 @@ const readQueueTitles = (targetPage: playwright.Page): Promise<readonly string[]
     return titles
   })
 
+const readQueueSources = (targetPage: playwright.Page): Promise<readonly string[]> =>
+  targetPage.evaluate(() => {
+    const sources: string[] = []
+    const current = document.querySelector('[data-queue-state="current"]')
+    if (current) {
+      const source = current.getAttribute('data-queue-current-source') || ''
+      sources.push(source)
+    }
+    document.querySelectorAll('[data-queue-item-id]').forEach(element => {
+      sources.push(element.getAttribute('data-queue-item-source') || '')
+    })
+    return sources
+  })
+
+const toExpectedQueuedSource = (sourceUrl: string): string => {
+  const normalizedSource = /^https?:\/\//i.test(sourceUrl) ? sourceUrl : `https://${sourceUrl}`
+  return new URL(normalizedSource).toString()
+}
+
+const toExpectedPreviewProvider = (source: StreamingSiteBrowserPairE2ESource): string =>
+  source.lane === 'generic' ? 'unknown' : source.lane
+
 const waitForQueueTotal = async (
   targetPage: playwright.Page,
   expectedTotal: number,
@@ -261,6 +295,17 @@ const waitForQueueTitles = async (
   await waitUntil(`${label} queue titles`, async () => {
     const actualTitles = await readQueueTitles(targetPage)
     return JSON.stringify(actualTitles) === JSON.stringify(expectedTitles)
+  })
+}
+
+const waitForQueueSources = async (
+  targetPage: playwright.Page,
+  expectedSources: readonly string[],
+  label: string
+): Promise<void> => {
+  await waitUntil(`${label} queue sources`, async () => {
+    const actualSources = await readQueueSources(targetPage)
+    return JSON.stringify(actualSources) === JSON.stringify(expectedSources)
   })
 }
 
@@ -479,6 +524,45 @@ const expectNoRuntimeErrors = async (
   expect(await readSystemErrorEvents(guestPage)).toEqual([])
 }
 
+const doLiveReceiptsReconcile = (
+  hostReceipt: RuntimeLiveReceipt,
+  guestReceipt: RuntimeLiveReceipt
+): boolean =>
+  hostReceipt.receiptState === 'ready' &&
+  guestReceipt.receiptState === 'ready' &&
+  hostReceipt.sentMessages > 0 &&
+  hostReceipt.receivedMessages > 0 &&
+  guestReceipt.sentMessages > 0 &&
+  guestReceipt.receivedMessages > 0 &&
+  hostReceipt.sentMessages === guestReceipt.receivedMessages &&
+  guestReceipt.sentMessages === hostReceipt.receivedMessages &&
+  hostReceipt.sentBytes === guestReceipt.receivedBytes &&
+  guestReceipt.sentBytes === hostReceipt.receivedBytes &&
+  hostReceipt.latencySampleCount > 0 &&
+  guestReceipt.latencySampleCount > 0 &&
+  hostReceipt.latencySampleCount <= hostReceipt.receivedMessages &&
+  guestReceipt.latencySampleCount <= guestReceipt.receivedMessages &&
+  hostReceipt.averageLatencyMs <= hostReceipt.latencyBudgetMs &&
+  guestReceipt.averageLatencyMs <= guestReceipt.latencyBudgetMs &&
+  hostReceipt.maxFrameBytes > 0 &&
+  guestReceipt.maxFrameBytes > 0 &&
+  hostReceipt.maxFrameBytes <= hostReceipt.frameBudgetBytes &&
+  guestReceipt.maxFrameBytes <= guestReceipt.frameBudgetBytes &&
+  hostReceipt.p95LatencyMs <= hostReceipt.latencyBudgetMs &&
+  guestReceipt.p95LatencyMs <= guestReceipt.latencyBudgetMs &&
+  hostReceipt.p95LatencyMs <= hostReceipt.actionP95BudgetMs &&
+  guestReceipt.p95LatencyMs <= guestReceipt.actionP95BudgetMs
+
+const waitForLiveReceiptsToReconcile = async (
+  hostPage: playwright.Page,
+  guestPage: playwright.Page,
+  label: string
+): Promise<void> => {
+  await waitUntil(`${label} live receipt reconciliation`, async () =>
+    doLiveReceiptsReconcile(await readLiveReceipt(hostPage), await readLiveReceipt(guestPage))
+  )
+}
+
 const expectLiveReceiptsToReconcile = async (
   hostPage: playwright.Page,
   guestPage: playwright.Page
@@ -510,6 +594,7 @@ const expectLiveReceiptsToReconcile = async (
   expect(guestReceipt.p95LatencyMs).toBeLessThanOrEqual(guestReceipt.latencyBudgetMs)
   expect(hostReceipt.p95LatencyMs).toBeLessThanOrEqual(hostReceipt.actionP95BudgetMs)
   expect(guestReceipt.p95LatencyMs).toBeLessThanOrEqual(guestReceipt.actionP95BudgetMs)
+  expect(doLiveReceiptsReconcile(hostReceipt, guestReceipt)).toBe(true)
 }
 
 const expectHappySealZeroLoss = async (targetPage: playwright.Page): Promise<void> => {
@@ -595,15 +680,20 @@ describe('RuntimeSessionShellPage browser-pair e2e sync', () => {
       await Promise.all([waitForHappySealReady(hostPage), waitForHappySealReady(guestSeat.page)])
 
       for (let index = 0; index < STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES.length; index += 1) {
-        await submitAddMediaUrl(hostPage, STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES[index].url)
+        await submitAddMediaUrl(hostPage, STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES[index])
         const expectedTitles = STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES.slice(0, index + 1).map(
           source => source.expectedText
+        )
+        const expectedSources = STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES.slice(0, index + 1).map(
+          source => toExpectedQueuedSource(source.url)
         )
         await Promise.all([
           waitForQueueTotal(hostPage, index + 1, `host source ${index + 1}`),
           waitForQueueTotal(guestSeat.page, index + 1, `guest source ${index + 1}`),
           waitForQueueTitles(hostPage, expectedTitles, `host source ${index + 1}`),
-          waitForQueueTitles(guestSeat.page, expectedTitles, `guest source ${index + 1}`)
+          waitForQueueTitles(guestSeat.page, expectedTitles, `guest source ${index + 1}`),
+          waitForQueueSources(hostPage, expectedSources, `host source ${index + 1}`),
+          waitForQueueSources(guestSeat.page, expectedSources, `guest source ${index + 1}`)
         ])
       }
 
@@ -622,6 +712,7 @@ describe('RuntimeSessionShellPage browser-pair e2e sync', () => {
         currentSourceIndex += 1
       }
 
+      await waitForLiveReceiptsToReconcile(hostPage, guestSeat.page, 'final')
       await Promise.all([waitForHappySealReady(hostPage), waitForHappySealReady(guestSeat.page)])
       await Promise.all([
         expectHappySealZeroLoss(hostPage),

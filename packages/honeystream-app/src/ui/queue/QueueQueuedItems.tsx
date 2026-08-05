@@ -28,7 +28,12 @@ export const QueueQueuedItems = memo(function QueueQueuedItems(props: QueueQueue
       <p>{props.title || 'Queued items'}</p>
       <ol>
         {props.items.map(item => (
-          <li key={item.id} data-queue-item-id={item.id}>
+          <li
+            key={item.id}
+            data-queue-item-id={item.id}
+            data-queue-item-kind={item.kind}
+            data-queue-item-source={item.source}
+          >
             <span>{item.title}</span>
             <span>{` \u00b7 ${requestedByLabel}: ${item.requestedBy}`}</span>
             <button

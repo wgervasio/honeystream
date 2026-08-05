@@ -591,8 +591,7 @@ const BROWSER_SYNC_RECEIPT_ITEMS = [
   {
     id: 'live-receipt',
     label: 'Live receipt green',
-    detail:
-      `The happy seal waits until this browser seat has sent and received real typed control frames under the ${LIVE_CONTROL_LATENCY_BUDGET_MS}ms live budget.`
+    detail: `The happy seal waits until this browser seat has sent and received real typed control frames under the ${LIVE_CONTROL_LATENCY_BUDGET_MS}ms live budget.`
   }
 ] as const
 const LIVE_PAIR_RECEIPT_ITEMS = [
@@ -1260,7 +1259,9 @@ const mapMediaSnapshotToQueueItem = (media: MediaSnapshot): QueueMediaItemViewMo
   id: media.mediaId,
   title: media.title,
   requestedBy: QUEUE_REQUESTED_BY_LABEL,
-  durationMs: media.durationMs
+  durationMs: media.durationMs,
+  kind: media.kind,
+  source: media.source
 })
 
 const mapSessionSnapshotToQueueItems = (
