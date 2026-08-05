@@ -24,7 +24,11 @@ interface BrowserSeat {
 }
 
 interface RuntimeLiveReceipt {
+  readonly actionP95BudgetMs: number
+  readonly averageLatencyMs: number
   readonly frameBudgetBytes: number
+  readonly latencyBudgetMs: number
+  readonly latencySampleCount: number
   readonly maxFrameBytes: number
   readonly p95LatencyMs: number
   readonly receiptState: string
@@ -109,7 +113,8 @@ const appendRuntimeQueryParam = (path: string, name: string, value: string): str
   return `${path}${separator}${encodeURIComponent(name)}=${encodeURIComponent(value)}`
 }
 
-const toHashRouteUrl = (appOrigin: string, routePath: string): string => `${appOrigin}/#${routePath}`
+const toHashRouteUrl = (appOrigin: string, routePath: string): string =>
+  `${appOrigin}/#${routePath}`
 
 const visitRuntimePath = async (
   targetPage: playwright.Page,
@@ -145,13 +150,21 @@ const getRuntimeInviteSecret = async (targetPage: playwright.Page): Promise<stri
 }
 
 const waitForRuntimeShell = async (targetPage: playwright.Page): Promise<void> => {
-  await targetPage.waitForSelector(RUNTIME_SHELL_SELECTOR, { timeout: APP_READY_TIMEOUT_MS })
+  try {
+    await targetPage.waitForSelector(RUNTIME_SHELL_SELECTOR, { timeout: APP_READY_TIMEOUT_MS })
+  } catch (error) {
+    const pageText = await targetPage.evaluate(() =>
+      document.body && document.body.textContent ? document.body.textContent.slice(0, 600) : ''
+    )
+    const message = error instanceof Error ? error.message : String(error)
+    throw new Error(
+      `Timed out waiting for runtime shell at ${targetPage.url()}. ` +
+        `Rendered text: "${pageText}". ${message}`
+    )
+  }
 }
 
-const setAddMediaInputValue = async (
-  targetPage: playwright.Page,
-  value: string
-): Promise<void> => {
+const setAddMediaInputValue = async (targetPage: playwright.Page, value: string): Promise<void> => {
   await targetPage.evaluate(
     ({ selector, nextValue }) => {
       const input = document.querySelector(selector)
@@ -282,7 +295,11 @@ const toFiniteNumber = (value: string, label: string): number => {
 
 const readLiveReceipt = async (targetPage: playwright.Page): Promise<RuntimeLiveReceipt> => {
   const attributes = await readAttributes(targetPage, LIVE_CONTROL_RECEIPT_SELECTOR, [
+    'data-live-action-p95-budget-ms',
+    'data-live-average-latency-ms',
     'data-live-frame-budget-bytes',
+    'data-live-latency-budget-ms',
+    'data-live-latency-sample-count',
     'data-live-max-frame-bytes',
     'data-live-p95-latency-ms',
     'data-live-receipt-state',
@@ -293,9 +310,25 @@ const readLiveReceipt = async (targetPage: playwright.Page): Promise<RuntimeLive
   ])
 
   return {
+    actionP95BudgetMs: toFiniteNumber(
+      attributes['data-live-action-p95-budget-ms'],
+      'live action P95 budget'
+    ),
+    averageLatencyMs: toFiniteNumber(
+      attributes['data-live-average-latency-ms'],
+      'live average latency'
+    ),
     frameBudgetBytes: toFiniteNumber(
       attributes['data-live-frame-budget-bytes'],
       'live frame budget'
+    ),
+    latencyBudgetMs: toFiniteNumber(
+      attributes['data-live-latency-budget-ms'],
+      'live latency budget'
+    ),
+    latencySampleCount: toFiniteNumber(
+      attributes['data-live-latency-sample-count'],
+      'live latency sample count'
     ),
     maxFrameBytes: toFiniteNumber(attributes['data-live-max-frame-bytes'], 'live max frame bytes'),
     p95LatencyMs: toFiniteNumber(attributes['data-live-p95-latency-ms'], 'live p95 latency'),
@@ -343,9 +376,12 @@ const waitForPlaybackState = async (
   targetPage: playwright.Page,
   state: 'paused' | 'playing'
 ): Promise<void> => {
-  await targetPage.waitForSelector(`${PLAYBACK_CONTROLS_SELECTOR}[data-playback-state="${state}"]`, {
-    timeout: CONTROL_READY_TIMEOUT_MS
-  })
+  await targetPage.waitForSelector(
+    `${PLAYBACK_CONTROLS_SELECTOR}[data-playback-state="${state}"]`,
+    {
+      timeout: CONTROL_READY_TIMEOUT_MS
+    }
+  )
 }
 
 const clickPlaybackIntent = async (
@@ -456,12 +492,63 @@ const expectLiveReceiptsToReconcile = async (
   expect(hostReceipt.receivedMessages).toBeGreaterThan(0)
   expect(guestReceipt.sentMessages).toBeGreaterThan(0)
   expect(guestReceipt.receivedMessages).toBeGreaterThan(0)
+  expect(hostReceipt.sentMessages).toBe(guestReceipt.receivedMessages)
+  expect(guestReceipt.sentMessages).toBe(hostReceipt.receivedMessages)
   expect(hostReceipt.sentBytes).toBe(guestReceipt.receivedBytes)
   expect(guestReceipt.sentBytes).toBe(hostReceipt.receivedBytes)
+  expect(hostReceipt.latencySampleCount).toBeGreaterThan(0)
+  expect(guestReceipt.latencySampleCount).toBeGreaterThan(0)
+  expect(hostReceipt.latencySampleCount).toBeLessThanOrEqual(hostReceipt.receivedMessages)
+  expect(guestReceipt.latencySampleCount).toBeLessThanOrEqual(guestReceipt.receivedMessages)
+  expect(hostReceipt.averageLatencyMs).toBeLessThanOrEqual(hostReceipt.latencyBudgetMs)
+  expect(guestReceipt.averageLatencyMs).toBeLessThanOrEqual(guestReceipt.latencyBudgetMs)
+  expect(hostReceipt.maxFrameBytes).toBeGreaterThan(0)
+  expect(guestReceipt.maxFrameBytes).toBeGreaterThan(0)
   expect(hostReceipt.maxFrameBytes).toBeLessThanOrEqual(hostReceipt.frameBudgetBytes)
   expect(guestReceipt.maxFrameBytes).toBeLessThanOrEqual(guestReceipt.frameBudgetBytes)
-  expect(hostReceipt.p95LatencyMs).toBeLessThanOrEqual(1500)
-  expect(guestReceipt.p95LatencyMs).toBeLessThanOrEqual(1500)
+  expect(hostReceipt.p95LatencyMs).toBeLessThanOrEqual(hostReceipt.latencyBudgetMs)
+  expect(guestReceipt.p95LatencyMs).toBeLessThanOrEqual(guestReceipt.latencyBudgetMs)
+  expect(hostReceipt.p95LatencyMs).toBeLessThanOrEqual(hostReceipt.actionP95BudgetMs)
+  expect(guestReceipt.p95LatencyMs).toBeLessThanOrEqual(guestReceipt.actionP95BudgetMs)
+}
+
+const expectHappySealZeroLoss = async (targetPage: playwright.Page): Promise<void> => {
+  const sealAttributes = await readAttributes(targetPage, HAPPY_SYNC_SEAL_SELECTOR, [
+    'data-byte-loss-rate',
+    'data-dropped-control-messages',
+    'data-lost-control-bytes',
+    'data-missing-directional-deliveries',
+    'data-reordered-control-messages',
+    'data-seal-state',
+    'data-sequence-gap-control-messages',
+    'data-site-lane-count',
+    'data-site-path-count'
+  ])
+
+  expect(sealAttributes['data-seal-state']).toBe('ready')
+  expect(sealAttributes['data-byte-loss-rate']).toBe('0')
+  expect(sealAttributes['data-lost-control-bytes']).toBe('0')
+  expect(sealAttributes['data-dropped-control-messages']).toBe('0')
+  expect(sealAttributes['data-reordered-control-messages']).toBe('0')
+  expect(sealAttributes['data-sequence-gap-control-messages']).toBe('0')
+  expect(sealAttributes['data-missing-directional-deliveries']).toBe('0')
+  expect(sealAttributes['data-site-lane-count']).toBe(
+    String(STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT)
+  )
+  expect(sealAttributes['data-site-path-count']).toBe(
+    String(STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT)
+  )
+}
+
+const waitForSystemErrorContaining = async (
+  targetPage: playwright.Page,
+  expectedMessage: string
+): Promise<void> => {
+  await waitUntil(`system error containing "${expectedMessage}"`, async () =>
+    (await readSystemErrorEvents(targetPage)).some(
+      message => message.indexOf(expectedMessage) !== -1
+    )
+  )
 }
 
 describe('RuntimeSessionShellPage browser-pair e2e sync', () => {
@@ -536,30 +623,10 @@ describe('RuntimeSessionShellPage browser-pair e2e sync', () => {
       }
 
       await Promise.all([waitForHappySealReady(hostPage), waitForHappySealReady(guestSeat.page)])
-      const sealAttributes = await readAttributes(hostPage, HAPPY_SYNC_SEAL_SELECTOR, [
-        'data-byte-loss-rate',
-        'data-dropped-control-messages',
-        'data-lost-control-bytes',
-        'data-missing-directional-deliveries',
-        'data-reordered-control-messages',
-        'data-seal-state',
-        'data-sequence-gap-control-messages',
-        'data-site-lane-count',
-        'data-site-path-count'
+      await Promise.all([
+        expectHappySealZeroLoss(hostPage),
+        expectHappySealZeroLoss(guestSeat.page)
       ])
-      expect(sealAttributes['data-seal-state']).toBe('ready')
-      expect(sealAttributes['data-byte-loss-rate']).toBe('0')
-      expect(sealAttributes['data-lost-control-bytes']).toBe('0')
-      expect(sealAttributes['data-dropped-control-messages']).toBe('0')
-      expect(sealAttributes['data-reordered-control-messages']).toBe('0')
-      expect(sealAttributes['data-sequence-gap-control-messages']).toBe('0')
-      expect(sealAttributes['data-missing-directional-deliveries']).toBe('0')
-      expect(sealAttributes['data-site-lane-count']).toBe(
-        String(STREAMING_SITE_BROWSER_PAIR_E2E_LANE_COUNT)
-      )
-      expect(sealAttributes['data-site-path-count']).toBe(
-        String(STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT)
-      )
 
       await expectLiveReceiptsToReconcile(hostPage, guestSeat.page)
       await expectNoRuntimeErrors(hostPage, guestSeat.page)
@@ -567,6 +634,64 @@ describe('RuntimeSessionShellPage browser-pair e2e sync', () => {
       expect(guestPageErrors).toEqual([])
     } finally {
       await guestSeat.dispose()
+    }
+  })
+
+  it('keeps invalid invite attempts out of the connected happy path', async () => {
+    const hostPage = page
+    const missingSecretSeat = await createGuestSeat()
+    const wrongSecretSeat = await createGuestSeat()
+
+    try {
+      const hostPeerId = await ms.setProfile('default', hostPage)
+      await ms.setProfile('clientA', missingSecretSeat.page)
+      await ms.setProfile('clientA', wrongSecretSeat.page)
+      const relayRoomId = `runtime-invite-rejection-${Date.now()}`
+
+      await visitRuntimePath(hostPage, `/join/${hostPeerId}`, relayRoomId)
+      await waitForRuntimeShell(hostPage)
+      await getRuntimeInviteSecret(hostPage)
+
+      await visitRuntimePath(missingSecretSeat.page, `/join/${hostPeerId}`, relayRoomId)
+      await waitForRuntimeShell(missingSecretSeat.page)
+      await waitForSystemErrorContaining(
+        missingSecretSeat.page,
+        'Invite secret is required to join a runtime session.'
+      )
+      const missingSecretRunway = await readAttributes(
+        missingSecretSeat.page,
+        '#runtime_connection_runway',
+        ['data-guest-seat-state', 'data-transport-status']
+      )
+      expect(missingSecretRunway).toEqual({
+        'data-guest-seat-state': 'waiting',
+        'data-transport-status': 'idle'
+      })
+
+      await visitRuntimePath(
+        wrongSecretSeat.page,
+        `/join/${hostPeerId}?secret=wrong-secret-123`,
+        relayRoomId
+      )
+      await waitForRuntimeShell(wrongSecretSeat.page)
+      await waitForSystemErrorContaining(
+        wrongSecretSeat.page,
+        'Invite secret was rejected by host.'
+      )
+      const wrongSecretRunway = await readAttributes(
+        wrongSecretSeat.page,
+        '#runtime_connection_runway',
+        ['data-guest-seat-state', 'data-invite-secret-state', 'data-transport-status']
+      )
+      expect(wrongSecretRunway).toEqual({
+        'data-guest-seat-state': 'waiting',
+        'data-invite-secret-state': 'present',
+        'data-transport-status': 'connected'
+      })
+      await waitForSystemErrorContaining(hostPage, 'Invite secret was rejected by host.')
+    } finally {
+      await wrongSecretSeat.dispose()
+      await missingSecretSeat.dispose()
     }
   })
 })
