@@ -92,7 +92,9 @@ const createGuestSeat = async (): Promise<BrowserSeat> => {
     return {
       page: guestPage,
       async dispose(): Promise<void> {
-        await guestPage.close()
+        if (!guestPage.isClosed()) {
+          await guestPage.close()
+        }
         await guestContext.close()
         await guestBrowser.close()
       }
@@ -104,7 +106,9 @@ const createGuestSeat = async (): Promise<BrowserSeat> => {
   return {
     page: guestPage,
     async dispose(): Promise<void> {
-      await guestPage.close()
+      if (!guestPage.isClosed()) {
+        await guestPage.close()
+      }
     }
   }
 }
@@ -152,7 +156,20 @@ const getRuntimeInviteSecret = async (targetPage: playwright.Page): Promise<stri
 
 const waitForRuntimeShell = async (targetPage: playwright.Page): Promise<void> => {
   try {
-    await targetPage.waitForSelector(RUNTIME_SHELL_SELECTOR, { timeout: APP_READY_TIMEOUT_MS })
+    await waitUntil(
+      'runtime shell',
+      () =>
+        targetPage.evaluate(
+          ({ shellSelector }) => {
+            return Boolean(
+              document.querySelector(shellSelector) ||
+                document.querySelector('#runtime_connection_runway')
+            )
+          },
+          { shellSelector: RUNTIME_SHELL_SELECTOR }
+        ),
+      APP_READY_TIMEOUT_MS
+    )
   } catch (error) {
     const pageText = await targetPage.evaluate(() =>
       document.body && document.body.textContent ? document.body.textContent.slice(0, 600) : ''
@@ -411,9 +428,21 @@ const waitForConnectedSeats = async (
 }
 
 const waitForHappySealReady = async (targetPage: playwright.Page): Promise<void> => {
-  await targetPage.waitForSelector(
-    `${HAPPY_SYNC_SEAL_SELECTOR}[data-seal-state="ready"][data-live-control-receipt-state="ready"]`,
-    { timeout: APP_READY_TIMEOUT_MS }
+  await waitUntil(
+    'happy sync seal readiness',
+    () =>
+      targetPage.evaluate(selector => {
+        const seal = document.querySelector(selector)
+        if (!seal) {
+          return false
+        }
+
+        return (
+          seal.getAttribute('data-seal-state') === 'ready' &&
+          seal.getAttribute('data-live-control-receipt-state') === 'ready'
+        )
+      }, HAPPY_SYNC_SEAL_SELECTOR),
+    APP_READY_TIMEOUT_MS
   )
 }
 
