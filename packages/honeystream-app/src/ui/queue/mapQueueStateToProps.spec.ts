@@ -20,7 +20,9 @@ describe('mapSessionMediaItemToQueueMediaItem', () => {
       id: 'media-1',
       title: 'Title',
       requestedBy: 'HostUser',
-      durationMs: undefined
+      durationMs: undefined,
+      kind: undefined,
+      source: 'https://example.com/media-1'
     })
   })
 })
@@ -36,14 +38,18 @@ describe('mapSessionQueueStateToQueueViewProps', () => {
       id: 'current-1',
       title: 'Current title',
       requestedBy: 'HostUser',
-      durationMs: undefined
+      durationMs: undefined,
+      kind: undefined,
+      source: 'https://example.com/current-1'
     })
     expect(mapped.queuedItems).toEqual([
       {
         id: 'queued-1',
         title: 'Queued title',
         requestedBy: 'GuestUser',
-        durationMs: undefined
+        durationMs: undefined,
+        kind: undefined,
+        source: 'https://example.com/queued-1'
       }
     ])
   })
