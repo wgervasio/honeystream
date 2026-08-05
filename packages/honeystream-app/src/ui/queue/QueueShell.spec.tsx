@@ -10,12 +10,15 @@ const makeMedia = (
   id: string,
   title: string,
   requestedBy: string,
-  durationMs?: number
+  durationMs?: number,
+  source?: string
 ): QueueMediaItemViewModel => ({
   id,
   title,
   requestedBy,
-  durationMs
+  durationMs,
+  kind: source ? 'website' : undefined,
+  source
 })
 
 describe('QueueCurrentItem', () => {
@@ -28,7 +31,15 @@ describe('QueueCurrentItem', () => {
 
   it('renders current item details', () => {
     const html = renderToStaticMarkup(
-      <QueueCurrentItem item={makeMedia('current-1', 'Current title', 'HostUser', 125000)} />
+      <QueueCurrentItem
+        item={makeMedia(
+          'current-1',
+          'Current title',
+          'HostUser',
+          125000,
+          'https://youtube.com/watch?v=current'
+        )}
+      />
     )
 
     expect(html).toContain('Current item')
@@ -37,6 +48,8 @@ describe('QueueCurrentItem', () => {
     expect(html).toContain('data-queue-duration="true"')
     expect(html).toContain('Requested by: HostUser')
     expect(html).toContain('data-queue-current-id="current-1"')
+    expect(html).toContain('data-queue-current-kind="website"')
+    expect(html).toContain('data-queue-current-source="https://youtube.com/watch?v=current"')
     expect(html).toContain('data-queue-state="current"')
   })
 })
@@ -53,8 +66,20 @@ describe('QueueQueuedItems', () => {
     const html = renderToStaticMarkup(
       <QueueQueuedItems
         items={[
-          makeMedia('queued-1', 'Queued title 1', 'HostUser'),
-          makeMedia('queued-2', 'Queued title 2', 'GuestUser')
+          makeMedia(
+            'queued-1',
+            'Queued title 1',
+            'HostUser',
+            undefined,
+            'https://youtube.com/watch?v=queued-1'
+          ),
+          makeMedia(
+            'queued-2',
+            'Queued title 2',
+            'GuestUser',
+            undefined,
+            'https://vimeo.com/queued-2'
+          )
         ]}
         onRemove={() => undefined}
       />
@@ -65,6 +90,9 @@ describe('QueueQueuedItems', () => {
     expect(html).toContain('Queued title 2')
     expect(html).toContain('data-queue-item-id="queued-1"')
     expect(html).toContain('data-queue-item-id="queued-2"')
+    expect(html).toContain('data-queue-item-kind="website"')
+    expect(html).toContain('data-queue-item-source="https://youtube.com/watch?v=queued-1"')
+    expect(html).toContain('data-queue-item-source="https://vimeo.com/queued-2"')
     expect(html).toContain('data-queue-action="remove"')
     expect(html).toContain('Remove')
   })

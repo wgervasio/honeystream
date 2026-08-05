@@ -36,6 +36,8 @@ export const QueueCurrentItem = memo(function QueueCurrentItem(props: QueueCurre
     <section
       className={props.className}
       data-queue-current-id={props.item.id}
+      data-queue-current-kind={props.item.kind}
+      data-queue-current-source={props.item.source}
       data-queue-state="current"
       aria-live="polite"
     >

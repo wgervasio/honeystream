@@ -9,7 +9,9 @@ export const mapSessionMediaItemToQueueMediaItem = (
   id: mediaItem.id,
   title: mediaItem.title,
   requestedBy: mediaItem.requestedBy,
-  durationMs: mediaItem.durationMs
+  durationMs: mediaItem.durationMs,
+  kind: mediaItem.kind,
+  source: mediaItem.url
 })
 
 export const mapSessionQueueStateToQueueViewProps = (
