@@ -3,6 +3,7 @@ const path = require('path')
 const NodeEnvironment = require('jest-environment-node')
 const playwright = require('playwright-core')
 const { getAppBaseUrl } = require('./server-config')
+const { patchUnsupportedChromiumTargets } = require('./playwright-compat')
 const playwrightConfig = require('../../jest-playwright.config')
 
 const ARTIFACTS_PATH = path.join(__dirname, '../artifacts')
@@ -54,6 +55,25 @@ function isTimeoutError(error) {
 }
 
 async function gotoAppPage(page, url, opts, label) {
+  const didUseHashNavigation = await page
+    .evaluate(nextUrl => {
+      const next = new URL(nextUrl)
+      if (
+        window.location.origin !== next.origin ||
+        window.location.pathname !== next.pathname ||
+        !next.hash
+      ) {
+        return false
+      }
+
+      window.location.hash = next.hash
+      return true
+    }, url)
+    .catch(() => false)
+  if (didUseHashNavigation) {
+    return
+  }
+
   try {
     await page.goto(url, {
       ...(opts || APP_READY_OPTIONS),
@@ -197,6 +217,8 @@ async function closeBrowser(browser) {
 class HoneystreamEnvironment extends NodeEnvironment {
   async setup() {
     await super.setup()
+
+    patchUnsupportedChromiumTargets()
 
     const launchOptions = playwrightConfig.launchBrowserApp || {}
     const browser = await playwright.chromium.launch(launchOptions)

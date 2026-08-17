@@ -477,7 +477,7 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('data-live-sent-control-messages="0"')
     expect(html).toContain('data-live-received-control-messages="0"')
     expect(html).toContain('data-live-latency-budget-ms="1500"')
-    expect(html).toContain('data-live-action-p95-budget-ms="5000"')
+    expect(html).toContain('data-live-action-p95-budget-ms="3500"')
     expect(html).toContain('data-live-browser-mode="separate-browser-processes"')
     expect(html).toContain('data-live-browser-process-count="2"')
     expect(html).toContain('data-live-byte-reconciliation="sent-equals-received"')
@@ -500,7 +500,7 @@ describe('RuntimeSessionShellPage', () => {
       'host+guest sent bytes match received bytes after every queue and control action'
     )
     expect(html).toContain('Live controls stay light')
-    expect(html).toContain('Action P95 stays &lt;=5000ms')
+    expect(html).toContain('Action P95 stays &lt;=3500ms')
     expect(html).toContain('id="runtime_site_matrix_receipt"')
     expect(html).toContain('Site matrix receipt')
     expect(html).toContain(`data-source-path-count="${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT}"`)

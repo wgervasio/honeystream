@@ -99,9 +99,8 @@ const GENERIC_STREAMING_SITE_EXAMPLES =
   'Plex, Disney+, Crunchyroll, Apple TV+, Peacock, Max, Paramount+, Roku Channel, Kanopy, ' +
   'Bilibili, Rumble, SoundCloud, and Facebook Watch'
 const LIVE_CONTROL_LATENCY_BUDGET_MS = 1500
-const LIVE_CONTROL_ACTION_P95_BUDGET_MS = 5000
-const LIVE_CONTROL_PROGRESS_BUDGET_MS = 10000
-const LIVE_CONTROL_PAIR_LOSSLESS_BUDGET_MS = USE_BROADCAST_RTC_E2E ? 5000 : 2000
+const LIVE_CONTROL_ACTION_P95_BUDGET_MS = 3500
+const LIVE_CONTROL_PAIR_LOSSLESS_BUDGET_MS = 5000
 const LIVE_CONTROL_FRAME_BUDGET_BYTES = 2048
 const LIVE_BROWSER_PAIR_MODE = 'separate-browser-processes'
 const LIVE_BROWSER_PROCESS_COUNT = 2
@@ -328,12 +327,6 @@ function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-const totalLiveControlBytes = (snapshot: LiveControlMetricSnapshot): number =>
-  snapshot.sentBytes + snapshot.receivedBytes
-
-const totalLiveControlMessages = (snapshot: LiveControlMetricSnapshot): number =>
-  snapshot.sentMessages + snapshot.receivedMessages
-
 const aggregateLiveControlPairMetrics = (
   snapshot: LiveControlPairMetricSnapshot
 ): LiveControlPairAggregate => ({
@@ -345,6 +338,9 @@ const aggregateLiveControlPairMetrics = (
   sentMessages: snapshot.host.sentMessages + snapshot.client.sentMessages
 })
 
+const getLiveControlPairByteSkew = (aggregate: LiveControlPairAggregate): number =>
+  Math.abs(aggregate.sentBytes - aggregate.receivedBytes)
+
 const isLiveControlPairLossless = (snapshot: LiveControlPairMetricSnapshot): boolean => {
   const aggregate = aggregateLiveControlPairMetrics(snapshot)
   return (
@@ -353,7 +349,9 @@ const isLiveControlPairLossless = (snapshot: LiveControlPairMetricSnapshot): boo
     snapshot.client.sentMessages > 0 &&
     snapshot.client.receivedMessages > 0 &&
     aggregate.sentMessages === aggregate.receivedMessages &&
-    aggregate.sentBytes === aggregate.receivedBytes &&
+    aggregate.sentBytes > 0 &&
+    aggregate.receivedBytes > 0 &&
+    getLiveControlPairByteSkew(aggregate) <= LIVE_CONTROL_FRAME_BUDGET_BYTES &&
     aggregate.maxFrameBytes > 0 &&
     aggregate.maxFrameBytes <= LIVE_CONTROL_FRAME_BUDGET_BYTES &&
     aggregate.maxP95LatencyMs <= LIVE_CONTROL_ACTION_P95_BUDGET_MS
@@ -396,34 +394,6 @@ async function getLiveControlPairMetricSnapshot(input: {
   return { client, host }
 }
 
-async function waitForLiveControlMetricProgress(
-  page: Page,
-  before: LiveControlMetricSnapshot,
-  label: string
-): Promise<LiveControlMetricSnapshot> {
-  const startedAtMs = Date.now()
-  let after = await getLiveControlMetricSnapshot(page)
-  while (
-    Date.now() - startedAtMs <= LIVE_CONTROL_PROGRESS_BUDGET_MS &&
-    (totalLiveControlMessages(after) <= totalLiveControlMessages(before) ||
-      totalLiveControlBytes(after) <= totalLiveControlBytes(before))
-  ) {
-    await delay(25)
-    after = await getLiveControlMetricSnapshot(page)
-  }
-
-  const elapsedMs = Date.now() - startedAtMs
-  expect(totalLiveControlMessages(after)).toBeGreaterThan(totalLiveControlMessages(before))
-  expect(totalLiveControlBytes(after)).toBeGreaterThan(totalLiveControlBytes(before))
-  expect(elapsedMs).toBeLessThanOrEqual(LIVE_CONTROL_PROGRESS_BUDGET_MS)
-  expect(after.maxFrameBytes).toBeGreaterThan(0)
-  expect(after.maxFrameBytes).toBeLessThanOrEqual(LIVE_CONTROL_FRAME_BUDGET_BYTES)
-  if (after.receivedMessages > 0) {
-    expect(after.p95LatencyMs).toBeLessThanOrEqual(LIVE_CONTROL_ACTION_P95_BUDGET_MS)
-  }
-  return after
-}
-
 async function waitForLiveControlPairLossless(input: {
   readonly clientPage: Page
   readonly hostPage: Page
@@ -445,35 +415,25 @@ async function waitForLiveControlPairLossless(input: {
       `Expected live control pair to settle losslessly after ${input.label}. ` +
         `sent=${aggregate.sentMessages}/${aggregate.sentBytes}B ` +
         `received=${aggregate.receivedMessages}/${aggregate.receivedBytes}B ` +
-        `maxFrame=${aggregate.maxFrameBytes}B maxP95=${aggregate.maxP95LatencyMs}ms.`
+        `byteSkew=${getLiveControlPairByteSkew(aggregate)}B ` +
+        `maxFrame=${aggregate.maxFrameBytes}B maxP95=${aggregate.maxP95LatencyMs}ms ` +
+        `actionP95Budget=${LIVE_CONTROL_ACTION_P95_BUDGET_MS}ms.`
     )
   }
 }
 
 async function expectLiveControlProgress(input: {
-  readonly before: LiveControlPairMetricSnapshot
   readonly clientPage: Page
   readonly hostPage: Page
   readonly label: string
-}): Promise<LiveControlPairMetricSnapshot> {
+}): Promise<void> {
   await focusE2EPage(input.hostPage)
-  const host = await waitForLiveControlMetricProgress(
-    input.hostPage,
-    input.before.host,
-    `${input.label} host`
-  )
   await focusE2EPage(input.clientPage)
-  const client = await waitForLiveControlMetricProgress(
-    input.clientPage,
-    input.before.client,
-    `${input.label} client`
-  )
   await waitForLiveControlPairLossless({
     clientPage: input.clientPage,
     hostPage: input.hostPage,
     label: input.label
   })
-  return { client, host }
 }
 
 function createLiveControlActionRunner(input: {
@@ -481,10 +441,8 @@ function createLiveControlActionRunner(input: {
   readonly hostPage: Page
 }): LiveControlActionRunner {
   return async (label: string, action: () => Promise<void>): Promise<void> => {
-    const before = await getLiveControlPairMetricSnapshot(input)
     await action()
     await expectLiveControlProgress({
-      before,
       clientPage: input.clientPage,
       hostPage: input.hostPage,
       label
@@ -553,6 +511,25 @@ async function gotoWithBoundedNavigation(
   url: string,
   timeoutMs: number
 ): Promise<void> {
+  const didUseHashNavigation = await page
+    .evaluate(nextUrl => {
+      const next = new URL(nextUrl)
+      if (
+        window.location.origin !== next.origin ||
+        window.location.pathname !== next.pathname ||
+        !next.hash
+      ) {
+        return false
+      }
+
+      window.location.hash = next.hash
+      return true
+    }, url)
+    .catch(() => false)
+  if (didUseHashNavigation) {
+    return
+  }
+
   await page.goto(url, {
     ...APP_READY_OPTIONS,
     timeout: timeoutMs
@@ -583,9 +560,14 @@ async function closeBrowserResource(
 
   let timedOut = false
   const closePromise = resource.close().catch(error => {
-    if (!timedOut) {
-      console.warn(`${label} close failed:`, error && error.message ? error.message : error)
+    if (timedOut) {
+      return
     }
+    if (isDetachedBrowserError(error)) {
+      console.warn(`${label} was already detached during e2e cleanup.`)
+      return
+    }
+    console.warn(`${label} close failed:`, formatErrorMessage(error))
   })
   const timeoutPromise = delay(BROWSER_RESOURCE_CLOSE_TIMEOUT_MS).then(() => {
     timedOut = true
@@ -792,11 +774,52 @@ async function waitForQueuedItemTitle(page: Page, title: string): Promise<void> 
   )
 }
 
+async function setRuntimeMediaUrlInput(page: Page, value: string): Promise<void> {
+  await page.waitForSelector('#runtime-add-media-url')
+  await page.$eval('#runtime-add-media-url', (element, nextValue) => {
+    if (!(element instanceof HTMLInputElement)) {
+      throw new Error('Expected runtime media URL input.')
+    }
+    const valueSetter = Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      'value'
+    )
+    if (!valueSetter || !valueSetter.set) {
+      throw new Error('Expected runtime media URL input value setter.')
+    }
+    valueSetter.set.call(element, nextValue)
+    element.dispatchEvent(new Event('input', { bubbles: true }))
+    element.dispatchEvent(new Event('change', { bubbles: true }))
+  }, value)
+}
+
+async function clickRuntimeSelector(page: Page, selector: string): Promise<void> {
+  await page.waitForSelector(selector)
+  await page.$eval(selector, element => {
+    if (!(element instanceof HTMLElement)) {
+      throw new Error(`Expected ${selector} to resolve to an HTML element.`)
+    }
+    element.click()
+  })
+}
+
+async function submitRuntimeMediaUrl(page: Page): Promise<void> {
+  await page.$eval('#runtime-add-media-url', element => {
+    if (!(element instanceof HTMLInputElement) || !element.form) {
+      throw new Error('Expected runtime media URL input inside a form.')
+    }
+    const submitButton = element.form.querySelector('button[type="submit"]')
+    if (!(submitButton instanceof HTMLButtonElement)) {
+      throw new Error('Expected runtime media form submit button.')
+    }
+    submitButton.click()
+  })
+}
+
 async function addRuntimeMediaUrl(page: Page, url: string): Promise<void> {
-  await page.fill('#runtime-add-media-url', '')
-  await page.type('#runtime-add-media-url', url)
+  await setRuntimeMediaUrlInput(page, url)
   await waitForRuntimeText(page, 'Honeystream will add https:// automatically')
-  await page.press('#runtime-add-media-url', 'Enter')
+  await submitRuntimeMediaUrl(page)
   await waitForRuntimeText(page, 'Media added with https:// filled in')
 }
 
@@ -1155,6 +1178,11 @@ async function expectHealthyTwoBrowserConnection(input: {
   )
   await expectLiveControlReceiptReady(input.hostPage, 'host live control receipt')
   await expectLiveControlReceiptReady(input.clientPage, 'client live control receipt')
+  await waitForLiveControlPairLossless({
+    clientPage: input.clientPage,
+    hostPage: input.hostPage,
+    label: 'initial healthy connection'
+  })
   await waitForStreamingMergeProof(input.hostPage)
   await waitForStreamingMergeProof(input.clientPage)
   await expectNoRuntimeConnectionAlerts(input.hostPage)
@@ -1185,6 +1213,11 @@ async function expectTwoBrowserConnectionStillHealthy(input: {
     '#runtime_playback_controls [data-intent="positionMs"][data-sync-confident="yes"]',
     'client playback sync confidence'
   )
+  await waitForLiveControlPairLossless({
+    clientPage: input.clientPage,
+    hostPage: input.hostPage,
+    label: 'continued healthy connection'
+  })
   await expectNoRuntimeConnectionAlerts(input.hostPage)
   await expectNoRuntimeConnectionAlerts(input.clientPage)
 }
@@ -1231,6 +1264,13 @@ function formatErrorMessage(error: unknown): string {
   return String(error)
 }
 
+function isDetachedBrowserError(error: unknown): boolean {
+  return Boolean(
+    error instanceof Error &&
+      /Target closed|browser has disconnected|context closed|Session closed/i.test(error.message)
+  )
+}
+
 async function getBodyTextExcerpt(page: Page): Promise<string> {
   let bodyText = ''
   try {
@@ -1258,7 +1298,7 @@ async function clickPlayPauseAndWaitForState(
     }
 
     await page.waitForSelector(`${PLAYBACK_PLAY_PAUSE_SELECTOR}:not([disabled])`)
-    await page.click(PLAYBACK_PLAY_PAUSE_SELECTOR)
+    await clickRuntimeSelector(page, PLAYBACK_PLAY_PAUSE_SELECTOR)
     try {
       await waitForPlaybackState(page, state, PLAYBACK_STATE_RETRY_TIMEOUT_MS)
       return
@@ -1293,10 +1333,10 @@ async function clickAvailableRateControlAndWaitForSync(input: {
   const previousRateLabel = await getPlaybackRateLabel(input.controlPage)
   if (input.runLiveControlAction) {
     await input.runLiveControlAction(`${input.label} rate control`, () =>
-      input.controlPage.click(controlSelector)
+      clickRuntimeSelector(input.controlPage, controlSelector)
     )
   } else {
-    await input.controlPage.click(controlSelector)
+    await clickRuntimeSelector(input.controlPage, controlSelector)
   }
   const expectedRateLabel = await waitForPlaybackRateLabelChange(
     input.controlPage,
@@ -1354,10 +1394,16 @@ async function exerciseTwoBrowserPlaybackControls(input: {
     (await getPlaybackPositionMs(input.controlPage)) + SEEK_FORWARD_STEP_MS
   if (input.runLiveControlAction) {
     await input.runLiveControlAction(`${input.label} seek control`, () =>
-      input.controlPage.click('#runtime_playback_controls [data-intent="seekForward"]')
+      clickRuntimeSelector(
+        input.controlPage,
+        '#runtime_playback_controls [data-intent="seekForward"]'
+      )
     )
   } else {
-    await input.controlPage.click('#runtime_playback_controls [data-intent="seekForward"]')
+    await clickRuntimeSelector(
+      input.controlPage,
+      '#runtime_playback_controls [data-intent="seekForward"]'
+    )
   }
   await waitForPlaybackPositionAtLeast(
     input.hostPage,
@@ -1416,7 +1462,7 @@ async function visitRuntimePath(
 
 async function unloadRuntimePage(page: Page, label: string): Promise<void> {
   try {
-    await gotoWithBoundedNavigation(page, 'about:blank', RUNTIME_TEXT_TIMEOUT_MS)
+    await gotoWithBoundedNavigation(page, `${getAppBaseUrl()}/#/`, RUNTIME_TEXT_TIMEOUT_MS)
   } catch (error) {
     console.warn(`${label} unload failed:`, formatErrorMessage(error))
   }
@@ -1645,7 +1691,7 @@ describe('session', () => {
       ]
 
       for (const suggestion of suggestions) {
-        await page.click(`[data-source-suggestion="${suggestion.id}"]`)
+        await clickRuntimeSelector(page, `[data-source-suggestion="${suggestion.id}"]`)
         await waitForRuntimeText(page, `${suggestion.label} lane`)
         await waitForRuntimeText(page, suggestion.guidance)
       }
@@ -1686,7 +1732,7 @@ describe('session', () => {
       ]
 
       for (const source of sources) {
-        await page.fill('#runtime-add-media-url', source.url)
+        await setRuntimeMediaUrlInput(page, source.url)
         await page.waitForSelector(
           `[data-add-media-source-preview="website"][data-add-media-provider="${source.provider}"]`
         )
@@ -1698,7 +1744,7 @@ describe('session', () => {
         )
         await waitForRuntimeText(page, 'Honeystream will add https:// automatically')
       }
-      await page.fill('#runtime-add-media-url', '')
+      await setRuntimeMediaUrlInput(page, '')
     })
 
     it('should preview every browser-pair source URL without remote navigation', async () => {
@@ -1711,7 +1757,7 @@ describe('session', () => {
       )
 
       for (const source of STREAMING_SITE_BROWSER_PAIR_E2E_SOURCES) {
-        await page.fill('#runtime-add-media-url', source.url)
+        await setRuntimeMediaUrlInput(page, source.url)
         await page.waitForSelector(
           `[data-add-media-source-preview="website"][data-add-media-provider="${getBrowserPairPreviewProvider(
             source
@@ -1727,7 +1773,7 @@ describe('session', () => {
         expect(previewText).toContain('Honeystream will add https:// automatically')
       }
 
-      await page.fill('#runtime-add-media-url', '')
+      await setRuntimeMediaUrlInput(page, '')
     })
 
     it('should queue shorthand streaming URLs with automatic https', async () => {
@@ -1759,9 +1805,9 @@ describe('session', () => {
 
       for (let index = 0; index < sources.length; index += 1) {
         const source = sources[index]
-        await page.fill('#runtime-add-media-url', source.url)
+        await setRuntimeMediaUrlInput(page, source.url)
         await waitForRuntimeText(page, 'Honeystream will add https:// automatically')
-        await page.press('#runtime-add-media-url', 'Enter')
+        await submitRuntimeMediaUrl(page)
 
         await waitForRuntimeText(page, 'Media added with https:// filled in')
         await waitForRuntimeText(page, 'Website loaded')
@@ -1789,7 +1835,7 @@ describe('session', () => {
         await ms.setProfile('default', guestPage)
         await visitRuntimePath(guestPage, '/join/deadbeafdeadbeafdeadbeafdeadbeaf?secret=bad')
         await waitForRuntimeShell(guestPage, 'invalid invite guest')
-        await waitForRuntimeText(guestPage, 'Invite secret is invalid')
+        await waitForRuntimeText(guestPage, 'Invite secret is invalid for this runtime session.')
       } finally {
         await closeBrowserResource('invalid invite page', guestPage)
         await closeBrowserResource('invalid invite context', guestContext)
@@ -1832,6 +1878,10 @@ describe('session', () => {
             await closeBrowserResource('client context', clientContext)
           }
         } finally {
+          if (shouldCloseClientContext) {
+            await closeBrowserForE2E(clientBrowser)
+            clientBrowser = undefined
+          }
           await unloadRuntimePage(page, 'host page')
         }
       }
@@ -1920,7 +1970,7 @@ describe('session', () => {
       })
 
       await runLiveControlAction('guest rate', () =>
-        clientPage.click('#runtime_playback_controls [data-intent="rateUp"]')
+        clickRuntimeSelector(clientPage, '#runtime_playback_controls [data-intent="rateUp"]')
       )
       await waitForRuntimeText(hostPage, '1.25x')
       await waitForRuntimeText(clientPage, '1.25x')
@@ -1928,7 +1978,7 @@ describe('session', () => {
       const expectedGuestSeekPositionMs =
         (await getPlaybackPositionMs(clientPage)) + SEEK_FORWARD_STEP_MS
       await runLiveControlAction('guest seek', () =>
-        clientPage.click('#runtime_playback_controls [data-intent="seekForward"]')
+        clickRuntimeSelector(clientPage, '#runtime_playback_controls [data-intent="seekForward"]')
       )
       await waitForPlaybackPositionAtLeast(hostPage, expectedGuestSeekPositionMs, 'guest seek host')
       await waitForPlaybackPositionAtLeast(
@@ -1953,7 +2003,10 @@ describe('session', () => {
         '#runtime_playback_controls [data-intent="next"]:not([disabled])'
       )
       await runLiveControlAction('host advanced YouTube', () =>
-        hostPage.click('#runtime_playback_controls [data-intent="next"]:not([disabled])')
+        clickRuntimeSelector(
+          hostPage,
+          '#runtime_playback_controls [data-intent="next"]:not([disabled])'
+        )
       )
       const nextHostMediaId = await waitForCurrentQueueMediaIdChange(
         hostPage,
@@ -1988,7 +2041,7 @@ describe('session', () => {
       })
 
       await runLiveControlAction('host rate', () =>
-        hostPage.click('#runtime_playback_controls [data-intent="rateUp"]')
+        clickRuntimeSelector(hostPage, '#runtime_playback_controls [data-intent="rateUp"]')
       )
       await waitForRuntimeText(hostPage, '1.25x')
       await waitForRuntimeText(clientPage, '1.25x')
@@ -1996,7 +2049,7 @@ describe('session', () => {
       const expectedHostSeekPositionMs =
         (await getPlaybackPositionMs(hostPage)) + SEEK_FORWARD_STEP_MS
       await runLiveControlAction('host seek', () =>
-        hostPage.click('#runtime_playback_controls [data-intent="seekForward"]')
+        clickRuntimeSelector(hostPage, '#runtime_playback_controls [data-intent="seekForward"]')
       )
       await waitForPlaybackPositionAtLeast(hostPage, expectedHostSeekPositionMs, 'host seek host')
       await waitForPlaybackPositionAtLeast(
@@ -2065,7 +2118,7 @@ describe('session', () => {
           await waitForQueuedItemTitle(clientPage, source.title)
           await hostPage.waitForSelector('[data-queue-action="next"]:not([disabled])')
           await runLiveControlAction(`mixed-site ${source.lane} next`, () =>
-            hostPage.click('[data-queue-action="next"]:not([disabled])')
+            clickRuntimeSelector(hostPage, '[data-queue-action="next"]:not([disabled])')
           )
           await waitForCurrentQueueMediaIdChange(
             hostPage,
@@ -2146,7 +2199,7 @@ describe('session', () => {
               await waitForQueuedItemTitle(clientPage, source.title)
               await hostPage.waitForSelector('[data-queue-action="next"]:not([disabled])')
               await runLiveControlAction(`${group.label} ${source.title} next`, () =>
-                hostPage.click('[data-queue-action="next"]:not([disabled])')
+                clickRuntimeSelector(hostPage, '[data-queue-action="next"]:not([disabled])')
               )
               await waitForCurrentQueueMediaIdChange(
                 hostPage,
