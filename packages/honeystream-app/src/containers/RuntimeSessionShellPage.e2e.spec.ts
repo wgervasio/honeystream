@@ -31,7 +31,9 @@ interface RuntimeLiveReceipt {
   readonly frameBudgetBytes: number
   readonly latencyBudgetMs: number
   readonly latencySampleCount: number
+  readonly latencySampleState: string
   readonly maxFrameBytes: number
+  readonly mediaByteSharing: number
   readonly pairCheck: string
   readonly p95LatencyMs: number
   readonly receiptState: string
@@ -424,7 +426,9 @@ const readLiveReceipt = async (targetPage: playwright.Page): Promise<RuntimeLive
     'data-live-frame-budget-bytes',
     'data-live-latency-budget-ms',
     'data-live-latency-sample-count',
+    'data-live-latency-sample-state',
     'data-live-max-frame-bytes',
+    'data-live-media-byte-sharing',
     'data-live-pair-check',
     'data-live-p95-latency-ms',
     'data-live-receipt-state',
@@ -456,7 +460,12 @@ const readLiveReceipt = async (targetPage: playwright.Page): Promise<RuntimeLive
       attributes['data-live-latency-sample-count'],
       'live latency sample count'
     ),
+    latencySampleState: attributes['data-live-latency-sample-state'],
     maxFrameBytes: toFiniteNumber(attributes['data-live-max-frame-bytes'], 'live max frame bytes'),
+    mediaByteSharing: toFiniteNumber(
+      attributes['data-live-media-byte-sharing'],
+      'live media byte sharing'
+    ),
     pairCheck: attributes['data-live-pair-check'],
     p95LatencyMs: toFiniteNumber(attributes['data-live-p95-latency-ms'], 'live p95 latency'),
     receiptState: attributes['data-live-receipt-state'],
@@ -534,6 +543,8 @@ const doLiveReceiptsReconcile = (
   (guestReceipt.receiptState === 'ready' || guestReceipt.receiptState === 'warming') &&
   hostReceipt.byteReconciliation === 'local-seat-observed' &&
   guestReceipt.byteReconciliation === 'local-seat-observed' &&
+  hostReceipt.mediaByteSharing === 0 &&
+  guestReceipt.mediaByteSharing === 0 &&
   hostReceipt.pairCheck === 'host-and-guest-sent-received-lossless' &&
   guestReceipt.pairCheck === 'host-and-guest-sent-received-lossless' &&
   hostReceipt.sentMessages > 0 &&
@@ -546,6 +557,8 @@ const doLiveReceiptsReconcile = (
   Math.abs(guestReceipt.sentBytes - hostReceipt.receivedBytes) <= guestReceipt.frameBudgetBytes &&
   hostReceipt.latencySampleCount > 0 &&
   guestReceipt.latencySampleCount > 0 &&
+  hostReceipt.latencySampleState === 'sampled' &&
+  guestReceipt.latencySampleState === 'sampled' &&
   hostReceipt.latencySampleCount <= hostReceipt.receivedMessages &&
   guestReceipt.latencySampleCount <= guestReceipt.receivedMessages &&
   hostReceipt.averageLatencyMs <= hostReceipt.latencyBudgetMs &&
@@ -591,6 +604,8 @@ const expectLiveReceiptsToReconcile = async (
   expect(['ready', 'warming']).toContain(guestReceipt.receiptState)
   expect(hostReceipt.byteReconciliation).toBe('local-seat-observed')
   expect(guestReceipt.byteReconciliation).toBe('local-seat-observed')
+  expect(hostReceipt.mediaByteSharing).toBe(0)
+  expect(guestReceipt.mediaByteSharing).toBe(0)
   expect(hostReceipt.pairCheck).toBe('host-and-guest-sent-received-lossless')
   expect(guestReceipt.pairCheck).toBe('host-and-guest-sent-received-lossless')
   expect(hostReceipt.sentMessages).toBeGreaterThan(0)
@@ -607,6 +622,8 @@ const expectLiveReceiptsToReconcile = async (
   )
   expect(hostReceipt.latencySampleCount).toBeGreaterThan(0)
   expect(guestReceipt.latencySampleCount).toBeGreaterThan(0)
+  expect(hostReceipt.latencySampleState).toBe('sampled')
+  expect(guestReceipt.latencySampleState).toBe('sampled')
   expect(hostReceipt.latencySampleCount).toBeLessThanOrEqual(hostReceipt.receivedMessages)
   expect(guestReceipt.latencySampleCount).toBeLessThanOrEqual(guestReceipt.receivedMessages)
   expect(hostReceipt.averageLatencyMs).toBeLessThanOrEqual(hostReceipt.latencyBudgetMs)
