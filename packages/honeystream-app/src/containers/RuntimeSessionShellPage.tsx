@@ -199,6 +199,7 @@ const GENERIC_STREAMING_SITE_EXAMPLES =
   'Kanopy, Bilibili, Rumble, SoundCloud, and Facebook Watch'
 const ZERO_LOSS_CONTROL_RATE = 0
 const ZERO_LOSS_CONTROL_BYTES = 0
+const ZERO_MEDIA_SHARED_BYTES = 0
 const ZERO_DROPPED_CONTROL_MESSAGES = 0
 const ZERO_MISSING_DIRECTIONAL_DELIVERIES = 0
 const ZERO_REORDERED_CONTROL_MESSAGES = 0
@@ -582,7 +583,7 @@ const BROWSER_SYNC_RECEIPT_ITEMS = [
     id: 'local-media',
     label: 'Media bytes stay local',
     detail:
-      'Each browser opens the same watch page locally while Honeystream syncs only host-led controls.'
+      'Each browser opens the same watch page locally; 0 media bytes are shared while Honeystream syncs only host-led controls.'
   },
   {
     id: 'flawless-handoff',
@@ -593,7 +594,7 @@ const BROWSER_SYNC_RECEIPT_ITEMS = [
   {
     id: 'live-receipt',
     label: 'Live receipt green',
-    detail: `The happy seal waits until this browser seat has sent and received real typed control frames under the ${LIVE_CONTROL_LATENCY_BUDGET_MS}ms live budget.`
+    detail: `The happy seal waits until this browser seat has sampled latency, sent and received real typed control frames, and shared 0 media bytes under the ${LIVE_CONTROL_LATENCY_BUDGET_MS}ms live budget.`
   }
 ] as const
 const LIVE_PAIR_RECEIPT_ITEMS = [
@@ -621,7 +622,7 @@ const LIVE_PAIR_RECEIPT_ITEMS = [
     label: 'Live controls stay light',
     detail:
       `Action P95 stays <=${LIVE_CONTROL_ACTION_P95_BUDGET_MS}ms, frames stay <=` +
-      `${LIVE_CONTROL_FRAME_BUDGET_BYTES}B, and media bytes stay local.`
+      `${LIVE_CONTROL_FRAME_BUDGET_BYTES}B, and 0 media bytes are shared.`
   }
 ] as const
 const BROWSER_SYNC_ASSURANCE_ITEMS = [
@@ -1596,8 +1597,13 @@ const RuntimeSessionRouteSurface = ({
     )
     const liveSentState = liveTelemetry.sentMessages > 0 ? 'observed' : 'waiting'
     const liveReceivedState = liveTelemetry.receivedMessages > 0 ? 'observed' : 'waiting'
+    const liveLatencySampleState =
+      liveTelemetry.latencySampleCount > 0 &&
+      liveTelemetry.latencySampleCount <= liveTelemetry.receivedMessages
+        ? 'sampled'
+        : 'waiting'
     const liveLatencyState =
-      liveTelemetry.receivedMessages > 0 && liveP95LatencyMs <= LIVE_CONTROL_LATENCY_BUDGET_MS
+      liveLatencySampleState === 'sampled' && liveP95LatencyMs <= LIVE_CONTROL_LATENCY_BUDGET_MS
         ? 'under-budget'
         : 'waiting'
     const liveFrameState =
@@ -1736,6 +1742,7 @@ const RuntimeSessionRouteSurface = ({
           data-live-control-receipt-state={liveControlReceiptState}
           data-live-max-frame-bytes={liveMaxFrameBytes}
           data-live-p95-latency-ms={liveP95LatencyMs}
+          data-media-byte-sharing={ZERO_MEDIA_SHARED_BYTES}
           data-missing-directional-deliveries={ZERO_MISSING_DIRECTIONAL_DELIVERIES}
           data-receipt-state={browserSyncReceiptState}
           data-reordered-control-messages={ZERO_REORDERED_CONTROL_MESSAGES}
@@ -1762,6 +1769,7 @@ const RuntimeSessionRouteSurface = ({
             data-dropped-control-messages={ZERO_DROPPED_CONTROL_MESSAGES}
             data-lost-control-bytes={ZERO_LOSS_CONTROL_BYTES}
             data-live-control-receipt-state={liveControlReceiptState}
+            data-media-byte-sharing={ZERO_MEDIA_SHARED_BYTES}
             data-missing-directional-deliveries={ZERO_MISSING_DIRECTIONAL_DELIVERIES}
             data-reordered-control-messages={ZERO_REORDERED_CONTROL_MESSAGES}
             data-seal-state={browserSyncReceiptState}
@@ -1826,8 +1834,10 @@ const RuntimeSessionRouteSurface = ({
             data-live-frame-state={liveFrameState}
             data-live-latency-budget-ms={LIVE_CONTROL_LATENCY_BUDGET_MS}
             data-live-latency-sample-count={liveTelemetry.latencySampleCount}
+            data-live-latency-sample-state={liveLatencySampleState}
             data-live-latency-state={liveLatencyState}
             data-live-max-frame-bytes={liveMaxFrameBytes}
+            data-live-media-byte-sharing={ZERO_MEDIA_SHARED_BYTES}
             data-live-pair-check={BROWSER_PAIR_LIVE_RECEIPT_CHECK}
             data-live-p95-latency-ms={liveP95LatencyMs}
             data-live-receipt-state={liveControlReceiptState}
@@ -1841,8 +1851,8 @@ const RuntimeSessionRouteSurface = ({
             <strong>Live control receipt</strong>
             <span>
               {liveControlReceiptState === 'ready'
-                ? `This browser seat has sent and received real typed control frames under the ${LIVE_CONTROL_LATENCY_BUDGET_MS}ms live latency and frame-size budgets.`
-                : 'Waiting for this browser seat to send and receive real typed control frames in both directions.'}
+                ? `This browser seat has sampled latency and sent and received real typed control frames under the ${LIVE_CONTROL_LATENCY_BUDGET_MS}ms live latency and frame-size budgets with 0 media bytes shared.`
+                : 'Waiting for this browser seat to send, receive, and sample real typed control frames in both directions.'}
             </span>
             <div>
               <article data-live-control-metric="sent">
@@ -1859,7 +1869,7 @@ const RuntimeSessionRouteSurface = ({
                 <b>{`P95 ${liveP95LatencyMs}ms`}</b>
                 <p>{`Live receipt budget <=${LIVE_CONTROL_LATENCY_BUDGET_MS}ms with ${
                   liveTelemetry.latencySampleCount
-                } bounded samples.`}</p>
+                } bounded samples and 0 media bytes shared.`}</p>
               </article>
               <article data-live-control-metric="frame-size">
                 <b>{`${liveMaxFrameBytes}B max frame`}</b>
@@ -1882,6 +1892,7 @@ const RuntimeSessionRouteSurface = ({
             data-dropped-control-messages={ZERO_DROPPED_CONTROL_MESSAGES}
             data-generic-path-count={STREAMING_SITE_BROWSER_PAIR_GENERIC_PATH_COUNT}
             data-lost-control-bytes={ZERO_LOSS_CONTROL_BYTES}
+            data-media-byte-sharing={ZERO_MEDIA_SHARED_BYTES}
             data-missing-directional-deliveries={ZERO_MISSING_DIRECTIONAL_DELIVERIES}
             data-reordered-control-messages={ZERO_REORDERED_CONTROL_MESSAGES}
             data-sequence-gap-control-messages={ZERO_SKIPPED_CONTROL_MESSAGES}
@@ -2009,6 +2020,7 @@ const RuntimeSessionRouteSurface = ({
           data-byte-loss-rate={ZERO_LOSS_CONTROL_RATE}
           data-live-control-receipt-state={liveControlReceiptState}
           data-lost-control-bytes={ZERO_LOSS_CONTROL_BYTES}
+          data-media-byte-sharing={ZERO_MEDIA_SHARED_BYTES}
           data-tail-latency-ms-budget={STREAMING_SITE_CONNECTION_P95_ROUND_TRIP_BUDGET_MS}
         >
           <div className={styles.cardHeader}>

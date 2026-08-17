@@ -144,8 +144,10 @@ const LIVE_CONTROL_RECEIPT_READY_SELECTOR =
   `[data-live-browser-process-count="${LIVE_BROWSER_PROCESS_COUNT}"]` +
   '[data-live-byte-reconciliation="local-seat-observed"]' +
   '[data-live-sent-control-state="observed"][data-live-received-control-state="observed"]' +
+  '[data-live-latency-sample-state="sampled"]' +
   '[data-live-latency-state="under-budget"][data-live-frame-state="under-budget"]' +
   `[data-live-latency-budget-ms="${LIVE_CONTROL_LATENCY_BUDGET_MS}"]` +
+  '[data-live-media-byte-sharing="0"]' +
   `[data-live-pair-check="${LIVE_PAIR_RECEIPT_CHECK}"]` +
   `[data-live-frame-budget-bytes="${LIVE_CONTROL_FRAME_BUDGET_BYTES}"]`
 const BROWSER_PAIR_MATRIX_SELECTOR =
@@ -1117,8 +1119,9 @@ async function expectLiveControlReceiptReady(page: Page, label: string): Promise
   await waitForRuntimeText(page, 'Live control receipt')
   await waitForRuntimeText(
     page,
-    `sent and received real typed control frames under the ${LIVE_CONTROL_LATENCY_BUDGET_MS}ms live latency and frame-size budgets`
+    `sampled latency and sent and received real typed control frames under the ${LIVE_CONTROL_LATENCY_BUDGET_MS}ms live latency and frame-size budgets`
   )
+  await waitForRuntimeText(page, '0 media bytes shared')
   await waitForRuntimeText(page, 'Different browser processes')
   await waitForRuntimeText(page, 'Both seats sent + received')
   await waitForRuntimeText(page, 'Pair bytes reconcile')
@@ -1232,8 +1235,8 @@ function expectLiveBrowserIsolation(input: {
   expect(input.clientBrowser).toBeDefined()
   expect(input.clientBrowser).not.toBe(browser)
   expect(input.clientPage.context()).not.toBe(input.hostPage.context())
-  const hostBrowserProcessId = getBrowserProcessId(browser)
   const clientBrowserProcessId = getBrowserProcessId(input.clientBrowser)
+  const hostBrowserProcessId = getBrowserProcessId(browser)
   if (
     typeof hostBrowserProcessId === 'number' &&
     typeof clientBrowserProcessId === 'number'
@@ -1596,7 +1599,7 @@ describe('session', () => {
       await waitForRuntimeText(page, 'Live control receipt')
       await waitForRuntimeText(
         page,
-        'Waiting for this browser seat to send and receive real typed control frames'
+        'Waiting for this browser seat to send, receive, and sample real typed control frames'
       )
       await waitForRuntimeText(
         page,

@@ -473,6 +473,7 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('data-live-sent-control-state="waiting"')
     expect(html).toContain('data-live-received-control-state="waiting"')
     expect(html).toContain('data-live-latency-state="waiting"')
+    expect(html).toContain('data-live-latency-sample-state="waiting"')
     expect(html).toContain('data-live-frame-state="waiting"')
     expect(html).toContain('data-live-sent-control-messages="0"')
     expect(html).toContain('data-live-received-control-messages="0"')
@@ -481,12 +482,14 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('data-live-browser-mode="separate-browser-processes"')
     expect(html).toContain('data-live-browser-process-count="2"')
     expect(html).toContain('data-live-byte-reconciliation="waiting-for-seat-frames"')
+    expect(html).toContain('data-live-media-byte-sharing="0"')
+    expect(html).toContain('data-media-byte-sharing="0"')
     expect(html).toContain('data-live-pair-check="host-and-guest-sent-received-lossless"')
     expect(html).toContain(
       `data-live-frame-budget-bytes="${STREAMING_SITE_CONNECTION_BUDGET.maxMessageBytes}"`
     )
     expect(html).toContain(
-      'Waiting for this browser seat to send and receive real typed control frames'
+      'Waiting for this browser seat to send, receive, and sample real typed control frames'
     )
     expect(html).toContain('Typed control frames stay &lt;=2048B while media bytes stay local.')
     expect(html).toContain('Different browser processes')
@@ -547,6 +550,7 @@ describe('RuntimeSessionShellPage', () => {
       `${STREAMING_SITE_BROWSER_PAIR_E2E_PATH_COUNT} two-browser transport paths`
     )
     expect(html).toContain('Media bytes stay local')
+    expect(html).toContain('0 media bytes are shared')
     expect(html).toContain('Flawless handoff')
     expect(html).toContain(
       'Invite, join, queue, pause, resume, seek, rate, and next all stay on the zero-loss happy path.'
