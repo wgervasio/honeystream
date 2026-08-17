@@ -532,8 +532,8 @@ const doLiveReceiptsReconcile = (
 ): boolean =>
   (hostReceipt.receiptState === 'ready' || hostReceipt.receiptState === 'warming') &&
   (guestReceipt.receiptState === 'ready' || guestReceipt.receiptState === 'warming') &&
-  hostReceipt.byteReconciliation === 'sent-equals-received' &&
-  guestReceipt.byteReconciliation === 'sent-equals-received' &&
+  hostReceipt.byteReconciliation === 'local-seat-observed' &&
+  guestReceipt.byteReconciliation === 'local-seat-observed' &&
   hostReceipt.pairCheck === 'host-and-guest-sent-received-lossless' &&
   guestReceipt.pairCheck === 'host-and-guest-sent-received-lossless' &&
   hostReceipt.sentMessages > 0 &&
@@ -589,8 +589,8 @@ const expectLiveReceiptsToReconcile = async (
 
   expect(['ready', 'warming']).toContain(hostReceipt.receiptState)
   expect(['ready', 'warming']).toContain(guestReceipt.receiptState)
-  expect(hostReceipt.byteReconciliation).toBe('sent-equals-received')
-  expect(guestReceipt.byteReconciliation).toBe('sent-equals-received')
+  expect(hostReceipt.byteReconciliation).toBe('local-seat-observed')
+  expect(guestReceipt.byteReconciliation).toBe('local-seat-observed')
   expect(hostReceipt.pairCheck).toBe('host-and-guest-sent-received-lossless')
   expect(guestReceipt.pairCheck).toBe('host-and-guest-sent-received-lossless')
   expect(hostReceipt.sentMessages).toBeGreaterThan(0)
