@@ -142,7 +142,7 @@ const LIVE_CONTROL_RECEIPT_READY_SELECTOR =
   `[data-live-action-p95-budget-ms="${LIVE_CONTROL_ACTION_P95_BUDGET_MS}"]` +
   `[data-live-browser-mode="${LIVE_BROWSER_PAIR_MODE}"]` +
   `[data-live-browser-process-count="${LIVE_BROWSER_PROCESS_COUNT}"]` +
-  '[data-live-byte-reconciliation="sent-equals-received"]' +
+  '[data-live-byte-reconciliation="local-seat-observed"]' +
   '[data-live-sent-control-state="observed"][data-live-received-control-state="observed"]' +
   '[data-live-latency-state="under-budget"][data-live-frame-state="under-budget"]' +
   `[data-live-latency-budget-ms="${LIVE_CONTROL_LATENCY_BUDGET_MS}"]` +

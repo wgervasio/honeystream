@@ -206,6 +206,8 @@ const ZERO_SKIPPED_CONTROL_MESSAGES = 0
 const LIVE_CONTROL_LATENCY_BUDGET_MS = 1500
 const LIVE_CONTROL_ACTION_P95_BUDGET_MS = 3500
 const LIVE_CONTROL_FRAME_BUDGET_BYTES = STREAMING_SITE_CONNECTION_BUDGET.maxMessageBytes
+const LIVE_BYTE_RECONCILIATION_READY_STATE = 'local-seat-observed'
+const LIVE_BYTE_RECONCILIATION_WARMING_STATE = 'waiting-for-seat-frames'
 const BROWSER_PAIR_LIVE_BROWSER_MODE = 'separate-browser-processes'
 const BROWSER_PAIR_LIVE_BROWSER_PROCESS_COUNT = 2
 const BROWSER_PAIR_LIVE_RECEIPT_CHECK = 'host-and-guest-sent-received-lossless'
@@ -1602,11 +1604,21 @@ const RuntimeSessionRouteSurface = ({
       liveMaxFrameBytes > 0 && liveMaxFrameBytes <= LIVE_CONTROL_FRAME_BUDGET_BYTES
         ? 'under-budget'
         : 'waiting'
+    const liveByteReconciliationState =
+      liveSentState === 'observed' &&
+      liveReceivedState === 'observed' &&
+      liveTelemetry.sentBytes > 0 &&
+      liveTelemetry.receivedBytes > 0 &&
+      liveLatencyState === 'under-budget' &&
+      liveFrameState === 'under-budget'
+        ? LIVE_BYTE_RECONCILIATION_READY_STATE
+        : LIVE_BYTE_RECONCILIATION_WARMING_STATE
     const liveControlReceiptState =
       liveSentState === 'observed' &&
       liveReceivedState === 'observed' &&
       liveLatencyState === 'under-budget' &&
-      liveFrameState === 'under-budget'
+      liveFrameState === 'under-budget' &&
+      liveByteReconciliationState === LIVE_BYTE_RECONCILIATION_READY_STATE
         ? 'ready'
         : 'warming'
     const browserSyncReceiptState =
@@ -1809,7 +1821,7 @@ const RuntimeSessionRouteSurface = ({
             data-live-action-p95-budget-ms={LIVE_CONTROL_ACTION_P95_BUDGET_MS}
             data-live-browser-mode={BROWSER_PAIR_LIVE_BROWSER_MODE}
             data-live-browser-process-count={BROWSER_PAIR_LIVE_BROWSER_PROCESS_COUNT}
-            data-live-byte-reconciliation="sent-equals-received"
+            data-live-byte-reconciliation={liveByteReconciliationState}
             data-live-frame-budget-bytes={LIVE_CONTROL_FRAME_BUDGET_BYTES}
             data-live-frame-state={liveFrameState}
             data-live-latency-budget-ms={LIVE_CONTROL_LATENCY_BUDGET_MS}
@@ -1830,7 +1842,7 @@ const RuntimeSessionRouteSurface = ({
             <span>
               {liveControlReceiptState === 'ready'
                 ? `This browser seat has sent and received real typed control frames under the ${LIVE_CONTROL_LATENCY_BUDGET_MS}ms live latency and frame-size budgets.`
-                : 'Waiting for this browser seat to send and receive real typed control frames.'}
+                : 'Waiting for this browser seat to send and receive real typed control frames in both directions.'}
             </span>
             <div>
               <article data-live-control-metric="sent">

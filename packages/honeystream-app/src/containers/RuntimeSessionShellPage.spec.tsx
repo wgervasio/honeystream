@@ -480,7 +480,7 @@ describe('RuntimeSessionShellPage', () => {
     expect(html).toContain('data-live-action-p95-budget-ms="3500"')
     expect(html).toContain('data-live-browser-mode="separate-browser-processes"')
     expect(html).toContain('data-live-browser-process-count="2"')
-    expect(html).toContain('data-live-byte-reconciliation="sent-equals-received"')
+    expect(html).toContain('data-live-byte-reconciliation="waiting-for-seat-frames"')
     expect(html).toContain('data-live-pair-check="host-and-guest-sent-received-lossless"')
     expect(html).toContain(
       `data-live-frame-budget-bytes="${STREAMING_SITE_CONNECTION_BUDGET.maxMessageBytes}"`
